@@ -1,7 +1,7 @@
 import luigi
 
-from src.data.Task1 import Task1, Task2
-
+from src.data.Task1 import Task1
+from src.data.Task2 import Task2
 
 class ExampleWrapperTask(luigi.WrapperTask):
     """Run workflow to create word count and feature files
