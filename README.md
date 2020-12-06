@@ -1,7 +1,7 @@
-Textanalysis Prototype for QT PQ
+Project Template
 ==============================
 
-This project structure was adapted from the [cookiecutter_template](https://drivendata.github.io/cookiecutter-data-science/).
+The project structure was adapted from [cookiecutter_template](https://drivendata.github.io/cookiecutter-data-science/).
 Feel free to add information to this readme.
 
 Project Organization
@@ -54,7 +54,7 @@ Raw Data
 TODO: Enter information about raw data.
 
 
-Basic Infos
+Basic Info
 -----------
 
 The working directory for this project should be the base project folder. Please don't add any code that
@@ -67,7 +67,7 @@ Before you commit your code, please use the function provided under Code -> Refo
 clean up the imports otherwise.
 For committing code to the repository please follow this [guide](https://datasciencecampus.github.io/coding-standards/version-control.html).
 
-If you add code, please make sure to document it in a concise way, following this [guide](https://numpydoc.readthedocs.io/en/latest/format.html).
+If you add code, please make sure to document it concisely, following this [guide](https://numpydoc.readthedocs.io/en/latest/format.html).
 In PyCharm you can change the default docstring style under File -> Settings -> Tools -> Python Integrated Tools -> Docstring format -> NumPy.
 
 
@@ -75,7 +75,7 @@ Code Structure
 --------------
 
 The code structure for this project should be quite simple, as it is a prototype.
-Hence, their should be one main.py file (located at src/main.py) which describes the pipeline we build.
+Hence, there should be one main.py file (located at src/main.py) which describes the pipeline we build.
 
 Luigi HowTo
 -----------
@@ -83,6 +83,7 @@ Luigi HowTo
 Example Task Setup (please update when changed):
 
 [comment]: before_graph 
+TODO: Add TaskGraph for new project
 ![Luigi Task Graph](references/TaskGraph.png)
 
 [comment]: after_graph 
