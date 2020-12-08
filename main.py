@@ -19,4 +19,4 @@ class ExampleWrapperTask(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build([ExampleWrapperTask()],
-                local_scheduler=False, detailed_summary=True, workers=7)
+                local_scheduler=True, detailed_summary=True, workers=7)
