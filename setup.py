@@ -10,5 +10,7 @@ setup(
     license='',
     install_requires=['luigi==3.0.2',   # Packages needed by enduser, not developer
                       'pandas==1.1.5',
-                      ]
+                      ],
+    entry_points={'console_scripts': ['it_ticket_analysis=it_ticket_analysis.main:main'],
+                  },
 )
