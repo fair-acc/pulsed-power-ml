@@ -3,6 +3,7 @@ import luigi
 from it_ticket_analysis.data.Task1 import Task1
 from it_ticket_analysis.data.Task2 import Task2
 
+
 class ExampleWrapperTask(luigi.WrapperTask):
     """Run workflow to create word count and feature files
 
@@ -17,6 +18,10 @@ class ExampleWrapperTask(luigi.WrapperTask):
         return [Task1(), Task2()]
 
 
-if __name__ == '__main__':
+def main():
     luigi.build([ExampleWrapperTask()],
                 local_scheduler=True, detailed_summary=True, workers=7)
+
+
+if __name__ == '__main__':
+    main()
