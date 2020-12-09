@@ -3,7 +3,7 @@ from pathlib import Path
 import luigi
 import pandas as pd
 
-from src.data.Task1 import Task1
+from it_ticket_analysis.data.Task1 import Task1
 
 
 class Task2(luigi.Task):
