@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Template Project'
+project = 'IT Ticket Analysis'
 copyright = '2020, infoteam Software AG'
 author = 'infoteam Software AG'
 
