@@ -7,3 +7,5 @@ pandas==1.1.5
 setuptools==51.0.0
 pytest==6.1.2
 recommonmark
+dvc
+dvc[ssh]
