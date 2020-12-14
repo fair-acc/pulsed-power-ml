@@ -1,7 +1,7 @@
 import luigi
 
-from it_ticket_analysis.data.Task1 import Task1
-from it_ticket_analysis.data.Task2 import Task2
+from src.it_ticket_analysis.data.Task1 import Task1
+from src.it_ticket_analysis.data.Task2 import Task2
 
 
 class ExampleWrapperTask(luigi.WrapperTask):
