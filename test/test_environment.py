@@ -8,7 +8,7 @@ class BasicDevEnvironmentTests(unittest.TestCase):
     def test_happy_case(self):
         """ Happy Case
         """
-        self.assertTrue(True)
+        self.assertTrue(False)
 
     def test_python_version(self):
         """ Test python version
