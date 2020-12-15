@@ -7,4 +7,8 @@ test:
   stage: test
   script:
     - pip install -r requirements.txt
-    - pytest
+    - pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
