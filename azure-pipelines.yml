@@ -15,5 +15,19 @@ steps:
   displayName: 'install requirements'
 
 - script: |
-    pytest
+    pytest --doctest-modules --junitxml=junit/test-result.xml --cov-report=html
   displayName: 'run tests'
+
+# Publish Test Results
+# Publish test results to Azure Pipelines
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+    testResultsFiles: '**/test-*.xml' 
+    #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
+    #mergeTestResults: false # Optional
+    failTaskOnFailedTests: false # Optional
+    #testRunTitle: # Optional
+    #buildPlatform: # Optional
+    #buildConfiguration: # Optional
+    #publishRunAttachments: true # Optional
