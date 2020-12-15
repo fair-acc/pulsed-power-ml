@@ -90,4 +90,7 @@ target/
 
 # Mypy cache
 .mypy_cache/
-/data/
+
+# Data
+data/*/*.csv
+

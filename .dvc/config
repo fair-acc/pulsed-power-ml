@@ -1,0 +1,6 @@
+[core]
+    remote = nas
+['remote "nas"']
+    url = ssh://P01082-it@nas.infoteam.de/home/dvc-storage
+    user = P01082-it
+    password = uga6\O--3Cc
