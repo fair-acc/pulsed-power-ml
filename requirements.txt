@@ -10,3 +10,6 @@ pytest-cov==2.10.1
 recommonmark
 dvc
 dvc[ssh]
+sklearn
+matplotlib
+seaborn

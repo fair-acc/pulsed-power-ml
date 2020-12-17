@@ -1,14 +1,37 @@
 stages:
   - test
+  - cml_run
 
-image: python:3.7-slim
+# image: python:3.7-slim
+image: dvcorg/cml-py3:latest
+
+before_script:
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
 
 test:
   stage: test
   script:
-    - pip install -r requirements.txt
     - pytest --junitxml=report.xml
   artifacts:
     when: always
     reports:
       junit: report.xml
+
+cml:
+  stage: cml_run
+  script:
+    - dvc pull
+    - dvc repro
+    - git fetch --prune
+    - dvc metrics diff --show-md develop >> report.md
+    - dvc plots diff --target roc.csv --show-vega develop > vega.json
+    - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
+    - cml-send-comment report.md
+
+
+    #    - python src/it_ticket_analysis/train.py
+#
+#    - cat metrics.txt >> report.md
+    #- cml-publish roc.png --md >> report.md
+    #- cml-send-comment report.md
