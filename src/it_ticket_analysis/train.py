@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
+import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -34,10 +35,10 @@ train_score = clf.score(X_train, y_train) * 100
 # Report test set score
 test_score = clf.score(X_test, y_test) * 100
 
-# Write scores to a file
-with open("metrics.txt", 'w') as outfile:
-        outfile.write("Training Accuracy: %2.1f%%\n" % train_score)
-        outfile.write("Test Accuracy: %2.1f%%\n" % test_score)
+with open("metrics.json", 'w') as outfile:
+    json.dump({"Training Accuracy": train_score,
+               "Test Accuracy": test_score}, outfile)
+
 
 # Calc ROC
 y_pred = clf.predict_proba(X_test)
