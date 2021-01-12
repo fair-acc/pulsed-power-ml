@@ -5,7 +5,7 @@ stages:
     - data/raw/wine_quality.csv
     - src/it_ticket_analysis/train.py
     metrics:
-    - metrics.txt:
+    - metrics.json:
         cache: false
     plots:
     - roc.csv:
