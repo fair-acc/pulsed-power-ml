@@ -29,9 +29,18 @@ cml:
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-send-comment report.md
 
+pages:
+  script:
+  - sphinx-build -b html docs public
+  artifacts:
+    paths:
+    - public
+
 
     #    - python src/it_ticket_analysis/train.py
 #
 #    - cat metrics.txt >> report.md
     #- cml-publish roc.png --md >> report.md
     #- cml-send-comment report.md
+
+
