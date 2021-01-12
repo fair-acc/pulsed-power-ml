@@ -1,7 +1,7 @@
 stages:
   - test
   - cml_run
-  - documentation
+  - pages
 
 # image: python:3.7-slim
 image: dvcorg/cml-py3:latest
@@ -30,8 +30,7 @@ cml:
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-send-comment report.md
 
-documentation:
-  stage: documentation
+pages:
   script:
   - sphinx-build -b html docs public
   artifacts:
