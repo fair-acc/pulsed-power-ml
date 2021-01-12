@@ -31,6 +31,7 @@ cml:
     - cml-send-comment report.md
 
 documentation:
+  stage: documentation
   script:
   - sphinx-build -b html docs public
   artifacts:
