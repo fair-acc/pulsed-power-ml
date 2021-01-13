@@ -43,4 +43,4 @@ with open("metrics.json", 'w') as outfile:
 # Calc ROC
 y_pred = clf.predict_proba(X_test)
 fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred[:, 1])
-pd.DataFrame([fpr, tpr]).transpose().rename({0: 'fpr', 1: 'tpr'}, axis=1).to_csv("roc.csv")
+pd.DataFrame([fpr, tpr]).transpose().rename({0: 'fpr', 1: 'tpr'}, axis=1).to_csv("roc.csv", index=False)
