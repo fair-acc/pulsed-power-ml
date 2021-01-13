@@ -25,7 +25,7 @@ cml:
     - dvc repro
     - git fetch --prune
     - dvc metrics diff --show-md develop >> report.md
-    - dvc plots diff --target roc.csv --show-vega develop > vega.json
+    - dvc plots diff --target roc.csv --show-vega develop -x fpr -y tpr > vega.json
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-send-comment report.md
 
