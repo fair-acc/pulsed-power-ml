@@ -37,9 +37,9 @@ cml:
       - cml-tensorboard-dev \
           --logdir model\logs \
           --name "Go to tensorboard" \
-          --md >> report.md
-      - cml-send-comment report.md
-      - python train.py
+          --md >> report2.md
+      - cml-send-comment report2.md
+      - python train_tensorboard.py
 
 pages:
   script:
