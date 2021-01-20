@@ -1,6 +1,7 @@
 stages:
   - test
   - cml_run
+  - cml_run2
   - pages
 
 # image: python:3.7-slim
@@ -29,6 +30,16 @@ cml:
     - dvc plots diff --target roc.csv --show-vega develop > vega.json
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-send-comment report.md
+
+  stage: cml_run2
+  script:
+      - pip install -r requirements.txt
+      - cml-tensorboard-dev \
+          --logdir model\logs \
+          --name "Go to tensorboard" \
+          --md >> report.md
+      - cml-send-comment report.md
+      - python train.py
 
 pages:
   script:
