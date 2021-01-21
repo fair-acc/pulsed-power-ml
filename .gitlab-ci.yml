@@ -34,7 +34,7 @@ cml:
   stage: cml_run2
   script:
       - pip install -r requirements.txt
-      - cml-tensorboard-dev --logdir model\logs --name "Go to tensorboard" --md >> report2.md
+      - cml-tensorboard-dev --logdir model/logs --name "Go to tensorboard" --md >> report2.md
       - cml-send-comment report2.md
       - python train_tensorboard.py
 
