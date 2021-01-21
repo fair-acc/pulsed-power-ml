@@ -34,12 +34,9 @@ cml:
   stage: cml_run2
   script:
       - pip install -r requirements.txt
-      - cml-tensorboard-dev \
-          --logdir model\logs \
-          --name "Go to tensorboard" \
-          --md >> report.md
-      - cml-send-comment report.md
-      - python train.py
+      - cml-tensorboard-dev --logdir model/logs --name "Go to tensorboard" --md >> report2.md
+      - cml-send-comment report2.md
+      - python src/it_ticket_analysis/train_tensorboard.py
 
 pages:
   script:
