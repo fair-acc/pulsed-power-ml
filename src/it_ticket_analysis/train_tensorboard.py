@@ -26,6 +26,8 @@ cols = ['fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar',
         'chlorides', 'free_sulfur_dioxide', 'total_sulfur_dioxide', 'density',
         'pH', 'sulphates', 'alcohol', 'quality']
 
+print(os.getcwd())
+
 df = pd.read_csv("data/raw/wine_quality.csv", names=cols, header=0)
 
 train, test = train_test_split(df, test_size=0.2)
