@@ -8,7 +8,7 @@ from tensorflow.keras import layers
 # Set random seed
 seed = 42
 
-logdir = "../../model/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
+logdir = "model/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
 
 
 def df_to_dataset(df_in, shuffle=True, batchsize=32):
@@ -26,7 +26,7 @@ cols = ['fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar',
         'chlorides', 'free_sulfur_dioxide', 'total_sulfur_dioxide', 'density',
         'pH', 'sulphates', 'alcohol', 'quality']
 
-df = pd.read_csv("../../data/raw/wine_quality.csv", names=cols, header=0)
+df = pd.read_csv("data/raw/wine_quality.csv", names=cols, header=0)
 
 train, test = train_test_split(df, test_size=0.2)
 train, val = train_test_split(train, test_size=0.2)
