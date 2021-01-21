@@ -1,8 +1,8 @@
 stages:
-#  - test
-#  - cml_run
+  - test
+  - cml_run
   - cml_run2
-#  - pages
+  - pages
 
 # image: python:3.7-slim
 image: dvcorg/cml-py3:latest
@@ -11,25 +11,25 @@ before_script:
   - pip install --upgrade pip
   - pip install -r requirements.txt
 
-#test:
-#  stage: test
-#  script:
-#    - pytest --junitxml=report.xml
-#  artifacts:
-#    when: always
-#    reports:
-#      junit: report.xml
+test:
+  stage: test
+  script:
+    - pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
 
 cml:
-#  stage: cml_run
-#  script:
-#    - dvc pull
-#    - dvc repro
-#    - git fetch --prune
-#    - dvc metrics diff --show-md develop >> report.md
-#    - dvc plots diff --target roc.csv --show-vega develop > vega.json
-#    - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
-#    - cml-send-comment report.md
+  stage: cml_run
+  script:
+    - dvc pull
+    - dvc repro
+    - git fetch --prune
+    - dvc metrics diff --show-md develop >> report.md
+    - dvc plots diff --target roc.csv --show-vega develop > vega.json
+    - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
+    - cml-send-comment report.md
 
   stage: cml_run2
   script:
@@ -38,13 +38,12 @@ cml:
       - cml-send-comment report2.md
       - python src/it_ticket_analysis/train_tensorboard.py
 
-#pages:
-#  script:
-#  - sphinx-build -b html docs public
-#  artifacts:
-#    paths:
-#    - public
-
+pages:
+  script:
+  - sphinx-build -b html docs public
+  artifacts:
+    paths:
+    - public
 
     #    - python src/it_ticket_analysis/train.py
 #
