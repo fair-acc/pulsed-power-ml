@@ -1,7 +1,7 @@
 stages:
-#  - test
+  - test
   - cml_run
-#  - pages
+  - pages
 
 # image: python:3.7-slim
 image: dvcorg/cml-py3:latest
