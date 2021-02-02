@@ -1,3 +1,4 @@
+tensorflow-cpu
 # local package
 -e .
 
@@ -13,3 +14,4 @@ dvc[ssh]
 sklearn
 matplotlib
 seaborn
+numpy==1.19.3
