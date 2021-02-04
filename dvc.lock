@@ -5,12 +5,12 @@ mystage:
     md5: 55fd784356daea3175d96786a00f1e30
     size: 102549
   - path: src/it_ticket_analysis/train.py
-    md5: f7e264fcb30e5f690c427f1192f700e4
-    size: 1426
+    md5: 38fd54a72e6af8848c3977ef09ca341f
+    size: 1388
   outs:
-  - path: metrics.txt
-    md5: 2c530d6f10f7ef18ffc53791f7f3249d
-    size: 48
+  - path: metrics.json
+    md5: a5e895b96b6cb5ef067da0407032732f
+    size: 62
   - path: roc.csv
     md5: a80222d3910d2c3a08ef1c9873b25e06
     size: 2389

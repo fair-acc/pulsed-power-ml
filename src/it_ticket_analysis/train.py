@@ -27,7 +27,7 @@ X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random
 #################################
 
 # Fit a model on the train section
-clf = RandomForestClassifier(max_depth=2, random_state=seed)
+clf = RandomForestClassifier(max_depth=6, random_state=seed)
 clf.fit(X_train, y_train)
 
 # Report training set score
@@ -43,4 +43,4 @@ with open("metrics.json", 'w') as outfile:
 # Calc ROC
 y_pred = clf.predict_proba(X_test)
 fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred[:, 1])
-pd.DataFrame([fpr, tpr]).transpose().rename({0: 'fpr', 1: 'tpr'}, axis=1).to_csv("roc.csv")
+pd.DataFrame([fpr, tpr]).transpose().rename({0: 'fpr', 1: 'tpr'}, axis=1).to_csv("roc.csv", index=False)
