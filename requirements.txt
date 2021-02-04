@@ -1,4 +1,3 @@
-tensorflow-cpu
 # local package
 -e .
 
@@ -15,3 +14,5 @@ sklearn
 matplotlib
 seaborn
 numpy==1.19.3
+hypothesis
+tensorflow-cpu

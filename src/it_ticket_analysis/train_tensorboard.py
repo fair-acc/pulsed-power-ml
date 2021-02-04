@@ -4,12 +4,9 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow import feature_column
 from tensorflow.keras import layers
-import os
 
 # Set random seed
 seed = 42
-
-logdir = "model/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
 
 
 def df_to_dataset(df_in, shuffle=True, batchsize=32):
@@ -22,53 +19,60 @@ def df_to_dataset(df_in, shuffle=True, batchsize=32):
     return ds
 
 
-# Load in the data
-cols = ['fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar',
-        'chlorides', 'free_sulfur_dioxide', 'total_sulfur_dioxide', 'density',
-        'pH', 'sulphates', 'alcohol', 'quality']
+def load_data(data_path):
+    # Load in the data
+    cols = ['fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar',
+            'chlorides', 'free_sulfur_dioxide', 'total_sulfur_dioxide', 'density',
+            'pH', 'sulphates', 'alcohol', 'quality']
 
-print(os.listdir())
-
-df = pd.read_csv("./data/raw/wine_quality.csv", names=cols, header=0)
-
-train, test = train_test_split(df, test_size=0.2)
-train, val = train_test_split(train, test_size=0.2)
-
-batch_size = 5
-train_ds = df_to_dataset(train, batchsize=batch_size)
-val_ds = df_to_dataset(val, shuffle=False, batchsize=batch_size)
-test_ds = df_to_dataset(test, shuffle=False, batchsize=batch_size)
-
-for feature_batch, label_batch in train_ds.take(1):
-  print('Every feature:', list(feature_batch.keys()))
-  print('A batch of alcohol:', feature_batch['alcohol'])
-  print('A batch of targets:', label_batch)
-
-#feature_batch = train_ds.take(1)
-
-feature_columns = []
-for header in list(feature_batch.keys()):
-    feature_columns.append(feature_column.numeric_column(header))
-feature_layer = tf.keras.layers.DenseFeatures(feature_columns)
+    return pd.read_csv(data_path, names=cols, header=0)
 
 
-tb_callback = tf.keras.callbacks.TensorBoard(
-    log_dir=logdir, histogram_freq=0, write_graph=True,
-    update_freq='epoch', profile_batch=2)
+def make_fit(df_in, log_dir):
+    train, test = train_test_split(df_in, test_size=0.2)
+    train, val = train_test_split(train, test_size=0.2)
 
-model = tf.keras.Sequential([
-    feature_layer,
-    layers.Dense(256, activation='relu'),
-    layers.Dense(32, activation='relu'),
-    layers.Dropout(.1),
-    layers.Dense(6)
-])
+    batch_size = 5
+    train_ds = df_to_dataset(train, batchsize=batch_size)
+    val_ds = df_to_dataset(val, shuffle=False, batchsize=batch_size)
+    test_ds = df_to_dataset(test, shuffle=False, batchsize=batch_size)
 
-model.compile(optimizer='adam',
-              loss='mse',
-              metrics=['accuracy'])
+    for feature_batch, label_batch in train_ds.take(1):
+        print('Every feature:', list(feature_batch.keys()))
+        print('A batch of alcohol:', feature_batch['alcohol'])
+        print('A batch of targets:', label_batch)
 
-model.fit(train_ds,
-          validation_data=val_ds,
-          epochs=50,
-          callbacks=[tb_callback])
+    feature_columns = []
+    for header in list(feature_batch.keys()):
+        feature_columns.append(feature_column.numeric_column(header))
+    feature_layer = tf.keras.layers.DenseFeatures(feature_columns)
+
+    tb_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=log_dir, histogram_freq=0, write_graph=True,
+        update_freq='epoch', profile_batch=2)
+
+    model = tf.keras.Sequential([
+        feature_layer,
+        layers.Dense(256, activation='relu'),
+        layers.Dense(32, activation='relu'),
+        layers.Dropout(.1),
+        layers.Dense(6)
+    ])
+
+    model.compile(optimizer='adam',
+                  loss='mse',
+                  metrics=['accuracy'])
+
+    model.fit(train_ds,
+              validation_data=val_ds,
+              epochs=50,
+              callbacks=[tb_callback])
+
+
+if __name__ == '__main__':
+    logdir = "model/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
+    datapath = "./data/raw/wine_quality.csv"
+
+    df = load_data(datapath)
+
+    make_fit(df, logdir)
