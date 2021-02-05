@@ -2,17 +2,15 @@
 -e .
 
 # external requirements
-luigi==3.0.2
-pandas==1.1.5
-setuptools==51.0.0
-pytest==6.1.2
-pytest-cov==2.10.1
+luigi
+pandas
+setuptools
+pytest
+pytest-cov
 recommonmark
 dvc
 dvc[ssh]
 sklearn
-matplotlib
-seaborn
-numpy==1.19.3
+numpy==1.19.3  # other versions throw runtime error (https://tinyurl.com/y3dm3h86)
 hypothesis
 tensorflow-cpu
