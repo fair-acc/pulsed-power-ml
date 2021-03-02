@@ -37,6 +37,6 @@ steps:
   inputs:
     command: publish
     publishDirectory: '$(Build.ArtifactStagingDirectory)'
-    vstsFeedPublish: 'it_ticket_analysis/documentation'
+    vstsFeedPublish: 'template_project/documentation'
     vstsFeedPackagePublish: 'doku'
     packagePublishDescription: 'sphinx documentation'

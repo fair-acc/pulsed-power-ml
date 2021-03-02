@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'IT Ticket Analysis'
-copyright = '2020, infoteam Software AG'
+project = 'Template Project'
+copyright = '2021, infoteam Software AG'
 author = 'infoteam Software AG'
 
 # The full version, including alpha/beta/rc tags

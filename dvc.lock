@@ -1,10 +1,10 @@
 mystage:
-  cmd: python src/it_ticket_analysis/train.py
+  cmd: python src/template_project/train.py
   deps:
   - path: data/raw/wine_quality.csv
     md5: 55fd784356daea3175d96786a00f1e30
     size: 102549
-  - path: src/it_ticket_analysis/train.py
+  - path: src/template_project/train.py
     md5: 38fd54a72e6af8848c3977ef09ca341f
     size: 1388
   outs:
