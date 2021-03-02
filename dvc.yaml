@@ -1,9 +1,9 @@
 stages:
   mystage:
-    cmd: python src/it_ticket_analysis/train.py
+    cmd: python src/template_project/train.py
     deps:
     - data/raw/wine_quality.csv
-    - src/it_ticket_analysis/train.py
+    - src/template_project/train.py
     metrics:
     - metrics.json:
         cache: false

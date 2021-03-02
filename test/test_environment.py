@@ -2,7 +2,7 @@ import unittest
 import sys
 from hypothesis.extra.pandas import column, data_frames, range_indexes
 from hypothesis import given
-import src.it_ticket_analysis.train_tensorboard
+import src.template_project.train_tensorboard
 
 
 class BasicDevEnvironmentTests(unittest.TestCase):
@@ -53,7 +53,7 @@ class InputDataframeTests(unittest.TestCase):
                         column('alcohol', dtype=float),
                         column('quality', dtype=int)]))
     def test_input_df_conversion(self, df):
-        self.assertIsNotNone(src.it_ticket_analysis.train_tensorboard.df_to_dataset(df))
+        self.assertIsNotNone(src.template_project.train_tensorboard.df_to_dataset(df))
 
 
 if __name__ == '__main__':

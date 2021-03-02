@@ -34,7 +34,7 @@ Project Organization
         |                         generated with `pip freeze > requirements.txt`
         |
         +-- setup.py           <- makes project pip installable (pip install -e .) so it_ticket_analysis can be imported
-        +-- it_ticket_analysis <- Source code for use in this project.
+        +-- template_project   <- Source code for use in this project.
         |   +-- __init__.py    <- Makes src a Python module
         |   |
         |   +-- data           <- Scripts to download or generate data

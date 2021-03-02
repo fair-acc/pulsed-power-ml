@@ -32,7 +32,7 @@ cml:
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-tensorboard-dev --logdir model/logs --name "Go to tensorboard" --md >> report.md
     - cml-send-comment report.md
-    - python src/it_ticket_analysis/train_tensorboard.py
+    - python src/template_project/train_tensorboard.py
 
 pages:
   script:
@@ -41,10 +41,5 @@ pages:
     paths:
     - public
 
-    #    - python src/it_ticket_analysis/train.py
-#
-#    - cat metrics.txt >> report.md
-    #- cml-publish roc.png --md >> report.md
-    #- cml-send-comment report.md
 
 
