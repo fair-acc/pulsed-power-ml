@@ -3,7 +3,9 @@ from setuptools import find_packages, setup
 # Todo: Add license and description texts
 setup(
     name='template_project',
-    packages=find_packages(exclude=("test",)),  # Exclude tests for enduser
+    #packages=find_packages(exclude=("test",)),  # Exclude tests for enduser
+    packages=find_packages("src"),  # include all packages under src
+    package_dir={"": "src"},  # tell distutils packages are under src
     version='0.1.0',
     description='TODO',
     author='infoteam Software',
