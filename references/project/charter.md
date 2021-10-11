@@ -6,20 +6,47 @@
 * What business problems are we trying to address?
 
 ## Scope
+Ulrike:
+* Cardiology
+* CT (Computed Tomography) guided PCI (Percutaneous Coronary Intervention)
+* IVUS
+* OCT
+* Intravascular Imaging
+
+Andre:
+* Rheumatology
+* Rheumatoide Arthritis
+* Machine Learning
+* Telehealth
+* Digital Therapeutics
+* Clinical Support
+* Drug Tapering
+* Therapy Deescalation
+
+* PubMed
+* Google Scholar
+* https://en.wikipedia.org/wiki/List_of_academic_databases_and_search_engines
+* https://clinicaltrials.gov/
+  * Coronary Artery Disease
+* http://europepmc.org/developers
+
+* Wer ist in Gremien / Komitees unterwegs?
+* Wer schreibt an Guidelines mit?
+
+
 * What data science solutions are we trying to build?
 * What will we do?
 * How is it going to be consumed by the customer?
 
+* 
+
 ## Personnel
-* Who are on this project:
-	* Microsoft:
-		* Project lead
-		* PM
-		* Data scientist(s)
-		* Account manager
-	* Client:
-		* Data administrator
-		* Business contact
+* Who is on this project:
+    * infoteam:
+        * Stefan Förstel
+    * Client:
+        * Ulrike Haberland
+        * Andre Wichmann
 	
 ## Metrics
 * What are the qualitative objectives? (e.g. reduce user churn)

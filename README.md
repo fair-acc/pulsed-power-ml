@@ -1,58 +1,65 @@
 Project Template
 ==============================
 
-The project structure was adapted from [cookiecutter_template](https://drivendata.github.io/cookiecutter-data-science/).
-Feel free to add information to this readme.
+> We don't just trust people to obey the rules, we also trust that they know when to break them. - *Simon Sinek*
 
 Project Organization
 --------------------
 
         +-- LICENSE
-        +-- README.md          <- The top-level README for developers using this project.
+        +-- README.md              <- The top-level README for developers using this project.
         +-- data
-        |   +-- external       <- Data from third party sources.
-        |   +-- interim        <- Intermediate data that has been transformed.
-        |   +-- processed      <- The final, canonical data sets for modeling.
-        |   +-- raw            <- The original, immutable data dump.
+        |   +-- external           <- Data from third party sources.
+        |   +-- interim            <- Intermediate data that has been transformed.
+        |   +-- processed          <- The final, canonical data sets for modeling.
+        |   +-- raw                <- The original, immutable data dump.
         |
-        +-- docs               <- A default Sphinx project; see sphinx-doc.org for details
+        +-- docs                   <- A default Sphinx project; see sphinx-doc.org for details
         |
-        +-- logs               <- A folder to save log files to
+        +-- logs                   <- A folder to save log files to
         |
-        +-- models             <- Trained and serialized models, or model summaries
+        +-- models                 <- Trained and serialized models, or model summaries
         |
-        +-- notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-        |                         the creator's initials, and a short `-` delimited description, e.g.
-        |                          `1.0-jqp-initial-data-exploration`.
+        +-- notebooks              <- Jupyter notebooks. Naming convention is a number (for ordering),
+        |                           the creator's initials, and a short `-` delimited description, e.g.
+        |                           `1.0-jqp-initial-data-exploration`.
         |
-        +-- references         <- Data dictionaries, manuals, and all other explanatory materials.
+        +-- references             <- Data dictionaries, manuals, and all other explanatory materials.
         |
-        +-- reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-        |   +-- figures        <- Generated graphics and figures to be used in reporting
+        +-- reports                <- Generated analysis as HTML, PDF, LaTeX, etc.
+        |   +-- figures            <- Generated graphics and figures to be used in reporting
         |
-        +-- requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-        |                         generated with `pip freeze > requirements.txt`
+        +-- requirements.txt       <- The requirements file for reproducing the analysis environment, e.g.
+        |                           generated with `pip freeze > requirements.txt`
         |
-        +-- setup.py           <- makes project pip installable (pip install -e .) so it_ticket_analysis can be imported
-        +-- template_project   <- Source code for use in this project.
-        |   +-- __init__.py    <- Makes src a Python module
-        |   |
-        |   +-- data           <- Scripts to download or generate data
-        |   |
-        |   +-- features       <- Scripts to turn raw data into features for modeling
-        |   |
-        |   +-- models         <- Scripts to train models and then use trained models to make predictions
-        |   |
-        |   +-- visualization  <- Scripts to create exploratory and results oriented visualizations
-        |
-        +-- test               <- Tests for source code in this project. Mirrored folder structure to src.
+        +-- setup.py               <- makes project pip installable (pip install -e .)
+        +-- src                    <- Source code for use in this project
+        |   +-- template_project   <- Rename this folder to project name
+        |       +-- __init__.py    <- Makes src a Python module
+        |       |
+        |       +-- data           <- Scripts to download or generate data
+        |       |
+        |       +-- features       <- Scripts to turn raw data into features for modeling
+        |       |
+        |       +-- models         <- Scripts to train models and then use trained models to make predictions
+        |       |
+        |       +-- visualization  <- Scripts to create exploratory and results oriented visualizations
+        |   +-- templates          <- General folder for further templates
+        +-- test                   <- Tests for source code in this project. Mirrored folder structure to src.
 
-[comment]: include_start 
-Raw Data
+[comment]: include_start
+TODO List
 --------
 
-TODO: Enter information about raw data.
+* Preparation before kick-off meeting:
+  1. Create new environment using the [requirements.txt](requirements.txt). More info in the [pip documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files).
+  1. Read the basic info in this template
 
+* After kick-off meeting:
+  1. Fill out [project charter](references/project/charter.md).
+  1. Add raw data source information to [Data and Feature Definitions](references/data_report/data_definition.md).
+  1. Fill out the [Data Report](references/data_report).
+  1. Create a data dictionary for each raw dataset.
 
 Basic Info
 -----------
@@ -61,7 +68,7 @@ The working directory for this project should be the base project folder. Please
 manually changes that. If you are working in PyCharm, please go to Run -> Edit Configurations and under Templates ->
 Python set your Working Directory to that path. This way, all newly created \*.py Files will have it set as default.
 
-Work according to the GitFlow.
+Work according to the [GitLab Flow](https://docs.gitlab.com/ee/topics/gitlab_flow.html).
 
 Before you commit your code, please use the function provided under Code -> Reformat File or reformat your code and
 clean up the imports otherwise.
@@ -70,6 +77,8 @@ For committing code to the repository please follow this [guide](https://datasci
 If you add code, please make sure to document it concisely, following this [guide](https://numpydoc.readthedocs.io/en/latest/format.html).
 In PyCharm you can change the default docstring style under File -> Settings -> Tools -> Python Integrated Tools -> Docstring format -> NumPy.
 
+Have a look at the [DVC tutorial](https://www.youtube.com/watch?v=kLKBcPonMYw&list=PL7WG7YrwYcnDb0qdPl9-KEStsL-3oaEjg)
+or the complete [MLOps tutorial](https://www.youtube.com/watch?v=9BgIDqAzfuA&list=PL7WG7YrwYcnDBDuCkFbcyjnZQrdskFsBz).
 
 Code Structure
 --------------

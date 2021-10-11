@@ -10,8 +10,8 @@ If the client is providing you the data from a database-like data management sys
 
 _Example image of data schema when data is from a sql server_
 
-![](data-dictionary-from-sql-table.png)
+![](_examples/data-dictionary-from-sql-table.png)
 
 ## <Dataset 2 name (dictionary in Excel file)\>
 
-[dataset 2 with dictionary in Excel](./template_raw_data_dict.csv)
+[dataset 2 with dictionary in Excel](_examples/template_raw_data_dict.csv)

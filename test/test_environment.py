@@ -2,7 +2,7 @@ import unittest
 import sys
 from hypothesis.extra.pandas import column, data_frames, range_indexes
 from hypothesis import given
-import src.template_project.train_tensorboard
+import src.kol_db.train_tensorboard
 
 
 class BasicDevEnvironmentTests(unittest.TestCase):

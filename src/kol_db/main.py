@@ -1,7 +1,7 @@
 import luigi
 
-from src.template_project.data.Task1 import Task1
-from src.template_project.data.Task2 import Task2
+from src.kol_db.data.Task1 import Task1
+from src.kol_db.data.Task2 import Task2
 
 
 class ExampleWrapperTask(luigi.WrapperTask):

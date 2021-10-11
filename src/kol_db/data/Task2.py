@@ -3,7 +3,7 @@ from pathlib import Path
 import luigi
 import pandas as pd
 
-from src.template_project.data.Task1 import Task1
+from src.kol_db.data.Task1 import Task1
 
 
 class Task2(luigi.Task):
