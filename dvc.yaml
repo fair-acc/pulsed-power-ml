@@ -1,9 +1,9 @@
 stages:
   mystage:
-    cmd: python src/kol_db/train.py
+    cmd: python src/pulsed_power_ml/train.py
     deps:
     - data/raw/wine_quality.csv
-    - src/kol_db/train.py
+    - src/pulsed_power_ml/train.py
     metrics:
     - metrics.json:
         cache: false

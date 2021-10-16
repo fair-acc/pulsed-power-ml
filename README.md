@@ -1,4 +1,4 @@
-Project Template
+Project GSI/FAIR - Energiemanagement
 ==============================
 
 > We don't just trust people to obey the rules, we also trust that they know when to break them. - *Simon Sinek*
@@ -7,48 +7,47 @@ Project Organization
 --------------------
 
         +-- LICENSE
-        +-- README.md              <- The top-level README for developers using this project.
-        +-- data
-        |   +-- external           <- Data from third party sources.
-        |   +-- interim            <- Intermediate data that has been transformed.
-        |   +-- processed          <- The final, canonical data sets for modeling.
-        |   +-- raw                <- The original, immutable data dump.
-        |
-        +-- docs                   <- A default Sphinx project; see sphinx-doc.org for details
-        |
-        +-- logs                   <- A folder to save log files to
-        |
-        +-- models                 <- Trained and serialized models, or model summaries
-        |
-        +-- notebooks              <- Jupyter notebooks. Naming convention is a number (for ordering),
-        |                           the creator's initials, and a short `-` delimited description, e.g.
-        |                           `1.0-jqp-initial-data-exploration`.
-        |
-        +-- references             <- Data dictionaries, manuals, and all other explanatory materials.
-        |
-        +-- reports                <- Generated analysis as HTML, PDF, LaTeX, etc.
-        |   +-- figures            <- Generated graphics and figures to be used in reporting
-        |
-        +-- requirements.txt       <- The requirements file for reproducing the analysis environment, e.g.
-        |                           generated with `pip freeze > requirements.txt`
-        |
-        +-- setup.py               <- makes project pip installable (pip install -e .)
-        +-- src                    <- Source code for use in this project
-        |   +-- template_project   <- Rename this folder to project name
-        |       +-- __init__.py    <- Makes src a Python module
+        +-- README.md                 <- The top-level README for developers using this project.
+        +-- data        
+        |   +-- external              <- Data from third party sources.
+        |   +-- interim               <- Intermediate data that has been transformed.
+        |   +-- processed             <- The final, canonical data sets for modeling.
+        |   +-- raw                   <- The original, immutable data dump.
+        |       
+        +-- docs                      <- A default Sphinx project; see sphinx-doc.org for details
+        |       
+        +-- logs                      <- A folder to save log files to
+        |       
+        +-- models                    <- Trained and serialized models, or model summaries
+        |       
+        +-- notebooks                 <- Jupyter notebooks. Naming convention is a number (for ordering),
+        |                                the creator's initials, and a short `-` delimited description, e.g.
+        |                                 `1.0-jqp-initial-data-exploration`.
+        |       
+        +-- references                <- Data dictionaries, manuals, and all other explanatory materials.
+        |       
+        +-- reports                   <- Generated analysis as HTML, PDF, LaTeX, etc.
+        |   +-- figures               <- Generated graphics and figures to be used in reporting
+        |       
+        +-- requirements.txt          <- The requirements file for reproducing the analysis environment, e.g.
+        |                                generated with `pip freeze > requirements.txt`
+        |       
+        +-- setup.py                  <- makes project pip installable (pip install -e .)
+        +-- src                       <- Source code for use in this project
+        |   +-- pulsed_power_ml       <- Rename this folder to project name
+        |       +-- __init__.py       <- Makes src a Python module
         |       |
-        |       +-- data           <- Scripts to download or generate data
+        |       +-- data              <- Scripts to download or generate data
         |       |
-        |       +-- features       <- Scripts to turn raw data into features for modeling
+        |       +-- features          <- Scripts to turn raw data into features for modeling
         |       |
-        |       +-- models         <- Scripts to train models and then use trained models to make predictions
+        |       +-- models            <- Scripts to train models and then use trained models to make predictions
         |       |
-        |       +-- visualization  <- Scripts to create exploratory and results oriented visualizations
-        |   +-- templates          <- General folder for further templates
-        +-- test                   <- Tests for source code in this project. Mirrored folder structure to src.
+        |       +-- visualization     <- Scripts to create exploratory and results oriented visualizations
+        +-- test                      <- Tests for source code in this project. Mirrored folder structure to src.
 
-[comment]: include_start
-TODO List
+[comment]: include_start 
+Raw Data
 --------
 
 * Preparation before kick-off meeting:
@@ -61,18 +60,19 @@ TODO List
   1. Fill out the [Data Report](references/data_report).
   1. Create a data dictionary for each raw dataset.
 
+
 Basic Info
 -----------
 
 The working directory for this project should be the base project folder. Please don't add any code that
-manually changes that. If you are working in PyCharm, please go to Run -> Edit Configurations and under Templates ->
-Python set your Working Directory to that path. This way, all newly created \*.py Files will have it set as default.
+manually changes that. If you are working in PyCharm, go to Run -> Edit Configurations and under Templates -> Python 
+set your Working Directory to that path. This way, all newly created *.py Files will have it set as default.
 
-Work according to the [GitLab Flow](https://docs.gitlab.com/ee/topics/gitlab_flow.html).
+Work according to the [GitHub Flow](https://guides.github.com/introduction/flow/).
 
 Before you commit your code, please use the function provided under Code -> Reformat File or reformat your code and
 clean up the imports otherwise.
-For committing code to the repository please follow this [guide](https://datasciencecampus.github.io/coding-standards/version-control.html).
+For committing code to the repository please follow this [guide on commit messages](https://datasciencecampus.github.io/coding-standards/version-control.html).
 
 If you add code, please make sure to document it concisely, following this [guide](https://numpydoc.readthedocs.io/en/latest/format.html).
 In PyCharm you can change the default docstring style under File -> Settings -> Tools -> Python Integrated Tools -> Docstring format -> NumPy.

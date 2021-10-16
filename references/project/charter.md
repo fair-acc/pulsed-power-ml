@@ -3,79 +3,79 @@
 ## Business background
 
 * Who is the client, what business domain the client is in.
+  * [GSI Helmholtzzentrum für Schwerionenforschung GmbH](https://www.gsi.de/forschungbeschleuniger/fair)
 * What business problems are we trying to address?
+  * Energymanagement
 
 ## Scope
-Ulrike:
-* Cardiology
-* CT (Computed Tomography) guided PCI (Percutaneous Coronary Intervention)
-* IVUS
-* OCT
-* Intravascular Imaging
-
-Andre:
-* Rheumatology
-* Rheumatoide Arthritis
-* Machine Learning
-* Telehealth
-* Digital Therapeutics
-* Clinical Support
-* Drug Tapering
-* Therapy Deescalation
-
-* PubMed
-* Google Scholar
-* https://en.wikipedia.org/wiki/List_of_academic_databases_and_search_engines
-* https://clinicaltrials.gov/
-  * Coronary Artery Disease
-* http://europepmc.org/developers
-
-* Wer ist in Gremien / Komitees unterwegs?
-* Wer schreibt an Guidelines mit?
-
-
 * What data science solutions are we trying to build?
+  * We are building a monitoring system for energy consuming devices. 
+  * Basis for our work will be an experimental setup using hardware provided by GSI/FAIR with the central piece [Picoscope 4000A](https://www.picotech.com/oscilloscope/4000/picoscope-4000-series)
+  * Those devices will be classified by energy consumption parameters.
+  * Energy consumption will be plotted and annotated. 
 * What will we do?
+  * Create testfield based around the **Picoscope 4000A** publishing data via ZMQ stream (GNU Radio)
+  * Train classification model
+  * Annotate and visualize data
 * How is it going to be consumed by the customer?
-
-* 
+  * The data will be displayed via [HoloViews](https://holoviews.org/) dashboard
 
 ## Personnel
-* Who is on this project:
-    * infoteam:
-        * Stefan Förstel
-    * Client:
-        * Ulrike Haberland
-        * Andre Wichmann
-	
+* Who are on this project:
+	* infoteam:
+        * Heinesch, Roland (Roland.Heinesch@infoteam.de)
+        * Förstel, Stefan (Stefan.Foerstel@infoteam.de)
+        * Kittler, Thomas (Thomas.Kittler@infoteam.de)
+        * Signoriello, Stefano (Stefano.Signoriello@infoteam.de)
+        * Neumann, Christoph (Christoph.Neumann@infoteam.de)
+	* GSI/FAIR:
+		* Steinhagen, Ralph (R.Steinhagen@gsi.de)
+		* Krimm, Alexander (A.Krimm@gsi.de)
+
 ## Metrics
-* What are the qualitative objectives? (e.g. reduce user churn)
-* What is a quantifiable metric  (e.g. reduce the fraction of users with 4-week inactivity)
-* Quantify what improvement in the values of the metrics are useful for the customer scenario (e.g. reduce the  fraction of users with 4-week inactivity by 20%) 
-* What is the baseline (current) value of the metric? (e.g. current fraction of users with 4-week inactivity = 60%)
-* How will we measure the metric? (e.g. A/B test on a specified subset for a specified period; or comparison of performance after implementation to baseline)
+* Classification is working with x% accuracy
+* tbd
 
 ## Plan
 * Phases (milestones), timeline, short description of what we'll do in each phase.
+  * Phase 1a (depending on when we can get the complete hardware):
+    * Testfield works and streams live data via **Picoscope4000a**
+  * Phase 1b ():
+    * Fix the custom codeblock "Picoscope4000a" to work with GNURadio 3.8+
+  * Phase 2 (Build pipeline with synthetic data till Phase 1a is done):
+    * Classify streamed / received data
+  * Phase 3:
+    * Display annotated data in dashboard
+
+Architektur (Live):
+* Generation von Daten --> Pub via ZMQ
+* Sub via ZMQ --> Bekommen Live Daten
+* Klassifikation der Live Daten durch Modell
+* Annotation der Live Daten + Visualisierung
+
+Architektur (Training):
+* Generation von Daten --> Pub via ZMQ
+* Sub via ZMQ --> Rohdaten + Labels
+* Training des Modells
+
+
+Pakete:
+1. Thomas + Christoph: ZMQ Anbindung an VM, schreibe synthetische Trainingsdaten für Pipeline-Basis
+2. Christoph: Fix the custom codeblock "Picoscope4000a" to work with GNURadio 3.9
+3. Stefano + Thomas: Aufbauend auf 1.
 
 ## Architecture
 * Data
-  * What data do we expect? Raw data in the customer data sources (e.g. on-prem files, SQL, on-prem Hadoop etc.)
-* Data movement from on-prem to Azure using ADF or other data movement tools (Azcopy, EventHub etc.) to move either
-  * all the data, 
-  * after some pre-aggregation on-prem,
-  * Sampled data enough for modeling 
-
-* What tools and data storage/analytics resources will be used in the solution e.g.,
-  * ASA for stream aggregation
-  * HDI/Hive/R/Python for feature construction, aggregation and sampling
-  * AzureML for modeling and web service operationalization
-* How will the score or operationalized web service(s) (RRS and/or BES) be consumed in the business workflow of the customer? If applicable, write down pseudo code for the APIs of the web service calls.
-  * How will the customer use the model results to make decisions
-  * Data movement pipeline in production
-  * Make a 1 slide diagram showing the end to end data flow and decision architecture
-    * If there is a substantial change in the customer's business workflow, make a before/after diagram showing the data flow.
+  * Datatypes are tbd
+* Data movement:
+  * Data will be streamed via "ZMQ Pub Sink" and subscribed to
+  * For training this data will be written to disk
 
 ## Communication
-* How will we keep in touch? Weekly meetings?
+* Weekly meetings, Monday 13:00 - 13:30
+  * Via [Matrix](https://matrix.org/).
 * Who are the contact persons on both sides?
+  * infoteam
+    * Roland Heinesch
+  * GSI / FAIR
+    * Ralph Steinhagen

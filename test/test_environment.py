@@ -2,7 +2,7 @@ import unittest
 import sys
 from hypothesis.extra.pandas import column, data_frames, range_indexes
 from hypothesis import given
-import src.kol_db.train_tensorboard
+import src.pulsed_power_ml.train_tensorboard
 
 
 class BasicDevEnvironmentTests(unittest.TestCase):
@@ -16,7 +16,7 @@ class BasicDevEnvironmentTests(unittest.TestCase):
     def test_python_version(self):
         """ Test python version
 
-        Tests if python version is 3.7
+        Tests if python version is greater than 3.7
         """
         self.assertEqual(3, sys.version_info.major)  # Major Version = 3
         self.assertGreaterEqual(7, sys.version_info.minor)  # Minor Version between 6 and 7
@@ -53,7 +53,7 @@ class InputDataframeTests(unittest.TestCase):
                         column('alcohol', dtype=float),
                         column('quality', dtype=int)]))
     def test_input_df_conversion(self, df):
-        self.assertIsNotNone(src.template_project.train_tensorboard.df_to_dataset(df))
+        self.assertIsNotNone(src.pulsed_power_ml.train_tensorboard.df_to_dataset(df))
 
 
 if __name__ == '__main__':

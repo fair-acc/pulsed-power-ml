@@ -32,7 +32,7 @@ cml:
     - vl2png vega.json -s 1.5 | cml-publish --md  >> report.md
     - cml-tensorboard-dev --logdir model/logs --name "Go to tensorboard" --md >> report.md
     - cml-send-comment report.md
-    - python src/kol_db/train_tensorboard.py
+    - python src/pulsed_power_ml/train_tensorboard.py
 
 pages:
   script:
