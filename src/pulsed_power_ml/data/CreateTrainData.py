@@ -4,10 +4,10 @@ import luigi
 import pandas as pd
 
 
-class Task1(luigi.Task):
-    """This Luigi Task loads all raw ticket files and combines them into one"""
+class CreateTrainData(luigi.Task):
+    """Read ZMQ stream and save training data to file"""
 
-    output_path = Path('data/processed/task1_output.csv')
+    output_path = Path(f'data/raw/train_data.csv')
 
     def output(self):
         """
@@ -26,4 +26,4 @@ class Task1(luigi.Task):
 
 
 if __name__ == '__main__':
-    luigi.build([Task1()], local_scheduler=True, detailed_summary=True)
+    luigi.build([CreateTrainData()], local_scheduler=True, detailed_summary=True)

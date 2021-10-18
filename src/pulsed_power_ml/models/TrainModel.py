@@ -3,20 +3,20 @@ from pathlib import Path
 import luigi
 import pandas as pd
 
-from src.pulsed_power_ml.data.Task1 import Task1
+from src.pulsed_power_ml.data.CreateTrainData import CreateTrainData
 
 
-class Task2(luigi.Task):
+class TrainModel(luigi.Task):
     """This Luigi Task loads all raw ticket files and combines them into one"""
 
     output_path = Path('data/processed/task2_output.csv')
 
     def requires(self):
         """
-        Task1 has to be run before Task2
+        CreateTrainData has to be run before TrainModel
         """
 
-        return Task1()
+        return CreateTrainData()
 
     def output(self):
         """
@@ -36,4 +36,4 @@ class Task2(luigi.Task):
 
 
 if __name__ == '__main__':
-    luigi.build([Task2()], local_scheduler=True, detailed_summary=True)
+    luigi.build([TrainModel()], local_scheduler=True, detailed_summary=True)

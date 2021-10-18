@@ -1,7 +1,7 @@
 import luigi
 
-from src.pulsed_power_ml.data.Task1 import Task1
-from src.pulsed_power_ml.data.Task2 import Task2
+from src.pulsed_power_ml.data.CreateTrainData import CreateTrainData
+from pulsed_power_ml.models.TrainModel import TrainModel
 
 
 class ExampleWrapperTask(luigi.WrapperTask):
@@ -15,12 +15,14 @@ class ExampleWrapperTask(luigi.WrapperTask):
         https://luigi.readthedocs.io/en/stable/tasks.html
         """
 
-        return [Task1(), Task2()]
+        return [CreateTrainData(), TrainModel()]
 
 
 def main():
+    num_workers = 3
+
     luigi.build([ExampleWrapperTask()],
-                local_scheduler=True, detailed_summary=True, workers=7)
+                local_scheduler=True, detailed_summary=True, workers=num_workers)
 
 
 if __name__ == '__main__':
