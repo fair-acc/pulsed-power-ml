@@ -14,3 +14,4 @@ sklearn
 numpy==1.19.3  # other versions throw runtime error (https://tinyurl.com/y3dm3h86)
 hypothesis
 tensorflow-cpu
+holoviews
