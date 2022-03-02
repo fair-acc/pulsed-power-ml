@@ -16,6 +16,8 @@ The model used for the power disaggregation can only handle 'known' appliances w
 Additionally, the model must be trained with respective training data for each appliance. 
 Thus, for the power disaggregation objective, three different appliances, a halogen lamp, a fluorescent lamp a an LED has been used for training and testing. 
 
+![image](assets/setup_pulsed_power_ml.png)
+
 ### GNU-Radio Module
 The processing of the raw data and the calculation of frequency, phase shift, apparent-, active- and reactive power is handled by a GNU-Radio module, which has been developed for this purpose.
 A ZMQ-interface, which is implemented in GNU-Radio, is used to stream live data (either to a dashboard for visualization or to an algorithm for the power disaggregation).
@@ -23,7 +25,7 @@ A ZMQ-interface, which is implemented in GNU-Radio, is used to stream live data 
 ### Dashboard for live data
 One receiver of the data transmitted by GNU-Radio over the ZMQ-interface is a PyQt-Dashbaord for the purpose of visualizing the received data. 
 
-![image](https://user-images.githubusercontent.com/92721368/155737297-50ba1197-a6c2-4cb0-9308-ef9d481a0258.png)
+![image](assets/dashboard.png)
 
 ### Real time power disaggregation and visualization
 The other receiver is a Python-package which has been developed to disaggregate the total power consumption into the power consumed per appliance in real time. 
@@ -34,4 +36,4 @@ The knowledge gained from this analysis is then used to automatically detect swi
 The power profile for each appliance is modeled with affine function, which are also fitted during the 'training'.  
 An example of this models performance can be seen here: 
 
-![image](https://user-images.githubusercontent.com/92721368/155739040-825be72d-752d-4cd7-a8c0-1226cd8bc92b.png)
+![image](assets/trigger.png)
