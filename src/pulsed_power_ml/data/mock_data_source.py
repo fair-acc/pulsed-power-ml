@@ -14,7 +14,7 @@ class MockDataError(ValueError):
 class MockDataSource:
     def __init__(self, conn_info, stream_type):
         """
-
+        Set initial parameters
 
         Parameters
         ----------
@@ -83,13 +83,14 @@ class MockDataSource:
 if __name__ == '__main__':
     from src.pulsed_power_ml.data.zmq_connection_info import ZMQConnectionInfo
 
-    mds = MockDataSource(ZMQConnectionInfo(
-        connection_string='tcp://127.0.0.1',
-        port=1234,
-        topic='',
-        chan_cnt=1,
-        data_type=np.float32
-    ),
+    mds = MockDataSource(
+        ZMQConnectionInfo(
+            connection_string='tcp://127.0.0.1',
+            port=1234,
+            topic='',
+            chan_cnt=1,
+            data_type=np.float32
+        ),
         'raw'
     )
     mds.run()
