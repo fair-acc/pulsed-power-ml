@@ -18,7 +18,8 @@ class ZMQConnectionInfo:
     buffer_object: Union[
         partial[RawBuffer],
         partial[PowerBuffer],
-        partial[MainsFreqBuffer]
+        partial[MainsFreqBuffer],
+        None
     ]
     processing_function: Union[
         SignalCommunicate.requestBpGraphUpdate,

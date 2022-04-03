@@ -76,7 +76,8 @@ def get_conn_infos(nilm_window, classifier):
             topic='',
             chan_cnt=2,
             data_type=np.float32,
-            processing_function=update_raw
+            processing_function=update_raw,
+            buffer_object=None
         ),
         'raw_bp': ZMQConnectionInfo(
             connection_string='tcp://127.0.0.1',
@@ -84,7 +85,8 @@ def get_conn_infos(nilm_window, classifier):
             topic='',
             chan_cnt=2,
             data_type=np.float32,
-            processing_function=update_bp
+            processing_function=update_bp,
+            buffer_object=None
         ),
         'power': ZMQConnectionInfo(
             connection_string='tcp://127.0.0.1',
@@ -92,7 +94,8 @@ def get_conn_infos(nilm_window, classifier):
             topic='',
             chan_cnt=4,
             data_type=np.float32,
-            processing_function=update_power_and_trigger
+            processing_function=update_power_and_trigger,
+            buffer_object=None
         ),
         'mains_freq': ZMQConnectionInfo(
             connection_string='tcp://127.0.0.1',
@@ -100,7 +103,8 @@ def get_conn_infos(nilm_window, classifier):
             topic='',
             chan_cnt=1,
             data_type=np.float32,
-            processing_function=update_mains_freq
+            processing_function=update_mains_freq,
+            buffer_object=None
         ),
         'power_spec': ZMQConnectionInfo(
             connection_string='tcp://127.0.0.1',
@@ -108,7 +112,8 @@ def get_conn_infos(nilm_window, classifier):
             topic='',
             chan_cnt=1,
             data_type=np.float32,
-            processing_function=update_power_spec
+            processing_function=update_power_spec,
+            buffer_object=None
         )
     }
 
