@@ -23,7 +23,7 @@ class PowerBuffer:
         self.data_points_to_show = data_points_to_show
 
         self.prep_downsampling = 100
-        self.target_sample_rate = 10
+        self.target_sample_rate = 1_000
 
         self.data_counter = -1
         self.do_update_vis = False
@@ -46,12 +46,11 @@ class PowerBuffer:
         new_data : np.array
         """
 
-        reduced_data = new_data[::self.prep_downsampling]
-        self.buffer.extend(reduced_data)
+        self.buffer.extend(new_data)
 
         if len(self.buffer) >= self.data_points_to_show:
             self.buffer = self.buffer[-self.data_points_to_show:]
-            index_shift = len(reduced_data)
+            index_shift = len(new_data)
         else:
             index_shift = 0
 
@@ -69,5 +68,6 @@ class PowerBuffer:
         self.data_counter = (self.data_counter + 1) % self.update_rate
         self.do_update_vis = self.data_counter == 0
 
-        self.data = pd.DataFrame(self.buffer, columns=['P', 'Q', 'S', 'phi'], index=self.index)
+        self.data = pd.DataFrame(self.buffer[::self.prep_downsampling], columns=['P', 'Q', 'S', 'phi'],
+                                 index=self.index[::self.prep_downsampling])
         self.data['phi'] = self.data['phi'].apply(lambda x: degrees(x))
