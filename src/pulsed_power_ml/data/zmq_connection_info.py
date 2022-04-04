@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Union
 
-from src.pulsed_power_ml.data.buffers.power_buffer import PowerBuffer
-from src.pulsed_power_ml.data.buffers.mains_freq_buffer import MainsFreqBuffer
-from src.pulsed_power_ml.data.buffers.raw_buffer import RawBuffer
 from pulsed_power_ml.data.signal_communicate import SignalCommunicate
+from src.pulsed_power_ml.data.buffers.mains_freq_buffer import MainsFreqBuffer
+from src.pulsed_power_ml.data.buffers.power_buffer import PowerBuffer
+from src.pulsed_power_ml.data.buffers.raw_buffer import RawBuffer
+from src.pulsed_power_ml.data.buffers.trigger_buffer import TriggerBuffer
 
 
 @dataclass
@@ -26,3 +27,11 @@ class ZMQConnectionInfo:
         SignalCommunicate.requestRawGraphUpdate,
         SignalCommunicate.requestPowerGraphUpdate
     ]
+    trigger_buffer: Union[
+        partial[TriggerBuffer],
+        None
+    ] = None,
+    trigger_proc_fun: Union[
+        SignalCommunicate.requestTriggerGraphUpdate,
+        None
+    ] = None

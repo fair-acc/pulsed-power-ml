@@ -18,6 +18,7 @@ from src.pulsed_power_ml.data.buffers.power_buffer import PowerBuffer
 from src.pulsed_power_ml.data.buffers.raw_buffer import RawBuffer
 from src.pulsed_power_ml.data.zmq_connection_info import ZMQConnectionInfo
 
+from src.pulsed_power_ml.data.buffers.trigger_buffer import TriggerBuffer
 
 class Worker(QRunnable):
     """
@@ -52,6 +53,11 @@ class Worker(QRunnable):
 
         buffer = self.conn_info.buffer_object()
 
+        if self.conn_info.trigger_buffer != (None, ):
+            trigger_buffer = self.conn_info.trigger_buffer()
+        else:
+            trigger_buffer = None
+
         while True:
             message = subscriber.recv_multipart()
             msg = np.frombuffer(message[0], self.conn_info.data_type)
@@ -60,6 +66,11 @@ class Worker(QRunnable):
             buffer.update_data(parsed_msg)
             if (buffer.data is not None) & buffer.do_update_vis:
                 self.conn_info.processing_function.emit(buffer.data)
+
+            if trigger_buffer is not None:
+                trigger_buffer.update_data(parsed_msg)
+                if (trigger_buffer.data is not None) & trigger_buffer.do_update_vis:
+                    self.conn_info.trigger_proc_fun.emit(trigger_buffer.data)
 
         print('Stopping ZMQClient.')
         subscriber.close()
@@ -122,6 +133,7 @@ class NonIntrusiveLoadMonitoring(QWidget):
         self.plotData = {
             'rawBp': self._createBpPlot('BANDPASS FILTERED', axis_limits=raw_ax_lims),
             'power': self._createPowerPlot('POWER'),
+            'triggerEvents': self._createTriggerEventsPlot('TRIGGER EVENTS'),
         }
 
         # Create the tab widget with two tabs
@@ -146,6 +158,12 @@ class NonIntrusiveLoadMonitoring(QWidget):
                     columnPlotMap={'P': 'pPlot', 'Q': 'qPlot', 'S': 'sPlot', 'phi': 'phiPlot'})
         )
 
+        self.signalComm.requestTriggerGraphUpdate.connect(
+            partial(self.updateSingleYAxisPlots, plotName='triggerEvents',
+                    columnPlotMap={'S': 'sPlot', 'sEst': 'sEstPlot', 'sLED': 'sLEDPlot', 'sHalo': 'sHaloPlot',
+                                   'sFluo': 'sFluoPlot'})
+        )
+
     def getData(self):
         """Start workers with ZMQ listeners"""
 
@@ -166,7 +184,9 @@ class NonIntrusiveLoadMonitoring(QWidget):
                 chan_cnt=4,
                 data_type=np.float32,
                 buffer_object=partial(PowerBuffer, update_rate=10, data_points_to_show=6_000),
-                processing_function=self.signalComm.requestPowerGraphUpdate
+                processing_function=self.signalComm.requestPowerGraphUpdate,
+                trigger_buffer=partial(TriggerBuffer, update_rate=10, data_points_to_show=6_000),
+                trigger_proc_fun=self.signalComm.requestTriggerGraphUpdate
             ),
         }
 
@@ -182,6 +202,7 @@ class NonIntrusiveLoadMonitoring(QWidget):
 
         layout.addWidget(self.plotData['rawBp']['plotWidget'], 0, 0)
         layout.addWidget(self.plotData['power']['plotWidget'], 1, 0)
+        layout.addWidget(self.plotData['triggerEvents']['plotWidget'], 2, 0)
         generalTab.setLayout(layout)
         return generalTab
 
@@ -328,6 +349,70 @@ class NonIntrusiveLoadMonitoring(QWidget):
             'phiPlot': phiPlot
         }
 
+    def _createTriggerEventsPlot(self, title):
+        """
+        Create the layout for the plot showing the classified devices
+
+        Parameters
+        ----------
+        title : str
+
+        Returns
+        -------
+        Dict
+            Info about the plot
+        """
+
+        triggerEvents = PlotItem(name='triggerEventsPlot', title=title, axisItems={'bottom': DateAxisItem()})
+        plotWidget = self.plotHelper(plotItem=triggerEvents)
+
+        teVBox = triggerEvents.getViewBox()
+
+        # LEFT y-axis
+        triggerEvents.getAxis('left').setTickFont(self.plotOptions['visTickFont'])
+        triggerEvents.getAxis('left').setPen(self.plotOptions['axisPen'](color=self.colors['powerReal']))
+        triggerEvents.setLabel('left', 'Leistung (real) '
+                                       f'<font color={self.colors["powerEst"]}>Leistung (est)</font> '
+                                       f'<font color={self.colors["ledBulb"]}>LED</font> '
+                                       f'<font color={self.colors["halogenBulb"]}>Halogen</font> '
+                                       f'<font color={self.colors["fluorescentTube"]}>Röhre</font>',
+                               color=self.colors['powerReal'], **{'font-size': self.fontSize})
+
+        # x-axis
+        triggerEvents.getAxis('bottom').setTickFont(self.plotOptions['visTickFont'])
+        triggerEvents.getAxis('bottom').setPen(self.plotOptions['axisPen'](color=self.colors['time']))
+        triggerEvents.setLabel('bottom', 'time', units='s', color=self.colors['time'], **{'font-size': self.fontSize})
+
+        # Create plots
+        sPlot = triggerEvents.plot(pen=self.plotOptions['linePen'](self.colors['powerReal']))
+        sEstPlot = triggerEvents.plot(pen=self.plotOptions['linePen'](self.colors['powerEst']))
+        sLEDPlot = triggerEvents.plot(pen=self.plotOptions['linePen'](self.colors['ledBulb']))
+        sHaloPlot = triggerEvents.plot(pen=self.plotOptions['linePen'](self.colors['halogenBulb']))
+        sFluoPlot = triggerEvents.plot(pen=self.plotOptions['linePen'](self.colors['fluorescentTube']))
+
+        # Add Downsampling
+        sPlot.setDownsampling(auto=True, method='mean')
+        sEstPlot.setDownsampling(auto=True, method='mean')
+        sLEDPlot.setDownsampling(auto=True, method='mean')
+        sHaloPlot.setDownsampling(auto=True, method='mean')
+        sFluoPlot.setDownsampling(auto=True, method='mean')
+
+        # Add plots to ViewBox
+        teVBox.addItem(sPlot)
+        teVBox.addItem(sEstPlot)
+        teVBox.addItem(sLEDPlot)
+        teVBox.addItem(sHaloPlot)
+        teVBox.addItem(sFluoPlot)
+
+        return {
+            'plotWidget': plotWidget,
+            'sPlot': sPlot,
+            'sEstPlot': sEstPlot,
+            'sLEDPlot': sLEDPlot,
+            'sHaloPlot': sHaloPlot,
+            'sFluoPlot': sFluoPlot,
+        }
+
     def updateDoubleYAxisPlots(self, data, plotName, columnPlotMap):
         """
         Updating method for all plots with two Y axes.
@@ -351,6 +436,20 @@ class NonIntrusiveLoadMonitoring(QWidget):
 
         for col, plot in columnPlotMap.items():
             self.plotData[plotName][plot].setData(x=data.index, y=data[col].tolist(), _callSync='on')
+
+    def updateSingleYAxisPlots(self, data, plotName, columnPlotMap):
+        """
+        Updating method for all plots with one Y axis.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+        plotName : str
+        columnPlotMap : Dict[str, str]
+        """
+
+        for col, plot in columnPlotMap.items():
+            self.plotData[plotName][plot].setData(x=data.index, y=data[col].tolist())
 
 
 if __name__ == '__main__':
