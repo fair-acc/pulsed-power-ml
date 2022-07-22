@@ -1,0 +1,11 @@
+[submodule "external/ImGui"]
+    path = external/ImGui
+    url = https://github.com/ocornut/imgui.git
+
+[submodule "external/ImPlot"]
+    path = external/ImPlot
+    url = https://github.com/epezent/implot.git
+    
+[submodule "external/emscripten"]
+	path = external/emscripten
+	url = https://github.com/emscripten-core/emscripten.git
