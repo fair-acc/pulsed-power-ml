@@ -158,9 +158,10 @@ ENABLE_REFLECTION_FOR(BinaryData, resourceName, image)
 
 struct CounterData {
     int value;
+    int count;
 };
 
-ENABLE_REFLECTION_FOR(CounterData, value)
+ENABLE_REFLECTION_FOR(CounterData, value, count)
 
 std::string_view stripStart(std::string_view s, std::string_view prefix) {
     if (s.starts_with(prefix)) {
@@ -232,6 +233,7 @@ class CounterWorker : public Worker<serviceName, TestContext, Empty, CounterData
     std::atomic<bool>                      shutdownRequested;
     std::jthread                           notifyThread;
     int counter_value = 0;
+    int counter = 0;
 
     static constexpr auto                  PROPERTY_NAME = std::string_view("testCounter");
 
@@ -246,10 +248,12 @@ public:
             while (!shutdownRequested) {
                 std::this_thread::sleep_for(updateInterval);
                 counter_value = ++counter_value % 100;
+                counter = ++counter;
                 TestContext context;
                 context.contentType = opencmw::MIME::JSON;
                 CounterData reply;
                 reply.value = counter_value;
+                reply.count = counter;
                 super_t::notify("/", context, reply);
             }
         });
@@ -259,6 +263,7 @@ public:
             const auto topicPath  = URI<RELAXED>(std::string(rawCtx.request.topic())).path().value_or("");
             const auto path       = stripStart(topicPath, "/");
             out.value             = counter_value;
+            out.count             = counter;
         });
     }
 
@@ -279,7 +284,7 @@ int main() {
 
     FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(primaryBroker, fs, "./");
 
-    const auto                                      brokerRouterAddress = primaryBroker.bind(URI<>("mds://127.0.0.1:12346"));
+    const auto                                      brokerRouterAddress = primaryBroker.bind(URI<>("mds://127.0.0.1:12345"));
 
     if (!brokerRouterAddress) {
         std::cerr << "Could not bind to broker address" << std::endl;
@@ -292,7 +297,7 @@ int main() {
     });
 
     // second broker to test DNS functionalities
-    Broker       secondaryBroker("SecondaryTestBroker", { .dnsAddress = brokerRouterAddress->str });
+    Broker       secondaryBroker("SecondaryTestBroker", { .dnsAddress = brokerRouterAddress->str() });
 
     std::jthread secondaryBrokerThread([&secondaryBroker] {
         secondaryBroker.run();
