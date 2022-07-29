@@ -196,7 +196,9 @@ struct ImGui_ImplOpenGL3_Data
     bool            HasClipOrigin;
     bool            UseBufferSubData;
 
-    ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
+    ImGui_ImplOpenGL3_Data() {
+        memset((void*)this, 0, sizeof(*this));
+    }
 };
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
@@ -225,7 +227,8 @@ struct ImGui_ImplOpenGL3_VtxAttribState
     void SetState(GLint index)
     {
         glVertexAttribPointer(index, Size, Type, (GLboolean)Normalized, Stride, Ptr);
-        if (Enabled) glEnableVertexAttribArray(index); else glDisableVertexAttribArray(index);
+        if (Enabled) glEnableVertexAttribArray(index);
+        else glDisableVertexAttribArray(index);
     }
 };
 #endif
@@ -365,7 +368,8 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData* draw_data, int fb_wid
     bool clip_origin_lower_left = true;
     if (bd->HasClipOrigin)
     {
-        GLenum current_clip_origin = 0; glGetIntegerv(GL_CLIP_ORIGIN, (GLint*)&current_clip_origin);
+        GLenum current_clip_origin = 0;
+        glGetIntegerv(GL_CLIP_ORIGIN, (GLint*)&current_clip_origin);
         if (current_clip_origin == GL_UPPER_LEFT)
             clip_origin_lower_left = false;
     }
@@ -379,7 +383,11 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData* draw_data, int fb_wid
     float T = draw_data->DisplayPos.y;
     float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
 #if defined(GL_CLIP_ORIGIN)
-    if (!clip_origin_lower_left) { float tmp = T; T = B; B = tmp; } // Swap top and bottom if origin is upper left
+    if (!clip_origin_lower_left) {
+        float tmp = T;    // Swap top and bottom if origin is upper left
+        T = B;
+        B = tmp;
+    }
 #endif
     const float ortho_projection[4][4] =
     {
@@ -427,35 +435,59 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
     ImGui_ImplOpenGL3_Data* bd = ImGui_ImplOpenGL3_GetBackendData();
 
     // Backup GL state
-    GLenum last_active_texture; glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint*)&last_active_texture);
+    GLenum last_active_texture;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint*)&last_active_texture);
     glActiveTexture(GL_TEXTURE0);
-    GLuint last_program; glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&last_program);
-    GLuint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&last_texture);
+    GLuint last_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&last_program);
+    GLuint last_texture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&last_texture);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
-    GLuint last_sampler; if (bd->GlVersion >= 330) { glGetIntegerv(GL_SAMPLER_BINDING, (GLint*)&last_sampler); } else { last_sampler = 0; }
+    GLuint last_sampler;
+    if (bd->GlVersion >= 330) {
+        glGetIntegerv(GL_SAMPLER_BINDING, (GLint*)&last_sampler);
+    }
+    else {
+        last_sampler = 0;
+    }
 #endif
-    GLuint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, (GLint*)&last_array_buffer);
+    GLuint last_array_buffer;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, (GLint*)&last_array_buffer);
 #ifndef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
     // This is part of VAO on OpenGL 3.0+ and OpenGL ES 3.0+.
-    GLint last_element_array_buffer; glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_pos; last_vtx_attrib_state_pos.GetState(bd->AttribLocationVtxPos);
-    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_uv; last_vtx_attrib_state_uv.GetState(bd->AttribLocationVtxUV);
-    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_color; last_vtx_attrib_state_color.GetState(bd->AttribLocationVtxColor);
+    GLint last_element_array_buffer;
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
+    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_pos;
+    last_vtx_attrib_state_pos.GetState(bd->AttribLocationVtxPos);
+    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_uv;
+    last_vtx_attrib_state_uv.GetState(bd->AttribLocationVtxUV);
+    ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_color;
+    last_vtx_attrib_state_color.GetState(bd->AttribLocationVtxColor);
 #endif
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    GLuint last_vertex_array_object; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, (GLint*)&last_vertex_array_object);
+    GLuint last_vertex_array_object;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, (GLint*)&last_vertex_array_object);
 #endif
 #ifdef IMGUI_IMPL_HAS_POLYGON_MODE
-    GLint last_polygon_mode[2]; glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
+    GLint last_polygon_mode[2];
+    glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
 #endif
-    GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
-    GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
-    GLenum last_blend_src_rgb; glGetIntegerv(GL_BLEND_SRC_RGB, (GLint*)&last_blend_src_rgb);
-    GLenum last_blend_dst_rgb; glGetIntegerv(GL_BLEND_DST_RGB, (GLint*)&last_blend_dst_rgb);
-    GLenum last_blend_src_alpha; glGetIntegerv(GL_BLEND_SRC_ALPHA, (GLint*)&last_blend_src_alpha);
-    GLenum last_blend_dst_alpha; glGetIntegerv(GL_BLEND_DST_ALPHA, (GLint*)&last_blend_dst_alpha);
-    GLenum last_blend_equation_rgb; glGetIntegerv(GL_BLEND_EQUATION_RGB, (GLint*)&last_blend_equation_rgb);
-    GLenum last_blend_equation_alpha; glGetIntegerv(GL_BLEND_EQUATION_ALPHA, (GLint*)&last_blend_equation_alpha);
+    GLint last_viewport[4];
+    glGetIntegerv(GL_VIEWPORT, last_viewport);
+    GLint last_scissor_box[4];
+    glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
+    GLenum last_blend_src_rgb;
+    glGetIntegerv(GL_BLEND_SRC_RGB, (GLint*)&last_blend_src_rgb);
+    GLenum last_blend_dst_rgb;
+    glGetIntegerv(GL_BLEND_DST_RGB, (GLint*)&last_blend_dst_rgb);
+    GLenum last_blend_src_alpha;
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, (GLint*)&last_blend_src_alpha);
+    GLenum last_blend_dst_alpha;
+    glGetIntegerv(GL_BLEND_DST_ALPHA, (GLint*)&last_blend_dst_alpha);
+    GLenum last_blend_equation_rgb;
+    glGetIntegerv(GL_BLEND_EQUATION_RGB, (GLint*)&last_blend_equation_rgb);
+    GLenum last_blend_equation_alpha;
+    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, (GLint*)&last_blend_equation_alpha);
     GLboolean last_enable_blend = glIsEnabled(GL_BLEND);
     GLboolean last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
     GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
@@ -540,7 +572,7 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
                     glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
                 else
 #endif
-                glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
+                    glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
             }
         }
     }
@@ -570,13 +602,21 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
 #endif
     glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
     glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
-    if (last_enable_blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
-    if (last_enable_cull_face) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
-    if (last_enable_depth_test) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
-    if (last_enable_stencil_test) glEnable(GL_STENCIL_TEST); else glDisable(GL_STENCIL_TEST);
-    if (last_enable_scissor_test) glEnable(GL_SCISSOR_TEST); else glDisable(GL_SCISSOR_TEST);
+    if (last_enable_blend) glEnable(GL_BLEND);
+    else glDisable(GL_BLEND);
+    if (last_enable_cull_face) glEnable(GL_CULL_FACE);
+    else glDisable(GL_CULL_FACE);
+    if (last_enable_depth_test) glEnable(GL_DEPTH_TEST);
+    else glDisable(GL_DEPTH_TEST);
+    if (last_enable_stencil_test) glEnable(GL_STENCIL_TEST);
+    else glDisable(GL_STENCIL_TEST);
+    if (last_enable_scissor_test) glEnable(GL_SCISSOR_TEST);
+    else glDisable(GL_SCISSOR_TEST);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_PRIMITIVE_RESTART
-    if (bd->GlVersion >= 310) { if (last_enable_primitive_restart) glEnable(GL_PRIMITIVE_RESTART); else glDisable(GL_PRIMITIVE_RESTART); }
+    if (bd->GlVersion >= 310) {
+        if (last_enable_primitive_restart) glEnable(GL_PRIMITIVE_RESTART);
+        else glDisable(GL_PRIMITIVE_RESTART);
+    }
 #endif
 
 #ifdef IMGUI_IMPL_HAS_POLYGON_MODE
@@ -860,9 +900,18 @@ bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
 void    ImGui_ImplOpenGL3_DestroyDeviceObjects()
 {
     ImGui_ImplOpenGL3_Data* bd = ImGui_ImplOpenGL3_GetBackendData();
-    if (bd->VboHandle)      { glDeleteBuffers(1, &bd->VboHandle); bd->VboHandle = 0; }
-    if (bd->ElementsHandle) { glDeleteBuffers(1, &bd->ElementsHandle); bd->ElementsHandle = 0; }
-    if (bd->ShaderHandle)   { glDeleteProgram(bd->ShaderHandle); bd->ShaderHandle = 0; }
+    if (bd->VboHandle)      {
+        glDeleteBuffers(1, &bd->VboHandle);
+        bd->VboHandle = 0;
+    }
+    if (bd->ElementsHandle) {
+        glDeleteBuffers(1, &bd->ElementsHandle);
+        bd->ElementsHandle = 0;
+    }
+    if (bd->ShaderHandle)   {
+        glDeleteProgram(bd->ShaderHandle);
+        bd->ShaderHandle = 0;
+    }
     ImGui_ImplOpenGL3_DestroyFontsTexture();
 }
 

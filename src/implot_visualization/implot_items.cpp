@@ -33,30 +33,34 @@
 #define SQRT_3_2 0.86602540378f
 
 #ifndef IMPLOT_NO_FORCE_INLINE
-    #ifdef _MSC_VER
-        #define IMPLOT_INLINE __forceinline
-    #elif defined(__GNUC__)
-        #define IMPLOT_INLINE inline __attribute__((__always_inline__))
-    #elif defined(__CLANG__)
-        #if __has_attribute(__always_inline__)
-            #define IMPLOT_INLINE inline __attribute__((__always_inline__))
-        #else
-            #define IMPLOT_INLINE inline
-        #endif
-    #else
-        #define IMPLOT_INLINE inline
-    #endif
+#ifdef _MSC_VER
+#define IMPLOT_INLINE __forceinline
+#elif defined(__GNUC__)
+#define IMPLOT_INLINE inline __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+#if __has_attribute(__always_inline__)
+#define IMPLOT_INLINE inline __attribute__((__always_inline__))
 #else
-    #define IMPLOT_INLINE inline
+#define IMPLOT_INLINE inline
+#endif
+#else
+#define IMPLOT_INLINE inline
+#endif
+#else
+#define IMPLOT_INLINE inline
 #endif
 
 #if defined __SSE__ || defined __x86_64__ || defined _M_X64
 #ifndef IMGUI_ENABLE_SSE
 #include <immintrin.h>
 #endif
-static IMPLOT_INLINE float  ImInvSqrt(float x) { return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x))); }
+static IMPLOT_INLINE float  ImInvSqrt(float x) {
+    return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
+}
 #else
-static IMPLOT_INLINE float  ImInvSqrt(float x) { return 1.0f / sqrtf(x); }
+static IMPLOT_INLINE float  ImInvSqrt(float x) {
+    return 1.0f / sqrtf(x);
+}
 #endif
 
 #define IMPLOT_NORMALIZE2F_OVER_ZERO(VX,VY) do { float d2 = VX*VX + VY*VY; if (d2 > 0.0f) { float inv_len = ImInvSqrt(d2); VX *= inv_len; VY *= inv_len; } } while (0)
@@ -74,7 +78,9 @@ namespace ImPlot {
 
 // Calc maximum index size of ImDrawIdx
 template <typename T>
-struct MaxIdx { static const unsigned int Value; };
+struct MaxIdx {
+    static const unsigned int Value;
+};
 template <> const unsigned int MaxIdx<unsigned short>::Value = 65535;
 template <> const unsigned int MaxIdx<unsigned int>::Value   = 4294967295;
 
@@ -454,11 +460,16 @@ template <typename T>
 IMPLOT_INLINE T IndexData(const T* data, int idx, int count, int offset, int stride) {
     const int s = ((offset == 0) << 0) | ((stride == sizeof(T)) << 1);
     switch (s) {
-        case 3 : return data[idx];
-        case 2 : return data[(offset + idx) % count];
-        case 1 : return *(const T*)(const void*)((const unsigned char*)data + (size_t)((idx) ) * stride);
-        case 0 : return *(const T*)(const void*)((const unsigned char*)data + (size_t)((offset + idx) % count) * stride);
-        default: return T(0);
+    case 3 :
+        return data[idx];
+    case 2 :
+        return data[(offset + idx) % count];
+    case 1 :
+        return *(const T*)(const void*)((const unsigned char*)data + (size_t)((idx) ) * stride);
+    case 0 :
+        return *(const T*)(const void*)((const unsigned char*)data + (size_t)((offset + idx) % count) * stride);
+    default:
+        return T(0);
     }
 }
 
@@ -509,7 +520,9 @@ struct IndexerLin {
 
 struct IndexerConst {
     IndexerConst(double ref) : Ref(ref) { }
-    template <typename I> IMPLOT_INLINE double operator()(I) const { return Ref; }
+    template <typename I> IMPLOT_INLINE double operator()(I) const {
+        return Ref;
+    }
     const double Ref;
 };
 
@@ -676,8 +689,10 @@ struct FitterBarV {
     void Fit(ImPlotAxis& x_axis, ImPlotAxis& y_axis) const {
         int count = ImMin(Getter1.Count, Getter2.Count);
         for (int i = 0; i < count; ++i) {
-            ImPlotPoint p1 = Getter1(i); p1.x -= HalfWidth;
-            ImPlotPoint p2 = Getter2(i); p2.x += HalfWidth;
+            ImPlotPoint p1 = Getter1(i);
+            p1.x -= HalfWidth;
+            ImPlotPoint p2 = Getter2(i);
+            p2.x += HalfWidth;
             x_axis.ExtendFitWith(y_axis, p1.x, p1.y);
             y_axis.ExtendFitWith(x_axis, p1.y, p1.x);
             x_axis.ExtendFitWith(y_axis, p2.x, p2.y);
@@ -699,8 +714,10 @@ struct FitterBarH {
     void Fit(ImPlotAxis& x_axis, ImPlotAxis& y_axis) const {
         int count = ImMin(Getter1.Count, Getter2.Count);
         for (int i = 0; i < count; ++i) {
-            ImPlotPoint p1 = Getter1(i); p1.y -= HalfHeight;
-            ImPlotPoint p2 = Getter2(i); p2.y += HalfHeight;
+            ImPlotPoint p1 = Getter1(i);
+            p1.y -= HalfHeight;
+            ImPlotPoint p2 = Getter2(i);
+            p2.y += HalfHeight;
             x_axis.ExtendFitWith(y_axis, p1.x, p1.y);
             y_axis.ExtendFitWith(x_axis, p1.y, p1.x);
             x_axis.ExtendFitWith(y_axis, p2.x, p2.y);
@@ -1303,8 +1320,8 @@ struct RendererRectC : RendererBase {
     }
     IMPLOT_INLINE bool Render(ImDrawList& draw_list, const ImRect& cull_rect, int prim) const {
         RectC rect = Getter(prim);
-        ImVec2 P1 = this->Transformer(rect.Pos.x - rect.HalfSize.x , rect.Pos.y - rect.HalfSize.y);
-        ImVec2 P2 = this->Transformer(rect.Pos.x + rect.HalfSize.x , rect.Pos.y + rect.HalfSize.y);
+        ImVec2 P1 = this->Transformer(rect.Pos.x - rect.HalfSize.x, rect.Pos.y - rect.HalfSize.y);
+        ImVec2 P2 = this->Transformer(rect.Pos.x + rect.HalfSize.x, rect.Pos.y + rect.HalfSize.y);
         if ((rect.Color & IM_COL32_A_MASK) == 0 || !cull_rect.Overlaps(ImRect(ImMin(P1, P2), ImMax(P1, P2))))
             return false;
         PrimRectFill(draw_list,P1,P2,rect.Color,UV);
@@ -1489,7 +1506,7 @@ static const ImVec2 MARKER_LINE_SQUARE[8]   = {ImVec2(SQRT_1_2,SQRT_1_2), ImVec2
 static const ImVec2 MARKER_LINE_DIAMOND[8]  = {ImVec2(1, 0), ImVec2(0, -1), ImVec2(0, -1), ImVec2(-1, 0), ImVec2(-1, 0), ImVec2(0, 1), ImVec2(0, 1), ImVec2(1, 0)};
 static const ImVec2 MARKER_LINE_UP[6]       = {ImVec2(SQRT_3_2,0.5f), ImVec2(0,-1),ImVec2(0,-1),ImVec2(-SQRT_3_2,0.5f),ImVec2(-SQRT_3_2,0.5f),ImVec2(SQRT_3_2,0.5f)};
 static const ImVec2 MARKER_LINE_DOWN[6]     = {ImVec2(SQRT_3_2,-0.5f),ImVec2(0,1),ImVec2(0,1),ImVec2(-SQRT_3_2,-0.5f), ImVec2(-SQRT_3_2,-0.5f), ImVec2(SQRT_3_2,-0.5f)};
-static const ImVec2 MARKER_LINE_LEFT[6]     = {ImVec2(-1,0), ImVec2(0.5, SQRT_3_2),  ImVec2(0.5, SQRT_3_2),  ImVec2(0.5, -SQRT_3_2) , ImVec2(0.5, -SQRT_3_2) , ImVec2(-1,0) };
+static const ImVec2 MARKER_LINE_LEFT[6]     = {ImVec2(-1,0), ImVec2(0.5, SQRT_3_2),  ImVec2(0.5, SQRT_3_2),  ImVec2(0.5, -SQRT_3_2), ImVec2(0.5, -SQRT_3_2), ImVec2(-1,0) };
 static const ImVec2 MARKER_LINE_RIGHT[6]    = {ImVec2(1,0),  ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(-0.5, -SQRT_3_2), ImVec2(1,0) };
 static const ImVec2 MARKER_LINE_ASTERISK[6] = {ImVec2(-SQRT_3_2, -0.5f), ImVec2(SQRT_3_2, 0.5f),  ImVec2(-SQRT_3_2, 0.5f), ImVec2(SQRT_3_2, -0.5f), ImVec2(0, -1), ImVec2(0, 1)};
 static const ImVec2 MARKER_LINE_PLUS[4]     = {ImVec2(-1, 0), ImVec2(1, 0), ImVec2(0, -1), ImVec2(0, 1)};
@@ -1499,27 +1516,61 @@ template <typename _Getter>
 void RenderMarkers(const _Getter& getter, ImPlotMarker marker, float size, bool rend_fill, ImU32 col_fill, bool rend_line, ImU32 col_line, float weight) {
     if (rend_fill) {
         switch (marker) {
-            case ImPlotMarker_Circle  : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_CIRCLE,10,size,col_fill); break;
-            case ImPlotMarker_Square  : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_SQUARE, 4,size,col_fill); break;
-            case ImPlotMarker_Diamond : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_DIAMOND,4,size,col_fill); break;
-            case ImPlotMarker_Up      : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_UP,     3,size,col_fill); break;
-            case ImPlotMarker_Down    : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_DOWN,   3,size,col_fill); break;
-            case ImPlotMarker_Left    : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_LEFT,   3,size,col_fill); break;
-            case ImPlotMarker_Right   : RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_RIGHT,  3,size,col_fill); break;
+        case ImPlotMarker_Circle  :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_CIRCLE,10,size,col_fill);
+            break;
+        case ImPlotMarker_Square  :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_SQUARE, 4,size,col_fill);
+            break;
+        case ImPlotMarker_Diamond :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_DIAMOND,4,size,col_fill);
+            break;
+        case ImPlotMarker_Up      :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_UP,     3,size,col_fill);
+            break;
+        case ImPlotMarker_Down    :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_DOWN,   3,size,col_fill);
+            break;
+        case ImPlotMarker_Left    :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_LEFT,   3,size,col_fill);
+            break;
+        case ImPlotMarker_Right   :
+            RenderPrimitives1<RendererMarkersFill>(getter,MARKER_FILL_RIGHT,  3,size,col_fill);
+            break;
         }
     }
     if (rend_line) {
         switch (marker) {
-            case ImPlotMarker_Circle    : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_CIRCLE, 20,size,weight,col_line); break;
-            case ImPlotMarker_Square    : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_SQUARE,  8,size,weight,col_line); break;
-            case ImPlotMarker_Diamond   : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_DIAMOND, 8,size,weight,col_line); break;
-            case ImPlotMarker_Up        : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_UP,      6,size,weight,col_line); break;
-            case ImPlotMarker_Down      : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_DOWN,    6,size,weight,col_line); break;
-            case ImPlotMarker_Left      : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_LEFT,    6,size,weight,col_line); break;
-            case ImPlotMarker_Right     : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_RIGHT,   6,size,weight,col_line); break;
-            case ImPlotMarker_Asterisk  : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_ASTERISK,6,size,weight,col_line); break;
-            case ImPlotMarker_Plus      : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_PLUS,    4,size,weight,col_line); break;
-            case ImPlotMarker_Cross     : RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_CROSS,   4,size,weight,col_line); break;
+        case ImPlotMarker_Circle    :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_CIRCLE, 20,size,weight,col_line);
+            break;
+        case ImPlotMarker_Square    :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_SQUARE,  8,size,weight,col_line);
+            break;
+        case ImPlotMarker_Diamond   :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_DIAMOND, 8,size,weight,col_line);
+            break;
+        case ImPlotMarker_Up        :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_UP,      6,size,weight,col_line);
+            break;
+        case ImPlotMarker_Down      :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_DOWN,    6,size,weight,col_line);
+            break;
+        case ImPlotMarker_Left      :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_LEFT,    6,size,weight,col_line);
+            break;
+        case ImPlotMarker_Right     :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_RIGHT,   6,size,weight,col_line);
+            break;
+        case ImPlotMarker_Asterisk  :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_ASTERISK,6,size,weight,col_line);
+            break;
+        case ImPlotMarker_Plus      :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_PLUS,    4,size,weight,col_line);
+            break;
+        case ImPlotMarker_Cross     :
+            RenderPrimitives1<RendererMarkersLine>(getter,MARKER_LINE_CROSS,   4,size,weight,col_line);
+            break;
         }
     }
 }
@@ -2638,8 +2689,8 @@ double PlotHistogram2D(const char* label_id, const T* xs, const T* ys, int count
     double max_count = 0;
     for (int i = 0; i < count; ++i) {
         if (range.Contains((double)xs[i], (double)ys[i])) {
-            const int xb = ImClamp( (int)((double)(xs[i] - range.X.Min) / width)  , 0, x_bins - 1);
-            const int yb = ImClamp( (int)((double)(ys[i] - range.Y.Min) / height) , 0, y_bins - 1);
+            const int xb = ImClamp( (int)((double)(xs[i] - range.X.Min) / width), 0, x_bins - 1);
+            const int yb = ImClamp( (int)((double)(ys[i] - range.Y.Min) / height), 0, y_bins - 1);
             const int b  = yb * x_bins + xb;
             bin_counts[b] += 1.0;
             if (bin_counts[b] > max_count)

@@ -697,11 +697,30 @@ static void TableSetupColumnFlags(ImGuiTable* table, ImGuiTableColumn* column, I
     if (table->Flags & ImGuiTableFlags_Sortable)
     {
         int count = 0, mask = 0, list = 0;
-        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  != 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) { mask |= 1 << ImGuiSortDirection_Ascending;  list |= ImGuiSortDirection_Ascending  << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) != 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) { mask |= 1 << ImGuiSortDirection_Descending; list |= ImGuiSortDirection_Descending << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  == 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) { mask |= 1 << ImGuiSortDirection_Ascending;  list |= ImGuiSortDirection_Ascending  << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) == 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) { mask |= 1 << ImGuiSortDirection_Descending; list |= ImGuiSortDirection_Descending << (count << 1); count++; }
-        if ((table->Flags & ImGuiTableFlags_SortTristate) || count == 0) { mask |= 1 << ImGuiSortDirection_None; count++; }
+        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  != 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) {
+            mask |= 1 << ImGuiSortDirection_Ascending;
+            list |= ImGuiSortDirection_Ascending  << (count << 1);
+            count++;
+        }
+        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) != 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) {
+            mask |= 1 << ImGuiSortDirection_Descending;
+            list |= ImGuiSortDirection_Descending << (count << 1);
+            count++;
+        }
+        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  == 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) {
+            mask |= 1 << ImGuiSortDirection_Ascending;
+            list |= ImGuiSortDirection_Ascending  << (count << 1);
+            count++;
+        }
+        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) == 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) {
+            mask |= 1 << ImGuiSortDirection_Descending;
+            list |= ImGuiSortDirection_Descending << (count << 1);
+            count++;
+        }
+        if ((table->Flags & ImGuiTableFlags_SortTristate) || count == 0) {
+            mask |= 1 << ImGuiSortDirection_None;
+            count++;
+        }
         column->SortDirectionsAvailList = (ImU8)list;
         column->SortDirectionsAvailMask = (ImU8)mask;
         column->SortDirectionsAvailCount = (ImU8)count;
@@ -2343,7 +2362,9 @@ void ImGui::TableMergeDrawChannels(ImGuiTable* table)
         int     ChannelsCount;
         ImBitArray<IMGUI_TABLE_MAX_DRAW_CHANNELS> ChannelsMask;
 
-        MergeGroup() { ChannelsCount = 0; }
+        MergeGroup() {
+            ChannelsCount = 0;
+        }
     };
     int merge_group_mask = 0x00;
     MergeGroup merge_groups[4];
@@ -3383,7 +3404,10 @@ static void TableSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, 
     float f = 0.0f;
     int column_n = 0, r = 0, n = 0;
 
-    if (sscanf(line, "RefScale=%f", &f) == 1) { settings->RefScale = f; return; }
+    if (sscanf(line, "RefScale=%f", &f) == 1) {
+        settings->RefScale = f;
+        return;
+    }
 
     if (sscanf(line, "Column %d%n", &column_n, &r) == 1)
     {
@@ -3393,12 +3417,38 @@ static void TableSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, 
         char c = 0;
         ImGuiTableColumnSettings* column = settings->GetColumnSettings() + column_n;
         column->Index = (ImGuiTableColumnIdx)column_n;
-        if (sscanf(line, "UserID=0x%08X%n", (ImU32*)&n, &r)==1) { line = ImStrSkipBlank(line + r); column->UserID = (ImGuiID)n; }
-        if (sscanf(line, "Width=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->WidthOrWeight = (float)n; column->IsStretch = 0; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
-        if (sscanf(line, "Weight=%f%n", &f, &r) == 1)           { line = ImStrSkipBlank(line + r); column->WidthOrWeight = f; column->IsStretch = 1; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
-        if (sscanf(line, "Visible=%d%n", &n, &r) == 1)          { line = ImStrSkipBlank(line + r); column->IsEnabled = (ImU8)n; settings->SaveFlags |= ImGuiTableFlags_Hideable; }
-        if (sscanf(line, "Order=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->DisplayOrder = (ImGuiTableColumnIdx)n; settings->SaveFlags |= ImGuiTableFlags_Reorderable; }
-        if (sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       { line = ImStrSkipBlank(line + r); column->SortOrder = (ImGuiTableColumnIdx)n; column->SortDirection = (c == '^') ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending; settings->SaveFlags |= ImGuiTableFlags_Sortable; }
+        if (sscanf(line, "UserID=0x%08X%n", (ImU32*)&n, &r)==1) {
+            line = ImStrSkipBlank(line + r);
+            column->UserID = (ImGuiID)n;
+        }
+        if (sscanf(line, "Width=%d%n", &n, &r) == 1)            {
+            line = ImStrSkipBlank(line + r);
+            column->WidthOrWeight = (float)n;
+            column->IsStretch = 0;
+            settings->SaveFlags |= ImGuiTableFlags_Resizable;
+        }
+        if (sscanf(line, "Weight=%f%n", &f, &r) == 1)           {
+            line = ImStrSkipBlank(line + r);
+            column->WidthOrWeight = f;
+            column->IsStretch = 1;
+            settings->SaveFlags |= ImGuiTableFlags_Resizable;
+        }
+        if (sscanf(line, "Visible=%d%n", &n, &r) == 1)          {
+            line = ImStrSkipBlank(line + r);
+            column->IsEnabled = (ImU8)n;
+            settings->SaveFlags |= ImGuiTableFlags_Hideable;
+        }
+        if (sscanf(line, "Order=%d%n", &n, &r) == 1)            {
+            line = ImStrSkipBlank(line + r);
+            column->DisplayOrder = (ImGuiTableColumnIdx)n;
+            settings->SaveFlags |= ImGuiTableFlags_Reorderable;
+        }
+        if (sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       {
+            line = ImStrSkipBlank(line + r);
+            column->SortOrder = (ImGuiTableColumnIdx)n;
+            column->SortDirection = (c == '^') ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending;
+            settings->SaveFlags |= ImGuiTableFlags_Sortable;
+        }
     }
 }
 
@@ -3528,10 +3578,18 @@ void ImGui::TableGcCompactSettings()
 static const char* DebugNodeTableGetSizingPolicyDesc(ImGuiTableFlags sizing_policy)
 {
     sizing_policy &= ImGuiTableFlags_SizingMask_;
-    if (sizing_policy == ImGuiTableFlags_SizingFixedFit)    { return "FixedFit"; }
-    if (sizing_policy == ImGuiTableFlags_SizingFixedSame)   { return "FixedSame"; }
-    if (sizing_policy == ImGuiTableFlags_SizingStretchProp) { return "StretchProp"; }
-    if (sizing_policy == ImGuiTableFlags_SizingStretchSame) { return "StretchSame"; }
+    if (sizing_policy == ImGuiTableFlags_SizingFixedFit)    {
+        return "FixedFit";
+    }
+    if (sizing_policy == ImGuiTableFlags_SizingFixedSame)   {
+        return "FixedSame";
+    }
+    if (sizing_policy == ImGuiTableFlags_SizingStretchProp) {
+        return "StretchProp";
+    }
+    if (sizing_policy == ImGuiTableFlags_SizingStretchSame) {
+        return "StretchSame";
+    }
     return "N/A";
 }
 
@@ -3542,9 +3600,13 @@ void ImGui::DebugNodeTable(ImGuiTable* table)
     const char* buf_end = buf + IM_ARRAYSIZE(buf);
     const bool is_active = (table->LastFrameActive >= ImGui::GetFrameCount() - 2); // Note that fully clipped early out scrolling tables will appear as inactive here.
     ImFormatString(p, buf_end - p, "Table 0x%08X (%d columns, in '%s')%s", table->ID, table->ColumnsCount, table->OuterWindow->Name, is_active ? "" : " *Inactive*");
-    if (!is_active) { PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled)); }
+    if (!is_active) {
+        PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+    }
     bool open = TreeNode(table, "%s", buf);
-    if (!is_active) { PopStyleColor(); }
+    if (!is_active) {
+        PopStyleColor();
+    }
     if (IsItemHovered())
         GetForegroundDrawList()->AddRect(table->OuterRect.Min, table->OuterRect.Max, IM_COL32(255, 255, 0, 255));
     if (IsItemVisible() && table->HoveredColumnBody != -1)
@@ -3569,21 +3631,21 @@ void ImGui::DebugNodeTable(ImGuiTable* table)
         ImGuiTableColumn* column = &table->Columns[n];
         const char* name = TableGetColumnName(table, n);
         ImFormatString(buf, IM_ARRAYSIZE(buf),
-            "Column %d order %d '%s': offset %+.2f to %+.2f%s\n"
-            "Enabled: %d, VisibleX/Y: %d/%d, RequestOutput: %d, SkipItems: %d, DrawChannels: %d,%d\n"
-            "WidthGiven: %.1f, Request/Auto: %.1f/%.1f, StretchWeight: %.3f (%.1f%%)\n"
-            "MinX: %.1f, MaxX: %.1f (%+.1f), ClipRect: %.1f to %.1f (+%.1f)\n"
-            "ContentWidth: %.1f,%.1f, HeadersUsed/Ideal %.1f/%.1f\n"
-            "Sort: %d%s, UserID: 0x%08X, Flags: 0x%04X: %s%s%s..",
-            n, column->DisplayOrder, name, column->MinX - table->WorkRect.Min.x, column->MaxX - table->WorkRect.Min.x, (n < table->FreezeColumnsRequest) ? " (Frozen)" : "",
-            column->IsEnabled, column->IsVisibleX, column->IsVisibleY, column->IsRequestOutput, column->IsSkipItems, column->DrawChannelFrozen, column->DrawChannelUnfrozen,
-            column->WidthGiven, column->WidthRequest, column->WidthAuto, column->StretchWeight, column->StretchWeight > 0.0f ? (column->StretchWeight / sum_weights) * 100.0f : 0.0f,
-            column->MinX, column->MaxX, column->MaxX - column->MinX, column->ClipRect.Min.x, column->ClipRect.Max.x, column->ClipRect.Max.x - column->ClipRect.Min.x,
-            column->ContentMaxXFrozen - column->WorkMinX, column->ContentMaxXUnfrozen - column->WorkMinX, column->ContentMaxXHeadersUsed - column->WorkMinX, column->ContentMaxXHeadersIdeal - column->WorkMinX,
-            column->SortOrder, (column->SortDirection == ImGuiSortDirection_Ascending) ? " (Asc)" : (column->SortDirection == ImGuiSortDirection_Descending) ? " (Des)" : "", column->UserID, column->Flags,
-            (column->Flags & ImGuiTableColumnFlags_WidthStretch) ? "WidthStretch " : "",
-            (column->Flags & ImGuiTableColumnFlags_WidthFixed) ? "WidthFixed " : "",
-            (column->Flags & ImGuiTableColumnFlags_NoResize) ? "NoResize " : "");
+                       "Column %d order %d '%s': offset %+.2f to %+.2f%s\n"
+                       "Enabled: %d, VisibleX/Y: %d/%d, RequestOutput: %d, SkipItems: %d, DrawChannels: %d,%d\n"
+                       "WidthGiven: %.1f, Request/Auto: %.1f/%.1f, StretchWeight: %.3f (%.1f%%)\n"
+                       "MinX: %.1f, MaxX: %.1f (%+.1f), ClipRect: %.1f to %.1f (+%.1f)\n"
+                       "ContentWidth: %.1f,%.1f, HeadersUsed/Ideal %.1f/%.1f\n"
+                       "Sort: %d%s, UserID: 0x%08X, Flags: 0x%04X: %s%s%s..",
+                       n, column->DisplayOrder, name, column->MinX - table->WorkRect.Min.x, column->MaxX - table->WorkRect.Min.x, (n < table->FreezeColumnsRequest) ? " (Frozen)" : "",
+                       column->IsEnabled, column->IsVisibleX, column->IsVisibleY, column->IsRequestOutput, column->IsSkipItems, column->DrawChannelFrozen, column->DrawChannelUnfrozen,
+                       column->WidthGiven, column->WidthRequest, column->WidthAuto, column->StretchWeight, column->StretchWeight > 0.0f ? (column->StretchWeight / sum_weights) * 100.0f : 0.0f,
+                       column->MinX, column->MaxX, column->MaxX - column->MinX, column->ClipRect.Min.x, column->ClipRect.Max.x, column->ClipRect.Max.x - column->ClipRect.Min.x,
+                       column->ContentMaxXFrozen - column->WorkMinX, column->ContentMaxXUnfrozen - column->WorkMinX, column->ContentMaxXHeadersUsed - column->WorkMinX, column->ContentMaxXHeadersIdeal - column->WorkMinX,
+                       column->SortOrder, (column->SortDirection == ImGuiSortDirection_Ascending) ? " (Asc)" : (column->SortDirection == ImGuiSortDirection_Descending) ? " (Des)" : "", column->UserID, column->Flags,
+                       (column->Flags & ImGuiTableColumnFlags_WidthStretch) ? "WidthStretch " : "",
+                       (column->Flags & ImGuiTableColumnFlags_WidthFixed) ? "WidthFixed " : "",
+                       (column->Flags & ImGuiTableColumnFlags_NoResize) ? "NoResize " : "");
         Bullet();
         Selectable(buf);
         if (IsItemHovered())
@@ -3610,9 +3672,9 @@ void ImGui::DebugNodeTableSettings(ImGuiTableSettings* settings)
         ImGuiTableColumnSettings* column_settings = &settings->GetColumnSettings()[n];
         ImGuiSortDirection sort_dir = (column_settings->SortOrder != -1) ? (ImGuiSortDirection)column_settings->SortDirection : ImGuiSortDirection_None;
         BulletText("Column %d Order %d SortOrder %d %s Vis %d %s %7.3f UserID 0x%08X",
-            n, column_settings->DisplayOrder, column_settings->SortOrder,
-            (sort_dir == ImGuiSortDirection_Ascending) ? "Asc" : (sort_dir == ImGuiSortDirection_Descending) ? "Des" : "---",
-            column_settings->IsEnabled, column_settings->IsStretch ? "Weight" : "Width ", column_settings->WidthOrWeight, column_settings->UserID);
+                   n, column_settings->DisplayOrder, column_settings->SortOrder,
+                   (sort_dir == ImGuiSortDirection_Ascending) ? "Asc" : (sort_dir == ImGuiSortDirection_Descending) ? "Des" : "---",
+                   column_settings->IsEnabled, column_settings->IsStretch ? "Weight" : "Width ", column_settings->WidthOrWeight, column_settings->UserID);
     }
     TreePop();
 }

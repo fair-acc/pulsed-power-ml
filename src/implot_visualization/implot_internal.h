@@ -103,55 +103,113 @@ extern IMPLOT_API ImPlotContext* GImPlot; // Current implicit context pointer
 //-----------------------------------------------------------------------------
 
 // Computes the common (base-10) logarithm
-static inline float  ImLog10(float x)  { return log10f(x); }
-static inline double ImLog10(double x) { return log10(x);  }
-static inline float  ImSinh(float x)   { return sinhf(x);  }
-static inline double ImSinh(double x)  { return sinh(x);   }
-static inline float  ImAsinh(float x)  { return asinhf(x); }
-static inline double ImAsinh(double x) { return asinh(x);  }
+static inline float  ImLog10(float x)  {
+    return log10f(x);
+}
+static inline double ImLog10(double x) {
+    return log10(x);
+}
+static inline float  ImSinh(float x)   {
+    return sinhf(x);
+}
+static inline double ImSinh(double x)  {
+    return sinh(x);
+}
+static inline float  ImAsinh(float x)  {
+    return asinhf(x);
+}
+static inline double ImAsinh(double x) {
+    return asinh(x);
+}
 // Returns true if a flag is set
 template <typename TSet, typename TFlag>
-static inline bool ImHasFlag(TSet set, TFlag flag) { return (set & flag) == flag; }
+static inline bool ImHasFlag(TSet set, TFlag flag) {
+    return (set & flag) == flag;
+}
 // Flips a flag in a flagset
 template <typename TSet, typename TFlag>
-static inline void ImFlipFlag(TSet& set, TFlag flag) { ImHasFlag(set, flag) ? set &= ~flag : set |= flag; }
+static inline void ImFlipFlag(TSet& set, TFlag flag) {
+    ImHasFlag(set, flag) ? set &= ~flag : set |= flag;
+}
 // Linearly remaps x from [x0 x1] to [y0 y1].
 template <typename T>
-static inline T ImRemap(T x, T x0, T x1, T y0, T y1) { return y0 + (x - x0) * (y1 - y0) / (x1 - x0); }
+static inline T ImRemap(T x, T x0, T x1, T y0, T y1) {
+    return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+}
 // Linear rempas x from [x0 x1] to [0 1]
 template <typename T>
-static inline T ImRemap01(T x, T x0, T x1) { return (x - x0) / (x1 - x0); }
+static inline T ImRemap01(T x, T x0, T x1) {
+    return (x - x0) / (x1 - x0);
+}
 // Returns always positive modulo (assumes r != 0)
-static inline int ImPosMod(int l, int r) { return (l % r + r) % r; }
+static inline int ImPosMod(int l, int r) {
+    return (l % r + r) % r;
+}
 // Returns true if val is NAN
-static inline bool ImNan(double val) { return isnan(val); }
+static inline bool ImNan(double val) {
+    return isnan(val);
+}
 // Returns true if val is NAN or INFINITY
-static inline bool ImNanOrInf(double val) { return !(val >= -DBL_MAX && val <= DBL_MAX) || ImNan(val); }
+static inline bool ImNanOrInf(double val) {
+    return !(val >= -DBL_MAX && val <= DBL_MAX) || ImNan(val);
+}
 // Turns NANs to 0s
-static inline double ImConstrainNan(double val) { return ImNan(val) ? 0 : val; }
+static inline double ImConstrainNan(double val) {
+    return ImNan(val) ? 0 : val;
+}
 // Turns infinity to floating point maximums
-static inline double ImConstrainInf(double val) { return val >= DBL_MAX ?  DBL_MAX : val <= -DBL_MAX ? - DBL_MAX : val; }
+static inline double ImConstrainInf(double val) {
+    return val >= DBL_MAX ?  DBL_MAX : val <= -DBL_MAX ? - DBL_MAX : val;
+}
 // Turns numbers less than or equal to 0 to 0.001 (sort of arbitrary, is there a better way?)
-static inline double ImConstrainLog(double val) { return val <= 0 ? 0.001f : val; }
+static inline double ImConstrainLog(double val) {
+    return val <= 0 ? 0.001f : val;
+}
 // Turns numbers less than 0 to zero
-static inline double ImConstrainTime(double val) { return val < IMPLOT_MIN_TIME ? IMPLOT_MIN_TIME : (val > IMPLOT_MAX_TIME ? IMPLOT_MAX_TIME : val); }
+static inline double ImConstrainTime(double val) {
+    return val < IMPLOT_MIN_TIME ? IMPLOT_MIN_TIME : (val > IMPLOT_MAX_TIME ? IMPLOT_MAX_TIME : val);
+}
 // True if two numbers are approximately equal using units in the last place.
-static inline bool ImAlmostEqual(double v1, double v2, int ulp = 2) { return ImAbs(v1-v2) < DBL_EPSILON * ImAbs(v1+v2) * ulp || ImAbs(v1-v2) < DBL_MIN; }
+static inline bool ImAlmostEqual(double v1, double v2, int ulp = 2) {
+    return ImAbs(v1-v2) < DBL_EPSILON * ImAbs(v1+v2) * ulp || ImAbs(v1-v2) < DBL_MIN;
+}
 // Finds min value in an unsorted array
 template <typename T>
-static inline T ImMinArray(const T* values, int count) { T m = values[0]; for (int i = 1; i < count; ++i) { if (values[i] < m) { m = values[i]; } } return m; }
+static inline T ImMinArray(const T* values, int count) {
+    T m = values[0];
+    for (int i = 1; i < count; ++i) {
+        if (values[i] < m) {
+            m = values[i];
+        }
+    }
+    return m;
+}
 // Finds the max value in an unsorted array
 template <typename T>
-static inline T ImMaxArray(const T* values, int count) { T m = values[0]; for (int i = 1; i < count; ++i) { if (values[i] > m) { m = values[i]; } } return m; }
+static inline T ImMaxArray(const T* values, int count) {
+    T m = values[0];
+    for (int i = 1; i < count; ++i) {
+        if (values[i] > m) {
+            m = values[i];
+        }
+    }
+    return m;
+}
 // Finds the min and max value in an unsorted array
 template <typename T>
 static inline void ImMinMaxArray(const T* values, int count, T* min_out, T* max_out) {
-    T Min = values[0]; T Max = values[0];
+    T Min = values[0];
+    T Max = values[0];
     for (int i = 1; i < count; ++i) {
-        if (values[i] < Min) { Min = values[i]; }
-        if (values[i] > Max) { Max = values[i]; }
+        if (values[i] < Min) {
+            Min = values[i];
+        }
+        if (values[i] > Max) {
+            Max = values[i];
+        }
     }
-    *min_out = Min; *max_out = Max;
+    *min_out = Min;
+    *max_out = Max;
 }
 // Finds the sim of an array
 template <typename T>
@@ -296,27 +354,54 @@ struct ImPlotDateTimeSpec {
 struct ImPlotTime {
     time_t S;  // second part
     int    Us; // microsecond part
-    ImPlotTime() { S = 0; Us = 0; }
-    ImPlotTime(time_t s, int us = 0) { S  = s + us / 1000000; Us = us % 1000000; }
-    void RollOver() { S  = S + Us / 1000000;  Us = Us % 1000000; }
-    double ToDouble() const { return (double)S + (double)Us / 1000000.0; }
-    static ImPlotTime FromDouble(double t) { return ImPlotTime((time_t)t, (int)(t * 1000000 - floor(t) * 1000000)); }
+    ImPlotTime() {
+        S = 0;
+        Us = 0;
+    }
+    ImPlotTime(time_t s, int us = 0) {
+        S  = s + us / 1000000;
+        Us = us % 1000000;
+    }
+    void RollOver() {
+        S  = S + Us / 1000000;
+        Us = Us % 1000000;
+    }
+    double ToDouble() const {
+        return (double)S + (double)Us / 1000000.0;
+    }
+    static ImPlotTime FromDouble(double t) {
+        return ImPlotTime((time_t)t, (int)(t * 1000000 - floor(t) * 1000000));
+    }
 };
 
 static inline ImPlotTime operator+(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return ImPlotTime(lhs.S + rhs.S, lhs.Us + rhs.Us); }
+{
+    return ImPlotTime(lhs.S + rhs.S, lhs.Us + rhs.Us);
+}
 static inline ImPlotTime operator-(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return ImPlotTime(lhs.S - rhs.S, lhs.Us - rhs.Us); }
+{
+    return ImPlotTime(lhs.S - rhs.S, lhs.Us - rhs.Us);
+}
 static inline bool operator==(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return lhs.S == rhs.S && lhs.Us == rhs.Us; }
+{
+    return lhs.S == rhs.S && lhs.Us == rhs.Us;
+}
 static inline bool operator<(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return lhs.S == rhs.S ? lhs.Us < rhs.Us : lhs.S < rhs.S; }
+{
+    return lhs.S == rhs.S ? lhs.Us < rhs.Us : lhs.S < rhs.S;
+}
 static inline bool operator>(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return rhs < lhs; }
+{
+    return rhs < lhs;
+}
 static inline bool operator<=(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return lhs < rhs || lhs == rhs; }
+{
+    return lhs < rhs || lhs == rhs;
+}
 static inline bool operator>=(const ImPlotTime& lhs, const ImPlotTime& rhs)
-{ return lhs > rhs || lhs == rhs; }
+{
+    return lhs > rhs || lhs == rhs;
+}
 
 // Colormap data storage
 struct ImPlotColormapData {
@@ -332,7 +417,9 @@ struct ImPlotColormapData {
     ImGuiStorage    Map;
     int             Count;
 
-    ImPlotColormapData() { Count = 0; }
+    ImPlotColormapData() {
+        Count = 0;
+    }
 
     int Append(const char* name, const ImU32* keys, int count, bool qual) {
         if (GetIndex(name) != -1)
@@ -375,16 +462,16 @@ struct ImPlotColormapData {
                     ImU32 b = keys[i+1];
                     ImU32 c = ImMixU32(a,b,s);
                     // if (c != last) {
-                        Tables.push_back(c);
-                        // last = c;
-                        // n++;
+                    Tables.push_back(c);
+                    // last = c;
+                    // n++;
                     // }
                 }
             }
             ImU32 c = keys[key_count-1];
             // if (c != last) {
-                Tables.push_back(c);
-                // n++;
+            Tables.push_back(c);
+            // n++;
             // }
             // TableSizes.push_back(n);
             TableSizes.push_back(max_size);
@@ -399,18 +486,40 @@ struct ImPlotColormapData {
             _AppendTable(i);
     }
 
-    inline bool           IsQual(ImPlotColormap cmap) const                      { return Quals[cmap];                                             }
-    inline const char*    GetName(ImPlotColormap cmap) const                     { return cmap < Count ? Text.Buf.Data + TextOffsets[cmap] : NULL; }
-    inline ImPlotColormap GetIndex(const char* name) const                       { ImGuiID key = ImHashStr(name); return Map.GetInt(key,-1);       }
+    inline bool           IsQual(ImPlotColormap cmap) const                      {
+        return Quals[cmap];
+    }
+    inline const char*    GetName(ImPlotColormap cmap) const                     {
+        return cmap < Count ? Text.Buf.Data + TextOffsets[cmap] : NULL;
+    }
+    inline ImPlotColormap GetIndex(const char* name) const                       {
+        ImGuiID key = ImHashStr(name);
+        return Map.GetInt(key,-1);
+    }
 
-    inline const ImU32*   GetKeys(ImPlotColormap cmap) const                     { return &Keys[KeyOffsets[cmap]];                                 }
-    inline int            GetKeyCount(ImPlotColormap cmap) const                 { return KeyCounts[cmap];                                         }
-    inline ImU32          GetKeyColor(ImPlotColormap cmap, int idx) const        { return Keys[KeyOffsets[cmap]+idx];                              }
-    inline void           SetKeyColor(ImPlotColormap cmap, int idx, ImU32 value) { Keys[KeyOffsets[cmap]+idx] = value; RebuildTables();            }
+    inline const ImU32*   GetKeys(ImPlotColormap cmap) const                     {
+        return &Keys[KeyOffsets[cmap]];
+    }
+    inline int            GetKeyCount(ImPlotColormap cmap) const                 {
+        return KeyCounts[cmap];
+    }
+    inline ImU32          GetKeyColor(ImPlotColormap cmap, int idx) const        {
+        return Keys[KeyOffsets[cmap]+idx];
+    }
+    inline void           SetKeyColor(ImPlotColormap cmap, int idx, ImU32 value) {
+        Keys[KeyOffsets[cmap]+idx] = value;
+        RebuildTables();
+    }
 
-    inline const ImU32*   GetTable(ImPlotColormap cmap) const                    { return &Tables[TableOffsets[cmap]];                             }
-    inline int            GetTableSize(ImPlotColormap cmap) const                { return TableSizes[cmap];                                        }
-    inline ImU32          GetTableColor(ImPlotColormap cmap, int idx) const      { return Tables[TableOffsets[cmap]+idx];                          }
+    inline const ImU32*   GetTable(ImPlotColormap cmap) const                    {
+        return &Tables[TableOffsets[cmap]];
+    }
+    inline int            GetTableSize(ImPlotColormap cmap) const                {
+        return TableSizes[cmap];
+    }
+    inline ImU32          GetTableColor(ImPlotColormap cmap, int idx) const      {
+        return Tables[TableOffsets[cmap]+idx];
+    }
 
     inline ImU32 LerpTable(ImPlotColormap cmap, float t) const {
         int off = TableOffsets[cmap];
@@ -424,7 +533,10 @@ struct ImPlotColormapData {
 struct ImPlotPointError {
     double X, Y, Neg, Pos;
     ImPlotPointError(double x, double y, double neg, double pos) {
-        X = x; Y = y; Neg = neg; Pos = pos;
+        X = x;
+        Y = y;
+        Neg = neg;
+        Pos = pos;
     }
 };
 
@@ -445,12 +557,16 @@ struct ImPlotAnnotationCollection {
     ImGuiTextBuffer            TextBuffer;
     int                        Size;
 
-    ImPlotAnnotationCollection() { Reset(); }
+    ImPlotAnnotationCollection() {
+        Reset();
+    }
 
     void AppendV(const ImVec2& pos, const ImVec2& off, ImU32 bg, ImU32 fg, bool clamp, const char* fmt,  va_list args) IM_FMTLIST(7) {
         ImPlotAnnotation an;
-        an.Pos = pos; an.Offset = off;
-        an.ColorBg = bg; an.ColorFg = fg;
+        an.Pos = pos;
+        an.Offset = off;
+        an.ColorBg = bg;
+        an.ColorFg = fg;
         an.TextOffset = TextBuffer.size();
         an.Clamp = clamp;
         Annotations.push_back(an);
@@ -492,7 +608,9 @@ struct ImPlotTagCollection {
     ImGuiTextBuffer     TextBuffer;
     int                 Size;
 
-    ImPlotTagCollection() { Reset(); }
+    ImPlotTagCollection() {
+        Reset();
+    }
 
     void AppendV(ImAxis axis, double value, ImU32 bg, ImU32 fg, const char* fmt, va_list args) IM_FMTLIST(6) {
         ImPlotTag tag;
@@ -774,9 +892,13 @@ struct ImPlotAxis
             SetRange(Range.Min - delta, Range.Max + delta);
     }
 
-    inline float PixelSize() const { return ImAbs(PixelMax - PixelMin); }
+    inline float PixelSize() const {
+        return ImAbs(PixelMax - PixelMin);
+    }
 
-    inline double GetAspect() const { return Range.Size() / PixelSize(); }
+    inline double GetAspect() const {
+        return Range.Size() / PixelSize();
+    }
 
     inline void Constrain() {
         Range.Min = ImConstrainNan(ImConstrainInf(Range.Min));
@@ -864,24 +986,60 @@ struct ImPlotAxis
         UpdateTransformCache();
     }
 
-    inline bool HasLabel()          const { return LabelOffset != -1 && !ImHasFlag(Flags, ImPlotAxisFlags_NoLabel);                          }
-    inline bool HasGridLines()      const { return !ImHasFlag(Flags, ImPlotAxisFlags_NoGridLines);                                           }
-    inline bool HasTickLabels()     const { return !ImHasFlag(Flags, ImPlotAxisFlags_NoTickLabels);                                          }
-    inline bool HasTickMarks()      const { return !ImHasFlag(Flags, ImPlotAxisFlags_NoTickMarks);                                           }
-    inline bool WillRender()        const { return Enabled && (HasGridLines() || HasTickLabels() || HasTickMarks());                         }
-    inline bool IsOpposite()        const { return ImHasFlag(Flags, ImPlotAxisFlags_Opposite);                                               }
-    inline bool IsInverted()        const { return ImHasFlag(Flags, ImPlotAxisFlags_Invert);                                                 }
-    inline bool IsForeground()      const { return ImHasFlag(Flags, ImPlotAxisFlags_Foreground);                                             }
-    inline bool IsAutoFitting()     const { return ImHasFlag(Flags, ImPlotAxisFlags_AutoFit);                                                }
-    inline bool CanInitFit()        const { return !ImHasFlag(Flags, ImPlotAxisFlags_NoInitialFit) && !HasRange && !LinkedMin && !LinkedMax; }
-    inline bool IsRangeLocked()     const { return HasRange && RangeCond == ImPlotCond_Always;                                               }
-    inline bool IsLockedMin()       const { return !Enabled || IsRangeLocked() || ImHasFlag(Flags, ImPlotAxisFlags_LockMin);                 }
-    inline bool IsLockedMax()       const { return !Enabled || IsRangeLocked() || ImHasFlag(Flags, ImPlotAxisFlags_LockMax);                 }
-    inline bool IsLocked()          const { return IsLockedMin() && IsLockedMax();                                                           }
-    inline bool IsInputLockedMin()  const { return IsLockedMin() || IsAutoFitting();                                                         }
-    inline bool IsInputLockedMax()  const { return IsLockedMax() || IsAutoFitting();                                                         }
-    inline bool IsInputLocked()     const { return IsLocked()    || IsAutoFitting();                                                         }
-    inline bool HasMenus()          const { return !ImHasFlag(Flags, ImPlotAxisFlags_NoMenus);                                               }
+    inline bool HasLabel()          const {
+        return LabelOffset != -1 && !ImHasFlag(Flags, ImPlotAxisFlags_NoLabel);
+    }
+    inline bool HasGridLines()      const {
+        return !ImHasFlag(Flags, ImPlotAxisFlags_NoGridLines);
+    }
+    inline bool HasTickLabels()     const {
+        return !ImHasFlag(Flags, ImPlotAxisFlags_NoTickLabels);
+    }
+    inline bool HasTickMarks()      const {
+        return !ImHasFlag(Flags, ImPlotAxisFlags_NoTickMarks);
+    }
+    inline bool WillRender()        const {
+        return Enabled && (HasGridLines() || HasTickLabels() || HasTickMarks());
+    }
+    inline bool IsOpposite()        const {
+        return ImHasFlag(Flags, ImPlotAxisFlags_Opposite);
+    }
+    inline bool IsInverted()        const {
+        return ImHasFlag(Flags, ImPlotAxisFlags_Invert);
+    }
+    inline bool IsForeground()      const {
+        return ImHasFlag(Flags, ImPlotAxisFlags_Foreground);
+    }
+    inline bool IsAutoFitting()     const {
+        return ImHasFlag(Flags, ImPlotAxisFlags_AutoFit);
+    }
+    inline bool CanInitFit()        const {
+        return !ImHasFlag(Flags, ImPlotAxisFlags_NoInitialFit) && !HasRange && !LinkedMin && !LinkedMax;
+    }
+    inline bool IsRangeLocked()     const {
+        return HasRange && RangeCond == ImPlotCond_Always;
+    }
+    inline bool IsLockedMin()       const {
+        return !Enabled || IsRangeLocked() || ImHasFlag(Flags, ImPlotAxisFlags_LockMin);
+    }
+    inline bool IsLockedMax()       const {
+        return !Enabled || IsRangeLocked() || ImHasFlag(Flags, ImPlotAxisFlags_LockMax);
+    }
+    inline bool IsLocked()          const {
+        return IsLockedMin() && IsLockedMax();
+    }
+    inline bool IsInputLockedMin()  const {
+        return IsLockedMin() || IsAutoFitting();
+    }
+    inline bool IsInputLockedMax()  const {
+        return IsLockedMax() || IsAutoFitting();
+    }
+    inline bool IsInputLocked()     const {
+        return IsLocked()    || IsAutoFitting();
+    }
+    inline bool HasMenus()          const {
+        return !ImHasFlag(Flags, ImPlotAxisFlags_NoMenus);
+    }
 
     inline bool IsPanLocked(bool increasing) {
         if (ImHasFlag(Flags, ImPlotAxisFlags_PanStretch)) {
@@ -898,13 +1056,21 @@ struct ImPlotAxis
     }
 
     void PushLinks() {
-        if (LinkedMin) { *LinkedMin = Range.Min; }
-        if (LinkedMax) { *LinkedMax = Range.Max; }
+        if (LinkedMin) {
+            *LinkedMin = Range.Min;
+        }
+        if (LinkedMax) {
+            *LinkedMax = Range.Max;
+        }
     }
 
     void PullLinks() {
-        if (LinkedMin) { SetMin(*LinkedMin,true); }
-        if (LinkedMax) { SetMax(*LinkedMax,true); }
+        if (LinkedMin) {
+            SetMin(*LinkedMin,true);
+        }
+        if (LinkedMax) {
+            SetMax(*LinkedMax,true);
+        }
     }
 };
 
@@ -919,16 +1085,40 @@ struct ImPlotAlignmentData {
         Vertical    = true;
         PadA = PadB = PadAMax = PadBMax = 0;
     }
-    void Begin() { PadAMax = PadBMax = 0; }
-    void Update(float& pad_a, float& pad_b, float& delta_a, float& delta_b) {
-        float bak_a = pad_a; float bak_b = pad_b;
-        if (PadAMax < pad_a) { PadAMax = pad_a; }
-        if (PadBMax < pad_b) { PadBMax = pad_b; }
-        if (pad_a < PadA)    { pad_a = PadA; delta_a = pad_a - bak_a; } else { delta_a = 0; }
-        if (pad_b < PadB)    { pad_b = PadB; delta_b = pad_b - bak_b; } else { delta_b = 0; }
+    void Begin() {
+        PadAMax = PadBMax = 0;
     }
-    void End()   { PadA = PadAMax; PadB = PadBMax;      }
-    void Reset() { PadA = PadB = PadAMax = PadBMax = 0; }
+    void Update(float& pad_a, float& pad_b, float& delta_a, float& delta_b) {
+        float bak_a = pad_a;
+        float bak_b = pad_b;
+        if (PadAMax < pad_a) {
+            PadAMax = pad_a;
+        }
+        if (PadBMax < pad_b) {
+            PadBMax = pad_b;
+        }
+        if (pad_a < PadA)    {
+            pad_a = PadA;
+            delta_a = pad_a - bak_a;
+        }
+        else {
+            delta_a = 0;
+        }
+        if (pad_b < PadB)    {
+            pad_b = PadB;
+            delta_b = pad_b - bak_b;
+        }
+        else {
+            delta_b = 0;
+        }
+    }
+    void End()   {
+        PadA = PadAMax;
+        PadB = PadBMax;
+    }
+    void Reset() {
+        PadA = PadB = PadAMax = PadBMax = 0;
+    }
 };
 
 // State information for Plot items
@@ -950,7 +1140,9 @@ struct ImPlotItem
         LegendHovered = false;
     }
 
-    ~ImPlotItem() { ID = 0; }
+    ~ImPlotItem() {
+        ID = 0;
+    }
 };
 
 // Holds Legend state
@@ -974,7 +1166,10 @@ struct ImPlotLegend
         Location     = PreviousLocation = ImPlotLocation_NorthWest;
     }
 
-    void Reset() { Indices.shrink(0); Labels.Buf.shrink(0); }
+    void Reset() {
+        Indices.shrink(0);
+        Labels.Buf.shrink(0);
+    }
 };
 
 // Holds Items and Legend data
@@ -985,19 +1180,45 @@ struct ImPlotItemGroup
     ImPool<ImPlotItem> ItemPool;
     int                ColormapIdx;
 
-    ImPlotItemGroup() { ColormapIdx = 0; }
+    ImPlotItemGroup() {
+        ColormapIdx = 0;
+    }
 
-    int         GetItemCount() const             { return ItemPool.GetBufSize();                                 }
-    ImGuiID     GetItemID(const char*  label_id) { return ImGui::GetID(label_id); /* GetIDWithSeed */            }
-    ImPlotItem* GetItem(ImGuiID id)              { return ItemPool.GetByKey(id);                                 }
-    ImPlotItem* GetItem(const char* label_id)    { return GetItem(GetItemID(label_id));                          }
-    ImPlotItem* GetOrAddItem(ImGuiID id)         { return ItemPool.GetOrAddByKey(id);                            }
-    ImPlotItem* GetItemByIndex(int i)            { return ItemPool.GetByIndex(i);                                }
-    int         GetItemIndex(ImPlotItem* item)   { return ItemPool.GetIndex(item);                               }
-    int         GetLegendCount() const           { return Legend.Indices.size();                                 }
-    ImPlotItem* GetLegendItem(int i)             { return ItemPool.GetByIndex(Legend.Indices[i]);                }
-    const char* GetLegendLabel(int i)            { return Legend.Labels.Buf.Data + GetLegendItem(i)->NameOffset; }
-    void        Reset()                          { ItemPool.Clear(); Legend.Reset(); ColormapIdx = 0;            }
+    int         GetItemCount() const             {
+        return ItemPool.GetBufSize();
+    }
+    ImGuiID     GetItemID(const char*  label_id) {
+        return ImGui::GetID(label_id); /* GetIDWithSeed */
+    }
+    ImPlotItem* GetItem(ImGuiID id)              {
+        return ItemPool.GetByKey(id);
+    }
+    ImPlotItem* GetItem(const char* label_id)    {
+        return GetItem(GetItemID(label_id));
+    }
+    ImPlotItem* GetOrAddItem(ImGuiID id)         {
+        return ItemPool.GetOrAddByKey(id);
+    }
+    ImPlotItem* GetItemByIndex(int i)            {
+        return ItemPool.GetByIndex(i);
+    }
+    int         GetItemIndex(ImPlotItem* item)   {
+        return ItemPool.GetIndex(item);
+    }
+    int         GetLegendCount() const           {
+        return Legend.Indices.size();
+    }
+    ImPlotItem* GetLegendItem(int i)             {
+        return ItemPool.GetByIndex(Legend.Indices[i]);
+    }
+    const char* GetLegendLabel(int i)            {
+        return Legend.Labels.Buf.Data + GetLegendItem(i)->NameOffset;
+    }
+    void        Reset()                          {
+        ItemPool.Clear();
+        Legend.Reset();
+        ColormapIdx = 0;
+    }
 };
 
 // Holds Plot state information that must persist after EndPlot
@@ -1059,7 +1280,9 @@ struct ImPlotPlot
         return true;
     }
 
-    inline void ClearTextBuffer() { TextBuffer.Buf.shrink(0); }
+    inline void ClearTextBuffer() {
+        TextBuffer.Buf.shrink(0);
+    }
 
     inline void SetTitle(const char* title) {
         if (title && ImGui::FindRenderedTextEnd(title, NULL) != title) {
@@ -1070,13 +1293,25 @@ struct ImPlotPlot
             TitleOffset = -1;
         }
     }
-    inline bool HasTitle() const { return TitleOffset != -1 && !ImHasFlag(Flags, ImPlotFlags_NoTitle); }
-    inline const char* GetTitle() const { return TextBuffer.Buf.Data + TitleOffset; }
+    inline bool HasTitle() const {
+        return TitleOffset != -1 && !ImHasFlag(Flags, ImPlotFlags_NoTitle);
+    }
+    inline const char* GetTitle() const {
+        return TextBuffer.Buf.Data + TitleOffset;
+    }
 
-    inline       ImPlotAxis& XAxis(int i)       { return Axes[ImAxis_X1 + i]; }
-    inline const ImPlotAxis& XAxis(int i) const { return Axes[ImAxis_X1 + i]; }
-    inline       ImPlotAxis& YAxis(int i)       { return Axes[ImAxis_Y1 + i]; }
-    inline const ImPlotAxis& YAxis(int i) const { return Axes[ImAxis_Y1 + i]; }
+    inline       ImPlotAxis& XAxis(int i)       {
+        return Axes[ImAxis_X1 + i];
+    }
+    inline const ImPlotAxis& XAxis(int i) const {
+        return Axes[ImAxis_X1 + i];
+    }
+    inline       ImPlotAxis& YAxis(int i)       {
+        return Axes[ImAxis_Y1 + i];
+    }
+    inline const ImPlotAxis& YAxis(int i) const {
+        return Axes[ImAxis_Y1 + i];
+    }
 
     inline int EnabledAxesX() {
         int cnt = 0;
@@ -1102,7 +1337,9 @@ struct ImPlotPlot
         }
     }
 
-    inline const char* GetAxisLabel(const ImPlotAxis& axis) const { return TextBuffer.Buf.Data + axis.LabelOffset; }
+    inline const char* GetAxisLabel(const ImPlotAxis& axis) const {
+        return TextBuffer.Buf.Data + axis.LabelOffset;
+    }
 };
 
 // Holds subplot data that must persist after EndSubplot
@@ -1147,7 +1384,9 @@ struct ImPlotNextPlotData
     double*     LinkedMin[ImAxis_COUNT];
     double*     LinkedMax[ImAxis_COUNT];
 
-    ImPlotNextPlotData() { Reset(); }
+    ImPlotNextPlotData() {
+        Reset();
+    }
 
     void Reset() {
         for (int i = 0; i < ImAxis_COUNT; ++i) {
@@ -1178,7 +1417,9 @@ struct ImPlotNextItemData {
     bool            HasHidden;
     bool            Hidden;
     ImPlotCond      HiddenCond;
-    ImPlotNextItemData() { Reset(); }
+    ImPlotNextItemData() {
+        Reset();
+    }
     void Reset() {
         for (int i = 0; i < 5; ++i)
             Colors[i] = IMPLOT_AUTO_COL;
@@ -1392,7 +1633,9 @@ static inline void FitPoint(const ImPlotPoint& p) {
 
 // Returns true if two ranges overlap
 static inline bool RangesOverlap(const ImPlotRange& r1, const ImPlotRange& r2)
-{ return r1.Min <= r2.Max && r2.Min <= r1.Max; }
+{
+    return r1.Min <= r2.Max && r2.Min <= r1.Max;
+}
 
 // Shows an axis's context menu.
 IMPLOT_API void ShowAxisContextMenu(ImPlotAxis& axis, ImPlotAxis* equal_axis, bool time_allowed = false);
@@ -1424,18 +1667,28 @@ IMPLOT_API void LabelAxisValue(const ImPlotAxis& axis, double value, char* buff,
 //-----------------------------------------------------------------------------
 
 // Get styling data for next item (call between Begin/EndItem)
-static inline const ImPlotNextItemData& GetItemData() { return GImPlot->NextItemData; }
+static inline const ImPlotNextItemData& GetItemData() {
+    return GImPlot->NextItemData;
+}
 
 // Returns true if a color is set to be automatically determined
-static inline bool IsColorAuto(const ImVec4& col) { return col.w == -1; }
+static inline bool IsColorAuto(const ImVec4& col) {
+    return col.w == -1;
+}
 // Returns true if a style color is set to be automaticaly determined
-static inline bool IsColorAuto(ImPlotCol idx) { return IsColorAuto(GImPlot->Style.Colors[idx]); }
+static inline bool IsColorAuto(ImPlotCol idx) {
+    return IsColorAuto(GImPlot->Style.Colors[idx]);
+}
 // Returns the automatically deduced style color
 IMPLOT_API ImVec4 GetAutoColor(ImPlotCol idx);
 
 // Returns the style color whether it is automatic or custom set
-static inline ImVec4 GetStyleColorVec4(ImPlotCol idx) { return IsColorAuto(idx) ? GetAutoColor(idx) : GImPlot->Style.Colors[idx]; }
-static inline ImU32  GetStyleColorU32(ImPlotCol idx)  { return ImGui::ColorConvertFloat4ToU32(GetStyleColorVec4(idx)); }
+static inline ImVec4 GetStyleColorVec4(ImPlotCol idx) {
+    return IsColorAuto(idx) ? GetAutoColor(idx) : GImPlot->Style.Colors[idx];
+}
+static inline ImU32  GetStyleColorU32(ImPlotCol idx)  {
+    return ImGui::ColorConvertFloat4ToU32(GetStyleColorVec4(idx));
+}
 
 // Draws vertical text. The position is the bottom left of the text rect.
 IMPLOT_API void AddTextVertical(ImDrawList *DrawList, ImVec2 pos, ImU32 col, const char* text_begin, const char* text_end = NULL);
@@ -1447,10 +1700,16 @@ static inline ImVec2 CalcTextSizeVertical(const char *text) {
     return ImVec2(sz.y, sz.x);
 }
 // Returns white or black text given background color
-static inline ImU32 CalcTextColor(const ImVec4& bg) { return (bg.x * 0.299f + bg.y * 0.587f + bg.z * 0.114f) > 0.5f ? IM_COL32_BLACK : IM_COL32_WHITE; }
-static inline ImU32 CalcTextColor(ImU32 bg)         { return CalcTextColor(ImGui::ColorConvertU32ToFloat4(bg)); }
+static inline ImU32 CalcTextColor(const ImVec4& bg) {
+    return (bg.x * 0.299f + bg.y * 0.587f + bg.z * 0.114f) > 0.5f ? IM_COL32_BLACK : IM_COL32_WHITE;
+}
+static inline ImU32 CalcTextColor(ImU32 bg)         {
+    return CalcTextColor(ImGui::ColorConvertU32ToFloat4(bg));
+}
 // Lightens or darkens a color for hover
-static inline ImU32 CalcHoverColor(ImU32 col)       {  return ImMixU32(col, CalcTextColor(col), 32); }
+static inline ImU32 CalcHoverColor(ImU32 col)       {
+    return ImMixU32(col, CalcTextColor(col), 32);
+}
 
 // Clamps a label position so that it fits a rect defined by Min/Max
 static inline ImVec2 ClampLabelPos(ImVec2 pos, const ImVec2& size, const ImVec2& Min, const ImVec2& Max) {
@@ -1478,17 +1737,27 @@ IMPLOT_API void RenderColorBar(const ImU32* colors, int size, ImDrawList& DrawLi
 // Rounds x to powers of 2,5 and 10 for generating axis labels (from Graphics Gems 1 Chapter 11.2)
 IMPLOT_API double NiceNum(double x, bool round);
 // Computes order of magnitude of double.
-static inline int OrderOfMagnitude(double val) { return val == 0 ? 0 : (int)(floor(log10(fabs(val)))); }
+static inline int OrderOfMagnitude(double val) {
+    return val == 0 ? 0 : (int)(floor(log10(fabs(val))));
+}
 // Returns the precision required for a order of magnitude.
-static inline int OrderToPrecision(int order) { return order > 0 ? 0 : 1 - order; }
+static inline int OrderToPrecision(int order) {
+    return order > 0 ? 0 : 1 - order;
+}
 // Returns a floating point precision to use given a value
-static inline int Precision(double val) { return OrderToPrecision(OrderOfMagnitude(val)); }
+static inline int Precision(double val) {
+    return OrderToPrecision(OrderOfMagnitude(val));
+}
 // Round a value to a given precision
-static inline double RoundTo(double val, int prec) { double p = pow(10,(double)prec); return floor(val*p+0.5)/p; }
+static inline double RoundTo(double val, int prec) {
+    double p = pow(10,(double)prec);
+    return floor(val*p+0.5)/p;
+}
 
 // Returns the intersection point of two lines A and B (assumes they are not parallel!)
 static inline ImVec2 Intersection(const ImVec2& a1, const ImVec2& a2, const ImVec2& b1, const ImVec2& b2) {
-    float v1 = (a1.x * a2.y - a1.y * a2.x);  float v2 = (b1.x * b2.y - b1.y * b2.x);
+    float v1 = (a1.x * a2.y - a1.y * a2.x);
+    float v2 = (b1.x * b2.y - b1.y * b2.x);
     float v3 = ((a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x));
     return ImVec2((v1 * (b1.x - b2.x) - v2 * (a1.x - a2.x)) / v3, (v1 * (b1.y - b2.y) - v2 * (a1.y - a2.y)) / v3);
 }
@@ -1507,19 +1776,19 @@ void FillRange(ImVector<T>& buffer, int n, T vmin, T vmax) {
 template <typename T>
 static inline void CalculateBins(const T* values, int count, ImPlotBin meth, const ImPlotRange& range, int& bins_out, double& width_out) {
     switch (meth) {
-        case ImPlotBin_Sqrt:
-            bins_out  = (int)ceil(sqrt(count));
-            break;
-        case ImPlotBin_Sturges:
-            bins_out  = (int)ceil(1.0 + log2(count));
-            break;
-        case ImPlotBin_Rice:
-            bins_out  = (int)ceil(2 * cbrt(count));
-            break;
-        case ImPlotBin_Scott:
-            width_out = 3.49 * ImStdDev(values, count) / cbrt(count);
-            bins_out  = (int)round(range.Size() / width_out);
-            break;
+    case ImPlotBin_Sqrt:
+        bins_out  = (int)ceil(sqrt(count));
+        break;
+    case ImPlotBin_Sturges:
+        bins_out  = (int)ceil(1.0 + log2(count));
+        break;
+    case ImPlotBin_Rice:
+        bins_out  = (int)ceil(2 * cbrt(count));
+        break;
+    case ImPlotBin_Scott:
+        width_out = 3.49 * ImStdDev(values, count) / cbrt(count);
+        bins_out  = (int)round(range.Size() / width_out);
+        break;
     }
     width_out = range.Size() / bins_out;
 }

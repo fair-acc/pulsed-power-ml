@@ -463,39 +463,82 @@ enum ImPlotBin_ {
 // Double precision version of ImVec2 used by ImPlot. Extensible by end users.
 struct ImPlotPoint {
     double x, y;
-    ImPlotPoint()                         { x = y = 0.0;      }
-    ImPlotPoint(double _x, double _y)     { x = _x; y = _y;   }
-    ImPlotPoint(const ImVec2& p)          { x = p.x; y = p.y; }
-    double  operator[] (size_t idx) const { return (&x)[idx]; }
-    double& operator[] (size_t idx)       { return (&x)[idx]; }
+    ImPlotPoint()                         {
+        x = y = 0.0;
+    }
+    ImPlotPoint(double _x, double _y)     {
+        x = _x;
+        y = _y;
+    }
+    ImPlotPoint(const ImVec2& p)          {
+        x = p.x;
+        y = p.y;
+    }
+    double  operator[] (size_t idx) const {
+        return (&x)[idx];
+    }
+    double& operator[] (size_t idx)       {
+        return (&x)[idx];
+    }
 #ifdef IMPLOT_POINT_CLASS_EXTRA
     IMPLOT_POINT_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h
-                                 // to convert back and forth between your math types and ImPlotPoint.
+    // to convert back and forth between your math types and ImPlotPoint.
 #endif
 };
 
 // Range defined by a min/max value.
 struct ImPlotRange {
     double Min, Max;
-    ImPlotRange()                         { Min = 0; Max = 0;                                         }
-    ImPlotRange(double _min, double _max) { Min = _min; Max = _max;                                   }
-    bool Contains(double value) const     { return value >= Min && value <= Max;                      }
-    double Size() const                   { return Max - Min;                                         }
-    double Clamp(double value) const      { return (value < Min) ? Min : (value > Max) ? Max : value; }
+    ImPlotRange()                         {
+        Min = 0;
+        Max = 0;
+    }
+    ImPlotRange(double _min, double _max) {
+        Min = _min;
+        Max = _max;
+    }
+    bool Contains(double value) const     {
+        return value >= Min && value <= Max;
+    }
+    double Size() const                   {
+        return Max - Min;
+    }
+    double Clamp(double value) const      {
+        return (value < Min) ? Min : (value > Max) ? Max : value;
+    }
 };
 
 // Combination of two range limits for X and Y axes. Also an AABB defined by Min()/Max().
 struct ImPlotRect {
     ImPlotRange X, Y;
     ImPlotRect()                                                       {                                                               }
-    ImPlotRect(double x_min, double x_max, double y_min, double y_max) { X.Min = x_min; X.Max = x_max; Y.Min = y_min; Y.Max = y_max;   }
-    bool Contains(const ImPlotPoint& p) const                          { return Contains(p.x, p.y);                                    }
-    bool Contains(double x, double y) const                            { return X.Contains(x) && Y.Contains(y);                        }
-    ImPlotPoint Size() const                                           { return ImPlotPoint(X.Size(), Y.Size());                       }
-    ImPlotPoint Clamp(const ImPlotPoint& p)                            { return Clamp(p.x, p.y);                                       }
-    ImPlotPoint Clamp(double x, double y)                              { return ImPlotPoint(X.Clamp(x),Y.Clamp(y));                    }
-    ImPlotPoint Min() const                                            { return ImPlotPoint(X.Min, Y.Min);                             }
-    ImPlotPoint Max() const                                            { return ImPlotPoint(X.Max, Y.Max);                             }
+    ImPlotRect(double x_min, double x_max, double y_min, double y_max) {
+        X.Min = x_min;
+        X.Max = x_max;
+        Y.Min = y_min;
+        Y.Max = y_max;
+    }
+    bool Contains(const ImPlotPoint& p) const                          {
+        return Contains(p.x, p.y);
+    }
+    bool Contains(double x, double y) const                            {
+        return X.Contains(x) && Y.Contains(y);
+    }
+    ImPlotPoint Size() const                                           {
+        return ImPlotPoint(X.Size(), Y.Size());
+    }
+    ImPlotPoint Clamp(const ImPlotPoint& p)                            {
+        return Clamp(p.x, p.y);
+    }
+    ImPlotPoint Clamp(double x, double y)                              {
+        return ImPlotPoint(X.Clamp(x),Y.Clamp(y));
+    }
+    ImPlotPoint Min() const                                            {
+        return ImPlotPoint(X.Min, Y.Min);
+    }
+    ImPlotPoint Max() const                                            {
+        return ImPlotPoint(X.Max, Y.Max);
+    }
 };
 
 // Plot style structure
@@ -677,12 +720,12 @@ IMPLOT_API void EndPlot();
 //   #size value you pass to _BeginSubplots_ and #row/#col_ratios if provided.
 
 IMPLOT_API bool BeginSubplots(const char* title_id,
-                             int rows,
-                             int cols,
-                             const ImVec2& size,
-                             ImPlotSubplotFlags flags = 0,
-                             float* row_ratios        = NULL,
-                             float* col_ratios        = NULL);
+                              int rows,
+                              int cols,
+                              const ImVec2& size,
+                              ImPlotSubplotFlags flags = 0,
+                              float* row_ratios        = NULL,
+                              float* col_ratios        = NULL);
 
 // Only call EndSubplots() if BeginSubplots() returns true! Typically called at the end
 // of an if statement conditioned on BeginSublots(). See example above.
@@ -1267,16 +1310,16 @@ namespace ImPlot {
 
 // OBSOLETED in v0.13 -> PLANNED REMOVAL in v1.0
 IMPLOT_DEPRECATED( IMPLOT_API bool BeginPlot(const char* title_id,
-                                             const char* x_label,  // = NULL,
-                                             const char* y_label,  // = NULL,
-                                             const ImVec2& size       = ImVec2(-1,0),
-                                             ImPlotFlags flags        = ImPlotFlags_None,
-                                             ImPlotAxisFlags x_flags  = 0,
-                                             ImPlotAxisFlags y_flags  = 0,
-                                             ImPlotAxisFlags y2_flags = ImPlotAxisFlags_AuxDefault,
-                                             ImPlotAxisFlags y3_flags = ImPlotAxisFlags_AuxDefault,
-                                             const char* y2_label     = NULL,
-                                             const char* y3_label     = NULL) );
+                   const char* x_label,  // = NULL,
+                   const char* y_label,  // = NULL,
+                   const ImVec2& size       = ImVec2(-1,0),
+                   ImPlotFlags flags        = ImPlotFlags_None,
+                   ImPlotAxisFlags x_flags  = 0,
+                   ImPlotAxisFlags y_flags  = 0,
+                   ImPlotAxisFlags y2_flags = ImPlotAxisFlags_AuxDefault,
+                   ImPlotAxisFlags y3_flags = ImPlotAxisFlags_AuxDefault,
+                   const char* y2_label     = NULL,
+                   const char* y3_label     = NULL) );
 
 } // namespace ImPlot
 

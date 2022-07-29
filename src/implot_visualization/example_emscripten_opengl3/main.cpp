@@ -47,7 +47,7 @@ struct ScrollingBuffer {
             Offset  = 0;
         }
     }
-}; 
+};
 
 // Implot Test data
 int bar_data[5] = {1, 2, 3, 4, 5};
@@ -58,7 +58,7 @@ ScrollingBuffer buffer;
 
 // Deserialise
 // dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
-void deserialiseJson(std::string jsonString){
+void deserialiseJson(std::string jsonString) {
     int tmp_x;
     int tmp_y;
 
@@ -79,7 +79,7 @@ void deserialiseJson(std::string jsonString){
         else {
             tmp_y = element.value();
         }
-            
+
     }
     std::cout << "Buffer: x: " << tmp_x << ", y: " << tmp_y << "\n";
     buffer.AddPoint(tmp_x, tmp_y);
@@ -87,21 +87,21 @@ void deserialiseJson(std::string jsonString){
 }
 
 void downloadSucceeded(emscripten_fetch_t *fetch) {
-  printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-  // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-  std::string jsonData;
-  for (int i=0; i<fetch->numBytes; i++){
-    jsonData += fetch->data[i];
-  }
-  
-  printf("Json string:\n%s\n",jsonData.c_str());
-  deserialiseJson(jsonData.c_str());
-  emscripten_fetch_close(fetch); // Free data associated with the fetch.
+    printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+    // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
+    std::string jsonData;
+    for (int i=0; i<fetch->numBytes; i++) {
+        jsonData += fetch->data[i];
+    }
+
+    printf("Json string:\n%s\n",jsonData.c_str());
+    deserialiseJson(jsonData.c_str());
+    emscripten_fetch_close(fetch); // Free data associated with the fetch.
 }
 
 void downloadFailed(emscripten_fetch_t *fetch) {
-  printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-  emscripten_fetch_close(fetch); // Also free data on failure.
+    printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+    emscripten_fetch_close(fetch); // Also free data on failure.
 }
 
 // Emscripten requires to have full control over the main loop. We're going to store our SDL book-keeping variables globally.
@@ -151,7 +151,8 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImPlot::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -225,7 +226,7 @@ static void main_loop(void* arg)
     ImGui::NewFrame();
 
     // Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    if (show_demo_window){
+    if (show_demo_window) {
         ImGui::ShowDemoWindow(&show_demo_window);
         ImPlot::ShowDemoWindow();
     }
@@ -235,7 +236,7 @@ static void main_loop(void* arg)
         ImGui::SetNextWindowSize(ImVec2(800,300), ImGuiCond_Appearing);
         int bufferEnd = buffer.Data.size()-1;
         ImGui::Begin("Counter Demo Window");
-        if(ImPlot::BeginPlot("Counter Worker")){
+        if(ImPlot::BeginPlot("Counter Worker")) {
             ImPlot::SetupAxes("","Value");
             ImPlot::SetupAxisLimits(ImAxis_X1,buffer.Data[bufferEnd].x-250.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1,0,100);
