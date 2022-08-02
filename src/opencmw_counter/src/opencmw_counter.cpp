@@ -10,7 +10,6 @@
 
 using namespace opencmw::majordomo;
 
-CMRC_DECLARE(testImages);
 CMRC_DECLARE(assets);
 
 // from restserver_testapp.cpp
@@ -117,45 +116,6 @@ struct Reply {
 
 ENABLE_REFLECTION_FOR(Reply, name, booleanReturnType, byteReturnType, shortReturnType, intReturnType, longReturnType, timingCtx, lsaContext /*, replyOption*/)
 
-struct HelloWorldHandler {
-    std::string customFilter = "uninitialised";
-
-    void        operator()(RequestContext &rawCtx, const TestContext &requestContext, const Request &in, TestContext &replyContext, Reply &out) {
-        using namespace std::chrono;
-        const auto now        = system_clock::now();
-        const auto sinceEpoch = system_clock::to_time_t(now);
-        out.name              = fmt::format("Hello World! The local time is: {}", std::put_time(std::localtime(&sinceEpoch), "%Y-%m-%d %H:%M:%S"));
-        out.byteArray         = in.name; // doesn't really make sense atm
-        out.byteReturnType    = 50;
-
-        out.timingCtx         = opencmw::TimingCtx(3, {}, {}, {}, duration_cast<microseconds>(now.time_since_epoch()));
-        if (rawCtx.request.command() == Command::Set) {
-            customFilter = in.customFilter;
-        }
-        out.lsaContext           = customFilter;
-
-        replyContext.ctx         = out.timingCtx;
-        replyContext.ctx         = opencmw::TimingCtx(3, {}, {}, {}, duration_cast<microseconds>(now.time_since_epoch()));
-        replyContext.contentType = requestContext.contentType;
-        replyContext.testFilter  = fmt::format("HelloWorld - reply topic = {}", requestContext.testFilter);
-    }
-};
-
-struct ImageData {
-    std::string base64;
-    // TODO MimeType currently not serialisable by YaS/Json/cmwlight serialisers
-    std::string contentType;
-};
-
-ENABLE_REFLECTION_FOR(ImageData, base64, contentType)
-
-struct BinaryData {
-    std::string resourceName;
-    ImageData   image;
-};
-
-ENABLE_REFLECTION_FOR(BinaryData, resourceName, image)
-
 struct CounterData {
     int value;
     int count;
@@ -171,62 +131,6 @@ std::string_view stripStart(std::string_view s, std::string_view prefix) {
 }
 
 using opencmw::majordomo::Empty;
-
-template<units::basic_fixed_string serviceName, typename... Meta>
-class ImageServiceWorker : public Worker<serviceName, TestContext, Empty, BinaryData, Meta...> {
-    std::vector<std::vector<std::uint8_t>> imageData;
-    std::atomic<std::size_t>               selectedImage;
-    std::atomic<bool>                      shutdownRequested;
-    std::jthread                           notifyThread;
-
-    static constexpr auto                  PROPERTY_NAME = std::string_view("testImage");
-
-public:
-    using super_t = Worker<serviceName, TestContext, Empty, BinaryData, Meta...>;
-
-    template<typename BrokerType>
-    explicit ImageServiceWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
-        : super_t(broker, {}) {
-        const auto fs = cmrc::testImages::get_filesystem();
-        for (const auto &path : fs.iterate_directory("/testImages")) {
-            if (path.is_file()) {
-                const auto file = fs.open(fmt::format("testImages/{}", path.filename()));
-                imageData.push_back(std::vector<std::uint8_t>(file.begin(), file.end()));
-            }
-        }
-        assert(!imageData.empty());
-
-        notifyThread = std::jthread([this, updateInterval] {
-            while (!shutdownRequested) {
-                std::this_thread::sleep_for(updateInterval);
-                selectedImage = (selectedImage + 1) % imageData.size();
-                TestContext context;
-                // TODO ideally we could send this notification to any subscription independent of their contentType
-                context.contentType = opencmw::MIME::JSON;
-                BinaryData reply;
-                reply.resourceName      = "test.png";
-                reply.image.base64      = base64pp::encode(imageData[selectedImage]);
-                reply.image.contentType = "image/png"; // MIME::PNG;
-                // TODO the subscription via REST has a leading slash, so this "/" is necessary for it to match, check if that can be avoided
-                super_t::notify("/", context, reply);
-            }
-        });
-
-        super_t::setCallback([this](RequestContext &rawCtx, const TestContext &, const Empty &, TestContext &, BinaryData &out) {
-            using namespace opencmw;
-            const auto topicPath  = URI<RELAXED>(std::string(rawCtx.request.topic())).path().value_or("");
-            const auto path       = stripStart(topicPath, "/");
-            out.resourceName      = stripStart(stripStart(path, PROPERTY_NAME), "/");
-            out.image.base64      = base64pp::encode(imageData[selectedImage]);
-            out.image.contentType = "image/png"; // MIME::PNG;
-        });
-    }
-
-    ~ImageServiceWorker() {
-        shutdownRequested = true;
-        notifyThread.join();
-    }
-};
 
 template<units::basic_fixed_string serviceName, typename... Meta>
 class CounterWorker : public Worker<serviceName, TestContext, Empty, CounterData, Meta...> {
@@ -308,18 +212,8 @@ int main() {
 
     // TODO '"Reply": { "name": ... }' isn't valid json I think (not an object at top-level; also, Firefox doesn't like it). Should we omit the '"Reply:"?
 
-    Worker<"helloWorld", TestContext, Request, Reply, description<"A friendly service saying hello">> helloWorldWorker(primaryBroker, HelloWorldHandler());
-    ImageServiceWorker<"testImage", description<"Returns an image">>                                  imageWorker(primaryBroker, std::chrono::seconds(10));
-    CounterWorker<"testCounter", description<"Returns counter value">>                                counterWorker(primaryBroker, std::chrono::seconds(1));
+    CounterWorker<"testCounter", description<"Returns counter value">> counterWorker(primaryBroker, std::chrono::seconds(2));
 
-    std::jthread helloWorldThread([&helloWorldWorker] {
-        helloWorldWorker.run();
-    });
-
-    std::jthread imageThread([&imageWorker] {
-        imageWorker.run();
-    });
- 
     std::jthread counterThread([&counterWorker] {
         counterWorker.run();
     });
@@ -329,7 +223,5 @@ int main() {
     secondaryBroker.shutdown();
     secondaryBrokerThread.join();
     // workers terminate when broker shuts down
-    helloWorldThread.join();
-    imageThread.join();
     counterThread.join();
 }

@@ -12,15 +12,9 @@ cmrc_add_resource_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/mustache/ServicesList.mustache
     )
 
-cmrc_add_resource_library(
-    TESTIMAGE_ASSETS ALIAS assets::testImages NAMESPACE testImages
-    ${CMAKE_CURRENT_SOURCE_DIR}/testImages/PM5544_test_signal.png
-    ${CMAKE_CURRENT_SOURCE_DIR}/testImages/SMPTE_Color_Bars.png
-    )
-
 message("COPY ${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key DESTINATION ${CMAKE_CURRENT_BINARY_DIR}" )
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_public.crt" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 
-add_executable(MajordomoRest_example MajordomoRest_example.cpp)
-target_link_libraries(MajordomoRest_example PRIVATE majordomo project_options project_warnings assets::rest assets::testImages)
+add_executable(opencmw_counter opencmw_counter.cpp)
+target_link_libraries(opencmw_counter PRIVATE majordomo project_options project_warnings assets::rest)
