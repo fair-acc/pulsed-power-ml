@@ -15,13 +15,13 @@ CMRC_DECLARE(assets);
 // from restserver_testapp.cpp
 template <typename Mode, typename VirtualFS, role... Roles>
 class FileServerRestBackend : public RestBackend<Mode, VirtualFS, Roles...> {
-private:
+  private:
     using super_t = RestBackend<Mode, VirtualFS, Roles...>;
     std::filesystem::path _serverRoot;
     using super_t::_svr;
     using super_t::DEFAULT_REST_SCHEME;
 
-public:
+  public:
     using super_t::RestBackend;
 
     FileServerRestBackend(
@@ -32,7 +32,8 @@ public:
                                      .hostName("0.0.0.0")
                                      .port(DEFAULT_REST_PORT)
                                      .build())
-        : super_t(broker, vfs, restAddress), _serverRoot(std::move(serverRoot)) {}
+        : super_t(broker, vfs, restAddress), 
+          _serverRoot(std::move(serverRoot)) {}
 
     static auto
     deserializeSemicolonFormattedMessage(std::string_view method,
@@ -69,7 +70,7 @@ public:
         });
 
         auto cmrcHandler = [this](const httplib::Request &request,
-        httplib::Response &response) {
+                                  httplib::Response &response) {
             if (super_t::_vfs.is_file(request.path)) {
                 auto file = super_t::_vfs.open(request.path);
                 response.set_content(std::string(file.begin(), file.end()), "");
@@ -105,8 +106,8 @@ struct Request {
 ENABLE_REFLECTION_FOR(Request, name, timingCtx, customFilter /*, contentType*/)
 
 struct Reply {
-    // TODO java demonstrates custom enums here - we don't support that, but also
-    // the example doesn't need it
+    // TODO java demonstrates custom enums here - we don't support that, but
+    // also the example doesn't need it
     /*
     enum class Option {
         REPLY_OPTION1,
@@ -158,7 +159,8 @@ class CounterWorker
     static constexpr auto PROPERTY_NAME = std::string_view("testCounter");
 
 public:
-    using super_t = Worker<serviceName, TestContext, Empty, CounterData, Meta...>;
+    using super_t = 
+        Worker<serviceName, TestContext, Empty, CounterData, Meta...>;
 
     template <typename BrokerType>
     explicit CounterWorker(const BrokerType &broker,
@@ -181,10 +183,12 @@ public:
 
         super_t::setCallback([this](RequestContext &rawCtx, const TestContext &,
                                     const Empty &, TestContext &,
-        CounterData &out) {
+                                    CounterData &out) {
             using namespace opencmw;
             const auto topicPath =
-                URI<RELAXED>(std::string(rawCtx.request.topic())).path().value_or("");
+                URI<RELAXED>(std::string(rawCtx.request.topic()))
+                    .path()
+                    .value_or("");
             const auto path = stripStart(topicPath, "/");
             out.value = counter_value;
             out.count = counter;
@@ -206,7 +210,8 @@ int main() {
     Broker primaryBroker("PrimaryBroker");
     auto fs = cmrc::assets::get_filesystem();
 
-    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(primaryBroker, fs, "./");
+    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(primaryBroker, fs, 
+                                                         "./");
 
     const auto brokerRouterAddress =
         primaryBroker.bind(URI<>("mds://127.0.0.1:12345"));
@@ -221,21 +226,22 @@ int main() {
 
     // second broker to test DNS functionalities
     Broker secondaryBroker("SecondaryTestBroker",
-    {.dnsAddress = brokerRouterAddress->str()});
+                           {.dnsAddress = brokerRouterAddress->str()});
 
     std::jthread secondaryBrokerThread(
         [&secondaryBroker] { secondaryBroker.run(); });
 
-    // TODO IIRC we agreed that service names should be valid URIs and thus have a
-    // / prepended, but "/helloWorld" doesn't work with the REST interface
-    // (http://localhost:8080/helloWorld and http://localhost:8080//helloWorld are
-    // mapped to "helloWorld")
+    // TODO IIRC we agreed that service names should be valid URIs and thus have
+    // a / prepended, but "/helloWorld" doesn't work with the REST interface
+    // (http://localhost:8080/helloWorld and http://localhost:8080//helloWorld 
+    // are mapped to "helloWorld")
 
-    // TODO '"Reply": { "name": ... }' isn't valid json I think (not an object at
-    // top-level; also, Firefox doesn't like it). Should we omit the '"Reply:"?
+    // TODO '"Reply": { "name": ... }' isn't valid json I think (not an object
+    // at top-level; also, Firefox doesn't like it). Should we omit the 
+    // '"Reply:"?
 
     CounterWorker<"testCounter", description<"Returns counter value">>
-            counterWorker(primaryBroker, std::chrono::seconds(2));
+        counterWorker(primaryBroker, std::chrono::seconds(2));
 
     std::jthread counterThread([&counterWorker] { counterWorker.run(); });
 
