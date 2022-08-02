@@ -1,15 +1,13 @@
-# OpenCMW example project
+# OpenCMW Counter Worker
 
-This is a minimal example project to show how the opencmw library can be used from any CMake project.
-It uses CMake's FetchContent mechanism to obtain opencmw and (some of) its dependencies.
-Some dependencies (openssl, zlib) are assumed to be installed system wide such that the opencmw project can access them with find_package.
+This is a minimal example of a worker implementation using opencmw that simulates a saw tooth signal. This project is based on the opencmw example [https://github.com/fair-acc/opencmw-cpp-example](https://github.com/fair-acc/opencmw-cpp-example).
 
 ### Building
 
 ``` bash
 cmake -S . -B build
 cmake --build build
-build/src/MajordomoRest_example
+build/src/opencmw_counter
 ```
 ### Building against local opencmw-cpp
 
