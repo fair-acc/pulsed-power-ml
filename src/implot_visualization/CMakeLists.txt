@@ -8,7 +8,7 @@ project(${projectName} LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # necessary to tell CMake to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver) 
 set(CMAKE_EXECUTABLE_SUFFIX ".html")

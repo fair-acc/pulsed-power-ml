@@ -6,12 +6,12 @@
 
 - You may also refer to our [Continuous Integration setup](https://github.com/ocornut/imgui/tree/master/.github/workflows) for Emscripten setup.
 
-- Then build using `make` while in the `example_emscripten_opengl3/` directory.
+- Then build using `sh cmake_build.sh` while in the `implot_visulalization` directory.
 
 ## How to Run
 
 To run on a local machine:
-- `make serve` will use Python3 to spawn a local webserver, you can then browse http://localhost:8000 to access your build.
+- `sh run_client.sh` will use Python3 to spawn a local webserver, you can then browse http://localhost:8000 to access your build.
 - Otherwise, generally you will need a local webserver:
   - Quoting [https://emscripten.org/docs/getting_started](https://emscripten.org/docs/getting_started/Tutorial.html#generating-html):<br>
 _"Unfortunately several browsers (including Chrome, Safari, and Internet Explorer) do not support file:// [XHR](https://emscripten.org/docs/site/glossary.html#term-xhr) requests, and can’t load extra files needed by the HTML (like a .wasm file, or packaged file data as mentioned lower down). For these browsers you’ll need to serve the files using a [local webserver](https://emscripten.org/docs/getting_started/FAQ.html#faq-local-webserver) and then open http://localhost:8000/hello.html."_
