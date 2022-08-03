@@ -17,15 +17,15 @@ CC = emcc
 CXX = em++
 WEB_DIR = ../build/web
 EXE = $(WEB_DIR)/index.html
-IMGUI_DIR = ../imgui
-IMPLOT_DIR = ../implot
+IMGUI_DIR = ../lib/imgui
+IMPLOT_DIR = ../lib/implot
 EMSCRIPTEN_DIR = ../../../emscripten
-JSON_DIR = ../../../json
+JSON_DIR = ../lib/json
 OPENCMW_DIR = ../../../opencmw-cpp
 FMT_DIR = ../../../fmt
 SOURCES = main.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
-SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+SOURCES += $(IMGUI_DIR)/imgui_impl_sdl.cpp $(IMGUI_DIR)/imgui_impl_opengl3.cpp
 SOURCES += $(IMPLOT_DIR)/implot.cpp $(IMPLOT_DIR)/implot_demo.cpp $(IMPLOT_DIR)/implot_items.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
@@ -63,7 +63,7 @@ endif
 ## FINAL BUILD FLAGS
 ##---------------------------------------------------------------------
 
-CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(JSON_DIR)/single_include -I$(FMT_DIR)/include
+CPPFLAGS += -I$(IMGUI_DIR) -I$(IMPLOT_DIR) -I$(JSON_DIR)/single_include -I$(FMT_DIR)/include
 CPPFLAGS += -I$(OPENCMW_DIR)/src/serialiser/include -I$(OPENCMW_DIR)/src/core/include
 CPPFLAGS += -g
 CPPFLAGS += -Wall -Wformat -Os $(EMS)
@@ -80,7 +80,7 @@ LDFLAGS += -sFETCH
 %.o:$(IMGUI_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
-%.o:$(IMGUI_DIR)/backends/%.cpp
+%.o:$(IMPLOT_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 all: $(EXE)
