@@ -25,18 +25,18 @@ public:
     using super_t::RestBackend;
 
     FileServerRestBackend(
-            Broker<Roles...> &broker, const VirtualFS &vfs,
-            std::filesystem::path serverRoot,
-            opencmw::URI<>        restAddress = opencmw::URI<>::factory()
-                                                 .scheme(DEFAULT_REST_SCHEME)
-                                                 .hostName("0.0.0.0")
-                                                 .port(DEFAULT_REST_PORT)
-                                                 .build())
+        Broker<Roles...> &broker, const VirtualFS &vfs,
+        std::filesystem::path serverRoot,
+        opencmw::URI<>        restAddress = opencmw::URI<>::factory()
+                                            .scheme(DEFAULT_REST_SCHEME)
+                                            .hostName("0.0.0.0")
+                                            .port(DEFAULT_REST_PORT)
+                                            .build())
         : super_t(broker, vfs, restAddress), _serverRoot(std::move(serverRoot)) {}
 
     static auto
     deserializeSemicolonFormattedMessage(std::string_view method,
-            std::string_view                              serialized) {
+                                         std::string_view                              serialized) {
         // clang-format off
         auto result = MdpMessage::createClientMessage(
                           method == "SUB" ? Command::Subscribe :
@@ -52,7 +52,7 @@ public:
 
         for (std::size_t i = 2; i < result.requiredFrameCount(); ++i) {
             result.setFrameData(i, std::string_view(currentBegin, currentEnd),
-                    MessageFrame::dynamic_bytes_tag{});
+                                MessageFrame::dynamic_bytes_tag{});
             currentBegin = (currentEnd != bodyEnd) ? currentEnd + 1 : bodyEnd;
             currentEnd   = std::find(currentBegin, serialized.cend(), ';');
         }
@@ -63,13 +63,13 @@ public:
         _svr.set_mount_point("/", _serverRoot.string());
 
         _svr.Post("/stdio.html",
-                [](const httplib::Request &request, httplib::Response &response) {
-                    opencmw::debug::log() << "QtWASM:" << request.body;
-                    response.set_content("", "text/plain");
-                });
+        [](const httplib::Request &request, httplib::Response &response) {
+            opencmw::debug::log() << "QtWASM:" << request.body;
+            response.set_content("", "text/plain");
+        });
 
         auto cmrcHandler = [this](const httplib::Request &request,
-                                   httplib::Response     &response) {
+        httplib::Response     &response) {
             if (super_t::_vfs.is_file(request.path)) {
                 auto file = super_t::_vfs.open(request.path);
                 response.set_content(std::string(file.begin(), file.end()), "");
@@ -128,8 +128,8 @@ struct Reply {
 };
 
 ENABLE_REFLECTION_FOR(Reply, name, booleanReturnType, byteReturnType,
-        shortReturnType, intReturnType, longReturnType, timingCtx,
-        lsaContext /*, replyOption*/)
+                      shortReturnType, intReturnType, longReturnType, timingCtx,
+                      lsaContext /*, replyOption*/)
 
 struct CounterData {
     int value;
@@ -162,7 +162,7 @@ public:
 
     template<typename BrokerType>
     explicit CounterWorker(const BrokerType &broker,
-            std::chrono::milliseconds        updateInterval)
+                           std::chrono::milliseconds        updateInterval)
         : super_t(broker, {}) {
         notifyThread = std::jthread([this, updateInterval] {
             while (!shutdownRequested) {
@@ -179,12 +179,12 @@ public:
         });
 
         super_t::setCallback([this](RequestContext &rawCtx, const TestContext &,
-                                     const Empty &, TestContext &,
-                                     CounterData &out) {
+                                    const Empty &, TestContext &,
+        CounterData &out) {
             using namespace opencmw;
             const auto topicPath = URI<RELAXED>(std::string(rawCtx.request.topic()))
-                                           .path()
-                                           .value_or("");
+                                   .path()
+                                   .value_or("");
             const auto path = stripStart(topicPath, "/");
             out.value       = counter_value;
             out.count       = counter;
@@ -221,10 +221,10 @@ int main() {
 
     // second broker to test DNS functionalities
     Broker       secondaryBroker("SecondaryTestBroker",
-                  { .dnsAddress = brokerRouterAddress->str() });
+    { .dnsAddress = brokerRouterAddress->str() });
 
     std::jthread secondaryBrokerThread(
-            [&secondaryBroker] { secondaryBroker.run(); });
+        [&secondaryBroker] { secondaryBroker.run(); });
 
     // TODO IIRC we agreed that service names should be valid URIs and thus have
     // a / prepended, but "/helloWorld" doesn't work with the REST interface
@@ -236,7 +236,7 @@ int main() {
     // '"Reply:"?
 
     CounterWorker<"testCounter", description<"Returns counter value">>
-                 counterWorker(primaryBroker, std::chrono::seconds(2));
+            counterWorker(primaryBroker, std::chrono::seconds(2));
 
     std::jthread counterThread([&counterWorker] { counterWorker.run(); });
 
