@@ -96,5 +96,5 @@ target/
 data/*/*.csv
 
 # Emscripten
-.o
+*.o
 web/
