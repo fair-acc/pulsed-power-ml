@@ -49,18 +49,13 @@ struct ScrollingBuffer {
     }
 };
 
-// Implot Test data
-int             bar_data[5] = { 1, 2, 3, 4, 5 };
-int             x_data[5]   = { 1, 2, 3, 4, 5 };
-int             y1_data[5]  = { 4, 6, 8, 5, 3 };
-int             y2_data[5]  = { 3, 4, 8, 1, 2 };
 ScrollingBuffer buffer;
 
 // Deserialise
 // dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
 void deserialiseJson(std::string jsonString) {
-    int tmp_x;
-    int tmp_y;
+    float tmp_x;
+    float tmp_y;
 
     // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
@@ -73,7 +68,7 @@ void deserialiseJson(std::string jsonString) {
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         std::cout << "Json elements: key: " << element.key() << ", value: " << element.value() << "\n";
-        if (element.key() == "count") {
+        if (element.key() == "timestamp") {
             tmp_x = element.value();
         } else {
             tmp_y = element.value();
@@ -231,31 +226,20 @@ static void main_loop(void *arg) {
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
             ImPlot::SetupAxes("", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 250.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
             ImPlot::EndPlot();
         }
         ImGui::End();
-    }
 
-    // Multiple plots in one window
-    // {
-    //     ImGui::Begin("Multiple Plots in One Window");
-    //     if(ImPlot::BeginPlot("U/I Raw Data")){
-    //         ImPlot::SetupAxes("time (ms)","U (V)");
-    //         ImPlot::PlotBars("U/I Raw Data",bar_data,5);
-    //         ImPlot::EndPlot();
-    //     }
-    //     if(ImPlot::BeginPlot("U/I Bandpass Filter")){
-    //         ImPlot::SetupAxes("time (ms)","U (V) / I (A)");
-    //         ImPlot::PlotLine("I (A)",x_data,y1_data,5);
-    //         ImPlot::PlotLine("U (V)",x_data,y2_data,5);
-    //         ImPlot::EndPlot();
-    //     }
-    //     ImGui::End();
-    // }
+        // For debug purpose
+        // for (auto element : buffer.Data) {
+        //     std::cout << "[" << element.x << ", " << element.y << "] , ";
+        // }
+        // std::cout << "\n";
+    }
 
     // Rendering
     ImGui::Render();
