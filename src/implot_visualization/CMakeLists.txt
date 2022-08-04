@@ -10,12 +10,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
-# necessary to tell CMake to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver) 
+# necessary to tell CMake (with emscripten) to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver) 
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
 # locate the "executable" output in the build/web directory
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/web)
+
+# CAUTION: The "SHELL:" before some compile/link options has to be used to explicity tell CMake to not sum up options 
+# (e.g. -option A -option B => -option A B)(CMake default behaviour), but instead keep them separated (needed for
+# proper operation of emscripten)
 
 add_compile_options(
         -DIMGUI_DISABLE_FILE_FUNCTIONS

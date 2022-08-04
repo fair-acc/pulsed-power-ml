@@ -2,16 +2,18 @@
 
 - You need to install Emscripten from https://emscripten.org/docs/getting_started/downloads.html, and have the environment variables set, as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
 
-- Depending on your configuration, in Windows you may need to run `emsdk/emsdk_env.bat` in your console to access the Emscripten command-line tools.
+- Additionally you have to clone https://github.com/emscripten-core/emscripten repository to your local machine. This is necessary to integrate Emscripten as CMake toolchain.
 
-- You may also refer to our [Continuous Integration setup](https://github.com/ocornut/imgui/tree/master/.github/workflows) for Emscripten setup.
+- Make sure to configure the EMSCRIPTEN_ROOT_PATH and EMSDK_ROOT_PATH variables in `cmake_build.sh` according to the paths of emsdk and emscripten on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
 
-- Then build using `sh cmake_build.sh` while in the `implot_visulalization` directory.
+- Then build using `bash cmake_build.sh` while in the `implot_visualization` directory.
+
+- To delete your build you may use `bash cmake_clean.sh`
 
 ## How to Run
 
 To run on a local machine:
-- `sh run_client.sh` will use Python3 to spawn a local webserver, you can then browse http://localhost:8000 to access your build.
+- `bash run_client.sh` will use Python3 to spawn a local webserver, you can then browse http://localhost:8000 to access your build.
 - Otherwise, generally you will need a local webserver:
   - Quoting [https://emscripten.org/docs/getting_started](https://emscripten.org/docs/getting_started/Tutorial.html#generating-html):<br>
 _"Unfortunately several browsers (including Chrome, Safari, and Internet Explorer) do not support file:// [XHR](https://emscripten.org/docs/site/glossary.html#term-xhr) requests, and can’t load extra files needed by the HTML (like a .wasm file, or packaged file data as mentioned lower down). For these browsers you’ll need to serve the files using a [local webserver](https://emscripten.org/docs/getting_started/FAQ.html#faq-local-webserver) and then open http://localhost:8000/hello.html."_
