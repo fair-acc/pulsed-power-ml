@@ -1,8 +1,24 @@
-# OpenCMW Counter Worker
+# ImPlot Visualization
 
-This is a minimal example of a worker implementation using opencmw that simulates a saw tooth signal. This project is based on the opencmw example [https://github.com/fair-acc/opencmw-cpp-example](https://github.com/fair-acc/opencmw-cpp-example).
+The ImPlot Visualization visualizes signals pulled from OpenCMW.
 
-### Building
+## Getting Started
+
+1. Install Emscripten from https://emscripten.org/docs/getting_started/downloads.html
+
+2. Set the environment variables as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
+
+3. Additionally clone https://github.com/emscripten-core/emscripten repository to your local machine. This is necessary to integrate Emscripten as CMake toolchain.
+
+4. Make sure to configure the EMSCRIPTEN_ROOT_PATH and EMSDK_ROOT_PATH variables in `cmake_build.sh` according to the paths of emsdk and emscripten on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
+
+## Usage
+
+In order to visualize data passed by OpenCMW you need to build and run the OpenCMW worker first and then build and run the ImPlot Visualization.The following explains how to build and run OpenCMW and ImPlot Visualization.
+
+### OpenCMW Counter Worker
+
+How to Build
 
 ```bash
 cmake -S . -B build
@@ -10,17 +26,18 @@ cmake --build build
 build/src/opencmw_counter
 ```
 
-### Building against local opencmw-cpp
+How to Run
 
-Note: If you just want to implement a service, it will not be required and brings no benefit to checkout and build opencmw-cpp separatly.
+- Run `./opencmw_counter/build/src/opencmw_counter`
 
-There are environment variables which optionally can be used to point to your checkout of libfnt and/or opencmw-cpp.
-(The same works for opencmw's dependencies as it internally uses fetchContent as well)
+### ImPlot Visualization
 
-To do so, refer to the top folder of the other projects (which contains the toplevel `CMakeList.txt`) by doing:
+How to Build
 
-```bash
-cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_FMT=~/libfmt -DFETCHCONTENT_SOURCE_DIR_OPENCMW-CPP=~/opencmw-cpp
-```
+- Run `bash cmake_build.sh` while in the `implot_visualization` directory.
+- To delete your build you may use `bash cmake_clean.sh`
 
-OpenCMW will autumatically detect if it is used as a subproject and disable certain parts of the build like examples or tests.
+How to Run
+
+- Run `bash run_client.sh`. This will use Python3 to spawn a local webserver
+- Browse http://localhost:8000 to access your build.
