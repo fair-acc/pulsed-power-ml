@@ -27,7 +27,7 @@ add_compile_options(
         -Wall -Wformat -Os
         "SHELL:-s USE_SDL=2"
         "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
-
+        -pthread
 )
 
 add_link_options(
@@ -40,6 +40,7 @@ add_link_options(
         "SHELL:-s USE_SDL=2"
         "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
         -sFETCH
+        -pthread
 )
 
 set(outputFileName "index")

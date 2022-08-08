@@ -10,6 +10,7 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl.h"
+#include <chrono>
 #include <emscripten.h>
 #include <emscripten/fetch.h>
 #include <implot.h>
@@ -19,6 +20,7 @@
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 // #include <IoSerialiserJson.hpp>
 
 using json = nlohmann::json;
@@ -50,12 +52,15 @@ struct ScrollingBuffer {
 };
 
 ScrollingBuffer buffer;
+long            tmp_x_prev;
+long            tmp_x_first;
+bool            fetch_finished = true;
 
 // Deserialise
 // dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
 void deserialiseJson(std::string jsonString) {
-    float tmp_x;
-    float tmp_y;
+    long tmp_x;
+    int  tmp_y;
 
     // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
@@ -63,38 +68,57 @@ void deserialiseJson(std::string jsonString) {
     // For now, remove ""CounterData": " from dataAsJson to make it usable with
     // json::parse
     std::string modifiedJsonString = jsonString.erase(0, 14);
-    std::cout << "Modified Json string: " << modifiedJsonString << "\n";
+    // std::cout << "Modified Json string: " << modifiedJsonString << "\n";
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
-        std::cout << "Json elements: key: " << element.key() << ", value: " << element.value() << "\n";
+        // std::cout << "Json elements: key: " << element.key() << ", value: " << element.value() << "\n";
         if (element.key() == "timestamp") {
             tmp_x = element.value();
         } else {
             tmp_y = element.value();
         }
     }
-    std::cout << "Buffer: x: " << tmp_x << ", y: " << tmp_y << "\n";
-    buffer.AddPoint(tmp_x, tmp_y);
-    printf("Deserialisation finished.\n");
+    std::cout << "Buffer test: x: " << (long) (tmp_x - 1659621000) << ", y: " << tmp_y << "\n";
+
+    if (tmp_x != tmp_x_prev) {
+        buffer.AddPoint(tmp_x - 1659621000, tmp_y);
+        //  For debug purpose
+        //  for (auto element : buffer.Data) {
+        //      std::cout << "[" << element.x << ", " << element.y << "] , ";
+        //  }
+        //  std::cout << "\n";
+    }
+
+    // printf("Deserialisation finished.\n");
+    tmp_x_prev = tmp_x;
 }
 
 void downloadSucceeded(emscripten_fetch_t *fetch) {
-    printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+    // printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     std::string jsonData;
     for (int i = 0; i < fetch->numBytes; i++) {
         jsonData += fetch->data[i];
     }
 
-    printf("Json string:\n%s\n", jsonData.c_str());
+    // printf("Json string:\n%s\n", jsonData.c_str());
     deserialiseJson(jsonData.c_str());
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
+    fetch_finished = true;
 }
 
 void downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
+    fetch_finished = true;
+}
+
+void f1() {
+    for (int i = 0; i < 100; ++i) {
+        std::cout << "Thread 1 executing\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
 }
 
 // Emscripten requires to have full control over the main loop. We're going to store our SDL book-keeping variables globally.
@@ -176,8 +200,9 @@ int         main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
+    std::thread t1(f1);
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 0, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 2, true);
 }
 
 static void main_loop(void *arg) {
@@ -188,7 +213,11 @@ static void main_loop(void *arg) {
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
     attr.onsuccess  = downloadSucceeded;
     attr.onerror    = downloadFailed;
-    emscripten_fetch(&attr, "http://localhost:8080/testCounter");
+    if (fetch_finished) {
+        printf("Starting fetch.\n");
+        emscripten_fetch(&attr, "http://localhost:8080/testCounter");
+        fetch_finished = false;
+    }
 
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
@@ -229,12 +258,13 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
+            // ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
+            ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size());
             ImPlot::EndPlot();
         }
         ImGui::End();
 
-        // For debug purpose
+        // // For debug purpose
         // for (auto element : buffer.Data) {
         //     std::cout << "[" << element.x << ", " << element.y << "] , ";
         // }
