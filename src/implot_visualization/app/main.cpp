@@ -16,11 +16,11 @@
 #include <implot.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <pthread.h>
 #include <SDL.h>
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
-#include <thread>
 // #include <IoSerialiserJson.hpp>
 
 using json = nlohmann::json;
@@ -117,7 +117,7 @@ void downloadFailed(emscripten_fetch_t *fetch) {
 void f1() {
     for (int i = 0; i < 100; ++i) {
         std::cout << "Thread 1 executing\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
@@ -200,7 +200,7 @@ int         main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
-    std::thread t1(f1);
+    pthread_t fetch_thread;
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
     emscripten_set_main_loop_arg(main_loop, NULL, 2, true);
 }
