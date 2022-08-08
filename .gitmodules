@@ -1,3 +1,0 @@
-[submodule "src/implot_visualization/external/json"]
-	path = src/implot_visualization/external/json
-	url = https://github.com/nlohmann/json.git
