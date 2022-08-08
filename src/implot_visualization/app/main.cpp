@@ -83,11 +83,11 @@ void deserialiseJson(std::string jsonString) {
 
     if (tmp_x != tmp_x_prev) {
         buffer.AddPoint(tmp_x - 1659621000, tmp_y);
-        //  For debug purpose
-        //  for (auto element : buffer.Data) {
-        //      std::cout << "[" << element.x << ", " << element.y << "] , ";
-        //  }
-        //  std::cout << "\n";
+        // For debug purpose
+        for (auto element : buffer.Data) {
+            std::cout << "[" << element.x << ", " << element.y << "] , ";
+        }
+        std::cout << "\n";
     }
 
     // printf("Deserialisation finished.\n");
@@ -200,7 +200,7 @@ int         main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
-    pthread_t fetch_thread;
+    // pthread_t fetch_thread;
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
     emscripten_set_main_loop_arg(main_loop, NULL, 2, true);
 }
@@ -259,7 +259,7 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             // ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
-            ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size());
+            ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
             ImPlot::EndPlot();
         }
         ImGui::End();
