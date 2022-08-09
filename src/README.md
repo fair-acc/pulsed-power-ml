@@ -8,9 +8,7 @@ The ImPlot Visualization visualizes signals pulled from OpenCMW.
 
 2. Set the environment variables as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
 
-3. Additionally clone https://github.com/emscripten-core/emscripten repository to your local machine. This is necessary to integrate Emscripten as CMake toolchain.
-
-4. Make sure to configure the EMSCRIPTEN_ROOT_PATH and EMSDK_ROOT_PATH variables in `cmake_build.sh` according to the paths of emsdk and emscripten on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
+3. Make sure to configure the EMSDK_ROOT_PATH variable in `cmake_build.sh` according to the path of emsdk on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
 
 ## Usage
 
