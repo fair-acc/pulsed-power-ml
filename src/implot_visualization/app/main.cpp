@@ -16,7 +16,6 @@
 #include <implot.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <pthread.h>
 #include <SDL.h>
 #include <SDL_opengles2.h>
 #include <stdio.h>
