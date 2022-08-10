@@ -4,7 +4,7 @@
 
 # execute with: bash cmake_build.sh
 
-# Here the root directories for emscripten and emsdk should be specified according to your system
+# Here the root directory for emsdk should be specified according to your system
 
 EMSDK_ROOT_PATH=~/FAIR/emsdk
 
