@@ -6,8 +6,8 @@
 
 # Here the root directories for emscripten and emsdk should be specified according to your system
 
-EMSCRIPTEN_ROOT_PATH=~/FAIR/emscripten
-EMSDK_ROOT_PATH=~/FAIR/emsdk
+EMSCRIPTEN_ROOT_PATH=~/work/emscripten
+EMSDK_ROOT_PATH=~/work/emsdk
 
 # specification of the projects build folder
 
