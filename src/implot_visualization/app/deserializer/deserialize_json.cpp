@@ -64,6 +64,7 @@ void deserialiseJson(std::string jsonString) {
             tmp_y = element.value();
         }
     }
+    // For debug purpose
     std::cout << "Long: " << std::setprecision(std::numeric_limits<float>::digits) << tmp_x << ", y: " << tmp_y << "\n";
     std::cout << "Float: " << std::setprecision(std::numeric_limits<float>::digits) << static_cast<float>(tmp_x) << ", y: " << tmp_y << "\n";
 

@@ -1,7 +1,7 @@
-#include <emscripten_fetch.h>
 #include <deserialize_json.h>
 #include <emscripten.h>
 #include <emscripten/fetch.h>
+#include <emscripten_fetch.h>
 #include <iostream>
 #include <string.h>
 
