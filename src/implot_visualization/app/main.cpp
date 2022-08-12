@@ -1,143 +1,38 @@
-// Dear ImGui: standalone example application for Emscripten, using SDL2 + OpenGL3
-// (Emscripten is a C++-to-javascript compiler, used to publish executables for the web. See https://emscripten.org/)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
-
-// This is mostly the same code as the SDL2 + OpenGL3 example, simply with the modifications needed to run on Emscripten.
-// It is possible to combine both code into a single source file that will compile properly on Desktop and using Emscripten.
-// See https://github.com/ocornut/imgui/pull/2492 as an example on how to do just that.
-
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl.h"
-#include <chrono>
-#include <emscripten.h>
-#include <emscripten/fetch.h>
+#include <deserialize_json.h>
+#include <emscripten_fetch.h>
 #include <implot.h>
 #include <iostream>
-#include <nlohmann/json.hpp>
 #include <SDL.h>
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
-// #include <IoSerialiserJson.hpp>
-
-using json = nlohmann::json;
-
-// Utility structure for realtime plot
-struct ScrollingBuffer {
-    int              MaxSize;
-    int              Offset;
-    ImVector<ImVec2> Data;
-    ScrollingBuffer(int max_size = 2000) {
-        MaxSize = max_size;
-        Offset  = 0;
-        Data.reserve(MaxSize);
-    }
-    void AddPoint(float x, float y) {
-        if (Data.size() < MaxSize)
-            Data.push_back(ImVec2(x, y));
-        else {
-            Data[Offset] = ImVec2(x, y);
-            Offset       = (Offset + 1) % MaxSize;
-        }
-    }
-    void Erase() {
-        if (Data.size() > 0) {
-            Data.shrink(0);
-            Offset = 0;
-        }
-    }
-};
 
 ScrollingBuffer buffer;
-long            tmp_x_prev;
-long            tmp_x_first;
 bool            fetch_finished = true;
 
-// Deserialise
-// dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
-void deserialiseJson(std::string jsonString) {
-    long tmp_x;
-    int  tmp_y;
-
-    // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
-    // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
-    // deserialiser.
-    // For now, remove ""CounterData": " from dataAsJson to make it usable with
-    // json::parse
-    std::string modifiedJsonString = jsonString.erase(0, 14);
-    // std::cout << "Modified Json string: " << modifiedJsonString << "\n";
-
-    auto json_obj = json::parse(modifiedJsonString);
-    for (auto &element : json_obj.items()) {
-        // std::cout << "Json elements: key: " << element.key() << ", value: " << element.value() << "\n";
-        if (element.key() == "timestamp") {
-            tmp_x = element.value();
-        } else {
-            tmp_y = element.value();
-        }
-    }
-    std::cout << "Buffer test: x: " << (long) (tmp_x - 1659621000) << ", y: " << tmp_y << "\n";
-
-    if (tmp_x != tmp_x_prev) {
-        buffer.AddPoint(tmp_x - 1659621000, tmp_y);
-        // For debug purpose
-        for (auto element : buffer.Data) {
-            std::cout << "[" << element.x << ", " << element.y << "] , ";
-        }
-        std::cout << "\n";
-    }
-
-    // printf("Deserialisation finished.\n");
-    tmp_x_prev = tmp_x;
-}
-
-void downloadSucceeded(emscripten_fetch_t *fetch) {
-    // printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-    // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    std::string jsonData;
-    for (int i = 0; i < fetch->numBytes; i++) {
-        jsonData += fetch->data[i];
-    }
-
-    // printf("Json string:\n%s\n", jsonData.c_str());
-    deserialiseJson(jsonData.c_str());
-    emscripten_fetch_close(fetch); // Free data associated with the fetch.
-    fetch_finished = true;
-}
-
-void downloadFailed(emscripten_fetch_t *fetch) {
-    printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-    emscripten_fetch_close(fetch); // Also free data on failure.
-    fetch_finished = true;
-}
-
-void f1() {
-    for (int i = 0; i < 100; ++i) {
-        std::cout << "Thread 1 executing\n";
-        // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-}
-
-// Emscripten requires to have full control over the main loop. We're going to store our SDL book-keeping variables globally.
-// Having a single function that acts as a loop prevents us to store state in the stack of said function. So we need some location for this.
+// Emscripten requires to have full control over the main loop. We're going to
+// store our SDL book-keeping variables globally. Having a single function that
+// acts as a loop prevents us to store state in the stack of said function. So
+// we need some location for this.
 SDL_Window   *g_Window    = NULL;
 SDL_GLContext g_GLContext = NULL;
 
-// For clarity, our main loop code is declared at the end.
-static void main_loop(void *);
+static void   main_loop(void *);
 
-int         main(int, char **) {
+int           main(int, char **) {
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return -1;
     }
 
-    // For the browser using Emscripten, we are going to use WebGL1 with GL ES2. See the Makefile. for requirement details.
-    // It is very likely the generated file won't work in many browsers. Firefox is the only sure bet, but I have successfully
-    // run this code on Chrome for Android for example.
+    // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
+    // It is very likely the generated file won't work in many browsers.
+    // Firefox is the only sure bet, but I have successfully run this code on
+    // Chrome for Android for example.
     const char *glsl_version = "#version 100";
     // const char* glsl_version = "#version 300 es";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -169,8 +64,9 @@ int         main(int, char **) {
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
+    // For an Emscripten build we are disabling file-system access, so let's not
+    // attempt to do a fopen() of the imgui.ini file. You may manually call
+    // LoadIniSettingsFromMemory() to load settings from your own storage.
     io.IniFilename = NULL;
 
     // Setup Dear ImGui style
@@ -222,7 +118,7 @@ static void main_loop(void *arg) {
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = true;
+    static bool   show_demo_window = false;
     static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Poll and handle events (inputs, window resize, etc.)
@@ -241,7 +137,7 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    // Show the big demo window
     if (show_demo_window) {
         ImGui::ShowDemoWindow(&show_demo_window);
         ImPlot::ShowDemoWindow();
@@ -258,16 +154,12 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             // ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
+            // TODO: PlotScatter was manually adapted to work with long variables (see external/implot/implot_items.cpp). In order to avoid
+            // dependencies on those changes, a different solution needs to be found here.
             ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
             ImPlot::EndPlot();
         }
         ImGui::End();
-
-        // // For debug purpose
-        // for (auto element : buffer.Data) {
-        //     std::cout << "[" << element.x << ", " << element.y << "] , ";
-        // }
-        // std::cout << "\n";
     }
 
     // Rendering

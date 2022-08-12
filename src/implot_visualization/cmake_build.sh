@@ -6,7 +6,7 @@
 
 # Here the root directory for emsdk should be specified according to your system
 
-EMSDK_ROOT_PATH=~/FAIR/emsdk
+EMSDK_ROOT_PATH=~/work/emsdk
 
 # specification of the projects build folder
 
