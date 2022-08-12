@@ -1,9 +1,7 @@
 #pragma once
 
 #include <imgui.h>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
+#include <iostream>
 
 struct DataVector {
     long x;
