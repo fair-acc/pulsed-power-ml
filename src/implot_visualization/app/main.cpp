@@ -105,9 +105,11 @@ static void main_loop(void *arg) {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess  = downloadSucceeded;
-    attr.onerror    = downloadFailed;
+    static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
+    attr.requestHeaders                  = custom_headers;
+    attr.attributes                      = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess                       = downloadSucceeded;
+    attr.onerror                         = downloadFailed;
     if (fetch_finished) {
         printf("Starting fetch.\n");
         emscripten_fetch(&attr, "http://localhost:8080/testCounter");
