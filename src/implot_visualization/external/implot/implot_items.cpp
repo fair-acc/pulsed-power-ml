@@ -1573,7 +1573,7 @@ template IMPLOT_API void PlotScatter<ImS64>(const char *label_id, const ImS64 *x
 template IMPLOT_API void PlotScatter<ImU64>(const char *label_id, const ImU64 *xs, const ImU64 *ys, int count, ImPlotScatterFlags flags, int offset, int stride);
 template IMPLOT_API void PlotScatter<float>(const char *label_id, const float *xs, const float *ys, int count, ImPlotScatterFlags flags, int offset, int stride);
 template IMPLOT_API void PlotScatter<double>(const char *label_id, const double *xs, const double *ys, int count, ImPlotScatterFlags flags, int offset, int stride);
-template IMPLOT_API void PlotScatter<long>(const char *label_id, const long *xs, const long *ys, int count, ImPlotScatterFlags flags, int offset, int stride);
+// template IMPLOT_API void PlotScatter<long>(const char *label_id, const long *xs, const long *ys, int count, ImPlotScatterFlags flags, int offset, int stride);
 
 // custom
 void PlotScatterG(const char *label_id, ImPlotGetter getter_func, void *data, int count, ImPlotScatterFlags flags) {

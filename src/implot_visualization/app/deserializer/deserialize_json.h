@@ -4,14 +4,14 @@
 #include <iostream>
 
 struct DataVector {
-    long x;
-    long y;
+    int64_t x;
+    int64_t y;
 
     constexpr DataVector();
-    constexpr DataVector(long _x, long _y);
+    constexpr DataVector(int64_t _x, int64_t _y);
 
-    long  operator[](size_t idx) const;
-    long &operator[](size_t idx);
+    int64_t  operator[](size_t idx) const;
+    int64_t &operator[](size_t idx);
 };
 
 // Utility structure for realtime plot
@@ -22,7 +22,7 @@ struct ScrollingBuffer {
 
     ScrollingBuffer(int max_size = 2000);
 
-    void AddPoint(long x, long y);
+    void AddPoint(int64_t x, int64_t y);
     void Erase();
 };
 

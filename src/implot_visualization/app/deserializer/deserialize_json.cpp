@@ -5,18 +5,18 @@
 using json = nlohmann::json;
 
 extern ScrollingBuffer buffer;
-long                   tmp_x_prev;
-long                   tmp_x_first;
+int64_t                tmp_x_prev;
+int64_t                tmp_x_first;
 
 constexpr DataVector::DataVector()
     : x(0.0f), y(0.0f) {}
-constexpr DataVector::DataVector(long _x, long _y)
+constexpr DataVector::DataVector(int64_t _x, int64_t _y)
     : x(_x), y(_y) {}
-long DataVector::operator[](size_t idx) const {
+int64_t DataVector::operator[](size_t idx) const {
     IM_ASSERT(idx <= 1);
     return (&x)[idx];
 }
-long &DataVector::operator[](size_t idx) {
+int64_t &DataVector::operator[](size_t idx) {
     IM_ASSERT(idx <= 1);
     return (&x)[idx];
 }
@@ -26,7 +26,7 @@ ScrollingBuffer::ScrollingBuffer(int max_size) {
     Offset  = 0;
     Data.reserve(MaxSize);
 }
-void ScrollingBuffer::AddPoint(long x, long y) {
+void ScrollingBuffer::AddPoint(int64_t x, int64_t y) {
     if (Data.size() < MaxSize)
         Data.push_back(DataVector(x, y));
     else {
