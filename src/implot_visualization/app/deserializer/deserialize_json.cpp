@@ -67,11 +67,11 @@ void deserialiseJson(std::string jsonString) {
 
     if (tmp_x != tmp_x_prev) {
         buffer.AddPoint(tmp_x, tmp_y);
-        // For debug purpose
-        for (auto element : buffer.Data) {
-            std::cout << "[" << element.x << ", " << element.y << "] , ";
-        }
-        std::cout << "\n";
+        // For debug purposes
+        // for (auto element : buffer.Data) {
+        //     std::cout << "[" << element.x << ", " << element.y << "] , ";
+        // }
+        // std::cout << "\n";
     }
 
     // printf("Deserialisation finished.\n");
