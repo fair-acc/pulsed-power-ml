@@ -137,12 +137,11 @@ static void main_loop(void *arg) {
         int bufferEnd = buffer.Data.size() - 1;
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
-            ImPlot::SetupAxes("", "Value");
+            ImPlot::SetupAxes("Timestamp", "Value");
             ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            // ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
-            ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+            ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
             ImPlot::EndPlot();
         }
         ImGui::End();
