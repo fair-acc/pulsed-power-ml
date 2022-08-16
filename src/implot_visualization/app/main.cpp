@@ -61,8 +61,6 @@ int           main(int, char **) {
     ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // For an Emscripten build we are disabling file-system access, so let's not
     // attempt to do a fopen() of the imgui.ini file. You may manually call
@@ -78,13 +76,6 @@ int           main(int, char **) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Emscripten allows preloading a file or folder to be accessible at runtime. See Makefile for details.
     // io.Fonts->AddFontDefault();
 #ifndef IMGUI_DISABLE_FILE_FUNCTIONS
     io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
@@ -110,10 +101,6 @@ static void main_loop(void *arg) {
     static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Poll and handle events (inputs, window resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-    // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
@@ -124,12 +111,6 @@ static void main_loop(void *arg) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-
-    // Show the big demo window
-    if (show_demo_window) {
-        ImGui::ShowDemoWindow(&show_demo_window);
-        ImPlot::ShowDemoWindow();
-    }
 
     // Show counter demo
     if (buffer.Data.size() > 0) {
@@ -145,6 +126,12 @@ static void main_loop(void *arg) {
             ImPlot::EndPlot();
         }
         ImGui::End();
+    }
+
+    // Show demo windows
+    if (show_demo_window) {
+        ImGui::ShowDemoWindow(&show_demo_window);
+        ImPlot::ShowDemoWindow();
     }
 
     // Rendering
