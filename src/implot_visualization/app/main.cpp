@@ -95,24 +95,12 @@ int           main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
-    // pthread_t fetch_thread;
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 2, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 60, true);
 }
 
 static void main_loop(void *arg) {
-    // Use emscripten Fetch API as long polling mechanism
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    strcpy(attr.requestMethod, "GET");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess  = downloadSucceeded;
-    attr.onerror    = downloadFailed;
-    if (fetch_finished) {
-        printf("Starting fetch.\n");
-        emscripten_fetch(&attr, "http://localhost:8080/testCounter");
-        fetch_finished = false;
-    }
+    fetch("http://localhost:8080/testCounter");
 
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
@@ -149,14 +137,11 @@ static void main_loop(void *arg) {
         int bufferEnd = buffer.Data.size() - 1;
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
-            ImPlot::SetupAxes("", "Value");
+            ImPlot::SetupAxes("Timestamp", "Value");
             ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            // ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
-            // TODO: PlotScatter was manually adapted to work with long variables (see external/implot/implot_items.cpp). In order to avoid
-            // dependencies on those changes, a different solution needs to be found here.
-            ImPlot::PlotScatter("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
+            ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
             ImPlot::EndPlot();
         }
         ImGui::End();
