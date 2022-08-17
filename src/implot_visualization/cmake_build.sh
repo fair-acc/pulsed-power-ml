@@ -18,17 +18,7 @@ source "$EMSDK_ROOT_PATH"/emsdk_env.sh
 # deviate emscripten root path from emsdk root path
 EMSCRIPTEN_ROOT_PATH=$EMSDK_ROOT_PATH/upstream/emscripten
 
-# check if BUILD_DIR is already available or if we first have to create it
-
-if [ -d "$BUILD_DIR" ]; then
-    cd "$BUILD_DIR"
-else
-    mkdir "$BUILD_DIR"
-    cd "$BUILD_DIR"
-fi
-
 # build the app using cmake and the emscripten toolchain
-
-cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN_ROOT_PATH/cmake/Modules/Platform/Emscripten.cmake ..
-cmake --build .
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN_ROOT_PATH/cmake/Modules/Platform/Emscripten.cmake
+cmake --build build
 

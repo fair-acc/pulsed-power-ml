@@ -10,14 +10,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
-# necessary to tell CMake (with emscripten) to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver) 
+# necessary to tell CMake (with emscripten) to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver)
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
 # locate the "executable" output in the build/web directory
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/web)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/web)
 
-# CAUTION: The "SHELL:" before some compile/link options has to be used to explicity tell CMake to not sum up options 
+# CAUTION: The "SHELL:" before some compile/link options has to be used to explicity tell CMake to not sum up options
 # (e.g. -option A -option B => -option A B)(CMake default behaviour), but instead keep them separated (needed for
 # proper operation of emscripten)
 
@@ -48,8 +48,9 @@ add_executable(${outputFileName})
 add_subdirectory(external)
 add_subdirectory(app)
 
-
-
-
-
+add_custom_target(serve
+        python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
+        COMMENT start a python server serving the webassembly app
+        DEPENDS ${outputFileName}
+)
 
