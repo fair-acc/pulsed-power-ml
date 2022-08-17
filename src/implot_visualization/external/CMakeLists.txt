@@ -35,6 +35,7 @@ add_library(
 target_include_directories(
     imgui BEFORE
     PUBLIC
+        ${CURRENT_SOURCE_DIR}/imgui # include the modified imconfig header
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
 )
