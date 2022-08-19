@@ -4,12 +4,10 @@
 #include <emscripten_fetch.h>
 #include <iostream>
 #include <string.h>
-#include <thread>
 
 bool fetch_finished = true;
 
 void downloadSucceeded(emscripten_fetch_t *fetch) {
-    // printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     std::string jsonData(fetch->data, fetch->data + fetch->numBytes);
     deserialiseJson(jsonData.c_str());
@@ -34,9 +32,7 @@ void fetch(const char *url) {
     attr.onsuccess                       = downloadSucceeded;
     attr.onerror                         = downloadFailed;
     if (fetch_finished) {
-        printf("Starting fetch.\n");
         emscripten_fetch(&attr, url);
         fetch_finished = false;
-        std::cout << "Fetch " << std::this_thread::get_id() << std::endl;
     }
 }

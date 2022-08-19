@@ -19,7 +19,6 @@ struct DataVector {
 struct ScrollingBuffer {
     int                  MaxSize;
     int                  Offset;
-    std::mutex           WriteLock;
     ImVector<DataVector> Data;
 
     ScrollingBuffer(int max_size = 2000);
@@ -35,6 +34,10 @@ struct ScrollingBuffer {
     void Erase();
 };
 
-// Deserialise
-// dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
+/**
+ * @brief Deserializes json string
+ *
+ * @param jsonString string of type
+ * "counterData": {"value": key, "timestamp": key}
+ */
 void deserialiseJson(const std::string &jsonString);
