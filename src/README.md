@@ -35,7 +35,14 @@ How to Build
 - Run `bash cmake_build.sh` while in the `implot_visualization` directory.
 - To delete your build you may use `bash cmake_clean.sh`
 
+Alternatively if your system provides the `emcmake` command you can also use
+``` bash
+emcmake cmake -S . -B build && (cd build && emmake make -j 20)
+```
+NOTE: emcmake breaks `cmake --build` so we have to call make directly
+
 How to Run
 
-- Run `bash run_client.sh`. This will use Python3 to spawn a local webserver
+- run `cmake --build build --target serve`
+- This will use Python3 to spawn a local webserver
 - Browse http://localhost:8000 to access your build.
