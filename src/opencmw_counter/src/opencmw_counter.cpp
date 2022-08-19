@@ -4,6 +4,7 @@
 #include <majordomo/Worker.hpp>
 
 #include <atomic>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <thread>
@@ -132,11 +133,11 @@ ENABLE_REFLECTION_FOR(Reply, name, booleanReturnType, byteReturnType,
         lsaContext /*, replyOption*/)
 
 struct CounterData {
-    int value;
-    int count;
+    int         value;
+    std::time_t timestamp;
 };
 
-ENABLE_REFLECTION_FOR(CounterData, value, count)
+ENABLE_REFLECTION_FOR(CounterData, value, timestamp)
 
 std::string_view stripStart(std::string_view s, std::string_view prefix) {
     if (s.starts_with(prefix)) {
@@ -147,13 +148,14 @@ std::string_view stripStart(std::string_view s, std::string_view prefix) {
 
 using opencmw::majordomo::Empty;
 
+// Worker: Counter
 template<units::basic_fixed_string serviceName, typename... Meta>
 class CounterWorker
     : public Worker<serviceName, TestContext, Empty, CounterData, Meta...> {
     std::atomic<bool>     shutdownRequested;
     std::jthread          notifyThread;
     int                   counter_value = 0;
-    int                   counter       = 0;
+    std::time_t           timestamp;
 
     static constexpr auto PROPERTY_NAME = std::string_view("testCounter");
 
@@ -168,12 +170,12 @@ public:
             while (!shutdownRequested) {
                 std::this_thread::sleep_for(updateInterval);
                 counter_value = ++counter_value % 100;
-                counter       = ++counter;
+                timestamp     = std::time(nullptr);
                 TestContext context;
                 context.contentType = opencmw::MIME::JSON;
                 CounterData reply;
-                reply.value = counter_value;
-                reply.count = counter;
+                reply.value     = counter_value;
+                reply.timestamp = timestamp;
                 super_t::notify("/", context, reply);
             }
         });
@@ -187,7 +189,7 @@ public:
                                            .value_or("");
             const auto path = stripStart(topicPath, "/");
             out.value       = counter_value;
-            out.count       = counter;
+            out.timestamp   = timestamp;
         });
     }
 
