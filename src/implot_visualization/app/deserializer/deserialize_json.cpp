@@ -1,6 +1,7 @@
 #include <deserialize_json.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -14,11 +15,11 @@ constexpr DataVector::DataVector(int64_t _x, int64_t _y)
     : x(_x), y(_y) {}
 int64_t DataVector::operator[](size_t idx) const {
     IM_ASSERT(idx <= 1);
-    return (&x)[idx];
+    return idx == 0 ? x : y;
 }
 int64_t &DataVector::operator[](size_t idx) {
     IM_ASSERT(idx <= 1);
-    return (&x)[idx];
+    return idx == 0 ? x : y;
 }
 
 ScrollingBuffer::ScrollingBuffer(int max_size) {
@@ -27,12 +28,15 @@ ScrollingBuffer::ScrollingBuffer(int max_size) {
     Data.reserve(MaxSize);
 }
 void ScrollingBuffer::AddPoint(int64_t x, int64_t y) {
+    // std::lock_guard<std::mutex> guard(WriteLock);
+    std::cout << "Starting AddPoint " << std::this_thread::get_id() << std::endl;
     if (Data.size() < MaxSize)
         Data.push_back(DataVector(x, y));
     else {
         Data[Offset] = DataVector(x, y);
         Offset       = (Offset + 1) % MaxSize;
     }
+    std::cout << "Ending AddPoint " << std::this_thread::get_id() << std::endl;
 }
 void ScrollingBuffer::Erase() {
     if (Data.size() > 0) {
@@ -43,7 +47,7 @@ void ScrollingBuffer::Erase() {
 
 // Deserialise
 // dataAsJson:  String of format {"key1": value1, "key2": value2, ...}
-void deserialiseJson(std::string jsonString) {
+void deserialiseJson(const std::string &jsonString) {
     long tmp_x;
     int  tmp_y;
 
@@ -52,7 +56,8 @@ void deserialiseJson(std::string jsonString) {
     // deserialiser.
     // For now, remove ""CounterData": " from dataAsJson to make it usable with
     // json::parse
-    std::string modifiedJsonString = jsonString.erase(0, 14);
+    std::string modifiedJsonString = jsonString;
+    modifiedJsonString.erase(0, 14);
     // std::cout << "Modified Json string: " << modifiedJsonString << "\n";
 
     auto json_obj = json::parse(modifiedJsonString);

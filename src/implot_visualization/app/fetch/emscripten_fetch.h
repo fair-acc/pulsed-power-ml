@@ -5,4 +5,4 @@
 
 void downloadSucceeded(emscripten_fetch_t *fetch);
 void downloadFailed(emscripten_fetch_t *fetch);
-void fetch(const char *port);
+void fetch(const char *url);

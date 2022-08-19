@@ -4,19 +4,16 @@
 #include <emscripten_fetch.h>
 #include <iostream>
 #include <string.h>
+#include <thread>
 
-extern bool fetch_finished;
+bool fetch_finished = true;
 
-void        downloadSucceeded(emscripten_fetch_t *fetch) {
+void downloadSucceeded(emscripten_fetch_t *fetch) {
     // printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    std::string jsonData;
-    for (int i = 0; i < fetch->numBytes; i++) {
-        jsonData += fetch->data[i];
-    }
-
-    // printf("Json string:\n%s\n", jsonData.c_str());
+    std::string jsonData(fetch->data, fetch->data + fetch->numBytes);
     deserialiseJson(jsonData.c_str());
+
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
     fetch_finished = true;
 }
@@ -27,7 +24,7 @@ void downloadFailed(emscripten_fetch_t *fetch) {
     fetch_finished = true;
 }
 
-void fetch(const char *port) {
+void fetch(const char *url) {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
@@ -38,7 +35,8 @@ void fetch(const char *port) {
     attr.onerror                         = downloadFailed;
     if (fetch_finished) {
         printf("Starting fetch.\n");
-        emscripten_fetch(&attr, port);
+        emscripten_fetch(&attr, url);
         fetch_finished = false;
+        std::cout << "Fetch " << std::this_thread::get_id() << std::endl;
     }
 }

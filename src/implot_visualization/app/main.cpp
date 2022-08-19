@@ -11,7 +11,6 @@
 #include <string.h>
 
 ScrollingBuffer buffer;
-bool            fetch_finished = true;
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -47,7 +46,7 @@ int           main(int, char **) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("Dear ImGui Emscripten example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    g_Window                     = SDL_CreateWindow("OpenCMW Counter Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     g_GLContext                  = SDL_GL_CreateContext(g_Window);
     if (!g_GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
@@ -113,16 +112,18 @@ static void main_loop(void *arg) {
     ImGui::NewFrame();
 
     // Show counter demo
-    if (buffer.Data.size() > 0) {
+    {
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
-        int bufferEnd = buffer.Data.size() - 1;
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
             ImPlot::SetupAxes("Timestamp", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+            if (buffer.Data.size() > 0) {
+                int bufferEnd = buffer.Data.size() - 1;
+                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+            }
             ImPlot::EndPlot();
         }
         ImGui::End();
