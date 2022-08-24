@@ -27,9 +27,8 @@ include(GrPybind)
 ########################################################################
 # Python Bindings
 ########################################################################
-
 list(APPEND pulsed_power_python_files
-    opencmw_sink_python.cc python_bindings.cc)
+    opencmw_time_sink_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(pulsed_power
    ../../..

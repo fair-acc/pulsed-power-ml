@@ -1,10 +1,10 @@
-id: pulsed_power_opencmw_sink
-label: opencmw_sink
+id: pulsed_power_opencmw_time_sink
+label: OpenCMW Time Sink
 category: '[pulsed_power]'
 
 templates:
   imports: from gnuradio import pulsed_power
-  make: pulsed_power.opencmw_sink()
+  make: pulsed_power.opencmw_time_sink(${sample_rate}, ${signal_name}, ${signal_unit})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -13,10 +13,18 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-#- id: name
-#  label: Signal name
-#  dtype: string
-#  default: 1
+- id: sample_rate
+  label: Sample Rate (Hz)
+  dtype: float
+  default: samp_rate
+- id: signal_name
+  label: Signal Name
+  dtype: string
+  default: 'Voltage'
+- id: signal_unit
+  label: Signal Unit
+  dtype: string
+  default: 'volt'
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -30,7 +38,7 @@ parameters:
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
 - label: in
-#  domain: ...
+  domain: stream
   dtype: float
 #  vlen: ...
 #  optional: ...

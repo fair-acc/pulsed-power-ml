@@ -21,7 +21,7 @@ namespace py = pybind11;
 // Please do not delete
 /**************************************/
 // BINDING_FUNCTION_PROTOTYPES(
-    void bind_opencmw_sink(py::module& m);
+    void bind_opencmw_time_sink(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -50,6 +50,6 @@ PYBIND11_MODULE(pulsed_power_python, m)
     // Please do not delete
     /**************************************/
     // BINDING_FUNCTION_CALLS(
-    bind_opencmw_sink(m);
+    bind_opencmw_time_sink(m);
     // ) END BINDING_FUNCTION_CALLS
 }

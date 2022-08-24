@@ -5,7 +5,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 install(FILES
-    pulsed_power_opencmw_sink.block.yml DESTINATION share/gnuradio/grc/blocks
+    pulsed_power_opencmw_time_sink.block.yml DESTINATION share/gnuradio/grc/blocks
 )
