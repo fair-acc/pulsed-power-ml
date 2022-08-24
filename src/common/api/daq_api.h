@@ -22,7 +22,7 @@ struct Acquisition {
     opencmw::Annotated<std::vector<int64_t>, opencmw::NoUnit, "Status bit-mask bits for this channel/signal">                                           status;
     opencmw::Annotated<std::vector<float>, opencmw::NoUnit, "Minimum expected value for channel/signal">                                                channelRangeMin;
     opencmw::Annotated<std::vector<float>, opencmw::NoUnit, "Maximum expected value for channel/signal">                                                channelRangeMax;
-    // Celsius is currently not supported: https://mpusz.github.io/units/examples/kalman_filter/example_7.html
+    // Celsius is currently not supported: https://github.com/mpusz/units/pull/232
     opencmw::Annotated<std::vector<float>, opencmw::NoUnit, "Temperature of the measurement device"> temperature; // [°C]
 };
 
