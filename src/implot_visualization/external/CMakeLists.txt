@@ -18,7 +18,27 @@ FetchContent_Declare(
     GIT_TAG         69d744867f8847c91a126fa25e9a6a3d67b3be41 #v3.11.1
 )
 
-FetchContent_MakeAvailable(nlohmann_json imgui implot)
+# dependency of range-v3
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    FetchContent_Declare(
+            range-v3
+            GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
+            GIT_TAG 0.12.0
+            )
+
+    FetchContent_MakeAvailable(range-v3)
+
+    # range-v3-config.cmake not in source dir, so rewire range-v3_DIR
+    set(range-v3_DIR ${range-v3_SOURCE_DIR}/cmake)
+endif()
+
+FetchContent_Declare(
+    opencmw-cpp
+    GIT_REPOSITORY https://github.com/fair-acc/opencmw-cpp.git
+    GIT_TAG main # todo: use proper release once available
+)
+
+FetchContent_MakeAvailable(nlohmann_json imgui implot opencmw-cpp)
 
 # imgui and implot are not CMake Projects, so we have to define their targets manually here
 add_library(

@@ -14,4 +14,5 @@ target_link_libraries(
     PUBLIC
         imgui
         nlohmann_json
+        serialiser
 )
