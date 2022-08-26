@@ -26,6 +26,7 @@ class PULSED_POWER_API opencmw_time_sink : virtual public gr::sync_block
 {
 public:
     typedef std::shared_ptr<opencmw_time_sink> sptr;
+    using cb_copy_data_t = std::function<void(const float*, int&, float, int64_t)>;
 
     /*!
      * \brief Return a shared_ptr to a new instance of pulsed_power::opencmw_time_sink.
@@ -44,7 +45,7 @@ public:
      *
      * \param cb_copy_data callback in which the host application can copy the data
      */
-    virtual void set_callback(std::function<void(const float*, int)> cb_copy_data) = 0;
+    virtual void set_callback(cb_copy_data_t cb_copy_data) = 0;
 
     /*!
      * \brief Returns expected sample rate in Hz.

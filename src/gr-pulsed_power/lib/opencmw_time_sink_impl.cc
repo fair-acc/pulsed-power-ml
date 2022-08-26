@@ -23,9 +23,6 @@ opencmw_time_sink::sptr opencmw_time_sink::make(float sample_rate,
 }
 
 
-/*
- * The private constructor
- */
 opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
                                                std::string signal_name,
                                                std::string signal_unit)
@@ -41,9 +38,6 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
     registerSink();
 }
 
-/*
- * Our virtual destructor.
- */
 opencmw_time_sink_impl::~opencmw_time_sink_impl() 
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
@@ -56,12 +50,12 @@ int opencmw_time_sink_impl::work(int noutput_items,
 {
     auto in = static_cast<const input_type*>(input_items[0]);
 
-    // Do <+signal processing+>
-    for (auto callback: d_cb_copy_data) {
-        std::invoke(callback, in, noutput_items);
-    }
+    using namespace std::chrono;
+    int64_t timestamp = duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch()).count();
 
-    std::cout << "opencmw_time_sink::work() sink name: '" << get_signal_name() << "', noutput_items: " << noutput_items << std::endl;
+    for (auto callback: d_cb_copy_data) {
+        std::invoke(callback, in, noutput_items, d_sample_rate, timestamp);
+    }
 
     return noutput_items;
 }
@@ -78,7 +72,7 @@ void opencmw_time_sink_impl::deregisterSink()
     }
 }
 
-void opencmw_time_sink_impl::set_callback(std::function<void(const float*, int)> cb_copy_data) 
+void opencmw_time_sink_impl::set_callback(cb_copy_data_t cb_copy_data) 
 {
     d_cb_copy_data.push_back(cb_copy_data);
 }

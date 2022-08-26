@@ -19,7 +19,7 @@ private:
     float d_sample_rate; 
     std::string d_signal_name; 
     std::string d_signal_unit;
-    std::vector<std::function<void(const float*, int)>> d_cb_copy_data;
+    std::vector<cb_copy_data_t> d_cb_copy_data;
 
 public:
     opencmw_time_sink_impl(float sample_rate,
@@ -35,7 +35,7 @@ public:
     
     void deregisterSink();
 
-    void set_callback(std::function<void(const float*, int)> cb_copy_data) override;
+    void set_callback(cb_copy_data_t cb_copy_data) override;
 
     float get_sample_rate() override;
 
