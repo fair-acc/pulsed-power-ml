@@ -1,3 +1,4 @@
+#include <cmath>
 #include <deserialize_json.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -5,19 +6,15 @@
 using json = nlohmann::json;
 
 extern ScrollingBuffer buffer;
-int64_t                tmp_x_prev;
+uint64_t               counter = 0;
 
 constexpr DataVector::DataVector()
     : x(0.0f), y(0.0f) {}
-constexpr DataVector::DataVector(int64_t _x, int64_t _y)
+constexpr DataVector::DataVector(uint64_t _x, float _y)
     : x(_x), y(_y) {}
-int64_t DataVector::operator[](size_t idx) const {
-    IM_ASSERT(idx <= 1);
-    return idx == 0 ? x : y;
-}
-int64_t &DataVector::operator[](size_t idx) {
-    IM_ASSERT(idx <= 1);
-    return idx == 0 ? x : y;
+
+DataVector ScrollingBuffer::GetPoint(int idx) {
+    return Data[idx];
 }
 
 ScrollingBuffer::ScrollingBuffer(int max_size) {
@@ -25,13 +22,27 @@ ScrollingBuffer::ScrollingBuffer(int max_size) {
     Offset  = 0;
     Data.reserve(MaxSize);
 }
-void ScrollingBuffer::AddPoint(int64_t x, int64_t y) {
+
+void ScrollingBuffer::AddPoint(uint64_t x, float y) {
     if (Data.size() < MaxSize)
         Data.push_back(DataVector(x, y));
     else {
         Data[Offset] = DataVector(x, y);
         Offset       = (Offset + 1) % MaxSize;
     }
+}
+
+void ScrollingBuffer::AddVector(std::vector<uint64_t> x, std::vector<float> y) {
+    if (x.size() != y.size()) {
+        std::cout << "The number of timestamps does not match the number of signal values." << std::endl;
+        return;
+    }
+    // for debug purposes
+    for (int i = 0; i < x.size(); i++) {
+        buffer.AddPoint(x[i], y[i]);
+        std::cout << "[x: " << x[i] << ", y: " << y[i] << "],";
+    }
+    std::cout << std::endl;
 }
 void ScrollingBuffer::Erase() {
     if (Data.size() > 0) {
@@ -41,29 +52,43 @@ void ScrollingBuffer::Erase() {
 }
 
 void deserialiseJson(const std::string &jsonString) {
-    long tmp_x;
-    int  tmp_y;
+    uint64_t                 timestamp;
+    std::vector<std::string> signalNames;
+    std::vector<float>       values;
+    std::vector<float>       relativeTimestamps;
+    std::string              name = "Sinus";
 
-    // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
+    // TODO: dataAsJson is given in format R"("Acquisition": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
     // deserialiser.
-    // For now, remove ""CounterData": " from dataAsJson to make it usable with
+    // For now, remove ""Acquisition": " from dataAsJson to make it usable with
     // json::parse
     std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
-        if (element.key() == "timestamp") {
-            tmp_x = element.value();
-        } else {
-            tmp_y = element.value();
+        // if (element.key() == "refTriggerName") {
+        //     name = element.value();
+        // }
+        if (element.key() == "refTriggerStamp") {
+            timestamp = element.value();
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            relativeTimestamps.insert(relativeTimestamps.begin(), element.value().begin(), element.value().end());
+        } else if (element.key() == "channelNames") {
+            signalNames.insert(signalNames.begin(), element.value().begin(), element.value().end());
+        } else if (element.key() == "channelValues") {
+            values.insert(values.begin(), element.value().begin(), element.value().end());
         }
     }
 
-    if (tmp_x != tmp_x_prev) {
-        buffer.AddPoint(tmp_x, tmp_y);
+    std::vector<uint64_t> timestamps;
+    for (auto dt : relativeTimestamps) {
+        timestamps.push_back(timestamp + dt * std::pow(10, 9));
+        // timestamps.push_back(counter++);
     }
+    std::cout << "Absolute timestamps: " << timestamps[0] << std::endl;
 
-    tmp_x_prev = tmp_x;
+    buffer.AddVector(timestamps, values);
+    std::cout << "Buffer size: " << buffer.Data.size() << std::endl;
 }
