@@ -1,6 +1,7 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl.h"
+#include <cmath>
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 #include <implot.h>
@@ -46,7 +47,7 @@ int           main(int, char **) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("OpenCMW Counter Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    g_Window                     = SDL_CreateWindow("OpenCMW Sinus Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     g_GLContext                  = SDL_GL_CreateContext(g_Window);
     if (!g_GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
@@ -90,7 +91,7 @@ int           main(int, char **) {
 }
 
 static void main_loop(void *arg) {
-    fetch("http://localhost:8080/testCounter");
+    fetch("http://localhost:8080/timeDomainWorker");
 
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
@@ -113,16 +114,22 @@ static void main_loop(void *arg) {
 
     // Show counter demo
     {
-        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
-        ImGui::Begin("Counter Demo Window");
-        if (ImPlot::BeginPlot("Counter Worker")) {
-            ImPlot::SetupAxes("Timestamp", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
+        ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
+        ImGui::Begin("Sinus Demo Window");
+        if (ImPlot::BeginPlot("Sinus Sink")) {
+            ImPlot::SetupAxes("UTC Time", "Value");
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.2, 1.2);
             if (buffer.Data.size() > 0) {
                 int bufferEnd = buffer.Data.size() - 1;
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+                std::cout << "Buffer size ImPlot: " << buffer.Data.size() << std::endl;
+                // ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - std::pow(10, 8), buffer.Data[bufferEnd].x, ImGuiCond_Always);
+                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - std::pow(10, 3), buffer.Data[bufferEnd].x, ImGuiCond_Always);
+                // ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+                // std::cout << "Reinterpret: " << *reinterpret_cast<const double *>(&buffer.Data[0].x) << std::endl;
+                // std::cout << "Static cast: " << *static_cast<double *>(&buffer.Data[0].x) << std::endl;
+                // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(uint64_t), 2 * sizeof(float));
+                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
             }
             ImPlot::EndPlot();
         }

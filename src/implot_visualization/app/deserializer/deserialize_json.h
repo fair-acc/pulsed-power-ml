@@ -6,11 +6,11 @@
 #include <vector>
 
 struct DataVector {
-    uint64_t x;
-    float    y;
+    float x;
+    float y;
 
     constexpr DataVector();
-    constexpr DataVector(uint64_t _x, float _y);
+    constexpr DataVector(float _x, float _y);
 };
 
 struct ScrollingBuffer {
@@ -21,8 +21,7 @@ struct ScrollingBuffer {
 
     ScrollingBuffer(int max_size = 10000);
 
-    DataVector GetPoint(int idx);
-    void       AddPoint(uint64_t x, float y);
+    void AddPoint(float x, float y);
     /**
      * @brief Adds a new vector to the internal buffer.
      * @remarks This method is not thread-safe.
@@ -30,7 +29,7 @@ struct ScrollingBuffer {
      * @param x The x locations of the point.
      * @param y The y locations of the point.
      */
-    void AddVector(std::vector<uint64_t> x, std::vector<float> y);
+    void AddVector(std::vector<float> x, std::vector<float> y);
     void Erase();
 };
 
