@@ -10,6 +10,6 @@ Some dependencies (openssl, zlib) are assumed to be installed system wide such t
 ```bash
 cmake -S . -B build
 cmake --build build
-build/src/MajordomoRestBroker
+build/src/PulsedPowerService
 ```
 

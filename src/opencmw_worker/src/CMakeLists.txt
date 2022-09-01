@@ -16,8 +16,8 @@ message("COPY ${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key DESTINATION ${CM
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_public.crt" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 
-add_executable(MajordomoRestBroker MajordomoRestBroker.cpp)
-target_link_libraries(MajordomoRestBroker PRIVATE 
+add_executable(PulsedPowerService PulsedPowerService.cpp)
+target_link_libraries(PulsedPowerService PRIVATE 
     majordomo
     disruptor 
     project_options 
