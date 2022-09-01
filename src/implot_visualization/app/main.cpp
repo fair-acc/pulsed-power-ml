@@ -1,15 +1,17 @@
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl.h"
-#include <cmath>
-#include <deserialize_json.h>
-#include <emscripten_fetch.h>
-#include <implot.h>
+#include <chrono>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl.h"
+#include <implot.h>
+
+#include <deserialize_json.h>
+#include <emscripten_fetch.h>
 
 ScrollingBuffer buffer;
 
@@ -87,11 +89,13 @@ int           main(int, char **) {
 #endif
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 60, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 25, true);
 }
 
 static void main_loop(void *arg) {
+    std::cout << "Starting fetch." << std::endl;
     fetch("http://localhost:8080/timeDomainWorker");
+    std::cout << "Fetch finished." << std::endl;
 
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
@@ -112,31 +116,31 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Show counter demo
+    // Show Sinus demo
     {
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
         ImGui::Begin("Sinus Demo Window");
         if (ImPlot::BeginPlot("Sinus Sink")) {
             ImPlot::SetupAxes("UTC Time", "Value");
             ImPlot::SetupAxisLimits(ImAxis_Y1, -1.2, 1.2);
+            auto   clock       = std::chrono::system_clock::now();
+            double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
+            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             if (buffer.Data.size() > 0) {
-                int bufferEnd = buffer.Data.size() - 1;
-                std::cout << "Buffer size ImPlot: " << buffer.Data.size() << std::endl;
-                // ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - std::pow(10, 8), buffer.Data[bufferEnd].x, ImGuiCond_Always);
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - std::pow(10, 3), buffer.Data[bufferEnd].x, ImGuiCond_Always);
-                // ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // std::cout << "Reinterpret: " << *reinterpret_cast<const double *>(&buffer.Data[0].x) << std::endl;
-                // std::cout << "Static cast: " << *static_cast<double *>(&buffer.Data[0].x) << std::endl;
-                // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(uint64_t), 2 * sizeof(float));
-                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(float));
+                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+            } else {
+                std::cout << "Buffer.Data.size() == 0" << std::endl;
             }
             ImPlot::EndPlot();
+        } else {
+            std::cout << "BeginPlot == false" << std::endl;
         }
         ImGui::End();
     }
 
-    // Show demo windows
+    // Show ImGui and ImPlot demo windows
     if (show_demo_window) {
         ImGui::ShowDemoWindow(&show_demo_window);
         ImPlot::ShowDemoWindow();

@@ -5,23 +5,23 @@
 #include <shared_mutex>
 #include <vector>
 
-struct DataVector {
-    float x;
-    float y;
+struct DataPoint {
+    double x;
+    double y;
 
-    constexpr DataVector();
-    constexpr DataVector(float _x, float _y);
+    constexpr DataPoint();
+    constexpr DataPoint(double _x, double _y);
 };
 
 struct ScrollingBuffer {
-    int                  MaxSize;
-    int                  Offset;
-    ImVector<DataVector> Data;
-    std::string          Name;
+    int                 MaxSize;
+    int                 Offset;
+    ImVector<DataPoint> Data;
+    std::string         Name;
 
-    ScrollingBuffer(int max_size = 10000);
+    ScrollingBuffer(int max_size = 20000);
 
-    void AddPoint(float x, float y);
+    void AddPoint(double x, double y);
     /**
      * @brief Adds a new vector to the internal buffer.
      * @remarks This method is not thread-safe.
@@ -29,7 +29,7 @@ struct ScrollingBuffer {
      * @param x The x locations of the point.
      * @param y The y locations of the point.
      */
-    void AddVector(std::vector<float> x, std::vector<float> y);
+    void AddVector(const std::vector<double> &x, const std::vector<double> &y);
     void Erase();
 };
 

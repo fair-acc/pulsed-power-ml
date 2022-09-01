@@ -7,11 +7,10 @@ using json = nlohmann::json;
 
 extern ScrollingBuffer buffer;
 uint64_t               prev_refTrigger = 0;
-float                  counter         = 0.0f;
 
-constexpr DataVector::DataVector()
+constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
-constexpr DataVector::DataVector(float _x, float _y)
+constexpr DataPoint::DataPoint(double _x, double _y)
     : x(_x), y(_y) {}
 
 ScrollingBuffer::ScrollingBuffer(int max_size) {
@@ -20,27 +19,27 @@ ScrollingBuffer::ScrollingBuffer(int max_size) {
     Data.reserve(MaxSize);
 }
 
-void ScrollingBuffer::AddPoint(float x, float y) {
+void ScrollingBuffer::AddPoint(double x, double y) {
     if (Data.size() < MaxSize)
-        Data.push_back(DataVector(x, y));
+        Data.push_back(DataPoint(x, y));
     else {
-        Data[Offset] = DataVector(x, y);
+        Data[Offset] = DataPoint(x, y);
         Offset       = (Offset + 1) % MaxSize;
     }
 }
 
-void ScrollingBuffer::AddVector(std::vector<float> x, std::vector<float> y) {
+void ScrollingBuffer::AddVector(const std::vector<double> &x, const std::vector<double> &y) {
     if (x.size() != y.size()) {
         std::cout << "The number of timestamps does not match the number of signal values." << std::endl;
         return;
     }
-    // for debug purposes
     for (int i = 0; i < x.size(); i++) {
         buffer.AddPoint(x[i], y[i]);
-        std::cout << "[x: " << x[i] << ", y: " << y[i] << "],";
+        // std::cout << "[x: " << x[i] << ", y: " << y[i] << "],";
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
 }
+
 void ScrollingBuffer::Erase() {
     if (Data.size() > 0) {
         Data.shrink(0);
@@ -49,11 +48,14 @@ void ScrollingBuffer::Erase() {
 }
 
 void deserialiseJson(const std::string &jsonString) {
-    uint64_t                 timestamp;
+    uint64_t                 refTrigger_ns;
+    double                   refTrigger_s;
     std::vector<std::string> signalNames;
-    std::vector<float>       values;
-    std::vector<float>       relativeTimestamps;
+    std::vector<double>      values;
+    std::vector<double>      relativeTimestamps;
     std::string              name = "Sinus";
+
+    std::cout.precision(19);
 
     // TODO: dataAsJson is given in format R"("Acquisition": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
@@ -69,7 +71,13 @@ void deserialiseJson(const std::string &jsonString) {
         //     name = element.value();
         // }
         if (element.key() == "refTriggerStamp") {
-            timestamp = element.value();
+            refTrigger_ns = element.value();
+            refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            if (refTrigger_ns == prev_refTrigger) {
+                // std::cout << "refTrigger == previous" << std::endl;
+                // std::cout << refTrigger_ns << std::endl;
+                return;
+            }
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             relativeTimestamps.insert(relativeTimestamps.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
@@ -77,24 +85,19 @@ void deserialiseJson(const std::string &jsonString) {
         } else if (element.key() == "channelValues") {
             values.insert(values.begin(), element.value().begin(), element.value().end());
         }
+        // std::cout << "Continue extraction" << std::endl;
     }
-    std::cout << "Json deserialization finished." << std::endl;
 
-    if (timestamp != prev_refTrigger) {
-        std::vector<float> timestamps;
+    if (refTrigger_ns != prev_refTrigger) {
+        std::vector<double> timestamps;
         for (auto dt : relativeTimestamps) {
-            // timestamps.push_back(timestamp + dt * std::pow(10, 9));
-            timestamps.push_back(counter);
-            counter = counter + 1.0;
+            timestamps.push_back(refTrigger_s + dt);
         }
+
         std::cout << "Absolute timestamps: " << timestamps[0] << std::endl;
 
-        std::cout << "First element: [" << timestamps[0] << ", " << values[0] << "]" << std::endl;
-        std::cout << "Last element: [" << timestamps[timestamps.size() - 1] << ", " << values[values.size() - 1] << "]" << std::endl;
-
         buffer.AddVector(timestamps, values);
-        std::cout << "Buffer size: " << buffer.Data.size() << std::endl;
     }
 
-    prev_refTrigger = timestamp;
+    prev_refTrigger = refTrigger_ns;
 }
