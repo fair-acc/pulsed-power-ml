@@ -83,12 +83,12 @@ public:
 
 int main() {
 
-    Broker primaryBroker("PrimaryBroker");
+    Broker broker("Pulsed-Power-Broker");
     auto   fs = cmrc::assets::get_filesystem();
 
-    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(primaryBroker, fs, "./");
+    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./");
 
-    const auto brokerRouterAddress = primaryBroker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
+    const auto brokerRouterAddress = broker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
 
     if (!brokerRouterAddress) {
         std::cerr << "Could not bind to broker address" << std::endl;
@@ -96,15 +96,15 @@ int main() {
     }
 
     // note: our thread handling is very verbose, offer nicer API
-    std::jthread primaryBrokerThread([&primaryBroker] {
-        primaryBroker.run();
+    std::jthread brokerThread([&broker] {
+        broker.run();
     });
 
     // top block
     auto top = gr::make_top_block("GNURadio");
 
     // sampling rate
-    float samp_rate = 16000;
+    float samp_rate = 4'000;
 
     // gnuradio blocks
     // sinus_signal --> throttle --> opencmw_time_sink
@@ -121,22 +121,22 @@ int main() {
     top->start();
 
     // OpenCMW workers
-    // CounterWorker<"testCounter", description<"Returns counter value">>    counterWorker(primaryBroker, std::chrono::milliseconds(1000));
-    TimeDomainWorker<"timeDomainWorker", description<"Time-Domain Worker">> timeDomainWorker(primaryBroker);
+    CounterWorker   <"counter", description<"Returns counter value">>    counterWorker(broker, std::chrono::milliseconds(1000));
+    TimeDomainWorker<"pulsed_power", description<"Time-Domain Worker">> timeDomainWorker(broker);
 
-    //  std::jthread counterWorkerThread([&counterWorker] {
-    //      counterWorker.run();
-    //  });
+     std::jthread counterWorkerThread([&counterWorker] {
+         counterWorker.run();
+     });
 
     std::jthread timeSinkWorkerThread([&timeDomainWorker] {
         timeDomainWorker.run();
     });
 
 
-    primaryBrokerThread.join();
+    brokerThread.join();
 
     // workers terminate when broker shuts down
     top->stop();
-    // counterWorkerThread.join();
+    counterWorkerThread.join();
     timeSinkWorkerThread.join();
 }

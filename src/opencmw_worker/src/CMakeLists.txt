@@ -1,5 +1,5 @@
 cmrc_add_resource_library(
-    REST_SERVER_EXAMPLE_ASSETS ALIAS assets::rest NAMESPACE assets
+    REST_SERVER_ASSETS ALIAS assets::rest NAMESPACE assets
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/error.mustache
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/main.css
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/img/english.png
@@ -24,4 +24,5 @@ target_link_libraries(MajordomoRestBroker PRIVATE
     project_warnings 
     assets::rest
     gnuradio::gnuradio-analog
+    gnuradio::gnuradio-blocks
     gnuradio-pulsed_power)

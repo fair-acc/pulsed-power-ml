@@ -7,3 +7,6 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(opencmw-cpp)
+
+FetchContent_MakeAvailable(catch2)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)

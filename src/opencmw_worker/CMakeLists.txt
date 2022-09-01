@@ -75,3 +75,6 @@ enable_sanitizers(project_options)
 include(cmake/StaticAnalyzers.cmake)
 
 add_subdirectory(src)
+
+include(CTest)
+add_subdirectory(test)

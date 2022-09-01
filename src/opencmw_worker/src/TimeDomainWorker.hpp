@@ -4,6 +4,8 @@
 #include <majordomo/Worker.hpp>
 #include <disruptor/RingBuffer.hpp>
 
+#include <gnuradio/pulsed_power/opencmw_time_sink.h>
+
 #include <chrono>
 
 using opencmw::Annotated;
@@ -94,9 +96,9 @@ public:
                 context.contentType = opencmw::MIME::JSON;;
 
                 const std::chrono::duration<double, std::milli> time_elapsed = std::chrono::system_clock::now() - time_start;
-                fmt::print("polling result: {}, time elapsed: {} ms\n", result, time_elapsed.count());
+                // fmt::print("polling result: {}, time elapsed: {} ms\n", result, time_elapsed.count());
 
-                super_t::notify("/", context, _reply);
+                super_t::notify("/timeDomainWorker", context, _reply);
             }
         });
 
@@ -128,7 +130,7 @@ public:
         timestamp_ns -= timebase_ns * data_size;
 
         // write into RingBuffer
-        fmt::print("ringBuffer publishEvent, available space: {}\n", _ringBuffer->getRemainingCapacity());
+        // fmt::print("ringBuffer publishEvent, available space: {}\n", _ringBuffer->getRemainingCapacity());
         bool result = _ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns, timebase_ns] (RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
             bufferData.timebase = timebase_ns;
             bufferData.timestamp = timestamp_ns;
