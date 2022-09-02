@@ -29,6 +29,9 @@ add_compile_options(
         "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
 )
 
+# Enables 32 bit vertex indices for ImGui
+add_compile_definitions("ImDrawIdx=unsigned int")
+
 add_link_options(
         "SHELL:-s WASM=1"
         "SHELL:-s ALLOW_MEMORY_GROWTH=1"
