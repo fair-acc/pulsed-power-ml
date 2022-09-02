@@ -39,4 +39,4 @@ struct ScrollingBuffer {
  * @param jsonString string of type
  * "Acquisition": {"value": key, "timestamp": key}
  */
-void deserialiseJson(const std::string &jsonString);
+void deserializeJson(const std::string &jsonString, ScrollingBuffer &buffer);

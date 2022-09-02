@@ -93,8 +93,6 @@ int           main(int, char **) {
 }
 
 static void main_loop(void *arg) {
-    fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus");
-
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
@@ -114,8 +112,11 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Show Sinus demo
-    {
+    // Visualize One GR Signal
+    bool visualize_gr_signal = false;
+    if (visualize_gr_signal) {
+        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", buffer);
+
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
         ImGui::Begin("Sinus Demo Window");
         if (ImPlot::BeginPlot("Sinus Sink")) {
@@ -133,6 +134,27 @@ static void main_loop(void *arg) {
             ImPlot::EndPlot();
             ImGui::End();
         }
+    }
+
+    // Visualize Counter
+    bool visualize_counter = true;
+    if (visualize_counter) {
+        fetch("http://localhost:8080/counter/testCounter", buffer);
+
+        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
+        ImGui::Begin("Counter Demo Window");
+        if (ImPlot::BeginPlot("Counter Worker")) {
+            ImPlot::SetupAxes("Timestamp", "Value");
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
+            if (buffer.Data.size() > 0) {
+                int bufferEnd = buffer.Data.size() - 1;
+                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+            }
+            ImPlot::EndPlot();
+        }
+        ImGui::End();
     }
 
     // Show ImGui and ImPlot demo windows
