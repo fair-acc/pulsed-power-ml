@@ -26,7 +26,7 @@ class PULSED_POWER_API opencmw_time_sink : virtual public gr::sync_block
 {
 public:
     typedef std::shared_ptr<opencmw_time_sink> sptr;
-    using cb_copy_data_t = std::function<void(const float*, int&, float, int64_t)>;
+    using cb_copy_data_t = std::function<void(const float*, int&, const std::string&, float, int64_t)>;
 
     /*!
      * \brief Return a shared_ptr to a new instance of pulsed_power::opencmw_time_sink.

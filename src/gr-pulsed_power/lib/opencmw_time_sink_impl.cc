@@ -35,13 +35,13 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
       d_signal_unit(signal_unit)
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
-    registerSink();
+    register_sink();
 }
 
 opencmw_time_sink_impl::~opencmw_time_sink_impl() 
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
-    deregisterSink();
+    deregister_sink();
 }
 
 int opencmw_time_sink_impl::work(int noutput_items,
@@ -54,17 +54,17 @@ int opencmw_time_sink_impl::work(int noutput_items,
     int64_t timestamp = duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch()).count();
 
     for (auto callback: d_cb_copy_data) {
-        std::invoke(callback, in, noutput_items, d_sample_rate, timestamp);
+        std::invoke(callback, in, noutput_items, d_signal_name, d_sample_rate, timestamp);
     }
 
     return noutput_items;
 }
-void opencmw_time_sink_impl::registerSink()
+void opencmw_time_sink_impl::register_sink()
 {
     globalTimeSinksRegistry.push_back(this);
 }
 
-void opencmw_time_sink_impl::deregisterSink()
+void opencmw_time_sink_impl::deregister_sink()
 {
     auto result = std::find(globalTimeSinksRegistry.begin(), globalTimeSinksRegistry.end(), this);
     if (result != globalTimeSinksRegistry.end()) {

@@ -31,9 +31,9 @@ public:
              gr_vector_const_void_star& input_items,
              gr_vector_void_star& output_items);
 
-    void registerSink();
+    void register_sink();
     
-    void deregisterSink();
+    void deregister_sink();
 
     void set_callback(cb_copy_data_t cb_copy_data) override;
 

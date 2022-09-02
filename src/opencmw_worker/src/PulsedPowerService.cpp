@@ -108,14 +108,23 @@ int main() {
 
     // gnuradio blocks
     // sinus_signal --> throttle --> opencmw_time_sink
-    auto sinus_signal_source = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 50, 1, 0,0);
-    auto throttle_block = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
-    auto pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "Sinus signal", "V");
-    pulsed_power_opencmw_sink->set_max_noutput_items(640);
+    auto signal_source_0 = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
+    auto throttle_block_0 = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
+    auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "sinus", "V");
+    pulsed_power_opencmw_sink_0->set_max_noutput_items(640);
+
+    // saw_signal --> throttle --> opencmw_time_sink
+    auto signal_source_1 = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
+    auto throttle_block_1 = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
+    auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "V");
+    pulsed_power_opencmw_sink_1->set_max_noutput_items(640);
 
     // connections
-    top->hier_block2::connect(sinus_signal_source, 0, throttle_block, 0);
-    top->hier_block2::connect(throttle_block, 0, pulsed_power_opencmw_sink, 0);
+    top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
+    top->hier_block2::connect(throttle_block_0, 0, pulsed_power_opencmw_sink_0, 0);
+
+    top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
+    top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
     
     // start gnuradio flowgraph
     top->start();
