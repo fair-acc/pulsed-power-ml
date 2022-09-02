@@ -19,7 +19,7 @@ struct ScrollingBuffer {
     ImVector<DataPoint> Data;
     std::string         Name;
 
-    ScrollingBuffer(int max_size = 20000);
+    ScrollingBuffer(int max_size = 200'000);
 
     void AddPoint(double x, double y);
     /**

@@ -93,9 +93,7 @@ int           main(int, char **) {
 }
 
 static void main_loop(void *arg) {
-    std::cout << "Starting fetch." << std::endl;
-    fetch("http://localhost:8080/timeDomainWorker");
-    std::cout << "Fetch finished." << std::endl;
+    fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus");
 
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
@@ -121,23 +119,20 @@ static void main_loop(void *arg) {
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
         ImGui::Begin("Sinus Demo Window");
         if (ImPlot::BeginPlot("Sinus Sink")) {
-            ImPlot::SetupAxes("UTC Time", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.2, 1.2);
+            static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+            static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+            ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
             auto   clock       = std::chrono::system_clock::now();
             double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             if (buffer.Data.size() > 0) {
                 ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-            } else {
-                std::cout << "Buffer.Data.size() == 0" << std::endl;
             }
             ImPlot::EndPlot();
-        } else {
-            std::cout << "BeginPlot == false" << std::endl;
+            ImGui::End();
         }
-        ImGui::End();
     }
 
     // Show ImGui and ImPlot demo windows

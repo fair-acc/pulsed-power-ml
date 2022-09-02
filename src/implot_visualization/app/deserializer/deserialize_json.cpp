@@ -35,9 +35,7 @@ void ScrollingBuffer::AddVector(const std::vector<double> &x, const std::vector<
     }
     for (int i = 0; i < x.size(); i++) {
         buffer.AddPoint(x[i], y[i]);
-        // std::cout << "[x: " << x[i] << ", y: " << y[i] << "],";
     }
-    // std::cout << std::endl;
 }
 
 void ScrollingBuffer::Erase() {
@@ -53,7 +51,6 @@ void deserialiseJson(const std::string &jsonString) {
     std::vector<std::string> signalNames;
     std::vector<double>      values;
     std::vector<double>      relativeTimestamps;
-    std::string              name = "Sinus";
 
     std::cout.precision(19);
 
@@ -67,15 +64,11 @@ void deserialiseJson(const std::string &jsonString) {
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
-        // if (element.key() == "refTriggerName") {
-        //     name = element.value();
-        // }
         if (element.key() == "refTriggerStamp") {
             refTrigger_ns = element.value();
             refTrigger_s  = refTrigger_ns / std::pow(10, 9);
             if (refTrigger_ns == prev_refTrigger) {
-                // std::cout << "refTrigger == previous" << std::endl;
-                // std::cout << refTrigger_ns << std::endl;
+                std::cout << "refTrigger == previous" << std::endl;
                 return;
             }
         } else if (element.key() == "channelTimeSinceRefTrigger") {
