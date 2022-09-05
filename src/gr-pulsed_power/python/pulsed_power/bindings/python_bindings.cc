@@ -21,7 +21,7 @@ namespace py = pybind11;
 // Please do not delete
 /**************************************/
 // BINDING_FUNCTION_PROTOTYPES(
-    void bind_opencmw_time_sink(py::module& m);
+void bind_opencmw_time_sink(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 

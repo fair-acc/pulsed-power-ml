@@ -17,7 +17,7 @@ namespace pulsed_power {
 /*!
  * \brief GNU Radio OpenCMW sink for exporting time-domain data into OpenCMW.
  *
- * On each incoming data package a callback is called which allows the host 
+ * On each incoming data package a callback is called which allows the host
  * application to copy the data to its internal buffers
  * \ingroup pulsed_power
  *
@@ -26,7 +26,8 @@ class PULSED_POWER_API opencmw_time_sink : virtual public gr::sync_block
 {
 public:
     typedef std::shared_ptr<opencmw_time_sink> sptr;
-    using cb_copy_data_t = std::function<void(const float*, int&, const std::string&, float, int64_t)>;
+    using cb_copy_data_t =
+        std::function<void(const float*, int&, const std::string&, float, int64_t)>;
 
     /*!
      * \brief Return a shared_ptr to a new instance of pulsed_power::opencmw_time_sink.
@@ -41,7 +42,8 @@ public:
                      std::string signal_unit = "");
 
     /*!
-     * \brief Registers a callback which is called whenever a predefined number of samples is available.
+     * \brief Registers a callback which is called whenever a predefined number of samples
+     * is available.
      *
      * \param cb_copy_data callback in which the host application can copy the data
      */

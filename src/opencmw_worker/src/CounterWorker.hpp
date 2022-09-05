@@ -41,11 +41,10 @@ public:
                 std::this_thread::sleep_for(updateInterval);
                 if (counter_value < 100) {
                     counter_value++;
-                }
-                else {
+                } else {
                     counter_value = 0;
                 }
-                timestamp     = std::time(nullptr);
+                timestamp = std::time(nullptr);
                 TestContext context;
                 context.contentType = opencmw::MIME::JSON;
                 CounterData reply;
@@ -62,8 +61,8 @@ public:
             const auto topicPath = URI<RELAXED>(std::string(rawCtx.request.topic()))
                                            .path()
                                            .value_or("");
-            out.value       = counter_value;
-            out.timestamp   = timestamp;
+            out.value     = counter_value;
+            out.timestamp = timestamp;
         });
     }
 

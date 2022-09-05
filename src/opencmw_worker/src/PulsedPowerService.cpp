@@ -3,10 +3,10 @@
 #include <majordomo/RestBackend.hpp>
 
 // Gnu Radio includes
-#include <gnuradio/top_block.h>
 #include <gnuradio/analog/sig_source.h>
 #include <gnuradio/blocks/throttle.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
+#include <gnuradio/top_block.h>
 
 #include <atomic>
 #include <fstream>
@@ -80,15 +80,13 @@ public:
     }
 };
 
-
 int main() {
-
-    Broker broker("Pulsed-Power-Broker");
-    auto   fs = cmrc::assets::get_filesystem();
+    Broker                                          broker("Pulsed-Power-Broker");
+    auto                                            fs = cmrc::assets::get_filesystem();
 
     FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./");
 
-    const auto brokerRouterAddress = broker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
+    const auto                                      brokerRouterAddress = broker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
 
     if (!brokerRouterAddress) {
         std::cerr << "Could not bind to broker address" << std::endl;
@@ -108,14 +106,14 @@ int main() {
 
     // gnuradio blocks
     // sinus_signal --> throttle --> opencmw_time_sink
-    auto signal_source_0 = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
-    auto throttle_block_0 = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
+    auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
+    auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
     auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "sinus", "V");
     pulsed_power_opencmw_sink_0->set_max_noutput_items(640);
 
     // saw_signal --> throttle --> opencmw_time_sink
-    auto signal_source_1 = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
-    auto throttle_block_1 = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
+    auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
+    auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
     auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "V");
     pulsed_power_opencmw_sink_1->set_max_noutput_items(640);
 
@@ -125,22 +123,21 @@ int main() {
 
     top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
     top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
-    
+
     // start gnuradio flowgraph
     top->start();
 
     // OpenCMW workers
-    CounterWorker   <"counter", description<"Returns counter value">>    counterWorker(broker, std::chrono::milliseconds(1000));
+    CounterWorker<"counter", description<"Returns counter value">>      counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power", description<"Time-Domain Worker">> timeDomainWorker(broker);
 
-     std::jthread counterWorkerThread([&counterWorker] {
-         counterWorker.run();
-     });
-
-    std::jthread timeSinkWorkerThread([&timeDomainWorker] {
-        timeDomainWorker.run();
+    std::jthread                                                        counterWorkerThread([&counterWorker] {
+        counterWorker.run();
     });
 
+    std::jthread                                                        timeSinkWorkerThread([&timeDomainWorker] {
+        timeDomainWorker.run();
+    });
 
     brokerThread.join();
 

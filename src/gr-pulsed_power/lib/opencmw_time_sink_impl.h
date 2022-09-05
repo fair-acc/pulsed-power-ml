@@ -16,8 +16,8 @@ namespace pulsed_power {
 class opencmw_time_sink_impl : public opencmw_time_sink
 {
 private:
-    float d_sample_rate; 
-    std::string d_signal_name; 
+    float d_sample_rate;
+    std::string d_signal_name;
     std::string d_signal_unit;
     std::vector<cb_copy_data_t> d_cb_copy_data;
 
@@ -32,7 +32,7 @@ public:
              gr_vector_void_star& output_items);
 
     void register_sink();
-    
+
     void deregister_sink();
 
     void set_callback(cb_copy_data_t cb_copy_data) override;
