@@ -133,11 +133,11 @@ int main() {
 
     std::jthread                                                        counterWorkerThread([&counterWorker] {
         counterWorker.run();
-    });
+                                                           });
 
     std::jthread                                                        timeSinkWorkerThread([&timeDomainWorker] {
         timeDomainWorker.run();
-    });
+                                                           });
 
     brokerThread.join();
 
