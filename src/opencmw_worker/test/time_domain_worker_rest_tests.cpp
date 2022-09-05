@@ -3,9 +3,9 @@
 #include <majordomo/Settings.hpp>
 #include <majordomo/Worker.hpp>
 
+#include <IoSerialiserJson.hpp>
 #include <MIME.hpp>
 #include <opencmw.hpp>
-#include <IoSerialiserJson.hpp>
 
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
@@ -13,13 +13,13 @@
 
 #include <exception>
 
-#include <gnuradio/top_block.h>
 #include <gnuradio/analog/sig_source.h>
 #include <gnuradio/blocks/throttle.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
+#include <gnuradio/top_block.h>
 
-#include "TimeDomainWorker.hpp"
 #include "helpers.hpp"
+#include "TimeDomainWorker.hpp"
 
 using opencmw::majordomo::Broker;
 using opencmw::majordomo::BrokerMessage;
@@ -31,7 +31,6 @@ using opencmw::majordomo::Worker;
 
 using opencmw::majordomo::DEFAULT_REST_PORT;
 using opencmw::majordomo::PLAIN_HTTP;
-
 
 template<typename Mode, typename VirtualFS>
 class SimpleTestRestBackend : public opencmw::majordomo::RestBackend<Mode, VirtualFS> {
@@ -103,10 +102,10 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({{"X-OPENCMW-METHOD", "POLL"}}));
+    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({ { "X-OPENCMW-METHOD", "POLL" } }));
 
     REQUIRE(response->status == 200);
-    
+
     REQUIRE(response->body.find("Acquisition") != std::string::npos);
     REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
@@ -123,18 +122,18 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
 
     // gnuradio blocks
     // sinus_signal --> throttle --> opencmw_time_sink
-    auto sinus_signal_source = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 50, 1, 0,0);
-    auto throttle_block = gr::blocks::throttle::make(sizeof(float)*1, samp_rate, true);
+    auto sinus_signal_source       = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 50, 1, 0, 0);
+    auto throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
     auto pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "Saw Tooth Signal", "units");
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections
     top->hier_block2::connect(sinus_signal_source, 0, throttle_block, 0);
     top->hier_block2::connect(throttle_block, 0, pulsed_power_opencmw_sink, 0);
-    
+
     // start gnuradio flowgraph
     top->start();
-    
+
     // We run both broker and worker inproc
     Broker                                          broker("TestBroker");
     auto                                            fs = cmrc::assets::get_filesystem();
@@ -156,10 +155,10 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({{"X-OPENCMW-METHOD", "POLL"}}));
+    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({ { "X-OPENCMW-METHOD", "POLL" } }));
 
     REQUIRE(response->status == 200);
-    
+
     REQUIRE(response->body.find("Acquisition") != std::string::npos);
     REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
@@ -170,7 +169,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         opencmw::IoBuffer buffer;
         buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
         Acquisition data;
-        auto result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+        auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
         REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.size());
     }
