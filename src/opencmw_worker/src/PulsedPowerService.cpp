@@ -102,7 +102,7 @@ int main() {
     auto top = gr::make_top_block("GNURadio");
 
     // sampling rate
-    float samp_rate = 4'000;
+    float samp_rate = 8'000;
 
     // gnuradio blocks
     // sinus_signal --> throttle --> opencmw_time_sink
@@ -114,7 +114,7 @@ int main() {
     // saw_signal --> throttle --> opencmw_time_sink
     auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
     auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-    auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "V");
+    auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "A");
     pulsed_power_opencmw_sink_1->set_max_noutput_items(640);
 
     // connections
