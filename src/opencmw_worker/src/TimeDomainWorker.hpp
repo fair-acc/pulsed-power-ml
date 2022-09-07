@@ -87,7 +87,7 @@ public:
                         _reply.channelValues.insert(_reply.channelValues.end(), event.chunk.begin(), event.chunk.end());
 
                         return true;
-                    });
+                        });
 
                     if (result == PollState::Processing) {
                         //  generate relative timestamps
@@ -145,7 +145,7 @@ public:
             bool              result     = signaldata.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                 bufferData.timestamp = timestamp_ns;
                 bufferData.chunk.assign(data, data + data_size);
-            });
+                             });
 
             if (!result)
                 fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
