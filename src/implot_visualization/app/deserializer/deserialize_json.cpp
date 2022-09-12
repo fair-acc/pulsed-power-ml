@@ -5,7 +5,7 @@
 
 using json        = nlohmann::json;
 
-double tmp_t_prev = 0;
+double tmp_t_prev = 0.0;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -41,8 +41,8 @@ void ScrollingBuffer::Erase() {
 }
 
 void deserializeAcquisition(const std::string &jsonString, ScrollingBuffer &buffer) {
-    uint64_t                 refTrigger_ns;
-    double                   refTrigger_s;
+    uint64_t                 refTrigger_ns = 0;
+    double                   refTrigger_s  = 0.0;
     std::vector<std::string> signalNames;
     std::vector<double>      values;
     std::vector<double>      relativeTimestamps;
@@ -78,8 +78,8 @@ void deserializeAcquisition(const std::string &jsonString, ScrollingBuffer &buff
 }
 
 void deserializeCounter(const std::string &jsonString, ScrollingBuffer &buffer) {
-    double timestamp;
-    double value;
+    double timestamp = 0.0;
+    double value     = 0.0;
 
     // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
