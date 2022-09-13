@@ -133,7 +133,7 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
             if (buffer.Data.size() > 0) {
-                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+                ImPlot::PlotLine((buffer.Name).c_str(), &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
             }
             ImPlot::EndPlot();
             ImGui::End();
