@@ -25,7 +25,7 @@ void downloadFailed(emscripten_fetch_t *fetch) {
     fetch_finished = true;
 }
 
-void fetch(const char *url, ScrollingBuffer &buffer) {
+void fetch(const char *url, std::vector<Signal> &signals) {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
@@ -39,7 +39,7 @@ void fetch(const char *url, ScrollingBuffer &buffer) {
         fetch_finished = false;
     }
     if (fetch_successful) {
-        deserializeJson(jsonString, buffer);
+        deserializeJson(jsonString, signals);
         fetch_successful = false;
     }
 }

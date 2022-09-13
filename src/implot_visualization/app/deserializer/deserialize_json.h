@@ -13,13 +13,13 @@ struct DataPoint {
     constexpr DataPoint(double _x, double _y);
 };
 
-struct ScrollingBuffer {
+struct Signal {
     int                 MaxSize;
     int                 Offset;
     ImVector<DataPoint> Data;
     std::string         Name;
 
-    ScrollingBuffer(int max_size = 200'000);
+    Signal(int max_size = 200'000);
 
     void AddPoint(double x, double y);
     /**
@@ -39,4 +39,4 @@ struct ScrollingBuffer {
  * @param jsonString string of type
  * "Acquisition": {"value": key, "timestamp": key}
  */
-void deserializeJson(const std::string &jsonString, ScrollingBuffer &buffer);
+void deserializeJson(const std::string &jsonString, std::vector<Signal> &signals);

@@ -4,6 +4,7 @@
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -13,7 +14,7 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-ScrollingBuffer buffer;
+std::vector<Signal> signals(1);
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -113,9 +114,12 @@ static void main_loop(void *arg) {
     ImGui::NewFrame();
 
     // Visualize One GR Signal
-    bool visualize_gr_signal = false;
+    bool visualize_gr_signal = true;
     if (visualize_gr_signal) {
-        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", buffer);
+        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", signals);
+
+        // Help
+        Signal buffer = signals[0];
 
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
         ImGui::Begin("Sinus Demo Window");
@@ -137,9 +141,12 @@ static void main_loop(void *arg) {
     }
 
     // Visualize Counter
-    bool visualize_counter = true;
+    bool visualize_counter = false;
     if (visualize_counter) {
-        fetch("http://localhost:8080/counter/testCounter", buffer);
+        fetch("http://localhost:8080/counter/testCounter", signals);
+
+        // Help
+        Signal buffer = signals[0];
 
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
         ImGui::Begin("Counter Demo Window");
