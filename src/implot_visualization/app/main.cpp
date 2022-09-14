@@ -1,14 +1,17 @@
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl.h"
-#include <deserialize_json.h>
-#include <emscripten_fetch.h>
-#include <implot.h>
+#include <chrono>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl.h"
+#include <implot.h>
+
+#include <deserialize_json.h>
+#include <emscripten_fetch.h>
 
 ScrollingBuffer buffer;
 
@@ -46,7 +49,7 @@ int           main(int, char **) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("OpenCMW Counter Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    g_Window                     = SDL_CreateWindow("OpenCMW Sinus Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     g_GLContext                  = SDL_GL_CreateContext(g_Window);
     if (!g_GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
@@ -86,12 +89,10 @@ int           main(int, char **) {
 #endif
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 60, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 25, true);
 }
 
 static void main_loop(void *arg) {
-    fetch("http://localhost:8080/testCounter");
-
     ImGuiIO &io = ImGui::GetIO();
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
@@ -111,8 +112,35 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Show counter demo
-    {
+    // Visualize One GR Signal
+    bool visualize_gr_signal = false;
+    if (visualize_gr_signal) {
+        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", buffer);
+
+        ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
+        ImGui::Begin("Sinus Demo Window");
+        if (ImPlot::BeginPlot("Sinus Sink")) {
+            static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+            static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+            ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
+            auto   clock       = std::chrono::system_clock::now();
+            double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+            if (buffer.Data.size() > 0) {
+                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+            }
+            ImPlot::EndPlot();
+            ImGui::End();
+        }
+    }
+
+    // Visualize Counter
+    bool visualize_counter = true;
+    if (visualize_counter) {
+        fetch("http://localhost:8080/counter/testCounter", buffer);
+
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
@@ -129,7 +157,7 @@ static void main_loop(void *arg) {
         ImGui::End();
     }
 
-    // Show demo windows
+    // Show ImGui and ImPlot demo windows
     if (show_demo_window) {
         ImGui::ShowDemoWindow(&show_demo_window);
         ImPlot::ShowDemoWindow();
