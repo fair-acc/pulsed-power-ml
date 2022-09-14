@@ -12,57 +12,47 @@ constexpr DataPoint::DataPoint()
 constexpr DataPoint::DataPoint(double _x, double _y)
     : x(_x), y(_y) {}
 
-Signal::Signal(int max_size) {
-    MaxSize = max_size;
-    Offset  = 0;
-    Data.reserve(MaxSize);
+SignalBuffer::SignalBuffer(int max_size) {
+    maxSize = max_size;
+    offset  = 0;
+    data.reserve(maxSize);
 }
 
-void Signal::AddPoint(double x, double y) {
-    if (Data.size() < MaxSize)
-        Data.push_back(DataPoint(x, y));
+void SignalBuffer::addPoint(double x, double y) {
+    if (data.size() < maxSize)
+        data.push_back(DataPoint(x, y));
     else {
-        Data[Offset] = DataPoint(x, y);
-        Offset       = (Offset + 1) % MaxSize;
+        data[offset] = DataPoint(x, y);
+        offset       = (offset + 1) % maxSize;
     }
 }
 
-void Signal::Erase() {
-    if (Data.size() > 0) {
-        Data.shrink(0);
-        Offset = 0;
+void SignalBuffer::erase() {
+    if (data.size() > 0) {
+        data.shrink(0);
+        offset = 0;
     }
 }
 
-void addToSignalBuffers(std::vector<Signal> &signals,
-        std::vector<std::string>             signalNames,
-        double                               refTrigger,
-        std::vector<double>                 &relativeTimestamps,
-        std::vector<int>                     dims,
-        std::vector<double>                 &strideArray) {
+void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
 
-    for (int i = 0; i < signalNames.size(); i++) {
-        signals[i].Name = signalNames[i];
-        int stride      = dims[1];
-        int offset      = i * stride;
+    for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
+        signals[i].signalName = acquisitionData.signalNames[i];
+        int stride            = acquisitionData.strideArray.dims[1];
+        int offset            = i * stride;
 
-        for (int j = 0; j < relativeTimestamps.size(); j++) {
-            absoluteTimestamp = refTrigger + relativeTimestamps[j];
-            value             = strideArray[offset + j];
-            signals[i].AddPoint(absoluteTimestamp, value);
+        for (int j = 0; j < acquisitionData.relativeTimestamps.size(); j++) {
+            absoluteTimestamp = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
+            value             = acquisitionData.strideArray.values[offset + j];
+            signals[i].addPoint(absoluteTimestamp, value);
         }
     }
 }
 
-void deserializeAcquisition(const std::string &jsonString, std::vector<Signal> &signals) {
-    uint64_t                 refTrigger_ns = 0;
-    double                   refTrigger_s  = 0.0;
-    std::vector<std::string> signalNames;
-    std::vector<double>      relativeTimestamps;
-    std::vector<int>         dims;
-    std::vector<double>      strideArray;
+void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+    Acquisition acquisition;
 
     // TODO: dataAsJson is given in format R"("Acquisition": {"value": 27 })" which
     // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
@@ -75,23 +65,22 @@ void deserializeAcquisition(const std::string &jsonString, std::vector<Signal> &
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            refTrigger_ns = element.value();
-            refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            acquisition.refTrigger_ns = element.value();
+            acquisition.refTrigger_s  = acquisition.refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
-            relativeTimestamps.insert(relativeTimestamps.begin(), element.value().begin(), element.value().end());
+            acquisition.relativeTimestamps.insert(acquisition.relativeTimestamps.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            signalNames.insert(signalNames.begin(), element.value().begin(), element.value().end());
+            acquisition.signalNames.insert(acquisition.signalNames.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
-            dims        = std::vector<int>(element.value()["dims"]);
-            strideArray = std::vector<double>(element.value()["values"]);
-            std::cout << "StrideArray: " << strideArray.size() << std::endl;
+            acquisition.strideArray.dims   = std::vector<int>(element.value()["dims"]);
+            acquisition.strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
 
-    addToSignalBuffers(signals, signalNames, refTrigger_s, relativeTimestamps, dims, strideArray);
+    addToSignalBuffers(signals, acquisition);
 }
 
-void deserializeCounter(const std::string &jsonString, std::vector<Signal> &signals) {
+void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
     double timestamp = 0.0;
     double value     = 0.0;
 
@@ -113,13 +102,13 @@ void deserializeCounter(const std::string &jsonString, std::vector<Signal> &sign
     }
 
     if (timestamp != tmp_t_prev) {
-        signals[0].AddPoint(timestamp, value);
+        signals[0].addPoint(timestamp, value);
     }
 
     tmp_t_prev = timestamp;
 }
 
-void deserializeJson(const std::string &jsonString, std::vector<Signal> &signals) {
+void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
     if (jsonString.substr(1, 11) == "Acquisition") {
         deserializeAcquisition(jsonString, signals);
     } else if (jsonString.substr(1, 11) == "CounterData") {

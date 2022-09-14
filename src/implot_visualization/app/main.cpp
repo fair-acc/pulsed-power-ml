@@ -14,7 +14,7 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-std::vector<Signal> signals(1);
+std::vector<SignalBuffer> signals(1);
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -98,8 +98,11 @@ static void main_loop(void *arg) {
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = false;
-    static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool                visualize_gr_signal = true;
+    bool                visualize_counter   = false;
+    static bool         show_demo_window    = false;
+    static ImVec4       clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    static Deserializer deserializer;
 
     // Poll and handle events (inputs, window resize, etc.)
     SDL_Event event;
@@ -113,13 +116,12 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Visualize One GR Signal
-    bool visualize_gr_signal = true;
+    // Visualize One GR SignalBuffer
     if (visualize_gr_signal) {
-        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", signals);
+        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", signals, &deserializer);
 
         // Help
-        Signal buffer = signals[0];
+        SignalBuffer buffer = signals[0];
 
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
         ImGui::Begin("Sinus Demo Window");
@@ -132,8 +134,8 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            if (buffer.Data.size() > 0) {
-                ImPlot::PlotLine((buffer.Name).c_str(), &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+            if (buffer.data.size() > 0) {
+                ImPlot::PlotLine((buffer.signalName).c_str(), &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(double));
             }
             ImPlot::EndPlot();
             ImGui::End();
@@ -141,23 +143,22 @@ static void main_loop(void *arg) {
     }
 
     // Visualize Counter
-    bool visualize_counter = false;
     if (visualize_counter) {
-        fetch("http://localhost:8080/counter/testCounter", signals);
+        fetch("http://localhost:8080/counter/testCounter", signals, &deserializer);
 
         // Help
-        Signal buffer = signals[0];
+        SignalBuffer buffer = signals[0];
 
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
             ImPlot::SetupAxes("Timestamp", "Value");
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-            if (buffer.Data.size() > 0) {
-                int bufferEnd = buffer.Data.size() - 1;
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+            if (buffer.data.size() > 0) {
+                int bufferEnd = buffer.data.size() - 1;
+                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.data[bufferEnd].x - 300.0, buffer.data[bufferEnd].x, ImGuiCond_Always);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+                ImPlot::PlotLine("Counter", &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(int64_t));
             }
             ImPlot::EndPlot();
         }

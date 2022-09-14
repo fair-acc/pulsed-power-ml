@@ -5,7 +5,8 @@
 #include <shared_mutex>
 #include <vector>
 
-struct DataPoint {
+class DataPoint {
+public:
     double x;
     double y;
 
@@ -13,30 +14,44 @@ struct DataPoint {
     constexpr DataPoint(double _x, double _y);
 };
 
-struct Signal {
-    int                 MaxSize;
-    int                 Offset;
-    ImVector<DataPoint> Data;
-    std::string         Name;
+class SignalBuffer {
+public:
+    int                 maxSize;
+    int                 offset;
+    ImVector<DataPoint> data;
+    std::string         signalName;
 
-    Signal(int max_size = 200'000);
+    SignalBuffer(int max_size = 200'000);
 
-    void AddPoint(double x, double y);
-    /**
-     * @brief Adds a new vector to the internal buffer.
-     * @remarks This method is not thread-safe.
-     *
-     * @param x The x locations of the point.
-     * @param y The y locations of the point.
-     */
-    void AddVector(const std::vector<double> &x, const std::vector<double> &y);
-    void Erase();
+    void addPoint(double x, double y);
+    void erase();
 };
 
-/**
- * @brief Deserializes json string
- *
- * @param jsonString string of type
- * "Acquisition": {"value": key, "timestamp": key}
- */
-void deserializeJson(const std::string &jsonString, std::vector<Signal> &signals);
+struct StrideArray {
+    std::vector<int>    dims;
+    std::vector<double> values;
+};
+
+struct Acquisition {
+    uint64_t                 refTrigger_ns = 0;
+    double                   refTrigger_s  = 0.0;
+    std::vector<std::string> signalNames;
+    std::vector<double>      relativeTimestamps;
+    StrideArray              strideArray;
+};
+
+class Deserializer {
+public:
+    /**
+     * @brief Deserializes json string
+     *
+     * @param jsonString string of type
+     * "Acquisition": {"value": key, "timestamp": key}
+     */
+    void deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+
+private:
+    void deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+    void deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+    void addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData);
+};
