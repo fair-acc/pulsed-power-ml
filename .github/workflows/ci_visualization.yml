@@ -37,6 +37,9 @@ jobs:
       - name: Verify emscripten
         run: emcc -v
 
+      - name: Navigate to source directory
+        run: cd src/implot_visualization
+
       - name: Build
         shell: bash
         run: emcmake cmake -S . -B build && (cd build && emmake make -j 20)
