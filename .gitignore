@@ -98,6 +98,3 @@ data/*/*.csv
 # Emscripten
 *.o
 web/
-
-# gr-pulsed_power
-!src/gr-pulsed_power/lib
