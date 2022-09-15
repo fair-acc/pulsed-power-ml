@@ -42,7 +42,7 @@ jobs:
         run: emcmake cmake -S src/implot_visualization -B src/implot_visualization/build && (cd src/implot_visualization/build && emmake make -j 20)
 
       - name: Upload package
-        run: cmake --build . --parallel --target package
+        run: cmake --build src/implot_visualization --parallel --target package
 
       - uses: actions/upload-artifact@v2
         with:
