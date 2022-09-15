@@ -37,12 +37,9 @@ jobs:
       - name: Verify emscripten
         run: emcc -v
 
-      - name: Navigate to source directory
-        run: cd src/implot_visualization
-
       - name: Build
         shell: bash
-        run: emcmake cmake -S . -B build && (cd build && emmake make -j 20)
+        run: emcmake cmake -S src/implot_visualization -B src/implot_visualization/build && (cd src/implot_visualization/build && emmake make -j 20)
 
       - name: Upload package
         run: cmake --build . --parallel --target package
