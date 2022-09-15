@@ -13,6 +13,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  SRC_DIR: "src/implot_visualization"
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -39,10 +42,10 @@ jobs:
 
       - name: Build
         shell: bash
-        run: emcmake cmake -S src/implot_visualization -B src/implot_visualization/build && (cd src/implot_visualization/build && emmake make -j 20)
+        run: emcmake cmake -S ${{env.SRC_DIR}} -B ${{env.SRC_DIR}}/build && (cd ${{env.SRC_DIR}}/build && emmake make -j 20)
 
       - name: Upload package
-        run: cmake --build src/implot_visualization --parallel --target package
+        run: cmake --build ${{env.SRC_DIR}}/build --parallel --target package
 
       - uses: actions/upload-artifact@v2
         with:
