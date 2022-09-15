@@ -43,11 +43,3 @@ jobs:
       - name: Build
         shell: bash
         run: emcmake cmake -S ${{env.SRC_DIR}} -B ${{env.SRC_DIR}}/build && (cd ${{env.SRC_DIR}}/build && emmake make -j 20)
-
-      - name: Upload package
-        run: cmake --build ${{env.SRC_DIR}}/build --parallel --target package
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: package_wasm32
-          path: package/
