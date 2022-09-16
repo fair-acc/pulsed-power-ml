@@ -3,10 +3,19 @@ set(CMAKE_CXX_STANDARD 20)
 
 include(cmake/Dependencies.cmake)
 
-project(opencmw-example-project CXX)
+project(opencmw-worker CXX)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(GNUInstallDirs)
+
+find_package(Gnuradio "3.10" COMPONENTS
+    blocks
+    analog
+    filter
+    fft
+)
+
+find_package(gnuradio-pulsed_power)
 
 # Check for supported compiler versions
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -21,12 +30,6 @@ else ()
     message(WARN "No version check for your compiler (${CMAKE_CXX_COMPILER_ID}) implemented, "
             "in case of build problems consider updating your compiler or check if you can switch to gcc or clang")
 endif ()
-
-# Link this 'library' to set the c++ standard / compile-time options requested
-add_library(project_options INTERFACE)
-target_include_directories(project_options INTERFACE ${CMAKE_SOURCE_DIR}/3rd_party)
-
-target_compile_features(project_options INTERFACE cxx_std_20)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
@@ -52,3 +55,6 @@ enable_sanitizers(project_options)
 include(cmake/StaticAnalyzers.cmake)
 
 add_subdirectory(src)
+
+include(CTest)
+add_subdirectory(test)
