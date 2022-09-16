@@ -28,9 +28,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Init submodules
-        run: git submodule update --init --recursive
-
       - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v11
         with:
@@ -40,6 +37,8 @@ jobs:
       - name: Verify emscripten
         run: emcc -v
 
+      - name: Generate
+        run: emcmake cmake -S ${{env.SRC_DIR}} -B ${{env.SRC_DIR}}/build
+
       - name: Build
-        shell: bash
-        run: emcmake cmake -S ${{env.SRC_DIR}} -B ${{env.SRC_DIR}}/build && (cd ${{env.SRC_DIR}}/build && emmake make -j 20)
+        run: cd ${{env.SRC_DIR}}/build && emmake make
