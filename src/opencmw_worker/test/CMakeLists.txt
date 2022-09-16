@@ -23,7 +23,7 @@ function(opencmw_add_test_app name sources)
             Catch2::Catch2
             gnuradio::gnuradio-analog
             gnuradio::gnuradio-blocks
-            gnuradio-pulsed_power
+            gnuradio::gnuradio-pulsed_power
         )
 endfunction()
 
