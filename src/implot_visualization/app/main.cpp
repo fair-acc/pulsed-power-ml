@@ -14,7 +14,7 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-std::vector<SignalBuffer> signals(1);
+std::vector<SignalBuffer> signals(2);
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -124,8 +124,8 @@ static void main_loop(void *arg) {
         SignalBuffer buffer = signals[0];
 
         ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
-        ImGui::Begin("Sinus Demo Window");
-        if (ImPlot::BeginPlot("Sinus Sink")) {
+        ImGui::Begin("GR Signals Demo Window");
+        if (ImPlot::BeginPlot("GR Signals")) {
             static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
             static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
             ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
@@ -134,8 +134,10 @@ static void main_loop(void *arg) {
             ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            if (buffer.data.size() > 0) {
-                ImPlot::PlotLine((buffer.signalName).c_str(), &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(double));
+            for (int i = 0; i < signals.size(); i++) {
+                if (signals[i].data.size() > 0) {
+                    ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
+                }
             }
             ImPlot::EndPlot();
             ImGui::End();
