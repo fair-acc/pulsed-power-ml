@@ -73,8 +73,9 @@ public:
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
                 for (auto &[key_pair, signal_data] : _signalsMap) {
-                    bool      firstEvent = true;
-                    PollState result     = signal_data.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
+                    bool firstEvent = true;
+                    // poll data
+                    PollState result = signal_data.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
                         if (firstEvent) {
                             _reply.refTriggerStamp = event.timestamp;
                             _reply.channelTimeSinceRefTrigger.clear();
@@ -87,7 +88,7 @@ public:
                         _reply.channelValues.insert(_reply.channelValues.end(), event.chunk.begin(), event.chunk.end());
 
                         return true;
-                        });
+                    });
 
                     if (result == PollState::Processing) {
                         //  generate relative timestamps
@@ -95,7 +96,9 @@ public:
                             float relative_timestamp = i * (1 / key_pair.second);
                             _reply.channelTimeSinceRefTrigger.push_back(relative_timestamp);
                         }
-                        super_t::notify(fmt::format("/timeDomainWorker/{}", key_pair.first), TimeDomainContext(), _reply);
+                        TimeDomainContext context;
+                        context.contentType = opencmw::MIME::JSON;
+                        super_t::notify(fmt::format("/timeDomainWorker/{}", key_pair.first), context, _reply);
                     }
                     pollingDuration = std::chrono::system_clock::now() - time_start;
                 }
@@ -142,10 +145,11 @@ public:
         if (_signalsMap.find(std::make_pair(signal_name, sample_rate)) != _signalsMap.end()) {
             const SignalData &signaldata = _signalsMap.at(std::make_pair(signal_name, sample_rate));
 
-            bool              result     = signaldata.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
+            // publish data
+            bool result = signaldata.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                 bufferData.timestamp = timestamp_ns;
                 bufferData.chunk.assign(data, data + data_size);
-                             });
+            });
 
             if (!result)
                 fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);

@@ -80,6 +80,40 @@ public:
     }
 };
 
+class GRFlowGraph {
+private:
+    gr::top_block_sptr top;
+
+public:
+    GRFlowGraph(float samp_rate = 4'000.0F, int noutput_items = 640)
+        : top(gr::make_top_block("GNURadio")) {
+        // flowgraph setup
+        // sinus_signal --> throttle --> opencmw_time_sink
+        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
+        auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
+        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "sinus", "V");
+        pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
+
+        // saw_signal --> throttle --> opencmw_time_sink
+        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
+        auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
+        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "A");
+        pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
+
+        // connections
+        top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
+        top->hier_block2::connect(throttle_block_0, 0, pulsed_power_opencmw_sink_0, 0);
+
+        top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
+        top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
+    }
+
+    ~GRFlowGraph() { top->stop(); }
+
+    // start gnuradio flowgraph
+    void start() { top->start(); }
+};
+
 int main() {
     Broker                                          broker("Pulsed-Power-Broker");
     auto                                            fs = cmrc::assets::get_filesystem();
@@ -93,56 +127,23 @@ int main() {
         return 1;
     }
 
-    // note: our thread handling is very verbose, offer nicer API
-    std::jthread brokerThread([&broker] {
-        broker.run();
-    });
+    std::jthread brokerThread([&broker] { broker.run(); });
 
-    // top block
-    auto top = gr::make_top_block("GNURadio");
-
-    // sampling rate
-    float samp_rate = 8'000;
-
-    // gnuradio blocks
-    // sinus_signal --> throttle --> opencmw_time_sink
-    auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
-    auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-    auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "sinus", "V");
-    pulsed_power_opencmw_sink_0->set_max_noutput_items(640);
-
-    // saw_signal --> throttle --> opencmw_time_sink
-    auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
-    auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-    auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "A");
-    pulsed_power_opencmw_sink_1->set_max_noutput_items(640);
-
-    // connections
-    top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
-    top->hier_block2::connect(throttle_block_0, 0, pulsed_power_opencmw_sink_0, 0);
-
-    top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
-    top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
-
-    // start gnuradio flowgraph
-    top->start();
+    // flowgraph setup
+    GRFlowGraph flowgraph;
+    flowgraph.start();
 
     // OpenCMW workers
     CounterWorker<"counter", description<"Returns counter value">>      counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power", description<"Time-Domain Worker">> timeDomainWorker(broker);
 
-    std::jthread                                                        counterWorkerThread([&counterWorker] {
-        counterWorker.run();
-                                                           });
-
-    std::jthread                                                        timeSinkWorkerThread([&timeDomainWorker] {
-        timeDomainWorker.run();
-                                                           });
+    // run workers in separate threads
+    std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
+    std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
-    top->stop();
     counterWorkerThread.join();
     timeSinkWorkerThread.join();
 }

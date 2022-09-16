@@ -102,7 +102,17 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({ { "X-OPENCMW-METHOD", "POLL" } }));
+    const char *path     = "test.service/timeDomainWorker";
+    auto        response = http.Get(path);
+    for (size_t i = 0; i < 100; i++) {
+        response = http.Get(path);
+        if (response.error() == httplib::Error::Success) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    REQUIRE(response.error() == httplib::Error::Success);
 
     REQUIRE(response->status == 200);
 
@@ -111,24 +121,35 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
     REQUIRE(response->body.find("channelNames") != std::string::npos);
     REQUIRE(response->body.find("channelValues") != std::string::npos);
+
+    {
+        opencmw::IoBuffer buffer;
+        buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
+        Acquisition data;
+        auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+        fmt::print("deserialisation finished: {}\n", result);
+        REQUIRE(data.channelValues.size() == 0);
+    }
 }
 
 TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     // top block
     auto top = gr::make_top_block("GNURadio");
 
-    // sampling rate
-    float samp_rate = 200'000;
-
     // gnuradio blocks
-    // sinus_signal --> throttle --> opencmw_time_sink
-    auto sinus_signal_source       = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 50, 1, 0, 0);
-    auto throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-    auto pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "Saw Tooth Signal", "units");
+    // saw_tooth_signal --> throttle --> opencmw_time_sink
+    const double      SAMPLING_RATE = 200'000.0;
+    const double      SAW_AMPLITUDE = 1.0;
+    const double      SAW_FREQUENCY = 50.0;
+    const std::string signalName{ "saw" };
+    const std::string signalUnit{ "unit" };
+    auto              saw_signal_source         = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SAW_WAVE, SAW_FREQUENCY, SAW_AMPLITUDE, 0, 0);
+    auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, signalName, signalUnit);
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections
-    top->hier_block2::connect(sinus_signal_source, 0, throttle_block, 0);
+    top->hier_block2::connect(saw_signal_source, 0, throttle_block, 0);
     top->hier_block2::connect(throttle_block, 0, pulsed_power_opencmw_sink, 0);
 
     // start gnuradio flowgraph
@@ -150,20 +171,23 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
 
     REQUIRE(waitUntilServiceAvailable(broker.context, "test.service"));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const auto response = http.Get("test.service/timeDomainWorker", httplib::Headers({ { "X-OPENCMW-METHOD", "POLL" } }));
+    const char      *path = "test.service/timeDomainWorker/saw";
+    httplib::Headers headers({ { "X-OPENCMW-METHOD", "POLL" } });
+    auto             response = http.Get(path, headers);
+    for (size_t i = 0; i < 100; i++) {
+        response = http.Get(path, headers);
+        if (response.error() == httplib::Error::Success) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    REQUIRE(response.error() == httplib::Error::Success);
 
     REQUIRE(response->status == 200);
-
-    REQUIRE(response->body.find("Acquisition") != std::string::npos);
-    REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
-    REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
-    REQUIRE(response->body.find("channelNames") != std::string::npos);
-    REQUIRE(response->body.find("channelValues") != std::string::npos);
 
     {
         opencmw::IoBuffer buffer;
@@ -171,7 +195,23 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
+        REQUIRE(data.refTriggerStamp > 0);
         REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.size());
+        REQUIRE(data.channelNames.size() == 1);
+        REQUIRE(data.channelNames[0] == signalName);
+
+        // check if it is actually sawtooth signal
+        for (size_t i = 0; i < data.channelValues.size() - 1; ++i) {
+            Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
+            Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
+            Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference
+            if (data.channelValues[i + 1] > data.channelValues[i]) {
+                REQUIRE(saw_signal_slope == (data.channelValues[i + 1] - data.channelValues[i]));
+            } else {
+                REQUIRE(data.channelValues[i] == saw_amplitude);
+            }
+            REQUIRE(saw_timebase == (data.channelTimeSinceRefTrigger[i + 1] - data.channelTimeSinceRefTrigger[i]));
+        }
     }
 
     top->stop();

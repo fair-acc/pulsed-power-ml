@@ -20,9 +20,8 @@ add_executable(PulsedPowerService PulsedPowerService.cpp)
 target_link_libraries(PulsedPowerService PRIVATE 
     majordomo
     disruptor 
-    project_options 
     project_warnings 
     assets::rest
-    gnuradio::gnuradio-analog
     gnuradio::gnuradio-blocks
-    gnuradio-pulsed_power)
+    gnuradio::gnuradio-analog
+    gnuradio::gnuradio-pulsed_power)
