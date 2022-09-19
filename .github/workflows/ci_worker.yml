@@ -54,25 +54,25 @@ jobs:
 
       - name: Configure GNU Radio pulsed-power out of tree module
         shell: bash
-        run: cmake -S ${{SRC_DIR_GR}} -B ${{SRC_DIR_GR}}/build
+        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
 
       - name: Build GNU Radio pulsed-power out of tree module
         shell: bash
-        run: cmake --build ${{SRC_DIR_GR}}/build --target install && ldconfig
+        run: cmake --build ${{env.SRC_DIR_GR}}/build --target install && ldconfig
 
       - name: Configure CMake
         # Use a bash shell, so we can use the same syntax for environment variable access regardless of the host operating system
         shell: bash
-        run: cmake -S ${{SRC_DIR_WORKER}} -B ${{SRC_DIR_WORKER}}/build -DCMAKE_BUILD_TYPE=${{ matrix.cmake-build-type }}
+        run: cmake -S ${{env.SRC_DIR_WORKER}} -B ${{env.SRC_DIR_WORKER}}/build -DCMAKE_BUILD_TYPE=${{ matrix.cmake-build-type }}
 
       - name: Build worker
         shell: bash
         # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: cmake --build ${{SRC_DIR_WORKER}}/build
+        run: cmake --build ${{env.SRC_DIR_WORKER}}/build
 
       - name: Run tests
         if: matrix.configurations.name != env.REFERENCE_CONFIG || matrix.cmake-build-type != 'Debug'
-        working-directory: ${{SRC_DIR_WORKER}}/build
+        working-directory: ${{env.SRC_DIR_WORKER}}/build
         shell: bash
         # Execute tests defined by the CMake configuration. The coverage target runs the autodiscovered catch2 tests using
         # ctest and records the coverage using gcov
