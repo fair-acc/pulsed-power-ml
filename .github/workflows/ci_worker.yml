@@ -53,7 +53,10 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
 
       - name: Install GNU Radio
-        run: sudo apt install gnuradio
+        run: |
+          sudo add-apt-repository ppa:gnuradio/gnuradio-releases
+          sudo apt update
+          sudo apt install gnuradio
 
       - name: Configure GNU Radio pulsed-power out of tree module
         shell: bash
