@@ -104,6 +104,13 @@ static void main_loop(void *arg) {
     static ImVec4       clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     static Deserializer deserializer;
 
+    // Layout options
+    const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
+    ImVec2               window_center = main_viewport->GetWorkCenter();
+    int                  window_height = 350;
+    int                  window_width  = window_center.x;
+    // std::cout << ""
+
     // Poll and handle events (inputs, window resize, etc.)
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -120,10 +127,10 @@ static void main_loop(void *arg) {
     if (visualize_gr_signal) {
         fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", signals, &deserializer);
 
-        // Help
-        SignalBuffer buffer = signals[0];
-
-        ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
+        // Multiple Signals in One Window
+        // ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_None);
+        ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
         ImGui::Begin("GR Signals Demo Window");
         if (ImPlot::BeginPlot("GR Signals")) {
             static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
@@ -140,8 +147,30 @@ static void main_loop(void *arg) {
                 }
             }
             ImPlot::EndPlot();
-            ImGui::End();
         }
+        ImGui::End();
+
+        // One Window for Each Signal
+        ImGui::SetNextWindowPos(ImVec2(window_width, 0), ImGuiCond_None);
+        ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
+        ImGui::Begin("GR Signals Demo Window 2");
+        if (ImPlot::BeginPlot("GR Signals 2")) {
+            static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+            static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+            ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
+            auto   clock       = std::chrono::system_clock::now();
+            double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+            for (int i = 0; i < signals.size(); i++) {
+                if (signals[i].data.size() > 0) {
+                    ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
+                }
+            }
+            ImPlot::EndPlot();
+        }
+        ImGui::End();
     }
 
     // Visualize Counter

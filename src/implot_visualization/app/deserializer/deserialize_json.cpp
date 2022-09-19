@@ -49,11 +49,6 @@ void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const 
             signals[i].addPoint(absoluteTimestamp, value);
         }
     }
-
-    int endPoint = signals[0].data.size() - 1;
-    std::cout << "Size time: " << acquisitionData.relativeTimestamps.size() << std::endl;
-    std::cout << "sinus: size: " << signals[0].data.size() << ", value: " << signals[0].data[endPoint].y << std::endl;
-    std::cout << "signal2: size: " << signals[1].data.size() << ", value: " << signals[1].data[endPoint].y << std::endl;
 }
 
 void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
@@ -81,12 +76,6 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
             acquisition.strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
-
-    // Debug prints
-    // std::cout << "Size: " << acquisition.signalNames.size() << std::endl;
-    // std::cout << "Channel names: " << acquisition.signalNames[0] << ", " << acquisition.signalNames[1] << std::endl;
-    std::cout << "dims: " << acquisition.strideArray.dims[0] << ", " << acquisition.strideArray.dims[1] << std::endl;
-    std::cout << "dim strided array: " << acquisition.strideArray.values.size() << std::endl;
 
     addToSignalBuffers(signals, acquisition);
 }
