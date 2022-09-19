@@ -56,6 +56,10 @@ jobs:
           sudo apt update
           sudo apt install gnuradio
 
+      - name: Install GNU Radio dependencies
+        shell: bash
+        run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
+
       - name: Configure GNU Radio pulsed-power out of tree module
         shell: bash
         run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
