@@ -62,7 +62,9 @@ jobs:
 
       - name: Build GNU Radio pulsed-power out of tree module
         shell: bash
-        run: sudo cmake --build ${{env.SRC_DIR_GR}}/build --target install && ldconfig
+        run: |
+          sudo cmake --build ${{env.SRC_DIR_GR}}/build --target install
+          sudo ldconfig
 
       - name: Configure CMake
         # Use a bash shell, so we can use the same syntax for environment variable access regardless of the host operating system
