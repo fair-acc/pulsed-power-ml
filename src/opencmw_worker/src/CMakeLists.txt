@@ -1,5 +1,5 @@
 cmrc_add_resource_library(
-    REST_SERVER_EXAMPLE_ASSETS ALIAS assets::rest NAMESPACE assets
+    REST_SERVER_ASSETS ALIAS assets::rest NAMESPACE assets
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/error.mustache
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/main.css
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/img/english.png
@@ -16,5 +16,12 @@ message("COPY ${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key DESTINATION ${CM
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_public.crt" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 
-add_executable(opencmw_counter opencmw_counter.cpp)
-target_link_libraries(opencmw_counter PRIVATE majordomo project_options project_warnings assets::rest)
+add_executable(PulsedPowerService PulsedPowerService.cpp)
+target_link_libraries(PulsedPowerService PRIVATE 
+    majordomo
+    disruptor 
+    project_warnings 
+    assets::rest
+    gnuradio::gnuradio-blocks
+    gnuradio::gnuradio-analog
+    gnuradio::gnuradio-pulsed_power)
