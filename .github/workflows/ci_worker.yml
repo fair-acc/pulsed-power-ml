@@ -10,8 +10,8 @@ on:
 
 env:
   REFERENCE_CONFIG: "Ubuntu Latest gcc" # configuration used for coverage etc
-  SRC_DIR_GR: src/gr-pulsed_power
-  SRC_DIR_WORKER: src/opencmw_worker
+  SRC_DIR_GR: "src/gr-pulsed_power"
+  SRC_DIR_WORKER: "src/opencmw_worker"
 
 jobs:
   build:
