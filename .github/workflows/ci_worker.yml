@@ -55,6 +55,7 @@ jobs:
           sudo add-apt-repository ppa:gnuradio/gnuradio-releases
           sudo apt update
           sudo apt install gnuradio
+          sudo apt upgrade
 
       - name: Install GNU Radio dependencies
         shell: bash
