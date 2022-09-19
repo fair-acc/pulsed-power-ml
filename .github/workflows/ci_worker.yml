@@ -53,9 +53,8 @@ jobs:
         shell: bash
         run: |
           sudo add-apt-repository ppa:gnuradio/gnuradio-releases
-          sudo apt update
-          sudo apt install gnuradio
-          sudo apt upgrade
+          sudo apt-get update
+          sudo apt-get install gnuradio python3-packaging
 
       - name: Install GNU Radio dependencies
         shell: bash
