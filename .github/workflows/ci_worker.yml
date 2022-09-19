@@ -25,9 +25,6 @@ jobs:
           - name: Ubuntu Latest gcc
             os: ubuntu-latest
             compiler: gcc
-          - name: Ubuntu Latest clang
-            os: ubuntu-latest
-            compiler: clang
           # - name: MacOS Latest # deactivated because mp-units is not compatible with clangApple
           #   os: macos-latest
           # - name: Windows Latest # deactivated because msvc fails because of clang pragmas
@@ -53,6 +50,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
 
       - name: Install GNU Radio
+        shell: bash
         run: |
           sudo add-apt-repository ppa:gnuradio/gnuradio-releases
           sudo apt update
