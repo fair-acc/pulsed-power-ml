@@ -23,7 +23,7 @@ jobs:
       matrix:
         configurations:
           - name: Ubuntu Latest gcc
-            os: ubuntu-latest
+            os: ubuntu-22.04
             compiler: gcc
           # - name: MacOS Latest # deactivated because mp-units is not compatible with clangApple
           #   os: macos-latest
