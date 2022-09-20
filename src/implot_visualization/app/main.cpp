@@ -174,9 +174,7 @@ static void main_loop(void *arg) {
     if (visualize_counter) {
         fetch("http://localhost:8080/counter/testCounter", signals, &deserializer);
 
-        // Help
         SignalBuffer buffer = signals[0];
-
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
