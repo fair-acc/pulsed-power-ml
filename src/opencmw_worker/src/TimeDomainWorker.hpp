@@ -22,11 +22,10 @@ struct TimeDomainContext {
 ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, contentType)
 
 struct Acquisition {
-    int64_t                  refTriggerStamp;
-    std::vector<float>       channelTimeSinceRefTrigger;
-    std::vector<std::string> channelNames;
-    std::vector<float>       channelValues; // TODO change this to MultiArray
-    // opencmw::MultiArray<float, 2> channelValues2D;
+    int64_t                       refTriggerStamp;
+    std::vector<float>            channelTimeSinceRefTrigger;
+    std::vector<std::string>      channelNames;
+    opencmw::MultiArray<float, 2> channelValues;
 };
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerStamp, channelTimeSinceRefTrigger, channelNames, channelValues)
@@ -73,26 +72,28 @@ public:
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
                 for (auto &[key_pair, signal_data] : _signalsMap) {
-                    bool firstEvent = true;
+                    bool               firstEvent = true;
+                    std::vector<float> channelValues;
                     // poll data
                     PollState result = signal_data.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
                         if (firstEvent) {
                             _reply.refTriggerStamp = event.timestamp;
                             _reply.channelTimeSinceRefTrigger.clear();
                             _reply.channelNames.clear();
-                            _reply.channelValues.clear();
                             _reply.channelNames.push_back(key_pair.first);
                             firstEvent = false;
                         }
 
-                        _reply.channelValues.insert(_reply.channelValues.end(), event.chunk.begin(), event.chunk.end());
+                        channelValues.insert(channelValues.end(), event.chunk.begin(), event.chunk.end());
 
                         return true;
                     });
 
                     if (result == PollState::Processing) {
+                        //  generate multiarray values
+                        _reply.channelValues = opencmw::MultiArray<float, 2>(std::move(channelValues), { 1, channelValues.size() });
                         //  generate relative timestamps
-                        for (int i = 0; i < _reply.channelValues.size(); ++i) {
+                        for (int i = 0; i < channelValues.size(); ++i) {
                             float relative_timestamp = i * (1 / key_pair.second);
                             _reply.channelTimeSinceRefTrigger.push_back(relative_timestamp);
                         }
