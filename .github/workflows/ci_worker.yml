@@ -18,10 +18,11 @@ jobs:
     name: "${{ matrix.configurations.name }} | ${{ matrix.cmake-build-type }}"
     environment: configure coverage
     runs-on: ${{ matrix.configurations.os }}
-    continue-on-error: "Ubuntu Latest clang | ${{ matrix.cmake-build-type }}"
+    continue-on-error: ${{ matrix.configurations.allow_failure }}
     strategy:
       fail-fast: false
       matrix:
+        allow_failure: [false]
         configurations:
           - name: Ubuntu Latest gcc
             os: ubuntu-22.04 # pre-release, ubuntu-latest still points to ubuntu-20.04
@@ -29,6 +30,7 @@ jobs:
           - name: Ubuntu Latest clang
             os: ubuntu-22.04 # pre-release, ubuntu-latest still points to ubuntu-20.04
             compiler: clang
+            allow_failure: true
           # - name: MacOS Latest # deactivated because mp-units is not compatible with clangApple
           #   os: macos-latest
           # - name: Windows Latest # deactivated because msvc fails because of clang pragmas
