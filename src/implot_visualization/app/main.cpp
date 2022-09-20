@@ -128,7 +128,6 @@ static void main_loop(void *arg) {
         fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", signals, &deserializer);
 
         // Multiple Signals in One Window
-        // ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_None);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
         ImGui::Begin("GR Signals Demo Window");
@@ -150,24 +149,22 @@ static void main_loop(void *arg) {
         }
         ImGui::End();
 
-        // One Window for Each Signal
+        // Bandpass Filter Window
         ImGui::SetNextWindowPos(ImVec2(window_width, 0), ImGuiCond_None);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        ImGui::Begin("GR Signals Demo Window 2");
-        if (ImPlot::BeginPlot("GR Signals 2")) {
+        ImGui::Begin("U/I Bandpass Filter");
+        if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
             static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
             static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-            ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
+            ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
             auto   clock       = std::chrono::system_clock::now();
             double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
             ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            for (int i = 0; i < signals.size(); i++) {
-                if (signals[i].data.size() > 0) {
-                    ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
-                }
-            }
+            // if (buffer.Data.size() > 0) {
+            //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+            // }
             ImPlot::EndPlot();
         }
         ImGui::End();
