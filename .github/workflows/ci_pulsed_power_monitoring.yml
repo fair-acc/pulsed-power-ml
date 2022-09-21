@@ -115,7 +115,7 @@ jobs:
         # Execute tests defined by the CMake configuration. The coverage target runs the autodiscovered catch2 tests using
         # ctest and records the coverage using gcov
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: cmake --build . --config ${{ matrix.cmake-build-type }} --target coverage
+        run: cmake --build ${{env.SRC_DIR_WORKER}} --config ${{ matrix.cmake-build-type }} --target coverage
 
       - uses: codecov/codecov-action@v2
         if: matrix.configurations.name == env.REFERENCE_CONFIG && matrix.cmake-build-type == 'Debug'
