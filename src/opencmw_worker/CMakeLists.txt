@@ -53,8 +53,33 @@ enable_sanitizers(project_options)
 
 # allow for static analysis options
 include(cmake/StaticAnalyzers.cmake)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ENABLE_COVERAGE ON)
+else ()
+    set(ENABLE_COVERAGE OFF)
+endif ()
+
+if (ENABLE_COVERAGE)
+    if (UNIX AND NOT APPLE) # Linux
+        message("Coverage reporting enabled")
+        include(cmake/CodeCoverage.cmake) # https://github.com/bilke/cmake-modules/blob/master/CodeCoverage.cmake
+        # (License: BSL-1.0)
+        append_coverage_compiler_flags()
+        setup_target_for_coverage_gcovr_xml(
+                NAME coverage
+                EXECUTABLE ctest
+                EXCLUDE "$CMAKE_BUILD_DIR/*" "test/.*")
+        setup_target_for_coverage_gcovr_html(
+                NAME coverage_html
+                EXECUTABLE ctest
+                EXCLUDE "$CMAKE_BUILD_DIR/*" "test/.*")
+    else ()
+        message(WARNING "Coverage is only supported on linux")
+    endif ()
+endif ()
 
 add_subdirectory(src)
+
 
 include(CTest)
 add_subdirectory(test)
