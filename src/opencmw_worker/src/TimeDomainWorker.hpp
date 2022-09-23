@@ -15,19 +15,30 @@ using opencmw::NoUnit;
 struct TimeDomainContext {
     std::string             channelNameFilter;
     int32_t                 acquisitionModeFilter = 0; // STREAMING
-    opencmw::MIME::MimeType contentType           = opencmw::MIME::JSON;
+    std::string             triggerNameFilter;
+    int32_t                 maxClientUpdateFrequencyFilter;
+    opencmw::MIME::MimeType contentType = opencmw::MIME::JSON;
 };
 
-ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, contentType)
+ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, triggerNameFilter, maxClientUpdateFrequencyFilter, contentType)
 
 struct Acquisition {
+    std::string                   refTriggerName = { "NO_REF_TRIGGER" };
     int64_t                       refTriggerStamp;
     std::vector<float>            channelTimeSinceRefTrigger;
+    float                         channelUserDelay;
+    float                         channelActualDelay;
     std::vector<std::string>      channelNames;
     opencmw::MultiArray<float, 2> channelValues;
+    opencmw::MultiArray<float, 2> channelErrors;
+    std::vector<std::string>      channelUnits;
+    std::vector<int64_t>          status;
+    std::vector<float>            channelRangeMin;
+    std::vector<float>            channelRangeMax;
+    std::vector<float>            temperature;
 };
 
-ENABLE_REFLECTION_FOR(Acquisition, refTriggerStamp, channelTimeSinceRefTrigger, channelNames, channelValues)
+ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)
 
 struct RingBufferData {
     std::vector<float> chunk;
@@ -213,11 +224,11 @@ private:
             requestedSignals.emplace(std::string_view(signal.begin(), signal.end()));
         }
         if (requestedSignals.empty()) {
-            respondWithError(filterIn, "no signals requested, sending empty response\n");
+            respondWithEmptyResponse(filterIn, "no signals requested, sending empty response\n");
             return false;
         }
 
-        // check if signals exist, TODO check if signals have the same sample rate
+        // check if signals exist
         std::vector<std::string> unknownSignals;
         for (const auto &requestedSignal : requestedSignals) {
             if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
@@ -225,15 +236,14 @@ private:
             }
         }
         if (!unknownSignals.empty()) {
-            respondWithError(filterIn, fmt::format("requested unknown signals: {}\n", unknownSignals));
+            respondWithEmptyResponse(filterIn, fmt::format("requested unknown signals: {}\n", unknownSignals));
             return false;
         }
 
         return true;
     }
 
-    void respondWithError(const TimeDomainContext &filter, const std::string_view errorText) {
-        // send empty response, TODO respond with error
+    void respondWithEmptyResponse(const TimeDomainContext &filter, const std::string_view errorText) {
         fmt::print("{}\n", errorText);
         super_t::notify("/Acquisition", filter, Acquisition());
     }
