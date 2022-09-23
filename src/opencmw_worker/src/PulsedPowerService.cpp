@@ -85,7 +85,7 @@ private:
     gr::top_block_sptr top;
 
 public:
-    GRFlowGraph(float samp_rate = 4'000.0F, int noutput_items = 640)
+    GRFlowGraph(float samp_rate, int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // flowgraph setup
         // sinus_signal --> throttle --> opencmw_time_sink
@@ -95,10 +95,16 @@ public:
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
 
         // saw_signal --> throttle --> opencmw_time_sink
-        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 1, 1, 0, 0);
+        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
         auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
         auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "A");
         pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
+
+        // square_signal --> throttle --> opencmw_time_sink
+        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
+        auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
+        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "square", "A");
+        pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
 
         // connections
         top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
@@ -106,6 +112,9 @@ public:
 
         top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
         top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
+
+        top->hier_block2::connect(signal_source_2, 0, throttle_block_2, 0);
+        top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_2, 0);
     }
 
     ~GRFlowGraph() { top->stop(); }
@@ -130,7 +139,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraph flowgraph;
+    GRFlowGraph flowgraph(4'000.0F, 80);
     flowgraph.start();
 
     // OpenCMW workers
@@ -144,6 +153,6 @@ int main() {
     brokerThread.join();
 
     // workers terminate when broker shuts down
-    counterWorkerThread.join();
     timeSinkWorkerThread.join();
+    counterWorkerThread.join();
 }

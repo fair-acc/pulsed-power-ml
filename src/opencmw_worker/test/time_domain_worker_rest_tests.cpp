@@ -102,7 +102,7 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const char *path     = "test.service/timeDomainWorker";
+    const char *path     = "test.service/Acquisition";
     auto        response = http.Get(path);
     for (size_t i = 0; i < 100; i++) {
         response = http.Get(path);
@@ -117,10 +117,19 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     REQUIRE(response->status == 200);
 
     REQUIRE(response->body.find("Acquisition") != std::string::npos);
+    REQUIRE(response->body.find("refTriggerName") != std::string::npos);
     REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
+    REQUIRE(response->body.find("channelUserDelay") != std::string::npos);
+    REQUIRE(response->body.find("channelActualDelay") != std::string::npos);
     REQUIRE(response->body.find("channelNames") != std::string::npos);
     REQUIRE(response->body.find("channelValues") != std::string::npos);
+    REQUIRE(response->body.find("channelErrors") != std::string::npos);
+    REQUIRE(response->body.find("channelUnits") != std::string::npos);
+    REQUIRE(response->body.find("status") != std::string::npos);
+    REQUIRE(response->body.find("channelRangeMin") != std::string::npos);
+    REQUIRE(response->body.find("channelRangeMax") != std::string::npos);
+    REQUIRE(response->body.find("temperature") != std::string::npos);
 
     {
         opencmw::IoBuffer buffer;
@@ -128,7 +137,21 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
-        REQUIRE(data.channelValues.size() == 0);
+        REQUIRE(data.refTriggerName == "NO_REF_TRIGGER");
+        REQUIRE(data.refTriggerStamp == 0);
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == 0);
+        REQUIRE(data.channelUserDelay == 0.0F);
+        REQUIRE(data.channelActualDelay == 0.0F);
+        REQUIRE(data.channelNames.size() == 0);
+        REQUIRE(data.channelValues.n(0) == 0);
+        REQUIRE(data.channelValues.n(1) == 0);
+        REQUIRE(data.channelErrors.n(0) == 0);
+        REQUIRE(data.channelErrors.n(1) == 0);
+        REQUIRE(data.channelUnits.size() == 0);
+        REQUIRE(data.status.size() == 0);
+        REQUIRE(data.channelRangeMin.size() == 0);
+        REQUIRE(data.channelRangeMax.size() == 0);
+        REQUIRE(data.temperature.size() == 0);
     }
 }
 
@@ -174,7 +197,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const char      *path = "test.service/timeDomainWorker/saw";
+    const char      *path = "test.service/Acquisition?channelNameFilter=saw@200000Hz";
     httplib::Headers headers({ { "X-OPENCMW-METHOD", "POLL" } });
     auto             response = http.Get(path, headers);
     for (size_t i = 0; i < 100; i++) {
@@ -196,12 +219,12 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
         REQUIRE(data.refTriggerStamp > 0);
-        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.size());
-        REQUIRE(data.channelNames.size() == 1);
-        REQUIRE(data.channelNames[0] == signalName);
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
+        REQUIRE(data.channelNames.size() == data.channelValues.n(0));
+        REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
         // check if it is actually sawtooth signal
-        for (size_t i = 0; i < data.channelValues.size() - 1; ++i) {
+        for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
             Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
             Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
             Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference
