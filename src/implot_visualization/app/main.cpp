@@ -4,6 +4,7 @@
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -13,7 +14,7 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-ScrollingBuffer buffer;
+std::vector<SignalBuffer> signals(3);
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -49,7 +50,7 @@ int           main(int, char **) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("OpenCMW Sinus Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    g_Window                     = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     g_GLContext                  = SDL_GL_CreateContext(g_Window);
     if (!g_GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
@@ -89,7 +90,7 @@ int           main(int, char **) {
 #endif
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 25, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 0, true);
 }
 
 static void main_loop(void *arg) {
@@ -97,8 +98,17 @@ static void main_loop(void *arg) {
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = false;
-    static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool                visualize_gr_signal = true;
+    bool                visualize_counter   = false;
+    static bool         show_demo_window    = false;
+    static ImVec4       clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    static Deserializer deserializer;
+
+    // Layout options
+    const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
+    ImVec2               window_center = main_viewport->GetWorkCenter();
+    int                  window_height = 2 * window_center.y;
+    int                  window_width  = 2 * window_center.x;
 
     // Poll and handle events (inputs, window resize, etc.)
     SDL_Event event;
@@ -112,45 +122,119 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Visualize One GR Signal
-    bool visualize_gr_signal = false;
+    // Visualize One GR SignalBuffer
     if (visualize_gr_signal) {
-        fetch("http://localhost:8080/pulsed_power/timeDomainWorker/sinus", buffer);
+        fetch("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,saw@4000Hz,square@4000Hz", signals, &deserializer);
 
-        ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
-        ImGui::Begin("Sinus Demo Window");
-        if (ImPlot::BeginPlot("Sinus Sink")) {
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
+        ImGui::Begin("Pulsed Power Monitoring");
+
+        ImGui::ShowStyleSelector("Colors##Selector");
+
+        static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
+        static int                rows      = 2;
+        static int                cols      = 2;
+        static float              rratios[] = { 1, 1, 1, 1 };
+        static float              cratios[] = { 1, 1, 1, 1 };
+        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
+            // GR Signals Plot
+            if (ImPlot::BeginPlot("GR Signals")) {
+                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+                ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
+                auto   clock       = std::chrono::system_clock::now();
+                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                for (int i = 0; i < signals.size(); i++) {
+                    if (signals[i].data.size() > 0) {
+                        ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
+                    }
+                }
+                ImPlot::EndPlot();
+            }
+
+            // Bandpass Filter Plot
+            if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
+                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+                ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
+                ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Always);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                // if (buffer.Data.size() > 0) {
+                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+                // }
+                ImPlot::EndPlot();
+            }
+
+            // Power Plot
+            if (ImPlot::BeginPlot("Power")) {
+                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+                // Setup x-Axis
+                ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
+                auto   clock       = std::chrono::system_clock::now();
+                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+                ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                // if (buffer.Data.size() > 0) {
+                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+                // }
+                ImPlot::EndPlot();
+            }
+
+            // Mains Frequency Plot
+            if (ImPlot::BeginPlot("Mains Frequency")) {
+                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+                ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
+                auto   clock       = std::chrono::system_clock::now();
+                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                // if (buffer.Data.size() > 0) {
+                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+                // }
+                ImPlot::EndPlot();
+            }
+        }
+        ImPlot::EndSubplots();
+
+        // Power Spectrum
+        if (ImPlot::BeginPlot("Power Spectrum")) {
             static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
             static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-            ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
-            auto   clock       = std::chrono::system_clock::now();
-            double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-            ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0, 7, ImGuiCond_Always);
             ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            if (buffer.Data.size() > 0) {
-                ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-            }
+            // if (buffer.Data.size() > 0) {
+            //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
+            // }
             ImPlot::EndPlot();
-            ImGui::End();
         }
+        ImGui::End();
     }
 
     // Visualize Counter
-    bool visualize_counter = true;
     if (visualize_counter) {
-        fetch("http://localhost:8080/counter/testCounter", buffer);
+        fetch("http://localhost:8080/counter/testCounter", signals, &deserializer);
 
-        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_Appearing);
+        SignalBuffer buffer = signals[0];
+        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_FirstUseEver);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {
             ImPlot::SetupAxes("Timestamp", "Value");
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-            if (buffer.Data.size() > 0) {
-                int bufferEnd = buffer.Data.size() - 1;
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.Data[bufferEnd].x - 300.0, buffer.Data[bufferEnd].x, ImGuiCond_Always);
+            if (buffer.data.size() > 0) {
+                int bufferEnd = buffer.data.size() - 1;
+                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.data[bufferEnd].x - 300.0, buffer.data[bufferEnd].x, ImGuiCond_Always);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                ImPlot::PlotLine("Counter", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(int64_t));
+                ImPlot::PlotLine("Counter", &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(int64_t));
             }
             ImPlot::EndPlot();
         }

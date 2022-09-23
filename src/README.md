@@ -1,6 +1,6 @@
-# ImPlot Visualization
+# Pulsed Power Monitoring
 
-The ImPlot Visualization visualizes signals pulled from OpenCMW.
+![image](assets/visualize_multiple_gr_signals_light.png)
 
 ## Getting Started
 
@@ -14,31 +14,27 @@ The ImPlot Visualization visualizes signals pulled from OpenCMW.
 
 In order to visualize data passed by OpenCMW you need to build and run the OpenCMW worker first and then build and run the ImPlot Visualization.The following explains how to build and run OpenCMW and ImPlot Visualization.
 
-### OpenCMW Counter Worker
+### OpenCMW Worker
 
 How to Build
 
 ```bash
 cmake -S . -B build
 cmake --build build
-build/src/opencmw_counter
 ```
 
 How to Run
 
-- Run `./opencmw_counter/build/src/opencmw_counter`
+- Run `./opencmw_worker/build/src/PulsedPowerService`
 
 ### ImPlot Visualization
 
 How to Build
 
-- Run `bash cmake_build.sh` while in the `implot_visualization` directory.
-- To delete your build you may use `bash cmake_clean.sh`
-
-Alternatively if your system provides the `emcmake` command you can also use
-``` bash
+```bash
 emcmake cmake -S . -B build && (cd build && emmake make -j 20)
 ```
+
 NOTE: emcmake breaks `cmake --build` so we have to call make directly
 
 How to Run

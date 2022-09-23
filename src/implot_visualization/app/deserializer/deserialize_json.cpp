@@ -12,80 +12,73 @@ constexpr DataPoint::DataPoint()
 constexpr DataPoint::DataPoint(double _x, double _y)
     : x(_x), y(_y) {}
 
-ScrollingBuffer::ScrollingBuffer(int max_size) {
-    MaxSize = max_size;
-    Offset  = 0;
-    Data.reserve(MaxSize);
+SignalBuffer::SignalBuffer(int max_size) {
+    maxSize = max_size;
+    offset  = 0;
+    data.reserve(maxSize);
 }
 
-void ScrollingBuffer::AddPoint(double x, double y) {
-    if (Data.size() < MaxSize)
-        Data.push_back(DataPoint(x, y));
+void SignalBuffer::addPoint(double x, double y) {
+    if (data.size() < maxSize)
+        data.push_back(DataPoint(x, y));
     else {
-        Data[Offset] = DataPoint(x, y);
-        Offset       = (Offset + 1) % MaxSize;
+        data[offset] = DataPoint(x, y);
+        offset       = (offset + 1) % maxSize;
     }
 }
 
-void ScrollingBuffer::AddVector(const std::vector<double> &x, const std::vector<double> &y) {
-    for (int i = 0; i < x.size(); i++) {
-        AddPoint(x[i], y[i]);
+void SignalBuffer::erase() {
+    if (data.size() > 0) {
+        data.shrink(0);
+        offset = 0;
     }
 }
 
-void ScrollingBuffer::Erase() {
-    if (Data.size() > 0) {
-        Data.shrink(0);
-        Offset = 0;
+void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
+    double absoluteTimestamp = 0.0;
+    double value             = 0.0;
+
+    for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
+        signals[i].signalName = acquisitionData.signalNames[i];
+        int stride            = acquisitionData.strideArray.dims[1];
+        int offset            = i * stride;
+
+        for (int j = 0; j < stride; j++) {
+            absoluteTimestamp = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
+            value             = acquisitionData.strideArray.values[offset + j];
+            signals[i].addPoint(absoluteTimestamp, value);
+        }
     }
 }
 
-void deserializeAcquisition(const std::string &jsonString, ScrollingBuffer &buffer) {
-    uint64_t                 refTrigger_ns = 0;
-    double                   refTrigger_s  = 0.0;
-    std::vector<std::string> signalNames;
-    std::vector<double>      values;
-    std::vector<double>      relativeTimestamps;
+void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+    Acquisition acquisition;
 
-    // TODO: dataAsJson is given in format R"("Acquisition": {"value": 27 })" which
-    // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
-    // deserializer.
-    // For now, remove ""Acquisition": " from dataAsJson to make it usable with
-    // json::parse
     std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            refTrigger_ns = element.value();
-            refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            acquisition.refTrigger_ns = element.value();
+            acquisition.refTrigger_s  = acquisition.refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
-            relativeTimestamps.insert(relativeTimestamps.begin(), element.value().begin(), element.value().end());
+            acquisition.relativeTimestamps.insert(acquisition.relativeTimestamps.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            signalNames.insert(signalNames.begin(), element.value().begin(), element.value().end());
+            acquisition.signalNames.insert(acquisition.signalNames.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
-            values.insert(values.begin(), element.value().begin(), element.value().end());
+            acquisition.strideArray.dims   = std::vector<int>(element.value()["dims"]);
+            acquisition.strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
 
-    std::vector<double> timestamps;
-    for (auto dt : relativeTimestamps) {
-        timestamps.push_back(refTrigger_s + dt);
-    }
-
-    buffer.AddVector(timestamps, values);
+    addToSignalBuffers(signals, acquisition);
 }
 
-void deserializeCounter(const std::string &jsonString, ScrollingBuffer &buffer) {
-    double timestamp = 0.0;
-    double value     = 0.0;
+void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+    double      timestamp          = 0.0;
+    double      value              = 0.0;
 
-    // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
-    // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
-    // deserializer.
-    // For now, remove ""CounterData": " from dataAsJson to make it usable with
-    // json::parse
     std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
@@ -99,16 +92,16 @@ void deserializeCounter(const std::string &jsonString, ScrollingBuffer &buffer) 
     }
 
     if (timestamp != tmp_t_prev) {
-        buffer.AddPoint(timestamp, value);
+        signals[0].addPoint(timestamp, value);
     }
 
     tmp_t_prev = timestamp;
 }
 
-void deserializeJson(const std::string &jsonString, ScrollingBuffer &buffer) {
+void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
     if (jsonString.substr(1, 11) == "Acquisition") {
-        deserializeAcquisition(jsonString, buffer);
+        deserializeAcquisition(jsonString, signals);
     } else if (jsonString.substr(1, 11) == "CounterData") {
-        deserializeCounter(jsonString, buffer);
+        deserializeCounter(jsonString, signals);
     }
 }
