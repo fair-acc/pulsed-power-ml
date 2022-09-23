@@ -102,7 +102,7 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const char *path     = "test.service/timeDomainWorker";
+    const char *path     = "test.service/Acquisition";
     auto        response = http.Get(path);
     for (size_t i = 0; i < 100; i++) {
         response = http.Get(path);
@@ -128,7 +128,8 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
-        REQUIRE(data.channelValues.size() == 0);
+        REQUIRE(data.channelValues.n(0) == 0);
+        REQUIRE(data.channelValues.n(1) == 0);
     }
 }
 
@@ -174,7 +175,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const char      *path = "test.service/timeDomainWorker/saw";
+    const char      *path = "test.service/Acquisition?channelNameFilter=saw@200000Hz";
     httplib::Headers headers({ { "X-OPENCMW-METHOD", "POLL" } });
     auto             response = http.Get(path, headers);
     for (size_t i = 0; i < 100; i++) {
@@ -196,12 +197,12 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
         REQUIRE(data.refTriggerStamp > 0);
-        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.size());
-        REQUIRE(data.channelNames.size() == 1);
-        REQUIRE(data.channelNames[0] == signalName);
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
+        REQUIRE(data.channelNames.size() == data.channelValues.n(0));
+        REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
         // check if it is actually sawtooth signal
-        for (size_t i = 0; i < data.channelValues.size() - 1; ++i) {
+        for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
             Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
             Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
             Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference

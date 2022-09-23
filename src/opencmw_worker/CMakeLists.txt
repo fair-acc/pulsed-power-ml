@@ -19,8 +19,8 @@ find_package(gnuradio-pulsed_power)
 
 # Check for supported compiler versions
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.1.0)
-        message(FATAL_ERROR "GCC>=11.1.0 required, but gcc ${CMAKE_CXX_COMPILER_VERSION} detected.")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1.0)
+        message(FATAL_ERROR "GCC>=12.1.0 required, but gcc ${CMAKE_CXX_COMPILER_VERSION} detected.")
     endif ()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13.0.0)

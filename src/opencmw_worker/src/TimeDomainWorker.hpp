@@ -6,7 +6,6 @@
 
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
-#include <boost/functional/hash.hpp>
 #include <chrono>
 #include <unordered_map>
 
@@ -15,18 +14,17 @@ using opencmw::NoUnit;
 
 struct TimeDomainContext {
     std::string             channelNameFilter;
-    int32_t                 acquisitionModeFilter = 0;
+    int32_t                 acquisitionModeFilter = 0; // STREAMING
     opencmw::MIME::MimeType contentType           = opencmw::MIME::JSON;
 };
 
 ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, contentType)
 
 struct Acquisition {
-    int64_t                  refTriggerStamp;
-    std::vector<float>       channelTimeSinceRefTrigger;
-    std::vector<std::string> channelNames;
-    std::vector<float>       channelValues; // TODO change this to MultiArray
-    // opencmw::MultiArray<float, 2> channelValues2D;
+    int64_t                       refTriggerStamp;
+    std::vector<float>            channelTimeSinceRefTrigger;
+    std::vector<std::string>      channelNames;
+    opencmw::MultiArray<float, 2> channelValues;
 };
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerStamp, channelTimeSinceRefTrigger, channelNames, channelValues)
@@ -43,6 +41,7 @@ class TimeDomainWorker
     : public Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...> {
 private:
     static const size_t RING_BUFFER_SIZE = 4096;
+    const std::string   _deviceName;
     std::atomic<bool>   _shutdownRequested;
     std::jthread        _pollingThread;
     Acquisition         _reply;
@@ -57,68 +56,113 @@ private:
         eventpoller_t eventPoller;
     };
 
-    using pair_t = std::pair<std::string, float>;
-    std::unordered_map<pair_t, SignalData, boost::hash<pair_t>> _signalsMap;
+    std::unordered_map<std::string, SignalData> _signalsMap; // <completeSignalName, signalData>
 
 public:
     using super_t = Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...>;
 
     template<typename BrokerType>
-    explicit TimeDomainWorker(const BrokerType &broker)
-        : super_t(broker, {}) {
+    explicit TimeDomainWorker(const BrokerType &broker, const std::string &deviceName = "")
+        : super_t(broker, {}), _deviceName(deviceName) {
         // polling thread
         _pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
-                for (auto &[key_pair, signal_data] : _signalsMap) {
-                    bool firstEvent = true;
-                    // poll data
-                    PollState result = signal_data.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
-                        if (firstEvent) {
-                            _reply.refTriggerStamp = event.timestamp;
-                            _reply.channelTimeSinceRefTrigger.clear();
-                            _reply.channelNames.clear();
-                            _reply.channelValues.clear();
-                            _reply.channelNames.push_back(key_pair.first);
-                            firstEvent = false;
-                        }
+                for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
 
-                        _reply.channelValues.insert(_reply.channelValues.end(), event.chunk.begin(), event.chunk.end());
+                    const auto                         queryMap = subTopic.queryParamMap();
+                    const TimeDomainContext            filterIn = opencmw::query::deserialise<TimeDomainContext>(queryMap);
 
-                        return true;
-                    });
-
-                    if (result == PollState::Processing) {
-                        //  generate relative timestamps
-                        for (int i = 0; i < _reply.channelValues.size(); ++i) {
-                            float relative_timestamp = i * (1 / key_pair.second);
-                            _reply.channelTimeSinceRefTrigger.push_back(relative_timestamp);
-                        }
-                        TimeDomainContext context;
-                        context.contentType = opencmw::MIME::JSON;
-                        super_t::notify(fmt::format("/timeDomainWorker/{}", key_pair.first), context, _reply);
+                    std::set<std::string, std::less<>> requestedSignals;
+                    if (!checkRequestedSignals(filterIn, requestedSignals)) {
+                        break;
                     }
-                    pollingDuration = std::chrono::system_clock::now() - time_start;
+
+                    // find how many chunks should be parallely polled
+                    std::vector<uint64_t> chunksAvailable;
+                    for (const auto &requestedSignal : requestedSignals) {
+                        auto     signalData = _signalsMap.at(requestedSignal);
+                        uint64_t diff       = signalData.ringBuffer->cursor() - signalData.eventPoller->sequence()->value();
+                        chunksAvailable.push_back(diff);
+                    }
+
+                    uint64_t maxChunksToPoll = *std::min_element(chunksAvailable.begin(), chunksAvailable.end());
+
+                    if (maxChunksToPoll == 0) {
+                        // no new items for requested signals
+                        break;
+                    }
+
+                    // poll data
+                    std::vector<float> stridedValues;
+                    _reply.refTriggerStamp = 0;
+                    _reply.channelNames.clear();
+                    float sampleRate;
+                    for (const auto &requestedSignal : requestedSignals) {
+                        auto signalData = _signalsMap.at(requestedSignal);
+                        assert(maxChunksToPoll > 0);
+                        sampleRate = signalData.sampleRate;
+
+                        _reply.channelNames.push_back(requestedSignal);
+
+                        bool      firstChunk = true;
+                        PollState result;
+                        for (size_t i = 0; i < maxChunksToPoll; i++) {
+                            result = signalData.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
+                                if (firstChunk) {
+                                    _reply.refTriggerStamp = event.timestamp;
+                                    stridedValues.reserve(requestedSignals.size() * maxChunksToPoll * event.chunk.size());
+                                    firstChunk = false;
+                                }
+
+                                stridedValues.insert(stridedValues.end(), event.chunk.begin(), event.chunk.end());
+
+                                return false;
+                            });
+                        }
+                        assert(result == PollState::Processing);
+                    }
+
+                    //  generate multiarray values from strided array
+                    size_t channelValuesSize = stridedValues.size() / requestedSignals.size();
+                    _reply.channelValues     = opencmw::MultiArray<float, 2>(std::move(stridedValues), { requestedSignals.size(), channelValuesSize });
+                    //  generate relative timestamps
+                    _reply.channelTimeSinceRefTrigger.clear();
+                    _reply.channelTimeSinceRefTrigger.reserve(channelValuesSize);
+                    for (size_t i = 0; i < channelValuesSize; ++i) {
+                        float relativeTimestamp = static_cast<float>(i) * (1 / sampleRate);
+                        _reply.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
+                    }
+                    TimeDomainContext filterOut = filterIn;
+                    filterOut.contentType       = opencmw::MIME::JSON;
+                    // notify == zmq publish
+                    super_t::notify("/Acquisition", filterOut, _reply);
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(40) - pollingDuration);
+                pollingDuration   = std::chrono::system_clock::now() - time_start;
+
+                auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
+                std::this_thread::sleep_for(willSleepFor);
             }
         });
 
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
+        fmt::print("GR: number of time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
         for (auto sink : gr::pulsed_power::globalTimeSinksRegistry) {
-            auto signal_name = sink->get_signal_name();
-            auto signal_unit = sink->get_signal_unit();
-            auto sample_rate = sink->get_sample_rate();
+            const auto signal_name = sink->get_signal_name();
+            const auto signal_unit = sink->get_signal_unit();
+            const auto sample_rate = sink->get_sample_rate();
 
             // init RingBuffer, register poller and poller sequence
             auto ringbuffer = newRingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, ProducerType::Single>();
             auto poller     = ringbuffer->newPoller();
             ringbuffer->addGatingSequences({ poller->sequence() });
 
-            _signalsMap[std::make_pair(signal_name, sample_rate)] = SignalData({ signal_name, signal_unit, sample_rate, ringbuffer, poller });
+            const auto completeSignalName   = getCompleteSignalName(signal_name, sample_rate);
+            _signalsMap[completeSignalName] = SignalData({ signal_name, signal_unit, sample_rate, ringbuffer, poller });
+            fmt::print("GR: OpenCMW Time Sink '{}' added\n", completeSignalName);
 
             // register callback
             sink->set_callback(std::bind(&TimeDomainWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
@@ -142,18 +186,56 @@ public:
         }
 
         // write into RingBuffer
-        if (_signalsMap.find(std::make_pair(signal_name, sample_rate)) != _signalsMap.end()) {
-            const SignalData &signaldata = _signalsMap.at(std::make_pair(signal_name, sample_rate));
+        if (_signalsMap.find(getCompleteSignalName(signal_name, sample_rate)) != _signalsMap.end()) {
+            const SignalData &signalData = _signalsMap.at(getCompleteSignalName(signal_name, sample_rate));
 
             // publish data
-            bool result = signaldata.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
+            bool result = signalData.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                 bufferData.timestamp = timestamp_ns;
                 bufferData.chunk.assign(data, data + data_size);
             });
 
-            if (!result)
-                fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
+            if (!result) {
+                // fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
+            }
         }
+    }
+
+private:
+    const std::string getCompleteSignalName(const std::string &signalName, float sampleRate) const {
+        return fmt::format("{}{}{}@{}Hz", _deviceName, _deviceName.empty() ? "" : ":", signalName, sampleRate);
+        // return fmt::format("{}", signalName);
+    }
+
+    bool checkRequestedSignals(const TimeDomainContext &filterIn, std::set<std::string, std::less<>> &requestedSignals) {
+        auto signals = std::string_view(filterIn.channelNameFilter) | std::ranges::views::split(',');
+        for (const auto &signal : signals) {
+            requestedSignals.emplace(std::string_view(signal.begin(), signal.end()));
+        }
+        if (requestedSignals.empty()) {
+            respondWithError(filterIn, "no signals requested, sending empty response\n");
+            return false;
+        }
+
+        // check if signals exist, TODO check if signals have the same sample rate
+        std::vector<std::string> unknownSignals;
+        for (const auto &requestedSignal : requestedSignals) {
+            if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
+                unknownSignals.push_back(requestedSignal);
+            }
+        }
+        if (!unknownSignals.empty()) {
+            respondWithError(filterIn, fmt::format("requested unknown signals: {}\n", unknownSignals));
+            return false;
+        }
+
+        return true;
+    }
+
+    void respondWithError(const TimeDomainContext &filter, const std::string_view errorText) {
+        // send empty response, TODO respond with error
+        fmt::print("{}\n", errorText);
+        super_t::notify("/Acquisition", filter, Acquisition());
     }
 };
 
