@@ -72,40 +72,15 @@ public:
 
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
 
-                    const auto              queryMap = subTopic.queryParamMap();
-                    const TimeDomainContext filterIn = opencmw::query::deserialise<TimeDomainContext>(queryMap);
+                    const auto                         queryMap = subTopic.queryParamMap();
+                    const TimeDomainContext            filterIn = opencmw::query::deserialise<TimeDomainContext>(queryMap);
 
-                    // fmt::print("{}::activeSubscriptions: {}\n", serviceName.data(), queryMap);
-
-                    auto                               signals = std::string_view(filterIn.channelNameFilter) | std::ranges::views::split(',');
                     std::set<std::string, std::less<>> requestedSignals;
-                    for (const auto &signal : signals) {
-                        requestedSignals.emplace(std::string_view(signal.begin(), signal.end()));
-                    }
-                    if (requestedSignals.empty()) {
-                        // send empty response, TODO respond with error
-                        fmt::print("no signals requested, sending empty response\n");
-                        const TimeDomainContext filterOut = filterIn;
-                        super_t::notify("/Acquisition", filterOut, Acquisition());
+                    if (!checkRequestedSignals(filterIn, requestedSignals)) {
                         break;
                     }
 
-                    // check if signals exist, TODO check if signals have the same sample rate
-                    bool found = true;
-                    for (const auto &requestedSignal : requestedSignals) {
-                        if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
-                            fmt::print("requested unknown signal: {}\n", requestedSignal);
-                            found = false;
-                        }
-                    }
-                    if (!found) {
-                        // send empty response, TODO respond with error
-                        const TimeDomainContext filterOut = filterIn;
-                        super_t::notify("/Acquisition", filterOut, Acquisition());
-                        break;
-                    }
-
-                    // find how many items/chunks should be parallely polled
+                    // find how many chunks should be parallely polled
                     std::vector<uint64_t> chunksAvailable;
                     for (const auto &requestedSignal : requestedSignals) {
                         auto     signalData = _signalsMap.at(requestedSignal);
@@ -157,7 +132,7 @@ public:
                     _reply.channelTimeSinceRefTrigger.clear();
                     _reply.channelTimeSinceRefTrigger.reserve(channelValuesSize);
                     for (size_t i = 0; i < channelValuesSize; ++i) {
-                        float relativeTimestamp = i * (1 / sampleRate);
+                        float relativeTimestamp = static_cast<float>(i) * (1 / sampleRate);
                         _reply.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
                     }
                     TimeDomainContext filterOut = filterIn;
@@ -220,8 +195,9 @@ public:
                 bufferData.chunk.assign(data, data + data_size);
             });
 
-            if (!result)
-                fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
+            if (!result) {
+                // fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
+            }
         }
     }
 
@@ -229,6 +205,37 @@ private:
     const std::string getCompleteSignalName(const std::string &signalName, float sampleRate) const {
         return fmt::format("{}{}{}@{}Hz", _deviceName, _deviceName.empty() ? "" : ":", signalName, sampleRate);
         // return fmt::format("{}", signalName);
+    }
+
+    bool checkRequestedSignals(const TimeDomainContext &filterIn, std::set<std::string, std::less<>> &requestedSignals) {
+        auto signals = std::string_view(filterIn.channelNameFilter) | std::ranges::views::split(',');
+        for (const auto &signal : signals) {
+            requestedSignals.emplace(std::string_view(signal.begin(), signal.end()));
+        }
+        if (requestedSignals.empty()) {
+            respondWithError(filterIn, "no signals requested, sending empty response\n");
+            return false;
+        }
+
+        // check if signals exist, TODO check if signals have the same sample rate
+        std::vector<std::string> unknownSignals;
+        for (const auto &requestedSignal : requestedSignals) {
+            if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
+                unknownSignals.push_back(requestedSignal);
+            }
+        }
+        if (!unknownSignals.empty()) {
+            respondWithError(filterIn, fmt::format("requested unknown signals: {}\n", unknownSignals));
+            return false;
+        }
+
+        return true;
+    }
+
+    void respondWithError(const TimeDomainContext &filter, const std::string_view errorText) {
+        // send empty response, TODO respond with error
+        fmt::print("{}\n", errorText);
+        super_t::notify("/Acquisition", filter, Acquisition());
     }
 };
 
