@@ -54,11 +54,6 @@ void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const 
 void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
     Acquisition acquisition;
 
-    // TODO: dataAsJson is given in format R"("Acquisition": {"value": 27 })" which
-    // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
-    // deserializer.
-    // For now, remove ""Acquisition": " from dataAsJson to make it usable with
-    // json::parse
     std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
@@ -81,14 +76,9 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
 }
 
 void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    double timestamp = 0.0;
-    double value     = 0.0;
+    double      timestamp          = 0.0;
+    double      value              = 0.0;
 
-    // TODO: dataAsJson is given in format R"("CounterData": {"value": 27 })" which
-    // cannot be read by json::parse(). Maybe opencmw::serealiserJson is the better
-    // deserializer.
-    // For now, remove ""CounterData": " from dataAsJson to make it usable with
-    // json::parse
     std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
