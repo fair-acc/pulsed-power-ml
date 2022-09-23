@@ -117,10 +117,19 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     REQUIRE(response->status == 200);
 
     REQUIRE(response->body.find("Acquisition") != std::string::npos);
+    REQUIRE(response->body.find("refTriggerName") != std::string::npos);
     REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);
+    REQUIRE(response->body.find("channelUserDelay") != std::string::npos);
+    REQUIRE(response->body.find("channelActualDelay") != std::string::npos);
     REQUIRE(response->body.find("channelNames") != std::string::npos);
     REQUIRE(response->body.find("channelValues") != std::string::npos);
+    REQUIRE(response->body.find("channelErrors") != std::string::npos);
+    REQUIRE(response->body.find("channelUnits") != std::string::npos);
+    REQUIRE(response->body.find("status") != std::string::npos);
+    REQUIRE(response->body.find("channelRangeMin") != std::string::npos);
+    REQUIRE(response->body.find("channelRangeMax") != std::string::npos);
+    REQUIRE(response->body.find("temperature") != std::string::npos);
 
     {
         opencmw::IoBuffer buffer;
@@ -128,8 +137,21 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
+        REQUIRE(data.refTriggerName == "NO_REF_TRIGGER");
+        REQUIRE(data.refTriggerStamp == 0);
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == 0);
+        REQUIRE(data.channelUserDelay == 0.0F);
+        REQUIRE(data.channelActualDelay == 0.0F);
+        REQUIRE(data.channelNames.size() == 0);
         REQUIRE(data.channelValues.n(0) == 0);
         REQUIRE(data.channelValues.n(1) == 0);
+        REQUIRE(data.channelErrors.n(0) == 0);
+        REQUIRE(data.channelErrors.n(1) == 0);
+        REQUIRE(data.channelUnits.size() == 0);
+        REQUIRE(data.status.size() == 0);
+        REQUIRE(data.channelRangeMin.size() == 0);
+        REQUIRE(data.channelRangeMax.size() == 0);
+        REQUIRE(data.temperature.size() == 0);
     }
 }
 
