@@ -1,8 +1,6 @@
 # Pulsed Power Monitoring
 
-![image](src/assets/visualize_multiple_gr_signals_dark.png)
-
-![image](src/assets/visualize_multiple_gr_signals_light.png)
+![image](assets/visualize_multiple_gr_signals_light.png)
 
 ## Getting Started
 
