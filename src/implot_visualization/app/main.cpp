@@ -4,6 +4,7 @@
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 #include <vector>
 
 #include "imgui.h"
@@ -14,7 +15,12 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-std::vector<SignalBuffer> signals(3);
+std::vector<SignalBuffer> signals1(3);
+std::vector<SignalBuffer> signals2(2);
+std::vector<SignalBuffer> refTriggerTimeStamps(1);
+
+bool                      fetch_finished_1 = true;
+bool                      fetch_finished_2 = true;
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -91,6 +97,7 @@ int           main(int, char **) {
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
     emscripten_set_main_loop_arg(main_loop, NULL, 0, true);
+    // emscripten_set_main_loop_timing(EM_TIMING_SETIMMEDIATE, 10);
 }
 
 static void main_loop(void *arg) {
@@ -98,11 +105,10 @@ static void main_loop(void *arg) {
     IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    bool                visualize_gr_signal = true;
-    bool                visualize_counter   = false;
-    static bool         show_demo_window    = false;
-    static ImVec4       clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    static Deserializer deserializer;
+    bool          visualize_gr_signal = true;
+    bool          visualize_counter   = false;
+    static bool   show_demo_window    = false;
+    static ImVec4 clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
@@ -124,7 +130,26 @@ static void main_loop(void *arg) {
 
     // Visualize One GR SignalBuffer
     if (visualize_gr_signal) {
-        fetch("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,saw@4000Hz,square@4000Hz", signals, &deserializer);
+        // // one subscription
+        // static Deserializer deserializer;
+        // fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", signals1, &deserializer);
+
+        // two subscriptions
+        static Deserializer deserializer;
+        static Deserializer deserializer2;
+        // fetch_finished = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz,square@4000Hz", signals1, &deserializer);
+        // static Deserializer deserializer2;
+        // fetch_finished = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", signals2, &deserializer2);
+        if (fetch_finished_2) {
+            // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::cout << "Starting fetch" << std::endl;
+            fetch_finished_1 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", signals1, &deserializer);
+        }
+        if (fetch_finished_1) {
+            // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::cout << "Starting sinus fetch" << std::endl;
+            fetch_finished_2 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", signals2, &deserializer2);
+        }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -148,9 +173,9 @@ static void main_loop(void *arg) {
                 ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
                 ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < signals.size(); i++) {
-                    if (signals[i].data.size() > 0) {
-                        ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
+                for (int i = 0; i < signals1.size(); i++) {
+                    if (signals1[i].data.size() > 0 && signals1[i].addFinished) {
+                        ImPlot::PlotLine((signals1[i].signalName).c_str(), &signals1[i].data[0].x, &signals1[i].data[0].y, signals1[i].data.size(), 0, signals1[i].offset, 2 * sizeof(double));
                     }
                 }
                 ImPlot::EndPlot();
@@ -181,9 +206,12 @@ static void main_loop(void *arg) {
                 ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
                 ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
+                std::cout << signals2[1].data.size() << std::endl;
+                for (int i = 0; i < signals2.size(); i++) {
+                    if (signals2[i].data.size() > 0) {
+                        ImPlot::PlotLine((signals2[i].signalName).c_str(), &signals2[i].data[0].x, &signals2[i].data[0].y, signals2[i].data.size(), 0, signals2[i].offset, 2 * sizeof(double));
+                    }
+                }
                 ImPlot::EndPlot();
             }
 
@@ -222,9 +250,10 @@ static void main_loop(void *arg) {
 
     // Visualize Counter
     if (visualize_counter) {
-        fetch("http://localhost:8080/counter/testCounter", signals, &deserializer);
+        static Deserializer deserializer;
+        fetch("http://localhost:8080/counter/testCounter", signals1, &deserializer);
 
-        SignalBuffer buffer = signals[0];
+        SignalBuffer buffer = signals1[0];
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_FirstUseEver);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {

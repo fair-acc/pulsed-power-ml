@@ -20,11 +20,13 @@ public:
     int                 offset;
     ImVector<DataPoint> data;
     std::string         signalName;
+    bool                addFinished = false;
 
     SignalBuffer(int max_size = 200'000);
 
-    void addPoint(double x, double y);
-    void erase();
+    void      addPoint(double x, double y);
+    void      erase();
+    DataPoint back();
 };
 
 struct StrideArray {
