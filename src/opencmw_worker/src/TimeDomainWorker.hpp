@@ -139,6 +139,9 @@ public:
                     //  generate multiarray values from strided array
                     size_t channelValuesSize = stridedValues.size() / requestedSignals.size();
                     _reply.channelValues     = opencmw::MultiArray<float, 2>(std::move(stridedValues), { requestedSignals.size(), channelValuesSize });
+                    // std::cout << "Dims: " << _reply.channelValues.n(0) << ", " << _reply.channelValues.n(1) << std::endl;
+                    // std::cout << "ChannelValues length: " << stridedValues.size() << std::endl;
+                    std::cout << _reply.channelNames[0] << std::endl;
                     //  generate relative timestamps
                     _reply.channelTimeSinceRefTrigger.clear();
                     _reply.channelTimeSinceRefTrigger.reserve(channelValuesSize);

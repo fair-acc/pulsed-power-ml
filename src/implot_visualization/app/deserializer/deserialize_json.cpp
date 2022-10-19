@@ -112,11 +112,6 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
         if (element.key() == "refTriggerStamp") {
             acquisition.refTrigger_ns = element.value();
             acquisition.refTrigger_s  = acquisition.refTrigger_ns / std::pow(10, 9);
-            // debug begin
-            auto   p1               = std::chrono::system_clock::now();
-            double acquisition_time = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count();
-            refTriggerTimestamps[0].addPoint(acquisition_time, acquisition.refTrigger_s);
-            // debug end
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             acquisition.relativeTimestamps.insert(acquisition.relativeTimestamps.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
@@ -131,6 +126,18 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
             // }
         }
     }
+
+    // debug begin
+    auto   p1               = std::chrono::system_clock::now();
+    double acquisition_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(p1.time_since_epoch()).count()) / 1000;
+    if (acquisition.signalNames[0] == "sinus@4000Hz") {
+        refTriggerTimestamps[0].addPoint(acquisition_time, acquisition.refTrigger_s);
+        refTriggerTimestamps[0].signalName = "sinus & square";
+    } else {
+        refTriggerTimestamps[1].addPoint(acquisition_time, acquisition.refTrigger_s);
+        refTriggerTimestamps[1].signalName = "saw";
+    }
+    // debug end
 
     addToSignalBuffers(signals, acquisition);
     // timestampsInBufferAreEquidistant(signals[0]);

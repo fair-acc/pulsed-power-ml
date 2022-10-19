@@ -17,8 +17,7 @@
 
 std::vector<SignalBuffer> signals1(3);
 std::vector<SignalBuffer> signals2(2);
-std::vector<SignalBuffer> refTriggerTimestamps(1);
-std::vector<std::string>  subscriptions;
+std::vector<SignalBuffer> refTriggerTimestamps(2);
 
 bool                      fetch_finished_1 = true;
 bool                      fetch_finished_2 = true;
@@ -129,28 +128,15 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Visualize One GR SignalBuffer
+    // FAIR Visualization
     if (visualize_gr_signal) {
-        // one subscription
         static Deserializer deserializer;
-        fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,saw@4000Hz,square@4000Hz", signals1, &deserializer);
-
-        // // two subscriptions
-        // static Deserializer deserializer;
-        // static Deserializer deserializer2;
-        // // fetch_finished = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz,square@4000Hz", signals1, &deserializer);
-        // // static Deserializer deserializer2;
-        // // fetch_finished = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", signals2, &deserializer2);
-        // if (fetch_finished_2) {
-        //     // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        //     std::cout << "Starting fetch" << std::endl;
-        //     fetch_finished_1 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", signals1, &deserializer);
-        // }
-        // if (fetch_finished_1) {
-        //     // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        //     std::cout << "Starting sinus fetch" << std::endl;
-        //     fetch_finished_2 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", signals2, &deserializer2);
-        // }
+        if (fetch_finished_2) {
+            fetch_finished_1 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", signals1, &deserializer);
+        }
+        if (fetch_finished_1) {
+            fetch_finished_2 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", signals2, &deserializer);
+        }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -159,7 +145,7 @@ static void main_loop(void *arg) {
         ImGui::ShowStyleSelector("Colors##Selector");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 2;
+        static int                rows      = 3;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
@@ -216,33 +202,6 @@ static void main_loop(void *arg) {
                 ImPlot::EndPlot();
             }
 
-            // Plot Acquisition Timestamps
-            // if (ImPlot::BeginPlot("Power")) {
-            //     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-            //     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-            //     // Setup x-Axis
-            //     ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
-            //     auto   clock       = std::chrono::system_clock::now();
-            //     double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-            //     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-            //     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-            //     ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
-            //     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            //     ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-            //     for (int i = 0; i < refTriggerTimestamps.size(); i++) {
-            //         if (refTriggerTimestamps[i].data.size() > 0) {
-            //             ImPlot::PlotLine((refTriggerTimestamps[i].signalName).c_str(),
-            //                     &refTriggerTimestamps[i].data[0].x,
-            //                     &refTriggerTimestamps[i].data[0].y,
-            //                     refTriggerTimestamps[i].data.size(),
-            //                     0,
-            //                     refTriggerTimestamps[i].offset,
-            //                     2 * sizeof(double));
-            //         }
-            //     }
-            //     ImPlot::EndPlot();
-            // }
-
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("Mains Frequency")) {
                 static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
@@ -256,6 +215,33 @@ static void main_loop(void *arg) {
                 // if (buffer.Data.size() > 0) {
                 //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
                 // }
+                ImPlot::EndPlot();
+            }
+
+            // Plot Acquisition Timestamps
+            if (ImPlot::BeginPlot("Power")) {
+                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+                // Setup x-Axis
+                ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
+                auto   clock       = std::chrono::system_clock::now();
+                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+                ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
+                for (int i = 0; i < refTriggerTimestamps.size(); i++) {
+                    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+                    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+                    if (refTriggerTimestamps[i].data.size() > 0) {
+                        ImPlot::PlotLine((refTriggerTimestamps[i].signalName).c_str(),
+                                &refTriggerTimestamps[i].data[0].x,
+                                &refTriggerTimestamps[i].data[0].y,
+                                refTriggerTimestamps[i].data.size(),
+                                0,
+                                refTriggerTimestamps[i].offset,
+                                2 * sizeof(double));
+                    }
+                }
                 ImPlot::EndPlot();
             }
         }
