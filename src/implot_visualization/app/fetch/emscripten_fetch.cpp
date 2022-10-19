@@ -5,11 +5,11 @@
 #include <iostream>
 #include <string.h>
 
-bool        fetch_finished   = true;
-bool        fetch_successful = false;
-std::string jsonString;
+volatile bool fetch_finished   = true;
+bool          fetch_successful = false;
+std::string   jsonString;
 
-void        downloadSucceeded(emscripten_fetch_t *fetch) {
+void          downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     fetch_successful = true;
     std::string jsonData(fetch->data, fetch->data + fetch->numBytes);
@@ -34,16 +34,25 @@ bool fetch(const char *url, std::vector<SignalBuffer> &signals, Deserializer *de
     attr.attributes                      = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
     attr.onsuccess                       = downloadSucceeded;
     attr.onerror                         = downloadFailed;
+
+    // // synchronous fetch emscripten
+    // attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
+    // std::cout << url << std::endl;
+    // emscripten_fetch_t *fetch = emscripten_fetch(&attr, url);
+    // if (fetch->status == 200) {
+    //     printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+    // } else {
+    //     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+    // }
+
+    // own synchronous fetch
     if (fetch_finished) {
         emscripten_fetch(&attr, url);
         fetch_finished = false;
     }
     if (fetch_successful) {
-        std::cout << url << std::endl;
-        std::cout << jsonString << std::endl;
         deserializer->deserializeJson(jsonString, signals);
         fetch_successful = false;
-        fetch_finished   = true;
     }
     return fetch_finished;
 }

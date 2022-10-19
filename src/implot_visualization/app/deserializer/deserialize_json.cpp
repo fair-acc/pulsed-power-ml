@@ -1,11 +1,14 @@
+#include <chrono>
 #include <cmath>
 #include <deserialize_json.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-using json        = nlohmann::json;
+using json = nlohmann::json;
 
-double tmp_t_prev = 0.0;
+extern std::vector<SignalBuffer> refTriggerTimestamps;
+
+double                           tmp_t_prev = 0.0;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -109,6 +112,11 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
         if (element.key() == "refTriggerStamp") {
             acquisition.refTrigger_ns = element.value();
             acquisition.refTrigger_s  = acquisition.refTrigger_ns / std::pow(10, 9);
+            // debug begin
+            auto   p1               = std::chrono::system_clock::now();
+            double acquisition_time = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count();
+            refTriggerTimestamps[0].addPoint(acquisition_time, acquisition.refTrigger_s);
+            // debug end
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             acquisition.relativeTimestamps.insert(acquisition.relativeTimestamps.begin(), element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
@@ -125,7 +133,7 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
     }
 
     addToSignalBuffers(signals, acquisition);
-    timestampsInBufferAreEquidistant(signals[0]);
+    // timestampsInBufferAreEquidistant(signals[0]);
 }
 
 void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
