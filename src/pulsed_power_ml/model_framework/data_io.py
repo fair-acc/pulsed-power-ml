@@ -60,14 +60,14 @@ def read_training_files(path_to_folder: str,
     """
 
     # Read spectra
-    fft_apparent_power_file_name = glob.glob(path_to_folder + f"/*-{FFT_APPARENT_POWER_FIX}-*")[0]
-    fft_apparent_power = load_fft_file(fft_apparent_power_file_name, fft_size)
-
     fft_voltage_file_name = glob.glob(path_to_folder + f"/*-{FFT_VOLTAGE_FIX}-*")[0]
     fft_voltage = load_fft_file(fft_voltage_file_name, fft_size)
 
     fft_current_file_name = glob.glob(path_to_folder + f"/*-{FFT_CURRENT_FIX}-*")[0]
     fft_current = load_fft_file(fft_current_file_name, fft_size)
+
+    fft_apparent_power_file_name = glob.glob(path_to_folder + f"/*-{FFT_APPARENT_POWER_FIX}-*")[0]
+    fft_apparent_power = load_fft_file(fft_apparent_power_file_name, fft_size)
 
     # read P, Q, S and Phi versus time
     # ToDo: Need to synchronize file sinks in GNU Radio first. Use dummy values as place holder
