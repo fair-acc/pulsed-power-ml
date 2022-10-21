@@ -1,0 +1,3 @@
+background_n: 5
+fft_size: 16384
+sample_size: 200000
