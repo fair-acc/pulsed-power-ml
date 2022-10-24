@@ -35,9 +35,11 @@ if __name__ == "__main__":
         fft_size=pars['fft_size'],
         sample_size=pars['sample_size'],
     )
-    spectra = load_fft_file("../training_data/training_data_2022-10-12/halo/HaloOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12",pars['fft_size'])
+    spectra = load_fft_file(("../training_data/training_data_2022-10-12/halo/"
+                             "HaloOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12"),
+                            pars['fft_size'])
     
-    background_vector = spectra[np.arange(-pars['background_n'],0)]
+    background_vector = spectra[np.arange(-pars['background_n'], 0)]
     current_background = calculate_background(background_vector)
     
     for spectrum in spectra[[400]]:

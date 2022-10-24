@@ -16,15 +16,17 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
     Parameters
     ----------
     list_of_data_points
-    ax
+        Array of data points.
     fft_size
-
+        (Full) size of the FFT.
     Returns
     -------
 
     """
     # Create figure and axis objects
-    fig = plt.figure(figsize=(16, 45 / 2), dpi=150)
+    fig = plt.figure(figsize=(16, 45 / 2),
+                     dpi=200,
+                     layout="tight")
     fft_u_ax = fig.add_subplot(5, 1, 1)
     fft_i_ax = fig.add_subplot(5, 1, 2)
     fft_s_ax = fig.add_subplot(5, 1, 3)
@@ -37,22 +39,27 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
     fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
                                 min_max_freq=min_max_freq,
                                 ax=fft_u_ax)
+    fft_u_ax.set_title('Voltage Spectrum')
 
     fft_i_ax = add_contour_plot(spectrum=list_of_data_points[:, spectrum_size:2*spectrum_size],
                                 min_max_freq=min_max_freq,
                                 ax=fft_i_ax)
+    fft_i_ax.set_title('Current Spectrum')
 
     fft_s_ax = add_contour_plot(spectrum=list_of_data_points[:, 2*spectrum_size:3*spectrum_size],
                                 min_max_freq=min_max_freq,
                                 ax=fft_s_ax)
+    fft_s_ax.set_title('Apparent Power Spectrum')
 
     # add PQS plot
     pqs_ax = add_pqs_plot(list_of_data_points[:, -4:-1],
                           ax=pqs_ax)
+    pqs_ax.set_title("Apparent, Active and Reactive Power")
 
     # add Phi plot
     phi_ax = add_phi_plot(list_of_data_points[:, -1],
                           ax=phi_ax)
+    phi_ax.set_title("Phase Angle")
 
     return fig
 
