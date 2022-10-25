@@ -81,6 +81,12 @@ public:
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
+                static size_t           subs       = 0;
+                if (subs != super_t::activeSubscriptions().size()) {
+                    subs = super_t::activeSubscriptions().size();
+                    fmt::print("TimeDomainWorker: activeSubs: {}\n", subs);
+                }
+
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
 
                     const auto                         queryMap = subTopic.queryParamMap();

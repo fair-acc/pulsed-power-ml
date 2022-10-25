@@ -10,17 +10,16 @@ public:
     std::vector<SignalBuffer> signals;
     volatile bool             fetchFinished   = true;
     volatile bool             fetchSuccessful = false;
-    std::string               extendedUrl;
 
     FetchUtils(const char *_url, int numSignals);
+
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);
     void downloadFailed(emscripten_fetch_t *fetch);
 
 private:
-    Deserializer *deserializer;
-    uint64_t      latestTimestamp;
-    int           longPollingIndex = 0;
+    Deserializer deserializer;
+    std::string  extendedUrl;
 
-    void          updateUrl();
+    void         updateUrl();
 };

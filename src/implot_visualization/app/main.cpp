@@ -16,8 +16,8 @@
 #include <emscripten_fetch.h>
 #include <plot_tools.h>
 
-FetchUtils              fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", 1);
-FetchUtils              fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz,square@4000Hz", 2);
+FetchUtils              fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
+FetchUtils              fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
 std::vector<FetchUtils> subscriptions = { fetchGrSignals, fetchPowerSignals };
 
 Plotter                 plotter;

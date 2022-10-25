@@ -36,7 +36,7 @@ FetchUtils::FetchUtils(const char *_url, const int numSignals) {
     url = _url;
     std::vector<SignalBuffer> _signals(numSignals);
     signals     = _signals;
-    extendedUrl = std::format("{}&longPollingIndex={}", url, "0");
+    extendedUrl = std::format("{}&lastRefTrigger=0", url);
 }
 
 void FetchUtils::fetch() {
@@ -55,7 +55,7 @@ void FetchUtils::fetch() {
         fetchFinished = false;
     }
     if (fetchSuccessful) {
-        deserializer->deserializeJson(jsonString, signals);
+        deserializer.deserializeJson(jsonString, signals);
         updateUrl();
         fetchSuccessful = false;
         fetchFinished   = true;
@@ -63,6 +63,5 @@ void FetchUtils::fetch() {
 }
 
 void FetchUtils::updateUrl() {
-    longPollingIndex++;
-    extendedUrl = std::format("{}&longPollingIndex={}", url, std::to_string(longPollingIndex));
+    extendedUrl = std::format("{}&lastRefTrigger={}", url, std::to_string(deserializer.lastRefTrigger));
 }

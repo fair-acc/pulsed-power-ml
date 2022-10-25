@@ -20,7 +20,6 @@ public:
     int                 offset;
     ImVector<DataPoint> data;
     std::string         signalName;
-    bool                addFinished = false;
 
     SignalBuffer(int max_size = 200'000);
 
@@ -43,11 +42,10 @@ struct Acquisition {
 };
 
 class Deserializer {
-    // public:
-    //     const std::string &jsonString;
-
 public:
-    void deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+    uint64_t lastRefTrigger = 0;
+
+    void     deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
 
 private:
     void deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals);

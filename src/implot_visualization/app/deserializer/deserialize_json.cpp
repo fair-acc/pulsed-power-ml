@@ -46,10 +46,9 @@ void   Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, cons
     double value             = 0.0;
 
     for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
-        signals[i].addFinished = false;
-        signals[i].signalName  = acquisitionData.signalNames[i];
-        int stride             = acquisitionData.strideArray.dims[1];
-        int offset             = i * stride;
+        signals[i].signalName = acquisitionData.signalNames[i];
+        int stride            = acquisitionData.strideArray.dims[1];
+        int offset            = i * stride;
 
         for (int j = 0; j < stride; j++) {
             absoluteTimestampPrev = absoluteTimestamp;
@@ -57,8 +56,6 @@ void   Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, cons
             value                 = acquisitionData.strideArray.values[offset + j];
             signals[i].addPoint(absoluteTimestamp, value);
         }
-
-        signals[i].addFinished = true;
     }
 }
 
@@ -83,6 +80,7 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
         }
     }
 
+    lastRefTrigger = acquisition.refTrigger_ns;
     addToSignalBuffers(signals, acquisition);
 }
 
