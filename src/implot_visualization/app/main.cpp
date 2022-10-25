@@ -15,9 +15,10 @@
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
 
-std::vector<SignalBuffer> signals1(3);
-std::vector<SignalBuffer> signals2(2);
 std::vector<SignalBuffer> refTriggerTimestamps(2);
+
+FetchUtils                fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", 1);
+FetchUtils                fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=square@4000Hz", 1);
 
 bool                      fetch_finished_1 = true;
 bool                      fetch_finished_2 = true;
@@ -130,12 +131,15 @@ static void main_loop(void *arg) {
 
     // FAIR Visualization
     if (visualize_gr_signal) {
-        static Deserializer deserializer;
-        if (fetch_finished_2) {
-            fetch_finished_1 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", signals1, &deserializer);
+        // fetchGrSignals.fetch();
+        // fetchPowerSignals.fetch();
+
+        // multiple subscriptions
+        if (fetchPowerSignals.fetchFinished) {
+            fetchGrSignals.fetch();
         }
-        if (fetch_finished_1) {
-            fetch_finished_2 = fetch("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", signals2, &deserializer);
+        if (fetchGrSignals.fetchFinished) {
+            fetchPowerSignals.fetch();
         }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
@@ -160,10 +164,16 @@ static void main_loop(void *arg) {
                 ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
                 ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < signals1.size(); i++) {
+                for (int i = 0; i < fetchGrSignals.signals.size(); i++) {
                     // if (signals1[i].data.size() > 0 && signals1[i].addFinished) {
-                    if (signals1[i].data.size() > 0) {
-                        ImPlot::PlotLine((signals1[i].signalName).c_str(), &signals1[i].data[0].x, &signals1[i].data[0].y, signals1[i].data.size(), 0, signals1[i].offset, 2 * sizeof(double));
+                    if (fetchGrSignals.signals[i].data.size() > 0) {
+                        ImPlot::PlotLine((fetchGrSignals.signals[i].signalName).c_str(),
+                                &fetchGrSignals.signals[i].data[0].x,
+                                &fetchGrSignals.signals[i].data[0].y,
+                                fetchGrSignals.signals[i].data.size(),
+                                0,
+                                fetchGrSignals.signals[i].offset,
+                                2 * sizeof(double));
                     }
                 }
                 ImPlot::EndPlot();
@@ -194,9 +204,15 @@ static void main_loop(void *arg) {
                 ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
                 ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
                 ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < signals2.size(); i++) {
-                    if (signals2[i].data.size() > 0) {
-                        ImPlot::PlotLine((signals2[i].signalName).c_str(), &signals2[i].data[0].x, &signals2[i].data[0].y, signals2[i].data.size(), 0, signals2[i].offset, 2 * sizeof(double));
+                for (int i = 0; i < fetchPowerSignals.signals.size(); i++) {
+                    if (fetchPowerSignals.signals[i].data.size() > 0) {
+                        ImPlot::PlotLine((fetchPowerSignals.signals[i].signalName).c_str(),
+                                &fetchPowerSignals.signals[i].data[0].x,
+                                &fetchPowerSignals.signals[i].data[0].y,
+                                fetchPowerSignals.signals[i].data.size(),
+                                0,
+                                fetchPowerSignals.signals[i].offset,
+                                2 * sizeof(double));
                     }
                 }
                 ImPlot::EndPlot();
@@ -264,10 +280,9 @@ static void main_loop(void *arg) {
 
     // Visualize Counter
     if (visualize_counter) {
-        static Deserializer deserializer;
-        fetch("http://localhost:8080/counter/testCounter", signals1, &deserializer);
+        FetchUtils   fetchCounterSignals("http://localhost:8080/counter/testCounter", 1);
 
-        SignalBuffer buffer = signals1[0];
+        SignalBuffer buffer = fetchCounterSignals.signals[0];
         ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_FirstUseEver);
         ImGui::Begin("Counter Demo Window");
         if (ImPlot::BeginPlot("Counter Worker")) {

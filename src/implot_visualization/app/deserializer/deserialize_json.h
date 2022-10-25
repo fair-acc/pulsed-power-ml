@@ -43,13 +43,10 @@ struct Acquisition {
 };
 
 class Deserializer {
+    // public:
+    //     const std::string &jsonString;
+
 public:
-    /**
-     * @brief Deserializes json string
-     *
-     * @param jsonString string of type
-     * "Acquisition": {"value": key, "timestamp": key}
-     */
     void deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
 
 private:

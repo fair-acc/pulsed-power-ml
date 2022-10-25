@@ -2,45 +2,67 @@
 #include <emscripten.h>
 #include <emscripten/fetch.h>
 #include <emscripten_fetch.h>
+#include <format>
 #include <iostream>
 #include <string.h>
 
-volatile bool fetch_finished   = true;
-volatile bool fetch_successful = false;
-std::string   jsonString;
+std::string jsonString;
 
-void          downloadSucceeded(emscripten_fetch_t *fetch) {
+void        FetchUtils::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     jsonString.assign(fetch->data, fetch->numBytes);
-    fetch_successful = true;
+    fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
 }
 
-void downloadFailed(emscripten_fetch_t *fetch) {
+void FetchUtils::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    fetch_finished = true;
+    fetchFinished = true;
 }
 
-bool fetch(const char *url, std::vector<SignalBuffer> &signals, Deserializer *deserializer) {
+void onDownloadSucceeded(emscripten_fetch_t *fetch) {
+    FetchUtils *fetchUtils = static_cast<FetchUtils *>(fetch->userData);
+    fetchUtils->downloadSucceeded(fetch);
+}
+
+void onDownloadFailed(emscripten_fetch_t *fetch) {
+    FetchUtils *fetchUtils = static_cast<FetchUtils *>(fetch->userData);
+    fetchUtils->downloadFailed(fetch);
+}
+
+FetchUtils::FetchUtils(const char *_url, const int numSignals) {
+    url = _url;
+    std::vector<SignalBuffer> _signals(numSignals);
+    signals     = _signals;
+    extendedUrl = std::format("{}&longPollingIndex={}", url, "0");
+}
+
+void FetchUtils::fetch() {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
     attr.requestHeaders                  = custom_headers;
     attr.attributes                      = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess                       = downloadSucceeded;
-    attr.onerror                         = downloadFailed;
+    attr.onsuccess                       = onDownloadSucceeded;
+    attr.onerror                         = onDownloadFailed;
+    attr.userData                        = this;
 
-    if (fetch_finished) {
-        emscripten_fetch(&attr, url);
-        fetch_finished = false;
+    if (fetchFinished) {
+        emscripten_fetch(&attr, extendedUrl.c_str());
+        fetchFinished = false;
     }
-    if (fetch_successful) {
+    if (fetchSuccessful) {
         deserializer->deserializeJson(jsonString, signals);
-        fetch_successful = false;
-        fetch_finished   = true;
+        updateUrl();
+        fetchSuccessful = false;
+        fetchFinished   = true;
     }
-    return fetch_finished;
+}
+
+void FetchUtils::updateUrl() {
+    longPollingIndex++;
+    extendedUrl = std::format("{}&longPollingIndex={}", url, std::to_string(longPollingIndex));
 }
