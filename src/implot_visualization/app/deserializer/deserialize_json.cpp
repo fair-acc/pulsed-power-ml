@@ -4,11 +4,9 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+using json        = nlohmann::json;
 
-extern std::vector<SignalBuffer> refTriggerTimestamps;
-
-double                           tmp_t_prev = 0.0;
+double tmp_t_prev = 0.0;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -43,29 +41,7 @@ DataPoint SignalBuffer::back() {
 
 double absoluteTimestampPrev = 0.0;
 
-bool   timestampsInBufferAreEquidistant(SignalBuffer &buffer) {
-    bool   isEquidistant = true;
-    double timestampCurr = buffer.data[0].x;
-    double timestampPrev = buffer.data[0].x;
-    double dt            = 0.0;
-    for (int i = 0; i < buffer.data.size(); i++) {
-        timestampCurr = buffer.data[i].x;
-        dt            = timestampCurr - timestampPrev;
-        // std::cout << "dt: " << dt << std::endl;
-        if (dt < 0 || dt > 0.001) {
-            isEquidistant = false;
-            std::cout << "Timestamps in Buffer are not equidistant!" << std::endl;
-            // std::cout << "Previous timestamp: " << timestampPrev << std::endl;
-            // std::cout << "Current timestamp: " << timestampCurr << std::endl;
-            std::cout << "dt: " << dt << std::endl;
-            std::cout << "Buffer index: " << i << std::endl;
-        }
-        timestampPrev = timestampCurr;
-    }
-    return isEquidistant;
-}
-
-void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
+void   Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
     double absoluteTimestamp = acquisitionData.refTrigger_s;
     double value             = 0.0;
 
@@ -80,21 +56,6 @@ void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const 
             absoluteTimestamp     = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
             value                 = acquisitionData.strideArray.values[offset + j];
             signals[i].addPoint(absoluteTimestamp, value);
-
-            // debug
-            // if (acquisitionData.signalNames[i] == "square@4000Hz" && value < 0) {
-            //     std::cout << "Negative value detected!" << std::endl;
-            //     std::cout << "Json: " << value << std::endl;
-            //     // std::cout << "StrideArray dims: " << acquisitionData.strideArray.dims[0] << ", " << acquisitionData.strideArray.dims[1] << std::endl;
-            //     // std::cout << "Index: " << offset + j << std::endl;
-            //     // std::cout << "Array length: " << acquisitionData.strideArray.values.size() << std::endl;
-            //     // std::cout << "Buffer: " << signals[i].back().y << std::endl;
-            // }
-            // if (absoluteTimestamp - absoluteTimestampPrev > 0.005) {
-            //     std::cout << "Data loss detected by missing timestamps!" << std::endl;
-            //     std::cout << "Previous timestamp: " << absoluteTimestampPrev << std::endl;
-            //     std::cout << "Current timestamp: " << absoluteTimestamp << std::endl;
-            // }
         }
 
         signals[i].addFinished = true;
@@ -119,28 +80,10 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
         } else if (element.key() == "channelValues") {
             acquisition.strideArray.dims   = std::vector<int>(element.value()["dims"]);
             acquisition.strideArray.values = std::vector<double>(element.value()["values"]);
-            // std::cout << "StrideArray dims: " << acquisition.strideArray.dims[0] << ", " << acquisition.strideArray.dims[1] << std::endl;
-            // std::cout << "Array length: " << acquisition.strideArray.values.size() << std::endl;
-            // if (acquisition.strideArray.dims[0] * acquisition.strideArray.dims[1] != acquisition.strideArray.values.size()) {
-            //     std::cout << "Vector size does not match dimensions!" << std::endl;
-            // }
         }
     }
 
-    // debug begin
-    auto   p1               = std::chrono::system_clock::now();
-    double acquisition_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(p1.time_since_epoch()).count()) / 1000;
-    if (acquisition.signalNames[0] == "sinus@4000Hz") {
-        refTriggerTimestamps[0].addPoint(acquisition_time, acquisition.refTrigger_s);
-        refTriggerTimestamps[0].signalName = "sinus & square";
-    } else {
-        refTriggerTimestamps[1].addPoint(acquisition_time, acquisition.refTrigger_s);
-        refTriggerTimestamps[1].signalName = "saw";
-    }
-    // debug end
-
     addToSignalBuffers(signals, acquisition);
-    // timestampsInBufferAreEquidistant(signals[0]);
 }
 
 void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
@@ -167,7 +110,6 @@ void Deserializer::deserializeCounter(const std::string &jsonString, std::vector
 }
 
 void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    // std::cout << jsonString << std::endl;
     if (jsonString.substr(1, 11) == "Acquisition") {
         deserializeAcquisition(jsonString, signals);
     } else if (jsonString.substr(1, 11) == "CounterData") {

@@ -14,14 +14,13 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
+#include <plot_tools.h>
 
-std::vector<SignalBuffer> refTriggerTimestamps(2);
+FetchUtils              fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", 1);
+FetchUtils              fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz,square@4000Hz", 2);
+std::vector<FetchUtils> subscriptions = { fetchGrSignals, fetchPowerSignals };
 
-FetchUtils                fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz", 1);
-FetchUtils                fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=square@4000Hz", 1);
-
-bool                      fetch_finished_1 = true;
-bool                      fetch_finished_2 = true;
+Plotter                 plotter;
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -131,15 +130,17 @@ static void main_loop(void *arg) {
 
     // FAIR Visualization
     if (visualize_gr_signal) {
-        // fetchGrSignals.fetch();
-        // fetchPowerSignals.fetch();
-
-        // multiple subscriptions
-        if (fetchPowerSignals.fetchFinished) {
-            fetchGrSignals.fetch();
-        }
-        if (fetchGrSignals.fetchFinished) {
-            fetchPowerSignals.fetch();
+        // Periodic polling
+        for (int i = 0; i < subscriptions.size(); i++) {
+            if (i == 0) {
+                if (subscriptions[subscriptions.size() - 1].fetchFinished) {
+                    subscriptions[i].fetch();
+                }
+            } else {
+                if (subscriptions[i - 1].fetchFinished) {
+                    subscriptions[i].fetch();
+                }
+            }
         }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
@@ -149,115 +150,32 @@ static void main_loop(void *arg) {
         ImGui::ShowStyleSelector("Colors##Selector");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 3;
+        static int                rows      = 2;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // GR Signals Plot
             if (ImPlot::BeginPlot("GR Signals")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < fetchGrSignals.signals.size(); i++) {
-                    // if (signals1[i].data.size() > 0 && signals1[i].addFinished) {
-                    if (fetchGrSignals.signals[i].data.size() > 0) {
-                        ImPlot::PlotLine((fetchGrSignals.signals[i].signalName).c_str(),
-                                &fetchGrSignals.signals[i].data[0].x,
-                                &fetchGrSignals.signals[i].data[0].y,
-                                fetchGrSignals.signals[i].data.size(),
-                                0,
-                                fetchGrSignals.signals[i].offset,
-                                2 * sizeof(double));
-                    }
-                }
+                plotter.plotGrSignals(subscriptions[0].signals);
                 ImPlot::EndPlot();
             }
 
             // Bandpass Filter Plot
             if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
-                ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Always);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
+                plotter.plotBandpassFilter(subscriptions[0].signals);
                 ImPlot::EndPlot();
             }
 
             // Power Plot
             if (ImPlot::BeginPlot("Power")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                // Setup x-Axis
-                ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < fetchPowerSignals.signals.size(); i++) {
-                    if (fetchPowerSignals.signals[i].data.size() > 0) {
-                        ImPlot::PlotLine((fetchPowerSignals.signals[i].signalName).c_str(),
-                                &fetchPowerSignals.signals[i].data[0].x,
-                                &fetchPowerSignals.signals[i].data[0].y,
-                                fetchPowerSignals.signals[i].data.size(),
-                                0,
-                                fetchPowerSignals.signals[i].offset,
-                                2 * sizeof(double));
-                    }
-                }
+                plotter.plotPower(subscriptions[1].signals);
                 ImPlot::EndPlot();
             }
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("Mains Frequency")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
-                ImPlot::EndPlot();
-            }
-
-            // Plot Acquisition Timestamps
-            if (ImPlot::BeginPlot("Power")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                // Setup x-Axis
-                ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
-                for (int i = 0; i < refTriggerTimestamps.size(); i++) {
-                    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-                    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                    if (refTriggerTimestamps[i].data.size() > 0) {
-                        ImPlot::PlotLine((refTriggerTimestamps[i].signalName).c_str(),
-                                &refTriggerTimestamps[i].data[0].x,
-                                &refTriggerTimestamps[i].data[0].y,
-                                refTriggerTimestamps[i].data.size(),
-                                0,
-                                refTriggerTimestamps[i].offset,
-                                2 * sizeof(double));
-                    }
-                }
+                plotter.plotMainsFrequency(subscriptions[1].signals);
                 ImPlot::EndPlot();
             }
         }
@@ -265,14 +183,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-            static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-            ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
-            ImPlot::SetupAxisLimits(ImAxis_X1, 0, 7, ImGuiCond_Always);
-            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            // if (buffer.Data.size() > 0) {
-            //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-            // }
+            plotter.plotPowerSpectrum(subscriptions[1].signals);
             ImPlot::EndPlot();
         }
         ImGui::End();
