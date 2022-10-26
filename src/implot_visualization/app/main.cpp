@@ -16,8 +16,8 @@
 #include <emscripten_fetch.h>
 #include <plot_tools.h>
 
-FetchUtils              fetchGrSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
-FetchUtils              fetchPowerSignals("http://192.168.56.101:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
+FetchUtils              fetchGrSignals("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
+FetchUtils              fetchPowerSignals("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
 std::vector<FetchUtils> subscriptions = { fetchGrSignals, fetchPowerSignals };
 
 Plotter                 plotter;
@@ -96,7 +96,7 @@ int           main(int, char **) {
 #endif
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 0, true);
+    emscripten_set_main_loop_arg(main_loop, NULL, 25, true);
     // emscripten_set_main_loop_timing(EM_TIMING_SETIMMEDIATE, 10);
 }
 

@@ -43,12 +43,12 @@ void FetchUtils::fetch() {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
-    static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
-    attr.requestHeaders                  = custom_headers;
-    attr.attributes                      = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess                       = onDownloadSucceeded;
-    attr.onerror                         = onDownloadFailed;
-    attr.userData                        = this;
+    // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
+    // attr.requestHeaders = custom_headers;
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess  = onDownloadSucceeded;
+    attr.onerror    = onDownloadFailed;
+    attr.userData   = this;
 
     if (fetchFinished) {
         emscripten_fetch(&attr, extendedUrl.c_str());
