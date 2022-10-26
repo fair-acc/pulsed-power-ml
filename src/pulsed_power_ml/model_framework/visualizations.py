@@ -10,7 +10,7 @@ import matplotlib
 
 
 def plot_data_point_array(list_of_data_points: Union[list, np.array],
-                          fft_size:int ) -> matplotlib.figure.Figure:
+                          fft_size: int) -> matplotlib.figure.Figure:
     """
     Add a contour plot for all three spectra, one
     Parameters
@@ -25,7 +25,7 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
     """
     # Create figure and axis objects
     fig = plt.figure(figsize=(16, 45 / 2),
-                     dpi=200,
+                     dpi=400,
                      layout="tight")
     fft_u_ax = fig.add_subplot(5, 1, 1)
     fft_i_ax = fig.add_subplot(5, 1, 2)
@@ -34,7 +34,7 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
     phi_ax = fig.add_subplot(5, 1, 5)
 
     # Add spectrum plots
-    min_max_freq = [0, 100]
+    min_max_freq = [0, 1_000]
     spectrum_size = int(fft_size/2)
     fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
                                 min_max_freq=min_max_freq,
@@ -66,8 +66,7 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
 
 def add_contour_plot(spectrum: np.array,
                      min_max_freq: List[float],
-                     ax: matplotlib.axis.Axis,
-                     time_ticks: np.ndarray=None) -> matplotlib.axis.Axis:
+                     ax: matplotlib.axis.Axis) -> matplotlib.axis.Axis:
     """
     Add a contour plot of the provided spectrum to *axes*.
 
@@ -79,8 +78,6 @@ def add_contour_plot(spectrum: np.array,
         Array containing the min frequency and the max frequency.
     ax
         Axis object to add the plot to.
-    time_axis
-        2d array (tick position, tick). If provided, will use to add respective ticks to the time axis.
 
     Returns
     -------
@@ -89,13 +86,13 @@ def add_contour_plot(spectrum: np.array,
     """
 
     # add spectrum to axis
-    im = ax.imshow(X=spectrum.T,
-                   aspect="auto",
-                   interpolation="none",
-                   origin="lower")
+    ax.imshow(X=spectrum.T,
+              aspect="auto",
+              interpolation="none",
+              origin="lower")
 
     # add frequency ticks to y-axis
-    y_labels = np.arange(min_max_freq[0], min_max_freq[1]+1, 25)
+    y_labels = np.arange(min_max_freq[0], min_max_freq[1]+1, 250)
     y_ticks_position_list = np.linspace(0, len(spectrum[0]), len(y_labels))
     ax.set_yticks(ticks=y_ticks_position_list,
                   labels=y_labels)
@@ -107,15 +104,11 @@ def add_contour_plot(spectrum: np.array,
     # Miscellaneous
     ax.grid(True)
 
-    # Add colorbar
-    # plt.colorbar(im, ax=ax)
-
     return ax
 
 
 def add_pqs_plot(pqs_array: np.array,
-                 ax: matplotlib.axis.Axis,
-                 time_ticks: np.ndarray=None) -> matplotlib.axis.Axis:
+                 ax: matplotlib.axis.Axis) -> matplotlib.axis.Axis:
     """
     Add a P, Q, S versus time plot to the provided axis.
 
@@ -126,8 +119,6 @@ def add_pqs_plot(pqs_array: np.array,
         timestep.
     ax
         Axis object to add the plot to.
-    time_axis
-        2d array (tick position, tick). If provided, will use to add respective ticks to the time axis.
 
     Returns
     -------
@@ -153,8 +144,7 @@ def add_pqs_plot(pqs_array: np.array,
 
 
 def add_phi_plot(phi_array: np.array,
-                 ax: matplotlib.axis.Axis,
-                 time_ticks: np.ndarray=None) -> matplotlib.axis.Axis:
+                 ax: matplotlib.axis.Axis) -> matplotlib.axis.Axis:
     """
     Add a Phi versus time plot to the provided axis.
 
@@ -164,8 +154,6 @@ def add_phi_plot(phi_array: np.array,
         array with shape (n_timesteps, 1), whereas the second dimension contains the values of PHI for each timestep.
     ax
         Axis object to add the plot to.
-    time_axis
-        2d array (tick position, tick). If provided, will use to add respective ticks to the time axis.
 
     Returns
     -------
