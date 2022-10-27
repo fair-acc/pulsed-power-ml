@@ -43,9 +43,10 @@ struct Acquisition {
 
 class Deserializer {
 public:
-    uint64_t lastRefTrigger = 0;
+    uint64_t    lastRefTrigger = 0;
+    std::string jsonString     = "";
 
-    void     deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+    void        deserializeJson(std::vector<SignalBuffer> &signals);
 
 private:
     void deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals);

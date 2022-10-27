@@ -6,11 +6,9 @@
 #include <iostream>
 #include <string.h>
 
-std::string jsonString;
-
-void        Subscription::downloadSucceeded(emscripten_fetch_t *fetch) {
+void Subscription::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    jsonString.assign(fetch->data, fetch->numBytes);
+    deserializer.jsonString.assign(fetch->data, fetch->numBytes);
     fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
@@ -32,11 +30,21 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
     fetchUtils->downloadFailed(fetch);
 }
 
-Subscription::Subscription(const char *_url, const int numSignals) {
-    url = _url;
+Subscription::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
+    url              = _url;
+    requestedSignals = _requestedSignals;
+    for (std::string str : _requestedSignals) {
+        url = url + str + ",";
+    }
+    if (!url.empty()) {
+        url.pop_back();
+    }
+
+    int                       numSignals = _requestedSignals.size();
     std::vector<SignalBuffer> _signals(numSignals);
     signals     = _signals;
-    extendedUrl = std::format("{}&lastRefTrigger=0", url);
+
+    extendedUrl = url + "&lastRefTrigger=0";
 }
 
 void Subscription::fetch() {
@@ -55,7 +63,7 @@ void Subscription::fetch() {
         fetchFinished = false;
     }
     if (fetchSuccessful) {
-        deserializer.deserializeJson(jsonString, signals);
+        deserializer.deserializeJson(signals);
         updateUrl();
         fetchSuccessful = false;
         fetchFinished   = true;
@@ -63,5 +71,5 @@ void Subscription::fetch() {
 }
 
 void Subscription::updateUrl() {
-    extendedUrl = std::format("{}&lastRefTrigger={}", url, std::to_string(deserializer.lastRefTrigger));
+    extendedUrl = url + "&lastRefTrigger=" + std::to_string(deserializer.lastRefTrigger);
 }

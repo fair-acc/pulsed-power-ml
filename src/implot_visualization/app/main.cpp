@@ -27,11 +27,9 @@ class AppState {
 public:
     std::vector<Subscription> _subscriptions;
     Plotter                   _plotter;
-    bool                      _sequentialPolling;
 
-    AppState(std::vector<Subscription> &subscriptions, bool sequentialPolling) {
-        _subscriptions     = subscriptions;
-        _sequentialPolling = sequentialPolling;
+    AppState(std::vector<Subscription> &subscriptions) {
+        _subscriptions = subscriptions;
     }
 };
 
@@ -101,11 +99,10 @@ int         main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
-    Subscription              grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
-    Subscription              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
-    std::vector<Subscription> subscriptions     = { grSubscription, powerSubscription };
-    bool                      sequentialPolling = false;
-    AppState                  appState(subscriptions, sequentialPolling);
+    Subscription              grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
+    Subscription              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    std::vector<Subscription> subscriptions = { grSubscription, powerSubscription };
+    AppState                  appState(subscriptions);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
     emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
@@ -143,23 +140,8 @@ static void main_loop(void *arg) {
 
     // Pulsed Power Monitoring Dashboard
     {
-        // Periodic polling
-        if (args->_sequentialPolling) {
-            for (int i = 0; i < subscriptions.size(); i++) {
-                if (i == 0) {
-                    if (subscriptions[subscriptions.size() - 1].fetchFinished) {
-                        subscriptions[i].fetch();
-                    }
-                } else {
-                    if (subscriptions[i - 1].fetchFinished) {
-                        subscriptions[i].fetch();
-                    }
-                }
-            }
-        } else {
-            for (Subscription &sub : subscriptions) {
-                sub.fetch();
-            }
+        for (Subscription &sub : subscriptions) {
+            sub.fetch();
         }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);

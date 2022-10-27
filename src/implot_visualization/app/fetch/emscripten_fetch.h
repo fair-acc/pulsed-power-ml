@@ -6,20 +6,21 @@
 
 class Subscription {
 public:
-    const char               *url;
+    std::string               url;
     std::vector<SignalBuffer> signals;
     volatile bool             fetchFinished   = true;
     volatile bool             fetchSuccessful = false;
 
-    Subscription(const char *_url, int numSignals);
+    Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);
     void downloadFailed(emscripten_fetch_t *fetch);
 
 private:
-    Deserializer deserializer;
-    std::string  extendedUrl;
+    std::vector<std::string> requestedSignals;
+    Deserializer             deserializer;
+    std::string              extendedUrl;
 
-    void         updateUrl();
+    void                     updateUrl();
 };

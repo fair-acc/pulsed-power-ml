@@ -82,7 +82,7 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
     addToSignalBuffers(signals, acquisition);
 }
 
-void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+void Deserializer::deserializeJson(std::vector<SignalBuffer> &signals) {
     if (jsonString.substr(1, 11) == "Acquisition") {
         deserializeAcquisition(jsonString, signals);
     }
