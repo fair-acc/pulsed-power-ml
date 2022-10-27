@@ -39,21 +39,19 @@ DataPoint SignalBuffer::back() {
     return data[maxSize - 1];
 }
 
-double absoluteTimestampPrev = 0.0;
-
-void   Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
-    double absoluteTimestamp = acquisitionData.refTrigger_s;
+void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
+    double absoluteTimestamp = 0.0;
     double value             = 0.0;
 
+    // Destride array
     for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
         signals[i].signalName = acquisitionData.signalNames[i];
         int stride            = acquisitionData.strideArray.dims[1];
         int offset            = i * stride;
 
         for (int j = 0; j < stride; j++) {
-            absoluteTimestampPrev = absoluteTimestamp;
-            absoluteTimestamp     = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
-            value                 = acquisitionData.strideArray.values[offset + j];
+            absoluteTimestamp = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
+            value             = acquisitionData.strideArray.values[offset + j];
             signals[i].addPoint(absoluteTimestamp, value);
         }
     }
@@ -84,33 +82,8 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
     addToSignalBuffers(signals, acquisition);
 }
 
-void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    double      timestamp          = 0.0;
-    double      value              = 0.0;
-
-    std::string modifiedJsonString = jsonString;
-    modifiedJsonString.erase(0, 14);
-
-    auto json_obj = json::parse(modifiedJsonString);
-    for (auto &element : json_obj.items()) {
-        if (element.key() == "timestamp") {
-            timestamp = element.value();
-        } else {
-            value = element.value();
-        }
-    }
-
-    if (timestamp != tmp_t_prev) {
-        signals[0].addPoint(timestamp, value);
-    }
-
-    tmp_t_prev = timestamp;
-}
-
 void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
     if (jsonString.substr(1, 11) == "Acquisition") {
         deserializeAcquisition(jsonString, signals);
-    } else if (jsonString.substr(1, 11) == "CounterData") {
-        deserializeCounter(jsonString, signals);
     }
 }

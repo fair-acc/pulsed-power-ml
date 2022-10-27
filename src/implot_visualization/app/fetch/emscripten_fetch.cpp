@@ -8,7 +8,7 @@
 
 std::string jsonString;
 
-void        FetchUtils::downloadSucceeded(emscripten_fetch_t *fetch) {
+void        Subscription::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     jsonString.assign(fetch->data, fetch->numBytes);
     fetchSuccessful = true;
@@ -16,30 +16,30 @@ void        FetchUtils::downloadSucceeded(emscripten_fetch_t *fetch) {
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
 }
 
-void FetchUtils::downloadFailed(emscripten_fetch_t *fetch) {
+void Subscription::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
     fetchFinished = true;
 }
 
 void onDownloadSucceeded(emscripten_fetch_t *fetch) {
-    FetchUtils *fetchUtils = static_cast<FetchUtils *>(fetch->userData);
+    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
     fetchUtils->downloadSucceeded(fetch);
 }
 
 void onDownloadFailed(emscripten_fetch_t *fetch) {
-    FetchUtils *fetchUtils = static_cast<FetchUtils *>(fetch->userData);
+    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
     fetchUtils->downloadFailed(fetch);
 }
 
-FetchUtils::FetchUtils(const char *_url, const int numSignals) {
+Subscription::Subscription(const char *_url, const int numSignals) {
     url = _url;
     std::vector<SignalBuffer> _signals(numSignals);
     signals     = _signals;
     extendedUrl = std::format("{}&lastRefTrigger=0", url);
 }
 
-void FetchUtils::fetch() {
+void Subscription::fetch() {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
@@ -62,6 +62,6 @@ void FetchUtils::fetch() {
     }
 }
 
-void FetchUtils::updateUrl() {
+void Subscription::updateUrl() {
     extendedUrl = std::format("{}&lastRefTrigger={}", url, std::to_string(deserializer.lastRefTrigger));
 }

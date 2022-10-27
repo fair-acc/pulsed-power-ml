@@ -49,6 +49,5 @@ public:
 
 private:
     void deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals);
-    void deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals);
     void addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData);
 };

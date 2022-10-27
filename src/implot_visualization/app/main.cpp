@@ -16,12 +16,6 @@
 #include <emscripten_fetch.h>
 #include <plot_tools.h>
 
-FetchUtils              fetchGrSignals("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
-FetchUtils              fetchPowerSignals("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
-std::vector<FetchUtils> subscriptions = { fetchGrSignals, fetchPowerSignals };
-
-Plotter                 plotter;
-
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
 // acts as a loop prevents us to store state in the stack of said function. So
@@ -29,9 +23,21 @@ Plotter                 plotter;
 SDL_Window   *g_Window    = NULL;
 SDL_GLContext g_GLContext = NULL;
 
-static void   main_loop(void *);
+class AppState {
+public:
+    std::vector<Subscription> _subscriptions;
+    Plotter                   _plotter;
+    bool                      _sequentialPolling;
 
-int           main(int, char **) {
+    AppState(std::vector<Subscription> &subscriptions, bool sequentialPolling) {
+        _subscriptions     = subscriptions;
+        _sequentialPolling = sequentialPolling;
+    }
+};
+
+static void main_loop(void *);
+
+int         main(int, char **) {
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -95,20 +101,27 @@ int           main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
+    Subscription              grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,square@4000Hz", 2);
+    Subscription              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=saw@4000Hz", 1);
+    std::vector<Subscription> subscriptions     = { grSubscription, powerSubscription };
+    bool                      sequentialPolling = false;
+    AppState                  appState(subscriptions, sequentialPolling);
+
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 25, true);
-    // emscripten_set_main_loop_timing(EM_TIMING_SETIMMEDIATE, 10);
+    emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
 }
 
 static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
-    IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
+
+    // Parse arguments from main
+    AppState                  *args          = static_cast<AppState *>(arg);
+    std::vector<Subscription> &subscriptions = args->_subscriptions;
+    Plotter                   &plotter       = args->_plotter;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    bool          visualize_gr_signal = true;
-    bool          visualize_counter   = false;
-    static bool   show_demo_window    = false;
-    static ImVec4 clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    static bool   show_demo_window = false;
+    static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
@@ -128,18 +141,24 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // FAIR Visualization
-    if (visualize_gr_signal) {
+    // Pulsed Power Monitoring Dashboard
+    {
         // Periodic polling
-        for (int i = 0; i < subscriptions.size(); i++) {
-            if (i == 0) {
-                if (subscriptions[subscriptions.size() - 1].fetchFinished) {
-                    subscriptions[i].fetch();
+        if (args->_sequentialPolling) {
+            for (int i = 0; i < subscriptions.size(); i++) {
+                if (i == 0) {
+                    if (subscriptions[subscriptions.size() - 1].fetchFinished) {
+                        subscriptions[i].fetch();
+                    }
+                } else {
+                    if (subscriptions[i - 1].fetchFinished) {
+                        subscriptions[i].fetch();
+                    }
                 }
-            } else {
-                if (subscriptions[i - 1].fetchFinished) {
-                    subscriptions[i].fetch();
-                }
+            }
+        } else {
+            for (Subscription &sub : subscriptions) {
+                sub.fetch();
             }
         }
 
@@ -184,27 +203,6 @@ static void main_loop(void *arg) {
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
             plotter.plotPowerSpectrum(subscriptions[1].signals);
-            ImPlot::EndPlot();
-        }
-        ImGui::End();
-    }
-
-    // Visualize Counter
-    if (visualize_counter) {
-        FetchUtils   fetchCounterSignals("http://localhost:8080/counter/testCounter", 1);
-
-        SignalBuffer buffer = fetchCounterSignals.signals[0];
-        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Counter Demo Window");
-        if (ImPlot::BeginPlot("Counter Worker")) {
-            ImPlot::SetupAxes("Timestamp", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-            if (buffer.data.size() > 0) {
-                int bufferEnd = buffer.data.size() - 1;
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.data[bufferEnd].x - 300.0, buffer.data[bufferEnd].x, ImGuiCond_Always);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                ImPlot::PlotLine("Counter", &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(int64_t));
-            }
             ImPlot::EndPlot();
         }
         ImGui::End();

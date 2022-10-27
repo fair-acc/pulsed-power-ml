@@ -4,14 +4,14 @@
 #include <emscripten.h>
 #include <emscripten/fetch.h>
 
-class FetchUtils {
+class Subscription {
 public:
     const char               *url;
     std::vector<SignalBuffer> signals;
     volatile bool             fetchFinished   = true;
     volatile bool             fetchSuccessful = false;
 
-    FetchUtils(const char *_url, int numSignals);
+    Subscription(const char *_url, int numSignals);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);
