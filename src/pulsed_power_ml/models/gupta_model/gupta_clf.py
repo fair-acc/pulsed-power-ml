@@ -13,6 +13,7 @@ from sklearn.metrics import euclidean_distances
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import switch_detected
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature_vector
 
 
 class GuptaClassifier(BaseEstimator, ClassifierMixin):
@@ -20,8 +21,10 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self,
                  background_n: int = 25,
                  fft_size_real: int = 2**16,
+                 sample_rate: int = 2_000_000,
                  n_known_appliances: int = 10,
-                 spectrum_type: int = 0) -> None:
+                 spectrum_type: int = 0,
+                 n_peaks_max: int = 10) -> None:
         """
         Instantiation method for the Gupta classifier.
 
@@ -31,16 +34,22 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
             Number of data points used for the background estimation.
         fft_size_real
             Number of points in the spectrum (original FFT size / 2).
+        sample_rate
+            Sample rate of the DAQ.
         n_known_appliances
             Number of known appliances.
         spectrum_type
             Determines which spectrum is used. 0: voltage, 1: current, 2: apparent power
+        n_peaks_max:
+            Max. number of peaks, which are used to calculate features.
         """
         # Parameters
         self.background_n = background_n
         self.fft_size_real = fft_size_real
+        self.sample_rate = sample_rate
         self.n_known_appliances = n_known_appliances
         self.spectrum_type = spectrum_type
+        self.n_peaks_max = n_peaks_max
 
         # Containers
         self.current_state_vector = np.zeros(n_known_appliances + 1)  # one additional for "others"
@@ -105,7 +114,10 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
             return self.current_state_vector
 
         # 5. Calculate feature vector
-        # feature_vector = calculate_feature_vector(cleaned_spectrum)
+        feature_vector = calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
+                                                  n_peaks_max=self.n_peaks_max,
+                                                  fft_size_real=self.fft_size_real,
+                                                  sample_rate=self.sample_rate)
 
         # 6. Empty background vector
         self.background_vector.clear()

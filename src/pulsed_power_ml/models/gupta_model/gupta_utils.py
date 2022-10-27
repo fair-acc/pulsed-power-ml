@@ -1,9 +1,13 @@
+"""
+This module contains functions needed by the Gupta classification algorithm.
+"""
 from math import ceil
 import yaml
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, savgol_filter
+from scipy.optimize import curve_fit
 
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file, read_training_files
 
@@ -120,6 +124,114 @@ def event_detected(res_spectrum: np.ndarray):
         peak_detected = False
         
     return peak_detected
+
+def gaussian(x: float, a: float, mu: float, sigma: float) -> float:
+    """
+    Gaussian with amplitude.
+
+    Parameters
+    ----------
+    x
+        Independent variable.
+    a
+        Amplitude
+    mu
+        Expected value
+    sigma
+        Sqrt(Variance)
+
+    Returns
+    -------
+    a * exp(- (x - mu)**2 / (2 * sigma**2) )
+    """
+    return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+
+def fit_gaussian_to_peak(frequency_window: np.array, magnitude_window: np.array) -> np.array:
+    """
+    Fit a gaussian to the data points in **peak_window**
+
+    Parameters
+    ----------
+    frequency_window
+        Array of frequencies (x-values).
+    magnitude_window
+        Array of corresponding magnitudes (y-values)
+
+    Returns
+    -------
+    parameters
+        Array with [a, mu, sigma]
+    """
+    # Initial guesses
+    a_init = magnitude_window.max()
+    mu_init = frequency_window.mean()
+    sigma_init = np.sqrt(sum(magnitude_window * (frequency_window - mu_init)**2) / sum(magnitude_window))
+
+    popt, pcov = curve_fit(f=gaussian,
+                           xdata=frequency_window,
+                           ydata=magnitude_window,
+                           p0=[a_init, mu_init, sigma_init])
+    return popt
+
+
+def calculate_feature_vector(cleaned_spectrum: np.array,
+                             n_peaks_max: int,
+                             fft_size_real: int,
+                             sample_rate: int) -> np.array:
+    """
+    Calculate a feature vector given a cleaned spectrum.
+
+    Parameters
+    ----------
+    cleaned_spectrum
+        Array. Spectrum with background removed.
+    n_peaks_max
+        Max. number of peaks that are used to calculate features.
+    fft_size_real
+        Number of points in the real part of the spectrum.
+    sample_rate
+        Sample rate of the DAQ.
+
+    Returns
+    -------
+    feature_vector
+        Array of length 3 * n_peaks_max of the form: [a_0, mu_0, sigma_0, a_1, mu_1, sigma_1, ...]
+    """
+    # get peaks
+    min_peak_height = 4 * cleaned_spectrum.std()  # This could probably be optimized.
+    if abs(cleaned_spectrum.min()) > abs(cleaned_spectrum.max()):
+        switch_off_factor = -1
+    else:
+        switch_off_factor = 1
+    peak_indices, peak_properties = find_peaks(x=cleaned_spectrum * switch_off_factor,
+                                               height=min_peak_height)
+
+    # remove peaks in the first and last bin of the spectrum (cannot be used for gaussian fit)
+    peak_height_list = [(peak_index, peak_height) \
+                        for peak_index, peak_height in zip(peak_indices, peak_properties['peak_heights']) \
+                        if peak_index > 0 and peak_index < fft_size_real]
+
+    # select highest peaks if more than n_peaks_max peaks have been found
+    if len(peak_height_list) > n_peaks_max:
+        peak_height_list = sorted(peak_height_list,
+                                  key=lambda x: x[1],
+                                  reverse=True)[:n_peaks_max]
+        peak_height_list = sorted(peak_height_list,
+                                  key=lambda x: x[0])
+
+    # Apply fit and store fit parameters in feature vector
+    freq_per_bin = sample_rate / fft_size_real
+    feature_vector = np.zeros(3 * n_peaks_max)
+    for i, (peak_index, peak_height) in enumerate(peak_height_list):
+        frequencies = [j * freq_per_bin + freq_per_bin / 2 for j in [peak_index - 1, peak_index, peak_index + 1]]
+        magnitudes = cleaned_spectrum[peak_index - 1:peak_index + 2]
+        a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
+        feature_vector[i * 3] = a * switch_off_factor
+        feature_vector[i * 3 + 1] = mu
+        feature_vector[i * 3 + 2] = sigma
+
+    return feature_vector
 
 
 if __name__ == "__main__":
