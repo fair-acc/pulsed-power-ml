@@ -63,6 +63,26 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
 
     return fig
 
+def get_frequencies_from_spectrum(spectrum: np.array,
+                                  sample_rate: int) -> np.array:
+    """
+    Returns an array containing the central frequencies per bin.
+    Parameters
+    ----------
+    spectrum
+        Array containing the magnitudes.
+    sample_rate
+        Sampel rate of the DAQ.
+
+    Returns
+    -------
+    frequencies
+        Array with the same length as **spectrum** containing the central frequency for each bin in **spectrum**.
+    """
+    freq_per_bin = sample_rate / len(spectrum)
+    frequencies = np.arange(freq_per_bin / 2, sample_rate, freq_per_bin)
+    return frequencies
+
 
 def add_contour_plot(spectrum: np.array,
                      min_max_freq: List[float],
