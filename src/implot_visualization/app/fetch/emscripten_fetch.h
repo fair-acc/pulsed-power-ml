@@ -8,8 +8,8 @@ class Subscription {
 public:
     std::string               url;
     std::vector<SignalBuffer> signals;
-    volatile bool             fetchFinished   = true;
-    volatile bool             fetchSuccessful = false;
+    bool                      fetchFinished   = true;
+    bool                      fetchSuccessful = false;
 
     Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);
 
