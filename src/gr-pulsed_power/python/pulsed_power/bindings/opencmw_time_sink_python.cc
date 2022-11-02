@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(opencmw_time_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(b8cf3b76ba68b2ee2e679ea7bc0fb36f)                     */
+/* BINDTOOL_HEADER_FILE_HASH(88406fa1adfdae61d69042e2846feaa1)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -42,7 +42,7 @@ void bind_opencmw_time_sink(py::module& m)
 
         .def(py::init(&opencmw_time_sink::make),
              py::arg("sample_rate"),
-             py::arg("signal_name") = "Signal 1",
+             py::arg("signal_name") = "signal_1",
              py::arg("signal_unit") = "",
              D(opencmw_time_sink, make))
 

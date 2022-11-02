@@ -16,18 +16,18 @@ struct TimeDomainContext {
     std::string             channelNameFilter;
     int32_t                 acquisitionModeFilter = 0; // STREAMING
     std::string             triggerNameFilter;
-    int32_t                 maxClientUpdateFrequencyFilter;
-    opencmw::MIME::MimeType contentType = opencmw::MIME::JSON;
+    int32_t                 maxClientUpdateFrequencyFilter = 25;
+    opencmw::MIME::MimeType contentType                    = opencmw::MIME::JSON;
 };
 
 ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, triggerNameFilter, maxClientUpdateFrequencyFilter, contentType)
 
 struct Acquisition {
-    std::string                   refTriggerName = { "NO_REF_TRIGGER" };
-    int64_t                       refTriggerStamp;
+    std::string                   refTriggerName  = { "NO_REF_TRIGGER" };
+    int64_t                       refTriggerStamp = 0;
     std::vector<float>            channelTimeSinceRefTrigger;
-    float                         channelUserDelay;
-    float                         channelActualDelay;
+    float                         channelUserDelay   = 0.0f;
+    float                         channelActualDelay = 0.0f;
     std::vector<std::string>      channelNames;
     opencmw::MultiArray<float, 2> channelValues;
     opencmw::MultiArray<float, 2> channelErrors;
@@ -40,11 +40,6 @@ struct Acquisition {
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)
 
-struct RingBufferData {
-    std::vector<float> chunk;
-    int64_t            timestamp;
-};
-
 using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
@@ -56,7 +51,10 @@ private:
     std::atomic<bool>   _shutdownRequested;
     std::jthread        _pollingThread;
     Acquisition         _reply;
-
+    struct RingBufferData {
+        std::vector<float> chunk;
+        int64_t            timestamp;
+    };
     using ringbuffer_t  = std::shared_ptr<RingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
     using eventpoller_t = std::shared_ptr<EventPoller<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
     struct SignalData {
@@ -73,15 +71,18 @@ public:
     using super_t = Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...>;
 
     template<typename BrokerType>
-    explicit TimeDomainWorker(const BrokerType &broker, const std::string &deviceName = "")
-        : super_t(broker, {}), _deviceName(deviceName), _reply{} {
+    explicit TimeDomainWorker(const BrokerType &broker)
+        : super_t(broker, {}), _reply{} {
         // polling thread
         _pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
-
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
+
+                    if (subTopic.path() != "/Acquisition") {
+                        break;
+                    }
 
                     const auto                         queryMap = subTopic.queryParamMap();
                     const TimeDomainContext            filterIn = opencmw::query::deserialise<TimeDomainContext>(queryMap);
@@ -91,64 +92,15 @@ public:
                         break;
                     }
 
-                    // find how many chunks should be parallely polled
-                    std::vector<uint64_t> chunksAvailable;
-                    for (const auto &requestedSignal : requestedSignals) {
-                        auto     signalData = _signalsMap.at(requestedSignal);
-                        uint64_t diff       = signalData.ringBuffer->cursor() - signalData.eventPoller->sequence()->value();
-                        chunksAvailable.push_back(diff);
-                    }
-
-                    uint64_t maxChunksToPoll = *std::min_element(chunksAvailable.begin(), chunksAvailable.end());
+                    uint64_t maxChunksToPoll = chunksToPoll(requestedSignals);
 
                     if (maxChunksToPoll == 0) {
-                        // no new items for requested signals
                         break;
                     }
 
-                    // poll data
-                    std::vector<float> stridedValues;
-                    _reply.refTriggerStamp = 0;
-                    _reply.channelNames.clear();
-                    float sampleRate;
-                    for (const auto &requestedSignal : requestedSignals) {
-                        auto signalData = _signalsMap.at(requestedSignal);
-                        assert(maxChunksToPoll > 0);
-                        sampleRate = signalData.sampleRate;
-
-                        _reply.channelNames.push_back(requestedSignal);
-
-                        bool      firstChunk = true;
-                        PollState result;
-                        for (size_t i = 0; i < maxChunksToPoll; i++) {
-                            result = signalData.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
-                                if (firstChunk) {
-                                    _reply.refTriggerStamp = event.timestamp;
-                                    stridedValues.reserve(requestedSignals.size() * maxChunksToPoll * event.chunk.size());
-                                    firstChunk = false;
-                                }
-
-                                stridedValues.insert(stridedValues.end(), event.chunk.begin(), event.chunk.end());
-
-                                return false;
-                            });
-                        }
-                        assert(result == PollState::Processing);
-                    }
-
-                    //  generate multiarray values from strided array
-                    size_t channelValuesSize = stridedValues.size() / requestedSignals.size();
-                    _reply.channelValues     = opencmw::MultiArray<float, 2>(std::move(stridedValues), { requestedSignals.size(), channelValuesSize });
-                    //  generate relative timestamps
-                    _reply.channelTimeSinceRefTrigger.clear();
-                    _reply.channelTimeSinceRefTrigger.reserve(channelValuesSize);
-                    for (size_t i = 0; i < channelValuesSize; ++i) {
-                        float relativeTimestamp = static_cast<float>(i) * (1 / sampleRate);
-                        _reply.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
-                    }
+                    pollMultipleSignals(requestedSignals, maxChunksToPoll, _reply);
                     TimeDomainContext filterOut = filterIn;
                     filterOut.contentType       = opencmw::MIME::JSON;
-                    // notify == zmq publish
                     super_t::notify("/Acquisition", filterOut, _reply);
                 }
                 pollingDuration   = std::chrono::system_clock::now() - time_start;
@@ -171,7 +123,7 @@ public:
             auto poller     = ringbuffer->newPoller();
             ringbuffer->addGatingSequences({ poller->sequence() });
 
-            const auto completeSignalName   = getCompleteSignalName(signal_name, sample_rate);
+            const auto completeSignalName   = fmt::format("{}@{}Hz", signal_name, sample_rate);
             _signalsMap[completeSignalName] = SignalData({ signal_name, signal_unit, sample_rate, ringbuffer, poller });
             fmt::print("GR: OpenCMW Time Sink '{}' added\n", completeSignalName);
 
@@ -179,9 +131,11 @@ public:
             sink->set_callback(std::bind(&TimeDomainWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
         }
 
-        super_t::setCallback([this](RequestContext & /*rawCtx*/, const TimeDomainContext & /*requestContext*/, const Empty &,
-                                     TimeDomainContext & /*replyContext*/, Acquisition &out) {
-            out = _reply;
+        super_t::setCallback([this](RequestContext &rawCtx, const TimeDomainContext     &requestContext, const Empty &,
+                                     TimeDomainContext /* &replyContext */, Acquisition &out) {
+            if (rawCtx.request.command() == Command::Get) {
+                handleGetRequest(requestContext, out);
+            }
         });
     }
 
@@ -197,8 +151,9 @@ public:
         }
 
         // write into RingBuffer
-        if (_signalsMap.find(getCompleteSignalName(signal_name, sample_rate)) != _signalsMap.end()) {
-            const SignalData &signalData = _signalsMap.at(getCompleteSignalName(signal_name, sample_rate));
+        const auto completeSignalName = fmt::format("{}@{}Hz", signal_name, sample_rate);
+        if (_signalsMap.contains(completeSignalName)) {
+            const SignalData &signalData = _signalsMap.at(completeSignalName);
 
             // publish data
             bool result = signalData.ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
@@ -213,9 +168,79 @@ public:
     }
 
 private:
-    const std::string getCompleteSignalName(const std::string &signalName, float sampleRate) const {
-        return fmt::format("{}{}{}@{}Hz", _deviceName, _deviceName.empty() ? "" : ":", signalName, sampleRate);
-        // return fmt::format("{}", signalName);
+    bool handleGetRequest(const TimeDomainContext &requestContext, Acquisition &out) {
+        std::set<std::string, std::less<>> requestedSignals;
+        if (!checkRequestedSignals(requestContext, requestedSignals)) {
+            return false; // TODO throw exception
+        }
+
+        uint64_t maxChunksToPoll = chunksToPoll(requestedSignals);
+
+        if (maxChunksToPoll == 0) {
+            return false;
+        }
+
+        pollMultipleSignals(requestedSignals, maxChunksToPoll, out);
+        return true;
+    }
+
+    // find how many chunks should be parallely polled
+    uint64_t chunksToPoll(std::set<std::string, std::less<>> &requestedSignals) {
+        std::vector<uint64_t> chunksAvailable;
+        for (const auto &requestedSignal : requestedSignals) {
+            auto     signalData = _signalsMap.at(requestedSignal);
+            uint64_t diff       = signalData.ringBuffer->cursor() - signalData.eventPoller->sequence()->value();
+            chunksAvailable.push_back(diff);
+        }
+        assert(!chunksAvailable.empty());
+        auto maxChunksToPollIterator = std::min_element(chunksAvailable.begin(), chunksAvailable.end());
+        if (maxChunksToPollIterator == chunksAvailable.end()) {
+            return 0;
+        }
+
+        return *maxChunksToPollIterator;
+    }
+
+    void pollMultipleSignals(const std::set<std::string, std::less<>> &requestedSignals, uint64_t chunksToPoll, Acquisition &out) {
+        std::vector<float> stridedValues;
+        out.refTriggerStamp = 0;
+        out.channelNames.clear();
+        float sampleRate = 0;
+        for (const auto &requestedSignal : requestedSignals) {
+            auto signalData = _signalsMap.at(requestedSignal);
+            assert(chunksToPoll > 0);
+            sampleRate = signalData.sampleRate;
+
+            out.channelNames.push_back(requestedSignal);
+
+            bool      firstChunk = true;
+            PollState result     = PollState::Idle;
+            for (size_t i = 0; i < chunksToPoll; i++) {
+                result = signalData.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
+                    if (firstChunk) {
+                        out.refTriggerStamp = event.timestamp;
+                        stridedValues.reserve(requestedSignals.size() * chunksToPoll * event.chunk.size());
+                        firstChunk = false;
+                    }
+
+                    stridedValues.insert(stridedValues.end(), event.chunk.begin(), event.chunk.end());
+
+                    return false;
+                });
+            }
+            assert(result == PollState::Processing);
+        }
+
+        //  generate multiarray values from strided array
+        size_t channelValuesSize = stridedValues.size() / requestedSignals.size();
+        out.channelValues        = opencmw::MultiArray<float, 2>(std::move(stridedValues), { static_cast<uint32_t>(requestedSignals.size()), static_cast<uint32_t>(channelValuesSize) });
+        //  generate relative timestamps
+        out.channelTimeSinceRefTrigger.clear();
+        out.channelTimeSinceRefTrigger.reserve(channelValuesSize);
+        for (size_t i = 0; i < channelValuesSize; ++i) {
+            float relativeTimestamp = static_cast<float>(i) * (1 / sampleRate);
+            out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
+        }
     }
 
     bool checkRequestedSignals(const TimeDomainContext &filterIn, std::set<std::string, std::less<>> &requestedSignals) {
@@ -231,7 +256,7 @@ private:
         // check if signals exist
         std::vector<std::string> unknownSignals;
         for (const auto &requestedSignal : requestedSignals) {
-            if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
+            if (!_signalsMap.contains(requestedSignal)) {
                 unknownSignals.push_back(requestedSignal);
             }
         }

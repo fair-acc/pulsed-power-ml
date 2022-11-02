@@ -38,7 +38,7 @@ public:
      * creating new instances.
      */
     static sptr make(float sample_rate,
-                     std::string signal_name = "Signal 1",
+                     std::string signal_name = "signal_1",
                      std::string signal_unit = "");
 
     /*!
