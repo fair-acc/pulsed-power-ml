@@ -2,44 +2,74 @@
 #include <emscripten.h>
 #include <emscripten/fetch.h>
 #include <emscripten_fetch.h>
+#include <format>
 #include <iostream>
 #include <string.h>
 
-bool        fetch_finished   = true;
-bool        fetch_successful = false;
-std::string jsonString;
-
-void        downloadSucceeded(emscripten_fetch_t *fetch) {
+void Subscription::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    fetch_successful = true;
-    std::string jsonData(fetch->data, fetch->data + fetch->numBytes);
-    jsonString = jsonData;
+    deserializer.jsonString.assign(fetch->data, fetch->numBytes);
+    fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
-    fetch_finished = true;
 }
 
-void downloadFailed(emscripten_fetch_t *fetch) {
+void Subscription::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    fetch_finished = true;
+    fetchFinished = true;
 }
 
-void fetch(const char *url, std::vector<SignalBuffer> &signals, Deserializer *deserializer) {
+void onDownloadSucceeded(emscripten_fetch_t *fetch) {
+    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
+    fetchUtils->downloadSucceeded(fetch);
+}
+
+void onDownloadFailed(emscripten_fetch_t *fetch) {
+    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
+    fetchUtils->downloadFailed(fetch);
+}
+
+Subscription::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
+    url              = _url;
+    requestedSignals = _requestedSignals;
+    for (std::string str : _requestedSignals) {
+        url = url + str + ",";
+    }
+    if (!url.empty()) {
+        url.pop_back();
+    }
+
+    int                       numSignals = _requestedSignals.size();
+    std::vector<SignalBuffer> _signals(numSignals);
+    signals     = _signals;
+
+    extendedUrl = url + "&lastRefTrigger=0";
+}
+
+void Subscription::fetch() {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
-    static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
-    attr.requestHeaders                  = custom_headers;
-    attr.attributes                      = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess                       = downloadSucceeded;
-    attr.onerror                         = downloadFailed;
-    if (fetch_finished) {
-        emscripten_fetch(&attr, url);
-        fetch_finished = false;
+    // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
+    // attr.requestHeaders = custom_headers;
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess  = onDownloadSucceeded;
+    attr.onerror    = onDownloadFailed;
+    attr.userData   = this;
+
+    if (fetchFinished) {
+        emscripten_fetch(&attr, extendedUrl.c_str());
+        fetchFinished = false;
     }
-    if (fetch_successful) {
-        deserializer->deserializeJson(jsonString, signals);
-        fetch_successful = false;
+    if (fetchSuccessful) {
+        deserializer.deserializeJson(signals);
+        updateUrl();
+        fetchSuccessful = false;
+        fetchFinished   = true;
     }
+}
+
+void Subscription::updateUrl() {
+    extendedUrl = url + "&lastRefTrigger=" + std::to_string(deserializer.lastRefTrigger);
 }

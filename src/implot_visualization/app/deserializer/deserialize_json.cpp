@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include <deserialize_json.h>
 #include <iostream>
@@ -34,10 +35,15 @@ void SignalBuffer::erase() {
     }
 }
 
+DataPoint SignalBuffer::back() {
+    return data[maxSize - 1];
+}
+
 void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
 
+    // Destride array
     for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
         signals[i].signalName = acquisitionData.signalNames[i];
         int stride            = acquisitionData.strideArray.dims[1];
@@ -52,9 +58,9 @@ void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const 
 }
 
 void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+    std::string modifiedJsonString = jsonString;
     Acquisition acquisition;
 
-    std::string modifiedJsonString = jsonString;
     modifiedJsonString.erase(0, 14);
 
     auto json_obj = json::parse(modifiedJsonString);
@@ -72,36 +78,12 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
         }
     }
 
+    lastRefTrigger = acquisition.refTrigger_ns;
     addToSignalBuffers(signals, acquisition);
 }
 
-void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    double      timestamp          = 0.0;
-    double      value              = 0.0;
-
-    std::string modifiedJsonString = jsonString;
-    modifiedJsonString.erase(0, 14);
-
-    auto json_obj = json::parse(modifiedJsonString);
-    for (auto &element : json_obj.items()) {
-        if (element.key() == "timestamp") {
-            timestamp = element.value();
-        } else {
-            value = element.value();
-        }
-    }
-
-    if (timestamp != tmp_t_prev) {
-        signals[0].addPoint(timestamp, value);
-    }
-
-    tmp_t_prev = timestamp;
-}
-
-void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+void Deserializer::deserializeJson(std::vector<SignalBuffer> &signals) {
     if (jsonString.substr(1, 11) == "Acquisition") {
         deserializeAcquisition(jsonString, signals);
-    } else if (jsonString.substr(1, 11) == "CounterData") {
-        deserializeCounter(jsonString, signals);
     }
 }
