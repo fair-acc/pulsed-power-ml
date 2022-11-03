@@ -5,16 +5,15 @@
 ## Getting Started
 
 1. Install Emscripten from https://emscripten.org/docs/getting_started/downloads.html
-
 2. Set the environment variables as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
-
-3. Make sure to configure the EMSDK_ROOT_PATH variable in `cmake_build.sh` according to the path of emsdk on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
+3. Build and install GNU Radio blocks as described in https://github.com/fair-acc/pulsed-power-ml/tree/main/src/gr-pulsed_power
 
 ## Usage
 
-In order to visualize data passed by OpenCMW you need to build and run the OpenCMW worker first and then build and run the ImPlot Visualization.The following explains how to build and run OpenCMW and ImPlot Visualization.
+In order to visualize data passed by OpenCMW
 
-### OpenCMW Worker
+1. Build and run the OpenCMW worker
+2. Build and run the ImPlot Visualization.
 
 How to Build
 
