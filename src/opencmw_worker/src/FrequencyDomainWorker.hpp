@@ -64,7 +64,7 @@ public:
 
     template<typename BrokerType>
     explicit FrequencyDomainWorker(const BrokerType &broker)
-        : super_t(broker, {}), _reply{} {
+        : super_t(broker, {}) {
         // polling thread
         _pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
@@ -230,7 +230,7 @@ private:
         // check if signals exist
         std::vector<std::string> unknownSignals;
         for (const auto &requestedSignal : requestedSignals) {
-            if (_signalsMap.find(requestedSignal) == _signalsMap.end()) {
+            if (!_signalsMap.contains(requestedSignal)) {
                 unknownSignals.push_back(requestedSignal);
             }
         }

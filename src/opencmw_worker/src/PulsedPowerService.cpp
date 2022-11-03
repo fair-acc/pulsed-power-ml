@@ -94,9 +94,10 @@ private:
     gr::top_block_sptr top;
 
 public:
-    GRFlowGraph(float samp_rate, int noutput_items)
+    GRFlowGraph(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // flowgraph setup
+        float samp_rate = 4'000.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
         auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
@@ -116,15 +117,18 @@ public:
         pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
 
         // sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
+        const float  samp_rate_2                      = 32'000.0f;
         const size_t vec_length                       = 1024;
         const size_t fft_size                         = vec_length;
-        auto         bandwidth                        = samp_rate;
+        const auto   bandwidth                        = samp_rate_2;
+        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SIN_WAVE, 50.0f, 100.0);
+        auto         throttle_block_3                 = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
         auto         stream_to_vector_0               = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vec_length);
         auto         fft_vxx_0                        = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(1024), true, 1);
         auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / vec_length, vec_length);
         auto         complex_to_mag_squared_0         = gr::blocks::complex_to_mag_squared::make(vec_length);
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
-        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make("sinus_fft", "dB", samp_rate, bandwidth);
+        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make("sinus_fft", "dB", samp_rate_2, bandwidth);
 
         // connections
         // time-domain sinks
@@ -138,7 +142,8 @@ public:
         top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_2, 0);
 
         // frequency-domain sinks
-        top->hier_block2::connect(throttle_block_0, 0, stream_to_vector_0, 0);
+        top->hier_block2::connect(signal_source_3, 0, throttle_block_3, 0);
+        top->hier_block2::connect(throttle_block_3, 0, stream_to_vector_0, 0);
         top->hier_block2::connect(stream_to_vector_0, 0, fft_vxx_0, 0);
         top->hier_block2::connect(fft_vxx_0, 0, multiply_const_xx_0, 0);
         top->hier_block2::connect(multiply_const_xx_0, 0, complex_to_mag_squared_0, 0);
@@ -168,13 +173,13 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraph flowgraph(4'000.0f, 160);
+    GRFlowGraph flowgraph(160);
     flowgraph.start();
 
     // OpenCMW workers
-    CounterWorker<"counter", description<"Returns counter value">>                counterWorker(broker, std::chrono::milliseconds(1000));
-    TimeDomainWorker<"pulsed_power", description<"Time-Domain Worker">>           timeDomainWorker(broker);
-    FrequencyDomainWorker<"pulsed_power", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
+    CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
+    TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
+    FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
 
     // run workers in separate threads
     std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });

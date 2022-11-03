@@ -72,7 +72,7 @@ public:
 
     template<typename BrokerType>
     explicit TimeDomainWorker(const BrokerType &broker)
-        : super_t(broker, {}), _reply{} {
+        : super_t(broker, {}) {
         // polling thread
         _pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
