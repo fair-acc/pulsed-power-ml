@@ -4,9 +4,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-using json        = nlohmann::json;
-
-double tmp_t_prev = 0.0;
+using json = nlohmann::json;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -57,7 +55,14 @@ void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const 
     }
 }
 
-void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
+void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const AcquisitionSpectra &acquisitionData) {
+    signals[0].signalName = acquisitionData.signalName;
+    for (int i = 0; i < acquisitionData.channelMagnitudeValues.size(); i++) {
+        signals[0].addPoint(acquisitionData.channelFrequencyValues[i], acquisitionData.channelMagnitudeValues[i]);
+    }
+}
+
+void Deserializer::deserializeAcquisition(std::vector<SignalBuffer> &signals) {
     std::string modifiedJsonString = jsonString;
     Acquisition acquisition;
 
@@ -82,8 +87,34 @@ void Deserializer::deserializeAcquisition(const std::string &jsonString, std::ve
     addToSignalBuffers(signals, acquisition);
 }
 
+void Deserializer::deserializeAcquisitionSpectra(std::vector<SignalBuffer> &signals) {
+    std::string        modifiedJsonString = jsonString;
+    AcquisitionSpectra acquisitionSpectra;
+
+    modifiedJsonString.erase(0, 21);
+
+    auto json_obj = json::parse(modifiedJsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "refTriggerStamp") {
+            acquisitionSpectra.refTrigger_ns = element.value();
+            acquisitionSpectra.refTrigger_s  = acquisitionSpectra.refTrigger_ns / std::pow(10, 9);
+        } else if (element.key() == "channelName") {
+            acquisitionSpectra.signalName = element.value();
+        } else if (element.key() == "channelMagnitudeValues") {
+            acquisitionSpectra.channelMagnitudeValues.insert(acquisitionSpectra.channelMagnitudeValues.begin(), element.value().begin(), element.value().end());
+        } else if (element.key() == "channelFrequencyValues") {
+            acquisitionSpectra.channelFrequencyValues.insert(acquisitionSpectra.channelFrequencyValues.begin(), element.value().begin(), element.value().end());
+        }
+    }
+
+    lastRefTrigger = acquisitionSpectra.refTrigger_ns;
+    addToSignalBuffers(signals, acquisitionSpectra);
+}
+
 void Deserializer::deserializeJson(std::vector<SignalBuffer> &signals) {
-    if (jsonString.substr(1, 11) == "Acquisition") {
-        deserializeAcquisition(jsonString, signals);
+    if (jsonString.substr(0, 14) == "\"Acquisition\":") {
+        deserializeAcquisition(signals);
+    } else if (jsonString.substr(0, 21) == "\"AcquisitionSpectra\":") {
+        deserializeAcquisitionSpectra(signals);
     }
 }

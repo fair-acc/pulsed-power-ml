@@ -101,7 +101,8 @@ int         main(int, char **) {
 
     Subscription              grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
     Subscription              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    std::vector<Subscription> subscriptions = { grSubscription, powerSubscription };
+    Subscription              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
+    std::vector<Subscription> subscriptions = { grSubscription, powerSubscription, frequencySubscription };
     AppState                  appState(subscriptions);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
@@ -184,7 +185,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            plotter.plotPowerSpectrum(subscriptions[1].signals);
+            plotter.plotPowerSpectrum(subscriptions[2].signals);
             ImPlot::EndPlot();
         }
         ImGui::End();

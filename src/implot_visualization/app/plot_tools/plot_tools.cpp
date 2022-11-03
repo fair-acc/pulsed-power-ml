@@ -70,5 +70,5 @@ void Plotter::plotPowerSpectrum(std::vector<SignalBuffer> &signals) {
     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
     ImPlot::SetupAxisLimits(ImAxis_X1, 0, 7, ImGuiCond_Always);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // plotSignals(signals);
+    plotSignals(signals);
 }

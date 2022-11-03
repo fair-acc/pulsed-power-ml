@@ -16,18 +16,18 @@ struct TimeDomainContext {
     std::string             channelNameFilter;
     int32_t                 acquisitionModeFilter = 0; // STREAMING
     std::string             triggerNameFilter;
-    int32_t                 maxClientUpdateFrequencyFilter;
-    opencmw::MIME::MimeType contentType = opencmw::MIME::JSON;
+    int32_t                 maxClientUpdateFrequencyFilter = 25;
+    opencmw::MIME::MimeType contentType                    = opencmw::MIME::JSON;
 };
 
 ENABLE_REFLECTION_FOR(TimeDomainContext, channelNameFilter, acquisitionModeFilter, triggerNameFilter, maxClientUpdateFrequencyFilter, contentType)
 
 struct Acquisition {
-    std::string                   refTriggerName = { "NO_REF_TRIGGER" };
-    int64_t                       refTriggerStamp;
+    std::string                   refTriggerName  = { "NO_REF_TRIGGER" };
+    int64_t                       refTriggerStamp = 0;
     std::vector<float>            channelTimeSinceRefTrigger;
-    float                         channelUserDelay;
-    float                         channelActualDelay;
+    float                         channelUserDelay   = 0.0f;
+    float                         channelActualDelay = 0.0f;
     std::vector<std::string>      channelNames;
     opencmw::MultiArray<float, 2> channelValues;
     opencmw::MultiArray<float, 2> channelErrors;
@@ -189,7 +189,7 @@ public:
                                      TimeDomainContext & /*replyContext*/, Acquisition   &out) {
             std::set<std::string, std::less<>> requestedSignals;
             if (!checkRequestedSignals(requestContext, requestedSignals)) {
-                // break; // TODO: Throw EXCEPTION
+                return;
             }
 
             // find how many chunks should be parallely polled
