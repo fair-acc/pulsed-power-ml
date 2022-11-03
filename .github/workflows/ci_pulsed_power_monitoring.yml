@@ -1,7 +1,6 @@
 name: build_pulsed_power_monitoring
 
 on:
-  workflow_dispatch
   push:
     branches: [main]
   pull_request:
