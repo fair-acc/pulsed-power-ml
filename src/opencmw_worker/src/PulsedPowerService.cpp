@@ -5,6 +5,7 @@
 // Gnu Radio includes
 #include <gnuradio/analog/sig_source.h>
 #include <gnuradio/blocks/complex_to_mag_squared.h>
+#include <gnuradio/blocks/file_sink.h>
 #include <gnuradio/blocks/multiply_const.h>
 #include <gnuradio/blocks/nlog10_ff.h>
 #include <gnuradio/blocks/stream_to_vector.h>
@@ -121,11 +122,11 @@ public:
         const size_t vec_length                       = 1024;
         const size_t fft_size                         = vec_length;
         const auto   bandwidth                        = samp_rate_2;
-        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SIN_WAVE, 50.0f, 100.0);
+        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SIN_WAVE, 3000.0f, 220.0);
         auto         throttle_block_3                 = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
         auto         stream_to_vector_0               = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vec_length);
         auto         fft_vxx_0                        = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(1024), true, 1);
-        auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / vec_length, vec_length);
+        auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / static_cast<float>(vec_length), vec_length);
         auto         complex_to_mag_squared_0         = gr::blocks::complex_to_mag_squared::make(vec_length);
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
         auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make("sinus_fft", "dB", samp_rate_2, bandwidth);
