@@ -65,34 +65,35 @@ def subtract_background(spectrum: np.ndarray, background: np.ndarray):
     return spectrum-background
 
 
-def switch_detected(res_spectrum: np.ndarray):
+def switch_detected(res_spectrum: np.ndarray, threshold: np.int):
     """
     Scans background subtracted spectrum for switch event 
-    (signal larger than standard deviation across more than 3/4 of spectrum) 
+    (signal larger than input parameterthreshold value) 
     to avoid dead time because of background re-calculation.
 
     Parameters
     ----------
     res_spectrum
         Background subtracted spectrum.
+    threshold
+        Threshold value
 
     Returns
     -------
     Boolean: True if switch event was detected, false if no switch event was detected
-    """    
+    """
     # what percentage of bins has to be above or below the respective thresholds?
-    perc_threshold = ceil(res_spectrum.__len__()*0.75)
+    threshold = 1000
     
     # how many bins are above the standard deviation?
-    bins_above_std = res_spectrum[res_spectrum>res_spectrum.std()]
-    n_bins_above_std = bins_above_std.__len__()
-    
+    n_bins_above_thr = res_spectrum[res_spectrum>threshold].__len__()
+
     # how many bins are below the negative standard deviation?
-    bins_below_minus_std = res_spectrum[res_spectrum<-1*res_spectrum.std()]
-    n_bins_below_minus_std = bins_below_minus_std.__len__()
+    n_bins_below_minus_thr = res_spectrum[res_spectrum<-1000].__len__()
     
-    if ((n_bins_above_std>=perc_threshold) or 
-        (n_bins_below_minus_std>=perc_threshold)):
+    if n_bins_above_thr>=1:
+        switch = True
+    elif n_bins_below_minus_thr>=1:
         switch = True
     else:
         switch = False
@@ -117,13 +118,17 @@ def event_detected(res_spectrum: np.ndarray):
     # ToDo: equivalent loop with negative signal to find dips (switch off)
     
     peaks, _ = find_peaks(res_spectrum, height=4*res_spectrum.std())
+    negpeaks, __ = find_peaks(-1*res_spectrum, height=4*res_spectrum.std())
 
     if peaks.__len__()>1:
         peak_detected = True
+    elif negpeaks.__len__()>1:
+        peak_detected = True
     else:
         peak_detected = False
-        
+
     return peak_detected
+
 
 def gaussian(x: float, a: float, mu: float, sigma: float) -> float:
     """
@@ -254,8 +259,8 @@ if __name__ == "__main__":
         residual = subtract_background(spectrum, current_background)
         # plt.plot(residual)
         # plt.show()
-        print("Switch detected: {}".format(switch_detected(residual)))
-        if switch_detected(residual):
+        print("Switch detected: {}".format(switch_detected(residual,pars['threshold'])))
+        if switch_detected(residual,pars['threshold']):
             print("Continuing...")
         else:
             peaks, _ = find_peaks(residual, height=4*residual.std())
