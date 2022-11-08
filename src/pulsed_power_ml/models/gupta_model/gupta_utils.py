@@ -30,6 +30,27 @@ def read_parameters(parameter_path: str):
     return param_dic
 
 
+def read_power_data_base(path_to_file: str) -> list:
+    """
+    Read yaml file containing the apparent power values of all known devices and return a list in this form:
+    [(name_0, value_0), (name_1, value_1), ...]
+
+    Parameters
+    ----------
+    path_to_file
+        Path to yaml file
+
+    Returns
+    -------
+    apparent_power_list
+    """
+    power_dict = yaml.safe_load(Path(path_to_file).read_text())
+    apparent_power_list = list()
+    for key, value in power_dict.items():
+        apparent_power_list.append((key, value))
+    return apparent_power_list
+
+
 def calculate_background(background_points: np.ndarray):
     """
     Calculates background from input spectra.

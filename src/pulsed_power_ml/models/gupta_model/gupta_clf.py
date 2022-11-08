@@ -3,6 +3,7 @@ This module contains the implementation of a classifier following the approach b
 """
 from typing import Self
 from collections import deque
+import copy
 
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -14,6 +15,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_backgro
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature_vector
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 
 
 class GuptaClassifier(BaseEstimator, ClassifierMixin):
@@ -24,7 +26,8 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
                  sample_rate: int = 2_000_000,
                  n_known_appliances: int = 10,
                  spectrum_type: int = 0,
-                 n_peaks_max: int = 10) -> None:
+                 n_peaks_max: int = 10,
+                 apparent_power_list: list = []) -> None:
         """
         Instantiation method for the Gupta classifier.
 
@@ -54,6 +57,9 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         # Containers
         self.current_state_vector = np.zeros(n_known_appliances + 1)  # one additional for "others"
         self.background_vector = deque(maxlen=self.background_n)
+
+        # Apparent Power data base
+        self.apparent_power_list = apparent_power_list
 
         return
 
@@ -123,10 +129,11 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         self.background_vector.clear()
 
         # 7. Classify event
-        # event_class = self.knn_clf.predict(feature_vector)
+        event_class = self.knn_clf.predict(feature_vector)
 
         # 8. Update current state vector accordingly
-        # self.current_state_vector = self.update_state_vector(event_class)
+        self.current_state_vector = self.update_state_vector(event_class=event_class,
+                                                             current_apparent_power=apparent_power)
 
         return self.current_state_vector
 
@@ -151,3 +158,50 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         spectrum = X[i:j]
         apparent_power = X[-2]
         return (spectrum, apparent_power)
+
+
+    def update_state_vector(self,
+                            event_class: np.array,
+                            current_apparent_power: float) -> np.array:
+        """
+        Given the current state vector and a classification results, return an updated state vector.
+
+        Parameters
+        ----------
+        event_class
+            One-hot encoded array of length 2N+1 (N is the number of known appliances).
+        current_apparent_power
+            Most recent value of the apparent power
+
+        Returns
+        -------
+        updated_state_vector
+        """
+
+        updated_state_vector = copy.deepcopy(self.current_state_vector)
+
+        if np.argmax(event_class) <= self.n_known_appliances:
+            # Case 1: Known appliance is switched on
+            state_vector_index = np.argmax(event_class)
+            updated_state_vector[state_vector_index] = self.apparent_power_list[state_vector_index][1]
+
+        elif self.n_known_appliances < np.argmax(event_class) <= self.n_known_appliances:
+            # Case 2: Known appliance is switched off
+            state_vector_index = int(np.argmax(event_class) / 2)
+            updated_state_vector[state_vector_index] = 0
+
+        else:
+            # Case 3: Unknown event
+            pass
+
+        # Update current state vector's power value for "unknown"
+        known_power = sum(updated_state_vector[:-1])
+        updated_state_vector[-1] = current_apparent_power - known_power
+
+        return updated_state_vector
+
+
+
+
+
+
