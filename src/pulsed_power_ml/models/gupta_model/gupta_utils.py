@@ -129,6 +129,25 @@ def event_detected(res_spectrum: np.ndarray):
 
     return peak_detected
 
+def update_background_vector(background_vector: np.ndarray, spectrum: np.ndarray):
+    """
+    Updates an existing background vector by removing the first element 
+    and appending the input spectrum at the end.
+    
+    Parameters
+    ----------
+    background_vector
+        Vector of n raw spectra containing x bins each.
+    spectrum
+        Raw spectrum of length x to be added to the vector.
+
+    Returns
+    -------
+    np.ndarray((n,x)): updated background_vector
+    """
+    background_vector = np.vstack((background_vector[1:], spectrum))
+    return background_vector
+
 
 def gaussian(x: float, a: float, mu: float, sigma: float) -> float:
     """
