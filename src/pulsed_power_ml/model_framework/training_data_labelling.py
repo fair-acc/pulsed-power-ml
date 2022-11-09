@@ -39,6 +39,15 @@ def data_labeller(spectra: np.ndarray, parameters: dict, appliance: str):
         counter+=1
     return(labels)
 
+
+
+def make_labeled_training_data(training_file, appliance_id):
+    # 1 load specturm array
+    # detecti switiching events
+    # disect spectrum durin gswitching event
+    # add label
+    return [spectrum_switching_event, label]
+
 if __name__ == "__main__":
     pars = read_parameters("src/pulsed_power_ml/models/gupta_model/parameters.yml")
     print(pars)
