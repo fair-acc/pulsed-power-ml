@@ -4,6 +4,8 @@ sample_size: 200000
 n_peaks: 10
 threshold: 1000
 appliances:
-  - tube
-  - halo
-  - led
+  - 1: tube
+  - 2: halo
+  - 3: led
+switching_offset: 1
+sample_rate: 2_000_000

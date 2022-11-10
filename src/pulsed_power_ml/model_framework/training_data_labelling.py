@@ -1,6 +1,6 @@
 import numpy as np
-from src.pulsed_power_ml.model_framework.data_io import load_fft_file, read_training_files
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background, read_parameters, subtract_background, switch_detected, update_background_vector
+from src.pulsed_power_ml.model_framework.data_io import load_fft_file
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background, read_parameters, subtract_background, switch_detected, update_background_vector, calculate_feature_vector
 
 def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
     """
@@ -70,12 +70,12 @@ def get_switch_spectra(spectra, switch_positions, parameters):
 
     Returns
     -------
-    switch_spectra
-        Array of clean switch_spectra for each switch event marked in switch_positions.
+    switch_features
+        Array of feature vectors for each switch event marked in switch_positions.
     """
 
     switch_indices = np.where(switch_positions==1)[1]
-    switch_spectra = []
+    switch_features = []
     for ind in switch_indices:
         raw_spectra = spectra[ind-parameters['background_n']-1:ind]
         background_vector = []
@@ -88,15 +88,21 @@ def get_switch_spectra(spectra, switch_positions, parameters):
         
         current_background = calculate_background(background_vector)
         
-        raw_switch_spectrum = spectra[ind+1]
+        raw_switch_spectrum = spectra[ind+parameters["switching_offset"]]
         raw_switch_spectrum = 10**raw_switch_spectrum
         clean_switch_spectrum = subtract_background(raw_switch_spectrum, current_background)
-        if switch_spectra.__len__() == 0:
-            switch_spectra = clean_switch_spectrum
+        if switch_features.__len__() == 0:
+            switch_features = calculate_feature_vector(clean_switch_spectrum, 
+                                                       parameters['n_peaks'], 
+                                                       parameters['fft_size']/2,
+                                                       parameters['sample_rate'])
         else:
-            switch_spectra = np.vstack((switch_spectra, clean_switch_spectrum))
+            switch_features = np.vstack((switch_features, calculate_feature_vector(clean_switch_spectrum,
+                                                                                   parameters['n_peaks'], 
+                                                                                   parameters['fft_size']/2,
+                                                                                   parameters['sample_rate'])))
             
-    return switch_spectra
+    return switch_features
         
 
 
@@ -127,18 +133,18 @@ def make_labeled_training_data(training_file: str, parameter_file: str):
     switch_spectra = get_switch_spectra(spectra,switch_positions,pars)
     # add label 
     events = np.where(switch_positions==1)[0] # 0 = on, 1 = off
-    labels = np.zeros((2,switch_spectra.__len__()))
+    labels = np.zeros((switch_spectra.__len__(),2))
     counter = 0
     for event in events:
         if event == 0:
-            labels[0,counter] = 1
+            labels[counter,0] = 1
         else:
-            labels[1,counter] = 1
+            labels[counter,1] = 1
         counter += 1
     return [switch_spectra, labels]
 
 
-def explode_to_complete_label_vector(labels: np.ndarray, appliance: str, parameter_file: str):
+def explode_to_complete_label_vector(labels: np.ndarray, appliance_id: int, parameter_file: str):
     """
     Function to explode single appliance label vector to complete label vector size of form
     [appliance1_on, appliance1_off, appliance2_on, appliance2_off,....]
@@ -158,15 +164,20 @@ def explode_to_complete_label_vector(labels: np.ndarray, appliance: str, paramet
         Array of labels including all appliances given in parameter file.
     """
     # get index of single appliance in parameter file appliances list
-    pars = read_parameters("src/pulsed_power_ml/models/gupta_model/parameters.yml")
-    ind = pars["appliances"].index(appliance)
+    pars = read_parameters(parameter_file)
+    ind = appliance_id-1
     
     # construct zeroes array of total size 
-    complete_label_vector = np.zeros((pars["appliances"].__len__()*2,labels[0].__len__()))
+    complete_label_vector = np.zeros((labels.__len__(), (pars["appliances"].__len__()*2)+1))
     
     # replace respective entries with input labels
-    complete_label_vector[ind*2] = labels[0]
-    complete_label_vector[(ind*2)+1] = labels[1]
+    counter = 0
+    for label in labels:
+        if label[0]==1:
+            complete_label_vector[counter][ind] = 1
+        elif label[1]==1:
+            complete_label_vector[counter][ind+pars['appliances'].__len__()] = 1
+        counter += 1
     
     return complete_label_vector
 
@@ -182,6 +193,6 @@ if __name__ == "__main__":
     
     training_file = "../training_data/2022-10-25_training_data/tube/FFTApparentPower_TubeOnOff_FFTSize131072"
     parameter_file = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
-    spectra, label = make_labeled_training_data(training_file, parameter_file)
-    compl_labels = explode_to_complete_label_vector(label,"tube",parameter_file)
+    features, labels = make_labeled_training_data(training_file, parameter_file)
+    compl_labels = explode_to_complete_label_vector(labels,1,parameter_file)
     
