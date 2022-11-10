@@ -3,6 +3,7 @@ fft_size: 131072
 sample_rate: 2000000
 n_peaks: 10
 threshold: 1000
+switching_offset: 1
 appliances:
   - 0: fluorescent
   - 1: halo
