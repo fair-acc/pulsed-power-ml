@@ -25,8 +25,8 @@ def read_parameters(parameter_path: str):
     Dictionary of parameters.
     """
     param_dic = yaml.safe_load(Path(parameter_path).read_text())
-    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_size']
-    param_dic['freq_per_bin'] = param_dic['sample_size'] / param_dic['fft_size']
+    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_rate']
+    param_dic['freq_per_bin'] = param_dic['sample_rate'] / param_dic['fft_size']
     return param_dic
 
 
