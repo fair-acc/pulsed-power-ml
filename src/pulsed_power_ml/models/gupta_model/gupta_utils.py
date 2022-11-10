@@ -103,22 +103,22 @@ def switch_detected(res_spectrum: np.ndarray, threshold: np.int):
     -------
     Boolean: True if switch event was detected, false if no switch event was detected
     """
-    # what percentage of bins has to be above or below the respective thresholds?
-    threshold = 1000
-    
+
     # how many bins are above the standard deviation?
     n_bins_above_thr = res_spectrum[res_spectrum>threshold].__len__()
 
     # how many bins are below the negative standard deviation?
-    n_bins_below_minus_thr = res_spectrum[res_spectrum<-1000].__len__()
+    n_bins_below_minus_thr = res_spectrum[res_spectrum<-threshold].__len__()
+
+    switchon = False
+    switchoff = False
     
     if n_bins_above_thr>=1:
-        switch = True
+        switchon = True
     elif n_bins_below_minus_thr>=1:
-        switch = True
-    else:
-        switch = False
-    return switch
+        switchoff = True
+
+    return [switchon, switchoff]
     
 
 def event_detected(res_spectrum: np.ndarray):
@@ -296,23 +296,14 @@ if __name__ == "__main__":
      
     # for spectrum in spectra[170:176]:  # Einschaltvorgang LED
     for spectrum in spectra[218:225]:  # Einschaltvorgang Halo
+        spectrum = 10**spectrum
         residual = subtract_background(spectrum, current_background)
         # plt.plot(residual)
         # plt.show()
-        print("Switch detected: {}".format(switch_detected(residual,pars['threshold'])))
-        if switch_detected(residual,pars['threshold']):
-            print("Continuing...")
-        else:
-            peaks, _ = find_peaks(residual, height=4*residual.std())
-            print("Peak detected: {}".format(event_detected(residual)))
-            print(peaks)
-            plt.xlim([0,200])
-            plt.plot(peaks, residual[peaks], "ob"); 
-            plt.plot(residual); 
-            plt.plot([0,residual.__len__()],[4*residual.std(),4*residual.std()]); 
-            plt.legend(['peaks','residual', '4*stdev']);
-            plt.show()
-        print("---------------------------------")
+        switch = switch_detected(residual,pars['threshold'])
+
+        print("Switch detected: {}".format(True in switch))
+
         
 
 

@@ -1,5 +1,5 @@
 background_n: 25
-fft_size: 16384
+fft_size: 131072
 sample_size: 200000
 n_peaks: 10
 threshold: 1000
@@ -7,4 +7,3 @@ appliances:
   - tube
   - halo
   - led
-  - other
