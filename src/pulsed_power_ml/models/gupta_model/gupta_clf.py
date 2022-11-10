@@ -1,21 +1,19 @@
 """
 This module contains the implementation of a classifier following the approach by Gupta.
 """
-from typing import Self
+from typing import Any
 from collections import deque
 import copy
 
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import euclidean_distances
+from sklearn.base import BaseEstimator
+from sklearn.base import ClassifierMixin
+from sklearn import neighbors
 
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature_vector
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 
 
 class GuptaClassifier(BaseEstimator, ClassifierMixin):
@@ -27,7 +25,11 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
                  n_known_appliances: int = 10,
                  spectrum_type: int = 0,
                  n_peaks_max: int = 10,
-                 apparent_power_list: list = []) -> None:
+                 apparent_power_list: list = [],
+                 n_neighbors: int = 5,
+                 knn_weights: str = "distance",
+                 distance_threshold: float = 10,
+                 ) -> None:
         """
         Instantiation method for the Gupta classifier.
 
@@ -43,8 +45,17 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
             Number of known appliances.
         spectrum_type
             Determines which spectrum is used. 0: voltage, 1: current, 2: apparent power
-        n_peaks_max:
+        n_peaks_max
             Max. number of peaks, which are used to calculate features.
+        apparent_power_list
+            List with one tuple per known appliance containing name and apparent power value:
+            [(name_0, value_0), (name_1, value_1), ...]
+        n_neighbors
+            Number of nearest neighbors which should be checked during the classification.
+        knn_weights
+            How to weight the distance of al neighbors.
+        distance_threshold
+            If distance to the nearest neighbor is above this threshold, an event is classified as "other"
         """
         # Parameters
         self.background_n = background_n
@@ -53,6 +64,12 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         self.n_known_appliances = n_known_appliances
         self.spectrum_type = spectrum_type
         self.n_peaks_max = n_peaks_max
+
+        # kNN-Classifier
+        self.n_neighbors = n_neighbors
+        self.knn_weights = knn_weights
+        self.distance_threshold = distance_threshold
+        self.clf = neighbors.KNeighborsClassifier()
 
         # Containers
         self.current_state_vector = np.zeros(n_known_appliances + 1)  # one additional for "others"
@@ -64,7 +81,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         return
 
 
-    def fit(self, X: np.array, y: np.array) -> Self:
+    def fit(self, X: np.array, y: np.array) -> Any:
         """
         Method to fit the internal kNN-Classifier to the provided data.
 
@@ -73,12 +90,13 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         X
             Training data (feature arrays for switching events).
         y
-            Labels of the switching events.
+            Labels of the switching events (one-hot-encoded).
 
         Returns
         -------
         Self
         """
+        self.clf.fit(X, y)
         return self
 
 
@@ -113,7 +131,8 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
                                                background=current_background)
 
         # 4. Check if appliance has been changed its state
-        event_detected_flag = switch_detected(cleaned_spectrum)
+        event_detected_flag = switch_detected(cleaned_spectrum,
+                                              threshold=1000)
         if not event_detected_flag:
             # add spectrum to background vector and return last state vector
             self.background_vector.append(spectrum)
@@ -129,7 +148,15 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         self.background_vector.clear()
 
         # 7. Classify event
-        event_class = self.knn_clf.predict(feature_vector)
+        distances, _ = self.clf.kneighbors([feature_vector])
+
+        # Check if known or unknown event via the smallest distance
+        if distances.min() > self.distance_threshold:
+            # Case 1: Unknown event
+            event_class = np.zeros(self.n_known_appliances * 2 + 1)[-1] = 1
+        else:
+            # Case 2: Known event
+            event_class = self.clf.predict([feature_vector])
 
         # 8. Update current state vector accordingly
         self.current_state_vector = self.update_state_vector(event_class=event_class,

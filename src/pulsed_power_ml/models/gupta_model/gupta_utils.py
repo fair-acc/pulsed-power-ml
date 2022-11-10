@@ -272,7 +272,7 @@ def calculate_feature_vector(cleaned_spectrum: np.array,
         frequencies = [j * freq_per_bin + freq_per_bin / 2 for j in [peak_index - 1, peak_index, peak_index + 1]]
         magnitudes = cleaned_spectrum[peak_index - 1:peak_index + 2]
         a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
-        feature_vector[i * 3] = a * switch_off_factor
+        feature_vector[i * 3] = a # * switch_off_factor For switch off events, amplitudes should be negative
         feature_vector[i * 3 + 1] = mu
         feature_vector[i * 3 + 2] = sigma
 
