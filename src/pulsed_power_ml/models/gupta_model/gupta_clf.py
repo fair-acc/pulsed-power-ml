@@ -59,7 +59,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         """
         # Parameters
         self.background_n = background_n
-        self.fft_size_real = fft_size_real
+        self.fft_size_real = int(fft_size_real)
         self.sample_rate = sample_rate
         self.n_known_appliances = n_known_appliances
         self.spectrum_type = spectrum_type
@@ -117,8 +117,11 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         # 0. Step: Remove unused information in data point
         spectrum, apparent_power = self.crop_data_point(X)
 
+        # 0.1 Step: Correct spectrum (ToDo: Remove this step once training data w/o log_10 amplitudes are available)
+        spectrum = 10**spectrum
+
         # 1. Step: Check if background vector is full
-        if not self.background_n != len(self.background_vector):
+        if self.background_n > len(self.background_vector):
             # Add current data point to background vector and return last state vector
             self.background_vector.append(spectrum)
             return self.current_state_vector
@@ -139,6 +142,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
             return self.current_state_vector
 
         # 5. Calculate feature vector
+        print("Event detected: Calculate feature vector")
         feature_vector = calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
                                                   n_peaks_max=self.n_peaks_max,
                                                   fft_size_real=self.fft_size_real,
@@ -223,12 +227,6 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
 
         # Update current state vector's power value for "unknown"
         known_power = sum(updated_state_vector[:-1])
-        updated_state_vector[-1] = current_apparent_power - known_power
+        updated_state_vector[-1] = max(current_apparent_power - known_power, 0)
 
         return updated_state_vector
-
-
-
-
-
-
