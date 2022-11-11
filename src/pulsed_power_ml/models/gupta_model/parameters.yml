@@ -1,6 +1,6 @@
 background_n: 25
 fft_size: 131072
-sample_size: 200000
+sample_rate: 2_000_000
 n_peaks: 10
 threshold: 1000
 appliances:
@@ -8,4 +8,3 @@ appliances:
   - 2: halo
   - 3: led
 switching_offset: 1
-sample_rate: 2_000_000
