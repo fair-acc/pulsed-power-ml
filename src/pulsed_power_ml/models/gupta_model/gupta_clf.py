@@ -80,7 +80,6 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
 
         return
 
-
     def fit(self, X: np.array, y: np.array) -> Any:
         """
         Method to fit the internal kNN-Classifier to the provided data.
@@ -98,7 +97,6 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         """
         self.clf.fit(X, y)
         return self
-
 
     def predict(self, X: np.array) -> np.array:
         """
@@ -130,13 +128,13 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         current_background = calculate_background(np.array(self.background_vector))
 
         # 3. Subtract current background from current spectrum
-        cleaned_spectrum = subtract_background(spectrum=spectrum,
+        cleaned_spectrum = subtract_background(raw_spectrum=spectrum,
                                                background=current_background)
 
         # 4. Check if appliance has been changed its state
         event_detected_flag = switch_detected(cleaned_spectrum,
                                               threshold=1000)
-        if not event_detected_flag:
+        if True not in event_detected_flag:
             # add spectrum to background vector and return last state vector
             self.background_vector.append(spectrum)
             return self.current_state_vector
@@ -168,7 +166,6 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
 
         return self.current_state_vector
 
-
     def crop_data_point(self, X: np.array) -> (np.array, int):
         """
         One data point consists of multiple spectra and quantities. For this algorithm, however, only a subset is
@@ -188,8 +185,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         j = (self.spectrum_type + 1) * self.fft_size_real
         spectrum = X[i:j]
         apparent_power = X[-2]
-        return (spectrum, apparent_power)
-
+        return spectrum, apparent_power
 
     def update_state_vector(self,
                             event_class: np.array,

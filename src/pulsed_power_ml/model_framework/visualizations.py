@@ -63,6 +63,7 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
 
     return fig
 
+
 def get_frequencies_from_spectrum(spectrum: np.array,
                                   sample_rate: int) -> np.array:
     """

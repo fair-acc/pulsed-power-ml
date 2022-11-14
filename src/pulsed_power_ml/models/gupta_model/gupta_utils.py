@@ -1,15 +1,16 @@
 """
 This module contains functions needed by the Gupta classification algorithm.
 """
-from math import ceil
+from typing import Tuple
 import yaml
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks, savgol_filter
+from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
-from src.pulsed_power_ml.model_framework.data_io import load_fft_file, read_training_files
+from src.pulsed_power_ml.model_framework.data_io import load_fft_file
+
 
 def read_parameters(parameter_path: str):
     """
@@ -17,7 +18,7 @@ def read_parameters(parameter_path: str):
 
     Parameters
     ----------
-    path_to_file
+    parameter_path
         Path to the .yml file.
 
     Returns
@@ -68,13 +69,13 @@ def calculate_background(background_points: np.ndarray):
     return background
 
 
-def subtract_background(spectrum: np.ndarray, background: np.ndarray):
+def subtract_background(raw_spectrum: np.ndarray, background: np.ndarray):
     """
     Subtracts background from spectrum.
 
     Parameters
     ----------
-    spectrum
+    raw_spectrum
         Raw spectrum.
     background
         Background to be subtracted from raw spectrum -- needs to have same length as spectrum.
@@ -83,10 +84,10 @@ def subtract_background(spectrum: np.ndarray, background: np.ndarray):
     -------
     Background subtracted spectrum
     """
-    return spectrum-background
+    return raw_spectrum-background
 
 
-def switch_detected(res_spectrum: np.ndarray, threshold: np.int):
+def switch_detected(res_spectrum: np.ndarray, threshold: np.int) -> Tuple[bool, bool]:
     """
     Scans background subtracted spectrum for switch event 
     (signal larger than input parameterthreshold value) 
@@ -101,24 +102,26 @@ def switch_detected(res_spectrum: np.ndarray, threshold: np.int):
 
     Returns
     -------
-    Boolean: True if switch event was detected, false if no switch event was detected
+    flag_tuple
+        Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
+        a "switch off" event ist detected.
     """
 
     # how many bins are above the standard deviation?
-    n_bins_above_thr = res_spectrum[res_spectrum>threshold].__len__()
+    n_bins_above_thr = res_spectrum[res_spectrum > threshold].__len__()
 
     # how many bins are below the negative standard deviation?
-    n_bins_below_minus_thr = res_spectrum[res_spectrum<-threshold].__len__()
+    n_bins_below_minus_thr = res_spectrum[res_spectrum < -threshold].__len__()
 
     switchon = False
     switchoff = False
     
-    if n_bins_above_thr>=1:
+    if n_bins_above_thr >= 1:
         switchon = True
-    elif n_bins_below_minus_thr>=1:
+    elif n_bins_below_minus_thr >= 1:
         switchoff = True
 
-    return [switchon, switchoff]
+    return switchon, switchoff
     
 
 def event_detected(res_spectrum: np.ndarray):
@@ -141,33 +144,34 @@ def event_detected(res_spectrum: np.ndarray):
     peaks, _ = find_peaks(res_spectrum, height=4*res_spectrum.std())
     negpeaks, __ = find_peaks(-1*res_spectrum, height=4*res_spectrum.std())
 
-    if peaks.__len__()>1:
+    if peaks.__len__() > 1:
         peak_detected = True
-    elif negpeaks.__len__()>1:
+    elif negpeaks.__len__() > 1:
         peak_detected = True
     else:
         peak_detected = False
 
     return peak_detected
 
-def update_background_vector(background_vector: np.ndarray, spectrum: np.ndarray):
+
+def update_background_vector(old_background_vector: np.ndarray, raw_spectrum: np.ndarray):
     """
     Updates an existing background vector by removing the first element 
     and appending the input spectrum at the end.
     
     Parameters
     ----------
-    background_vector
+    old_background_vector
         Vector of n raw spectra containing x bins each.
-    spectrum
+    raw_spectrum
         Raw spectrum of length x to be added to the vector.
 
     Returns
     -------
     np.ndarray((n,x)): updated background_vector
     """
-    background_vector = np.vstack((background_vector[1:], spectrum))
-    return background_vector
+    new_background_vector = np.vstack((old_background_vector[1:], raw_spectrum))
+    return new_background_vector
 
 
 def gaussian(x: float, a: float, mu: float, sigma: float) -> float:
@@ -216,7 +220,8 @@ def fit_gaussian_to_peak(frequency_window: np.array, magnitude_window: np.array)
     popt, pcov = curve_fit(f=gaussian,
                            xdata=frequency_window,
                            ydata=magnitude_window,
-                           p0=[a_init, mu_init, sigma_init])
+                           p0=[a_init, mu_init, sigma_init],
+                           full_output=False)
     return popt
 
 
@@ -253,8 +258,8 @@ def calculate_feature_vector(cleaned_spectrum: np.array,
                                                height=min_peak_height)
 
     # remove peaks in the first and last bin of the spectrum (cannot be used for gaussian fit)
-    peak_height_list = [(peak_index, peak_height) \
-                        for peak_index, peak_height in zip(peak_indices, peak_properties['peak_heights']) \
+    peak_height_list = [(peak_index, peak_height)
+                        for peak_index, peak_height in zip(peak_indices, peak_properties['peak_heights'])
                         if peak_index > 0 and peak_index < fft_size_real]
 
     # select highest peaks if more than n_peaks_max peaks have been found
@@ -272,7 +277,7 @@ def calculate_feature_vector(cleaned_spectrum: np.array,
         frequencies = [j * freq_per_bin + freq_per_bin / 2 for j in [peak_index - 1, peak_index, peak_index + 1]]
         magnitudes = cleaned_spectrum[peak_index - 1:peak_index + 2]
         a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
-        feature_vector[i * 3] = a # * switch_off_factor For switch off events, amplitudes should be negative
+        feature_vector[i * 3] = a  # * switch_off_factor For switch off events, amplitudes should be negative
         feature_vector[i * 3 + 1] = mu
         feature_vector[i * 3 + 2] = sigma
 
@@ -303,8 +308,3 @@ if __name__ == "__main__":
         switch = switch_detected(residual,pars['threshold'])
 
         print("Switch detected: {}".format(True in switch))
-
-        
-
-
-        
