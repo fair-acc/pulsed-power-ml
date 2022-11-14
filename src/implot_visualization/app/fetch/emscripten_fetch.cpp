@@ -6,70 +6,80 @@
 #include <iostream>
 #include <string.h>
 
-void Subscription::downloadSucceeded(emscripten_fetch_t *fetch) {
+template<typename T>
+void Subscription<T>::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    deserializer.jsonString.assign(fetch->data, fetch->numBytes);
-    fetchSuccessful = true;
+    this->acquisition.jsonString.assign(fetch->data, fetch->numBytes);
+    this->fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
 }
 
-void Subscription::downloadFailed(emscripten_fetch_t *fetch) {
+template<typename T>
+void Subscription<T>::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    fetchFinished = true;
+    this->fetchFinished = true;
 }
 
+template<typename T>
 void onDownloadSucceeded(emscripten_fetch_t *fetch) {
-    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
-    fetchUtils->downloadSucceeded(fetch);
+    Subscription<T> *sub = static_cast<Subscription<T> *>(fetch->userData);
+    sub->downloadSucceeded(fetch);
 }
 
+template<typename T>
 void onDownloadFailed(emscripten_fetch_t *fetch) {
-    Subscription *fetchUtils = static_cast<Subscription *>(fetch->userData);
-    fetchUtils->downloadFailed(fetch);
+    Subscription<T> *sub = static_cast<Subscription<T> *>(fetch->userData);
+    sub->downloadFailed(fetch);
 }
 
-Subscription::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
-    url              = _url;
+template<typename T>
+Subscription<T>::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
+    this->url        = _url;
     requestedSignals = _requestedSignals;
     for (std::string str : _requestedSignals) {
-        url = url + str + ",";
+        this->url = this->url + str + ",";
     }
-    if (!url.empty()) {
-        url.pop_back();
+    if (!this->url.empty()) {
+        this->url.pop_back();
     }
 
-    int                       numSignals = _requestedSignals.size();
-    std::vector<SignalBuffer> _signals(numSignals);
-    signals     = _signals;
+    int numSignals = _requestedSignals.size();
+    T   _acquisition(numSignals);
+    this->acquisition = _acquisition;
 
-    extendedUrl = url + "&lastRefTrigger=0";
+    this->extendedUrl = this->url + "&lastRefTrigger=0";
 }
 
-void Subscription::fetch() {
+template<typename T>
+void Subscription<T>::fetch() {
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
     // attr.requestHeaders = custom_headers;
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess  = onDownloadSucceeded;
-    attr.onerror    = onDownloadFailed;
+    attr.onsuccess  = onDownloadSucceeded<T>;
+    attr.onerror    = onDownloadFailed<T>;
     attr.userData   = this;
 
-    if (fetchFinished) {
-        emscripten_fetch(&attr, extendedUrl.c_str());
-        fetchFinished = false;
+    if (this->fetchFinished) {
+        emscripten_fetch(&attr, this->extendedUrl.c_str());
+        this->fetchFinished = false;
     }
     if (fetchSuccessful) {
-        deserializer.deserializeJson(signals);
+        this->acquisition.deserialize();
         updateUrl();
-        fetchSuccessful = false;
-        fetchFinished   = true;
+        this->fetchSuccessful = false;
+        this->fetchFinished   = true;
     }
 }
 
-void Subscription::updateUrl() {
-    extendedUrl = url + "&lastRefTrigger=" + std::to_string(deserializer.lastRefTrigger);
+template<typename T>
+void Subscription<T>::updateUrl() {
+    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
 }
+
+template class Subscription<Acquisition>;
+template class Subscription<AcquisitionSpectra>;

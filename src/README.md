@@ -1,6 +1,6 @@
 # Pulsed Power Monitoring
 
-![image](assets/visualize_multiple_gr_signals_light.png)
+![image](assets/dashboard_screenshot.png)
 
 ## Getting Started
 

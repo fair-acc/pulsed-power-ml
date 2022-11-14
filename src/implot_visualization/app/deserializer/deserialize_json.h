@@ -14,18 +14,27 @@ public:
     constexpr DataPoint(double _x, double _y);
 };
 
-class SignalBuffer {
+class Buffer {
+public:
+    ImVector<DataPoint> data;
+    std::string         signalName;
+
+    Buffer(int max_size = 200'000);
+
+    void assign(const std::vector<double> &x, const std::vector<double> &y);
+};
+
+class ScrollingBuffer {
 public:
     int                 maxSize;
     int                 offset;
     ImVector<DataPoint> data;
     std::string         signalName;
 
-    SignalBuffer(int max_size = 200'000);
+    ScrollingBuffer(int max_size = 200'000);
 
-    void      addPoint(double x, double y);
-    void      erase();
-    DataPoint back();
+    void addPoint(double x, double y);
+    void erase();
 };
 
 struct StrideArray {
@@ -33,32 +42,44 @@ struct StrideArray {
     std::vector<double> values;
 };
 
-struct Acquisition {
-    uint64_t                 refTrigger_ns = 0;
-    double                   refTrigger_s  = 0.0;
-    std::vector<std::string> signalNames;
-    std::vector<double>      relativeTimestamps;
-    StrideArray              strideArray;
-};
-
-struct AcquisitionSpectra {
-    uint64_t           refTrigger_ns = 0;
-    double             refTrigger_s  = 0.0;
-    std::string        signalName;
-    std::vector<float> channelMagnitudeValues;
-    std::vector<float> channelFrequencyValues;
-};
-
-class Deserializer {
+class Acquisition {
 public:
-    uint64_t    lastRefTrigger = 0;
-    std::string jsonString     = "";
+    std::vector<std::string>     signalNames;
+    std::string                  jsonString     = "";
+    uint64_t                     lastRefTrigger = 0;
+    std::vector<ScrollingBuffer> buffers;
 
-    void        deserializeJson(std::vector<SignalBuffer> &signals);
+    Acquisition();
+    Acquisition(int numSignals);
+
+    void deserialize();
 
 private:
-    void deserializeAcquisition(std::vector<SignalBuffer> &signals);
-    void deserializeAcquisitionSpectra(std::vector<SignalBuffer> &signals);
-    void addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData);
-    void addToSignalBuffers(std::vector<SignalBuffer> &signals, const AcquisitionSpectra &acquisitionData);
+    uint64_t            refTrigger_ns = 0;
+    double              refTrigger_s  = 0.0;
+    std::vector<double> relativeTimestamps;
+    StrideArray         strideArray;
+
+    void                addToBuffers();
+};
+
+class AcquisitionSpectra {
+public:
+    std::string         signalName;
+    uint64_t            lastRefTrigger = 0;
+    std::string         jsonString     = "";
+    std::vector<Buffer> buffers;
+
+    AcquisitionSpectra();
+    AcquisitionSpectra(int numSignals);
+
+    void deserialize();
+
+private:
+    uint64_t            refTrigger_ns = 0;
+    double              refTrigger_s  = 0.0;
+    std::vector<double> channelMagnitudeValues;
+    std::vector<double> channelFrequencyValues;
+
+    void                addToBuffers();
 };

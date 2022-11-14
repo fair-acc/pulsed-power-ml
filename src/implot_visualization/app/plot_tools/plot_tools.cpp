@@ -4,7 +4,7 @@
 #include <plot_tools.h>
 #include <vector>
 
-void Plotter::plotSignals(std::vector<SignalBuffer> &signals) {
+void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
         if (signals[i].data.size() > 0) {
             ImPlot::PlotLine((signals[i].signalName).c_str(),
@@ -18,7 +18,21 @@ void Plotter::plotSignals(std::vector<SignalBuffer> &signals) {
     }
 }
 
-void Plotter::plotGrSignals(std::vector<SignalBuffer> &signals) {
+void Plotter::plotSignals(std::vector<Buffer> &signals) {
+    for (int i = 0; i < signals.size(); i++) {
+        if (signals[i].data.size() > 0) {
+            ImPlot::PlotLine((signals[i].signalName).c_str(),
+                    &signals[i].data[0].x,
+                    &signals[i].data[0].y,
+                    signals[i].data.size(),
+                    0,
+                    0,
+                    2 * sizeof(double));
+        }
+    }
+}
+
+void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
@@ -30,7 +44,7 @@ void Plotter::plotGrSignals(std::vector<SignalBuffer> &signals) {
     plotSignals(signals);
 }
 
-void Plotter::plotBandpassFilter(std::vector<SignalBuffer> &signals) {
+void Plotter::plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
@@ -39,7 +53,7 @@ void Plotter::plotBandpassFilter(std::vector<SignalBuffer> &signals) {
     // plotSignals(signals);
 }
 
-void Plotter::plotPower(std::vector<SignalBuffer> &signals) {
+void Plotter::plotPower(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
@@ -52,7 +66,7 @@ void Plotter::plotPower(std::vector<SignalBuffer> &signals) {
     plotSignals(signals);
 }
 
-void Plotter::plotMainsFrequency(std::vector<SignalBuffer> &signals) {
+void Plotter::plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
@@ -64,11 +78,10 @@ void Plotter::plotMainsFrequency(std::vector<SignalBuffer> &signals) {
     // plotSignals(signals);
 }
 
-void Plotter::plotPowerSpectrum(std::vector<SignalBuffer> &signals) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+void Plotter::plotPowerSpectrum(std::vector<Buffer> &signals) {
+    static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
-    ImPlot::SetupAxisLimits(ImAxis_X1, 0, 7, ImGuiCond_Always);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
 }
