@@ -109,7 +109,8 @@ def add_contour_plot(spectrum: np.array,
     ax.imshow(X=spectrum.T,
               aspect="auto",
               interpolation="none",
-              origin="lower")
+              origin="lower",
+              cmap=matplotlib.colormaps["rainbow"])
 
     # add frequency ticks to y-axis
     y_labels = np.arange(min_max_freq[0], min_max_freq[1]+1, 250)
