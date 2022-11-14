@@ -2,7 +2,7 @@ background_n: 25
 fft_size: 131072
 sample_rate: 2_000_000
 n_peaks: 10
-threshold: 1000
+threshold: 900
 appliances:
   - 1: tube
   - 2: halo
