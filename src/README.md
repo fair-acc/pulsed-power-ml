@@ -10,10 +10,12 @@
 
 ## Usage
 
-In order to visualize data passed by OpenCMW
+In order to visualize data passed by OpenCMW, do the following:
 
 1. Build and run the OpenCMW worker
 2. Build and run the ImPlot Visualization.
+
+### OpenCMW
 
 How to Build
 
