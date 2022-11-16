@@ -4,12 +4,14 @@
 #include <emscripten.h>
 #include <emscripten/fetch.h>
 
+template<typename T>
 class Subscription {
 public:
-    std::string               url;
-    std::vector<SignalBuffer> signals;
-    bool                      fetchFinished   = true;
-    bool                      fetchSuccessful = false;
+    std::string    url;
+    T              acquisition;
+    std::vector<T> signals;
+    bool           fetchFinished   = true;
+    bool           fetchSuccessful = false;
 
     Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);
 
@@ -19,7 +21,6 @@ public:
 
 private:
     std::vector<std::string> requestedSignals;
-    Deserializer             deserializer;
     std::string              extendedUrl;
 
     void                     updateUrl();
