@@ -4,6 +4,7 @@
 #include <SDL_opengles2.h>
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 #include <vector>
 
 #include "imgui.h"
@@ -13,8 +14,7 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
-
-std::vector<SignalBuffer> signals(3);
+#include <plot_tools.h>
 
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
@@ -23,9 +23,26 @@ std::vector<SignalBuffer> signals(3);
 SDL_Window   *g_Window    = NULL;
 SDL_GLContext g_GLContext = NULL;
 
-static void   main_loop(void *);
+class AppState {
+public:
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
+    Plotter                                       plotter;
+    double                                        lastFrequencyFetchTime = 0.0;
 
-int           main(int, char **) {
+    AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency) {
+        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
+        this->subscriptionsFrequency  = _subscriptionsFrequency;
+
+        auto   clock                  = std::chrono::system_clock::now();
+        double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        this->lastFrequencyFetchTime  = currentTime;
+    }
+};
+
+static void main_loop(void *);
+
+int         main(int, char **) {
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -89,20 +106,32 @@ int           main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
+    ImGui::StyleColorsLight();
+
+    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
+    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
+
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, NULL, 0, true);
+    emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
 }
 
 static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
-    IM_UNUSED(arg); // We can pass this argument as the second parameter of emscripten_set_main_loop_arg(), but we don't use that.
+
+    // Parse arguments from main
+    AppState                                      *args                    = static_cast<AppState *>(arg);
+    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain = args->subscriptionsTimeDomain;
+    std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency  = args->subscriptionsFrequency;
+    Plotter                                       &plotter                 = args->plotter;
+    double                                        &lastFrequencyFetchTime  = args->lastFrequencyFetchTime;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    bool                visualize_gr_signal = true;
-    bool                visualize_counter   = false;
-    static bool         show_demo_window    = false;
-    static ImVec4       clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    static Deserializer deserializer;
+    static bool   show_demo_window = false;
+    static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
@@ -122,9 +151,21 @@ static void main_loop(void *arg) {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Visualize One GR SignalBuffer
-    if (visualize_gr_signal) {
-        fetch("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=sinus@4000Hz,saw@4000Hz,square@4000Hz", signals, &deserializer);
+    // Pulsed Power Monitoring Dashboard
+    {
+        for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
+            subTime.fetch();
+        }
+
+        // Update frequency domain signals with 1 Hz only
+        auto   clock       = std::chrono::system_clock::now();
+        double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        if (currentTime - lastFrequencyFetchTime >= 1.0) {
+            for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
+                subFreq.fetch();
+                lastFrequencyFetchTime = currentTime;
+            }
+        }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -140,66 +181,25 @@ static void main_loop(void *arg) {
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // GR Signals Plot
             if (ImPlot::BeginPlot("GR Signals")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                for (int i = 0; i < signals.size(); i++) {
-                    if (signals[i].data.size() > 0) {
-                        ImPlot::PlotLine((signals[i].signalName).c_str(), &signals[i].data[0].x, &signals[i].data[0].y, signals[i].data.size(), 0, signals[i].offset, 2 * sizeof(double));
-                    }
-                }
+                plotter.plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Bandpass Filter Plot
             if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
-                ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Always);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
+                plotter.plotBandpassFilter(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Power Plot
             if (ImPlot::BeginPlot("Power")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                // Setup x-Axis
-                ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
+                plotter.plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("Mains Frequency")) {
-                static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-                static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-                ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
-                auto   clock       = std::chrono::system_clock::now();
-                double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-                ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
-                ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                // if (buffer.Data.size() > 0) {
-                //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-                // }
+                plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
         }
@@ -207,35 +207,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-            static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-            ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
-            ImPlot::SetupAxisLimits(ImAxis_X1, 0, 7, ImGuiCond_Always);
-            ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-            // if (buffer.Data.size() > 0) {
-            //     // ImPlot::PlotLine("Sinus", &buffer.Data[0].x, &buffer.Data[0].y, buffer.Data.size(), 0, buffer.Offset, 2 * sizeof(double));
-            // }
-            ImPlot::EndPlot();
-        }
-        ImGui::End();
-    }
-
-    // Visualize Counter
-    if (visualize_counter) {
-        fetch("http://localhost:8080/counter/testCounter", signals, &deserializer);
-
-        SignalBuffer buffer = signals[0];
-        ImGui::SetNextWindowSize(ImVec2(800, 300), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Counter Demo Window");
-        if (ImPlot::BeginPlot("Counter Worker")) {
-            ImPlot::SetupAxes("Timestamp", "Value");
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-            if (buffer.data.size() > 0) {
-                int bufferEnd = buffer.data.size() - 1;
-                ImPlot::SetupAxisLimits(ImAxis_X1, buffer.data[bufferEnd].x - 300.0, buffer.data[bufferEnd].x, ImGuiCond_Always);
-                ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-                ImPlot::PlotLine("Counter", &buffer.data[0].x, &buffer.data[0].y, buffer.data.size(), 0, buffer.offset, 2 * sizeof(int64_t));
-            }
+            plotter.plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
             ImPlot::EndPlot();
         }
         ImGui::End();

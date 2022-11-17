@@ -78,6 +78,13 @@ public:
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
+
+                static size_t           subs       = 0;
+                if (subs != super_t::activeSubscriptions().size()) {
+                    subs = super_t::activeSubscriptions().size();
+                    fmt::print("TimeDomainWorker: activeSubs: {}\n", subs);
+                }
+
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
 
                     if (subTopic.path() != "/Acquisition") {
@@ -131,10 +138,67 @@ public:
             sink->set_callback(std::bind(&TimeDomainWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
         }
 
-        super_t::setCallback([this](RequestContext &rawCtx, const TimeDomainContext     &requestContext, const Empty &,
-                                     TimeDomainContext /* &replyContext */, Acquisition &out) {
-            if (rawCtx.request.command() == Command::Get) {
-                handleGetRequest(requestContext, out);
+        super_t::setCallback([this](RequestContext & /*rawCtx*/, const TimeDomainContext &requestContext, const Empty &,
+                                     TimeDomainContext & /*replyContext*/, Acquisition   &out) {
+            std::set<std::string, std::less<>> requestedSignals;
+            if (!checkRequestedSignals(requestContext, requestedSignals)) {
+                return;
+            }
+
+            // find how many chunks should be parallely polled
+            std::vector<uint64_t> chunksAvailable;
+            for (const auto &requestedSignal : requestedSignals) {
+                auto     signalData = _signalsMap.at(requestedSignal);
+                uint64_t diff       = signalData.ringBuffer->cursor() - signalData.eventPoller->sequence()->value();
+                chunksAvailable.push_back(diff);
+            }
+
+            uint64_t maxChunksToPoll = *std::min_element(chunksAvailable.begin(), chunksAvailable.end());
+
+            if (maxChunksToPoll == 0) {
+                // no new items for requested signals
+                return;
+            }
+
+            // poll data
+            std::vector<float> stridedValues;
+            out.refTriggerStamp = 0;
+            out.channelNames.clear();
+            float sampleRate;
+            for (const auto &requestedSignal : requestedSignals) {
+                auto signalData = _signalsMap.at(requestedSignal);
+                assert(maxChunksToPoll > 0);
+                sampleRate = signalData.sampleRate;
+
+                out.channelNames.push_back(requestedSignal);
+
+                bool      firstChunk = true;
+                PollState result;
+                for (size_t i = 0; i < maxChunksToPoll; i++) {
+                    result = signalData.eventPoller->poll([&](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
+                        if (firstChunk) {
+                            out.refTriggerStamp = event.timestamp;
+                            stridedValues.reserve(requestedSignals.size() * maxChunksToPoll * event.chunk.size());
+                            firstChunk = false;
+                        }
+
+                        stridedValues.insert(stridedValues.end(), event.chunk.begin(), event.chunk.end());
+
+                        return false;
+                    });
+                }
+                assert(result == PollState::Processing);
+            }
+
+            //  generate multiarray values from strided array
+            size_t channelValuesSize = stridedValues.size() / requestedSignals.size();
+            out.channelValues        = opencmw::MultiArray<float, 2>(std::move(stridedValues), { requestedSignals.size(), channelValuesSize });
+            //  generate relative timestamps
+            out.channelTimeSinceRefTrigger.clear();
+            out.channelTimeSinceRefTrigger.reserve(channelValuesSize);
+            for (size_t i = 0; i < channelValuesSize; ++i) {
+                float relativeTimestamp = static_cast<float>(i) * (1 / sampleRate);
+                out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
             }
         });
     }
