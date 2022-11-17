@@ -111,12 +111,14 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
+    std::string modifiedJsonString = this->jsonString;
+    if (this->jsonString.substr(0, 21) == "\"AcquisitionSpectra\":") {
+        modifiedJsonString.erase(0, 21);
+    } else if (this->jsonString.substr(0, 16) == "\"LimitingCurve\":") {
+        modifiedJsonString.erase(0, 16);
+    } else {
         return;
     }
-    std::string modifiedJsonString = this->jsonString;
-
-    modifiedJsonString.erase(0, 21);
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {

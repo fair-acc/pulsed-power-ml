@@ -78,10 +78,11 @@ void Plotter::plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     // plotSignals(signals);
 }
 
-void Plotter::plotPowerSpectrum(std::vector<Buffer> &signals) {
+void Plotter::plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
+    plotSignals(limitingCurve);
 }

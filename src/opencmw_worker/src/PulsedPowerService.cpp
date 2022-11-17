@@ -24,6 +24,7 @@
 
 #include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
+#include "LimitingCurveWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -181,11 +182,13 @@ int main() {
     CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
 
     // run workers in separate threads
     std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
+    std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
 
     brokerThread.join();
 
@@ -193,4 +196,5 @@ int main() {
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     counterWorkerThread.join();
+    limitingCurveWorkerThread.join();
 }

@@ -49,7 +49,11 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
     T   _acquisition(numSignals);
     this->acquisition = _acquisition;
 
-    this->extendedUrl = this->url + "&lastRefTrigger=0";
+    if (url.find("channelNameFilter") != std::string::npos) {
+        this->extendedUrl = this->url + "&lastRefTrigger=0";
+    } else {
+        this->extendedUrl = this->url;
+    }
 }
 
 template<typename T>
@@ -70,7 +74,9 @@ void Subscription<T>::fetch() {
     }
     if (fetchSuccessful) {
         this->acquisition.deserialize();
-        updateUrl();
+        if (url.find("channelNameFilter") != std::string::npos) {
+            updateUrl();
+        }
         this->fetchSuccessful = false;
         this->fetchFinished   = true;
     }

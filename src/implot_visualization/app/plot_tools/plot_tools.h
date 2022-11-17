@@ -9,7 +9,7 @@ public:
     void plotBandpassFilter(std::vector<ScrollingBuffer> &signals);
     void plotPower(std::vector<ScrollingBuffer> &signals);
     void plotMainsFrequency(std::vector<ScrollingBuffer> &signals);
-    void plotPowerSpectrum(std::vector<Buffer> &signals);
+    void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve);
 
 private:
     void plotSignals(std::vector<ScrollingBuffer> &signals);
