@@ -12,7 +12,7 @@ from scipy.optimize import curve_fit
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file
 
 
-def read_parameters(parameter_path: str):
+def read_parameters(parameter_path: str) -> dict:
     """
     Read parameters from a parameter yml file into a dictionary.
 
@@ -52,7 +52,7 @@ def read_power_data_base(path_to_file: str) -> list:
     return apparent_power_list
 
 
-def calculate_background(background_points: np.ndarray):
+def calculate_background(background_points: np.ndarray) -> np.ndarray:
     """
     Calculates background from input spectra.
 
@@ -69,7 +69,7 @@ def calculate_background(background_points: np.ndarray):
     return background
 
 
-def subtract_background(raw_spectrum: np.ndarray, background: np.ndarray):
+def subtract_background(raw_spectrum: np.ndarray, background: np.ndarray) -> np.ndarray:
     """
     Subtracts background from spectrum.
 
@@ -87,7 +87,7 @@ def subtract_background(raw_spectrum: np.ndarray, background: np.ndarray):
     return raw_spectrum-background
 
 
-def switch_detected(res_spectrum: np.ndarray, threshold: np.int) -> Tuple[bool, bool]:
+def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, bool]:
     """
     Scans background subtracted spectrum for switch event 
     (signal larger than input parameterthreshold value) 
@@ -124,7 +124,7 @@ def switch_detected(res_spectrum: np.ndarray, threshold: np.int) -> Tuple[bool, 
     return switchon, switchoff
     
 
-def event_detected(res_spectrum: np.ndarray):
+def event_detected(res_spectrum: np.ndarray) -> bool:
     """
     Scans background subtracted spectrum for peaks. 
     Threshold for peak detection is more than one peak above 4 times the standard deviation.
@@ -154,7 +154,7 @@ def event_detected(res_spectrum: np.ndarray):
     return peak_detected
 
 
-def update_background_vector(old_background_vector: np.ndarray, raw_spectrum: np.ndarray):
+def update_background_vector(old_background_vector: np.ndarray, raw_spectrum: np.ndarray) -> np.ndarray:
     """
     Updates an existing background vector by removing the first element 
     and appending the input spectrum at the end.
@@ -196,7 +196,7 @@ def gaussian(x: float, a: float, mu: float, sigma: float) -> float:
     return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 
-def fit_gaussian_to_peak(frequency_window: np.array, magnitude_window: np.array) -> np.array:
+def fit_gaussian_to_peak(frequency_window: np.ndarray, magnitude_window: np.ndarray) -> np.ndarray:
     """
     Fit a gaussian to the data points in **peak_window**
 
@@ -225,10 +225,10 @@ def fit_gaussian_to_peak(frequency_window: np.array, magnitude_window: np.array)
     return popt
 
 
-def calculate_feature_vector(cleaned_spectrum: np.array,
+def calculate_feature_vector(cleaned_spectrum: np.ndarray,
                              n_peaks_max: int,
                              fft_size_real: int,
-                             sample_rate: int) -> np.array:
+                             sample_rate: int) -> np.ndarray:
     """
     Calculate a feature vector given a cleaned spectrum.
 

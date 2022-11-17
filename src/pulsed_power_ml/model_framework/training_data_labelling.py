@@ -3,6 +3,7 @@ from glob import glob
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background, read_parameters, subtract_background, switch_detected, update_background_vector, calculate_feature_vector
 
+
 def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
     """
     Function to automatically label training spectra (from GNU Radio).
@@ -19,9 +20,9 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
     switch_positions
         Array of switch_positions for switch on and switch off.
     """
-    switch_positions=np.zeros((2,spectra.__len__()))
-    
-    background_vector = []
+    switch_positions = np.zeros((2, spectra.__len__()))
+
+    background_vector = np.array([])
     current_background = None
     counter = 0
     for spectrum in spectra:
@@ -32,17 +33,18 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
             residual = subtract_background(spectrum, current_background)
             switch = switch_detected(residual, parameters['threshold'])
             if True in switch:
-                switch_positions[switch.index(True),counter]=1
-                print ("switch detected")
+                switch_positions[switch.index(True), counter] = 1
+                print("switch detected")
                 print(counter)
-                background_vector = []
+                background_vector = np.array([])
                 current_background = None
             else:
-                background_vector = update_background_vector(background_vector, spectrum)
+                background_vector = update_background_vector(background_vector,
+                                                             spectrum)
                 current_background = calculate_background(background_vector)
         else:
             if background_vector.__len__() == 0:
-                background_vector = spectrum.reshape(1,-1)
+                background_vector = spectrum.reshape(1, -1)
             else:
                 background_vector = np.vstack((background_vector, spectrum))
 
@@ -52,13 +54,14 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
                 print("background calculated")
                 print(counter)
         
-        counter+=1
+        counter += 1
     return switch_positions
 
 
 def get_switch_features(spectra, switch_positions, parameters):
     """
-    Function to get clean spectra for switch events. Please make sure that there are at least 26 regular spectra for background calculation 
+    Function to get clean spectra for switch events. Please make sure that
+    there are at least 26 regular spectra for background calculation.
 
     Parameters
     ----------
@@ -75,11 +78,11 @@ def get_switch_features(spectra, switch_positions, parameters):
         Array of feature vectors for each switch event marked in switch_positions.
     """
 
-    switch_indices = np.where(switch_positions==1)[1]
+    switch_indices = np.where(switch_positions == 1)[1]
     switch_features = []
     for ind in switch_indices:
         raw_spectra = spectra[ind-parameters['background_n']-1:ind]
-        background_vector = []
+        background_vector = np.array([])
         for spectrum in raw_spectra:
             spectrum = 10**spectrum
             if background_vector.__len__() == 0:
@@ -203,7 +206,8 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
     1 if run without errors
     """
     pars = read_parameters(parameter_file)
-    sorts = ["ApparentPower","Voltage","Current"]
+    #sorts = ["ApparentPower","Voltage","Current"]
+    sorts = ["ApparentPower"]
     appliances = list()
     appliance_ids = list()
     for item in pars['appliances']:
@@ -218,8 +222,6 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
         allfeatures = []
         alllabels = []
         for file in files: # loop over appliances
-            if any(sort in file for sort in sorts):
-                s = sorts[np.where([sort in file for sort in sorts])[0][0]]
             appliance = None
             appliance_id = None
             if any(appl in file for appl in appliances):
@@ -228,10 +230,9 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
             if appliance is not None: # single appliance, not mixed
                 features, labels = make_labeled_training_data(file, parameter_file)
                 if features.__len__() == 0:
-                    print("Warning: No switches found for "+ appliance + " in " + s + "!")
+                    print("Warning: No switches found for "+ appliance + " in " + sort + "!")
                 else:
                     compl_labels = explode_to_complete_label_vector(labels,appliance_id,parameter_file)
-                    print(features.__len__())
                     if allfeatures.__len__() == 0:
                         allfeatures = features
                         alllabels = compl_labels
@@ -239,8 +240,8 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
                         allfeatures = np.vstack((allfeatures, features))
                         alllabels = np.vstack((alllabels, compl_labels))    
 
-        np.savetxt(output_path + "Features_" + s + ".csv", allfeatures, delimiter=",")
-        np.savetxt(output_path + "Labels_" + s + ".csv", alllabels, delimiter=",")
+        np.savetxt(output_path + "Features_" + sort + ".csv", allfeatures, delimiter=",")
+        np.savetxt(output_path + "Labels_" + sort + ".csv", alllabels, delimiter=",")
         
     return(1)
     
