@@ -30,13 +30,11 @@ public:
     Plotter                                       plotter;
     double                                        lastFrequencyFetchTime = 0.0;
 
-    AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency) {
-        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
-        this->subscriptionsFrequency  = _subscriptionsFrequency;
-
-        auto   clock                  = std::chrono::system_clock::now();
-        double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-        this->lastFrequencyFetchTime  = currentTime;
+    AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency)
+        : subscriptionsTimeDomain(_subscriptionsTimeDomain), subscriptionsFrequency(_subscriptionsFrequency) {
+        auto   clock                 = std::chrono::system_clock::now();
+        double currentTime           = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        this->lastFrequencyFetchTime = currentTime;
     }
 };
 

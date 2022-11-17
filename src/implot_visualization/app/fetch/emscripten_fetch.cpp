@@ -35,9 +35,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
-    this->url        = _url;
-    requestedSignals = _requestedSignals;
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
+    : url(_url), requestedSignals(_requestedSignals) {
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
