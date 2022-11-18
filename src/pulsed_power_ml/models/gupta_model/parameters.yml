@@ -3,8 +3,21 @@ fft_size: 131072
 sample_rate: 2_000_000
 n_peaks: 10
 threshold: 900
+#appliances:
+#  - 1: tube
+#  - 2: halo
+#  - 3: led
 appliances:
-  - 1: tube
-  - 2: halo
-  - 3: led
+  - 1: E1
+  - 2: F1
+  - 3: F2
+  - 4: FP1
+  - 5: H1
+  - 6: H2
+  - 7: L1
+  - 8: L2
+  - 9: PS1
+  - 10: PS1Lamp
+  - 11: R1
+  - 12: R2
 switching_offset: 1

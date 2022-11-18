@@ -116,7 +116,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         spectrum, apparent_power = self.crop_data_point(X)
 
         # 0.1 Step: Correct spectrum (ToDo: Remove this step once training data w/o log_10 amplitudes are available)
-        spectrum = 10**spectrum
+        #spectrum = 10**spectrum
 
         # 1. Step: Check if background vector is full
         if self.background_n > len(self.background_vector):
