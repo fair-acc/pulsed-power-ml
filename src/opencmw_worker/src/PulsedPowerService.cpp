@@ -15,6 +15,7 @@
 
 #include "CounterWorker.hpp"
 #include "TimeDomainWorker.hpp"
+#include "NilmPowerWorker.hpp"
 
 using namespace opencmw::majordomo;
 
@@ -145,14 +146,19 @@ int main() {
     // OpenCMW workers
     CounterWorker<"counter", description<"Returns counter value">>      counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power", description<"Time-Domain Worker">> timeDomainWorker(broker);
+    NilmPowerWorker<"nilm_values", description<"Nilm Data">>            nilmDataWorker(broker, std::chrono::milliseconds(1000));
+
 
     // run workers in separate threads
     std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
     timeSinkWorkerThread.join();
     counterWorkerThread.join();
+    nilmDataWorkerThread.join();
+
 }
