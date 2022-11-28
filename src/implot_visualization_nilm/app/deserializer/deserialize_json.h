@@ -101,8 +101,11 @@ private:
 class PowerUsage {
 public:
     //dummy devices
-    std::vector<std::string> devices = {"Pump", "DVR", "Kitchen Fridge", "Sys Laptop"}; 
+    std::vector<std::string> devices = {"Pump", "DVR", "Sys Laptop", "Others"}; 
     std::vector<double> powerUsages;
+    std::vector<double> powerUsagesDay;
+    std::vector<double> powerUsagesWeek;
+    std::vector<double> powerUsagesMonth;
     uint64_t            lastRefTrigger = 0;
     std::string         jsonString = "";
     std::vector<Buffer> buffers;
@@ -111,10 +114,13 @@ public:
     double              deliveryTime;
 
     // dummy values
-    std::vector<double> lastWeekUsage   = {80.0, 69.0, 52.0, 92.0, 72.0, 78.0, 80.0};
+    std::vector<double> lastWeekUsage   = {85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0}; // other service
 
     // dummy value
     double              powerUsageToday = 45.9;
+
+    //dummy value
+    double              kWhUsedDay      = 1098.99;
 
     //dummy value
     double              kWhUsedMonth    = 1098.99;
@@ -134,8 +140,12 @@ public:
 
     void                deserialize();
     void                fail();
-
     double              sumOfUsage();
+
+private: 
+    void                setSumOfUsageDay();
+    void                setSumOfUsageWeek();
+    void                setSumOfUsageMonth();
 
 // // TODO - define Buffer if needed
 // private:

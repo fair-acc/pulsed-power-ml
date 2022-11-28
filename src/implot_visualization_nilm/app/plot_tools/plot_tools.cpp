@@ -5,8 +5,6 @@
 #include <vector>
 #include <implot_internal.h>
 
-//void Plotter::plotBarchart(){};
-
 
 void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
@@ -90,7 +88,43 @@ void Plotter::plotPower(std::vector<ScrollingBuffer> &signals) {
 //     plotSignals(signals);
 // }
 
-void DeviceTable::plotTable(PowerUsage &powerUsage){
+void Plotter::plotBarchart(PowerUsage &powerUsage){
+    if(ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")){
+
+        // Todo - dates
+        //auto   clock       = std::chrono::system_clock::now();
+        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        
+        static const char*  labels[]    = {"1","2","3","4","5","6","Today"};
+        static double       kWh[7];
+        static double       kWhToday[7] = {0.0, 0.0,0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back()};
+        static const double positions[] = {0,1,2,3,4,5,6};
+        bool clamp = false;
+
+        std::copy(powerUsage.lastWeekUsage.begin(),  powerUsage.lastWeekUsage.end()-1, kWh);
+        kWh[6] = 0;
+
+        ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
+
+        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, 110, ImGuiCond_Always);
+        ImPlot::SetupAxes("Day","kWh");
+        ImPlot::SetupAxisTicks(ImAxis_X1,positions, 7, labels);
+        ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
+        ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
+
+        for(int i=0;i<7;i++){
+            if(i!=6){
+                ImPlot::Annotation(positions[i], kWh[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWh[i] );
+            }else{
+                ImPlot::Annotation(positions[i], kWhToday[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWhToday[i] );
+            }
+        }
+
+        ImPlot::EndPlot();
+    }
+}
+
+void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w){
 
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
@@ -110,7 +144,7 @@ void DeviceTable::plotTable(PowerUsage &powerUsage){
         }
     }else{       
         
-        ImGui::TextColored(ImVec4(1,1,0,1),"%s","Connection OK\n");
+        ImGui::TextColored(ImVec4(1,1,0,1),"%s","Connected\n");
         ImGui::Text(" ");
     }
 
@@ -118,13 +152,33 @@ void DeviceTable::plotTable(PowerUsage &powerUsage){
 
     double sum_of_usage = powerUsage.sumOfUsage();
 
+    std::string timePeriod;
+
+    switch (m_d_w)
+    {
+    case 0:
+        sum_of_usage   = powerUsage.kWhUsedMonth;
+        timePeriod = "Relative Usage current month";
+        break;
+    case 1:
+        sum_of_usage   = powerUsage.kWhUsedWeek;
+        timePeriod = "Relative Usage current week";
+        break;
+    case 2:
+        sum_of_usage   = powerUsage.kWhUsedDay;
+        timePeriod = "Relative Usage current day";
+        break;
+    default:
+        break;
+    }
+
 
     // nilm Visualisation
     if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1,0))){
         ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 200.0f);
         ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
         ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-        ImGui::TableSetupColumn("Relative Usage");
+        ImGui::TableSetupColumn(timePeriod.c_str());
         ImGui::TableHeadersRow();
         ImPlot::PushColormap(ImPlotColormap_Cool);
  
@@ -153,7 +207,22 @@ void DeviceTable::plotTable(PowerUsage &powerUsage){
                 ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%.2f", powerUsage.powerUsages[row] );
                 ImGui::TableSetColumnIndex(3);
-                double relative = powerUsage.powerUsages[row]/sum_of_usage;
+                double relative = 0;
+                switch (m_d_w)
+                {
+                case 0:
+                    relative = powerUsage.powerUsagesMonth[row]/sum_of_usage;
+                    break;
+                case 1:
+                    relative = powerUsage.powerUsagesWeek[row]/sum_of_usage;
+                    break;
+                case 2:
+                    relative = powerUsage.powerUsagesDay[row]/sum_of_usage;
+                    break;
+                default:
+                    break;
+                }
+
                 ImGui::Text("%.2f", relative);
             }
         }

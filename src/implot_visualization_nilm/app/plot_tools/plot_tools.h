@@ -5,11 +5,10 @@
 
 class Plotter {
 public:
-   // TODO plot barchart
-//    void plotBarchart();
 //    void plotGrSignals(std::vector<ScrollingBuffer> &signals);
 //     void plotBandpassFilter(std::vector<ScrollingBuffer> &signals);
     void plotPower(std::vector<ScrollingBuffer> &signals);
+    void plotBarchart(PowerUsage &powerUsage);
     // void plotMainsFrequency(std::vector<ScrollingBuffer> &signals);
     // void plotPowerSpectrum(std::vector<Buffer> &signals);
 
@@ -20,5 +19,5 @@ private:
 
 class DeviceTable {
 public:
-    void plotTable(PowerUsage &powerUsage);
+    void plotTable(PowerUsage &powerUsage, int m_d_w=0);
 };

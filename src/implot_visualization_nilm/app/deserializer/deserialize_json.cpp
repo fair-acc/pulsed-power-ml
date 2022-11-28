@@ -179,10 +179,19 @@ void PowerUsage::deserialize(){
         if (element.key() == "values"){
             this->powerUsages.assign(element.value().begin(), element.value().end());
         }
-       
        // TODO - Buffer if needed
        // addToBuffers();
     }
+
+    // dummy data TODO - deserialize in for , when structure is known
+    this->powerUsagesDay = {100.0,323.34,234.33, 500.55};
+    this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55};
+    this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89};
+
+    this->setSumOfUsageDay();
+    this->setSumOfUsageWeek();
+    this->setSumOfUsageMonth();
+
     this->success = true;
     this->init    = true;
     auto   clock       = std::chrono::system_clock::now();
@@ -209,3 +218,37 @@ double PowerUsage::sumOfUsage(){
         return 0.0;
     }
 }
+
+void PowerUsage::setSumOfUsageDay(){
+    if (this->init){
+        double sum_of_usage = 0.0;
+
+        for( std::vector<double>::iterator it =this->powerUsagesDay.begin();it!=this->powerUsagesDay.end();++it){
+            sum_of_usage += *it;
+        }
+        this->kWhUsedDay =  sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageWeek(){
+    double sum_of_usage = 0.0;
+
+    if (this->init){
+         for( std::vector<double>::iterator it =this->powerUsagesWeek.begin();it!=this->powerUsagesWeek.end();++it){
+            sum_of_usage += *it;
+        }
+        this->kWhUsedWeek =  sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageMonth(){
+    double sum_of_usage = 0.0;
+
+    if (this->init){
+        for( std::vector<double>::iterator it =this->powerUsagesMonth.begin();it!=this->powerUsagesMonth.end();++it){
+            sum_of_usage += *it;
+        }
+        this->kWhUsedMonth =  sum_of_usage;
+    }
+}
+

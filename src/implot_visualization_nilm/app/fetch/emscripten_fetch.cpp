@@ -55,6 +55,9 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
     } else{
         this->extendedUrl=this->url;
     }
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    lastFetchtime = currentTime;
 }
 
 template<typename T>

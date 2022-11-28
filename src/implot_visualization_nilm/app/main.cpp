@@ -18,6 +18,8 @@
 // TODO - barchart
 #include <plot_tools.h>
 
+#define ELECTRICY_PRICE 30
+
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
 // acts as a loop prevents us to store state in the stack of said function. So
@@ -108,11 +110,9 @@ int         main(int, char **) {
 
     // Load Fonts
      //io.Fonts->AddFontDefault();
-     //io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
-     //io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
 #ifndef IMGUI_DISABLE_FILE_FUNCTIONS
-    //io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
-    io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
+    //io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
    // io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
     //io.Fonts->AddFontFromFileTTF("fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("fonts/ProggyTiny.ttf", 10.0f);
@@ -146,8 +146,8 @@ static void main_loop(void *arg) {
    
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = false;
-    //static bool   show_demo_window = true;
+    //static bool   show_demo_window = false;
+    static bool   show_demo_window = true;
     static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
@@ -170,15 +170,23 @@ static void main_loop(void *arg) {
 
     // Nilm Power Monitoring Dashboard
     {
-        
+        auto   clock       = std::chrono::system_clock::now();
+        double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+
         for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages){
-            powerUsage.fetch();
+            if(currentTime -powerUsage.lastFetchtime >= 1.0){
+                powerUsage.fetch();
+                powerUsage.lastFetchtime = currentTime;
+            }
         }
-
+    
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
-            subTime.fetch();
+            if(currentTime -subTime.lastFetchtime >= 1.0){
+                subTime.fetch();
+                subTime.lastFetchtime = currentTime;
+            }
         }
-
+        
 
         PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
@@ -190,8 +198,6 @@ static void main_loop(void *arg) {
        // ImGui::ShowFontSelector("Font");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        //static ImPlotSubplotFlags flags     = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV |
-        //                         ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable;
         static int                rows      = 2;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
@@ -207,23 +213,59 @@ static void main_loop(void *arg) {
         //     ImGui::PopID();
         // }
 
-        double sum_of_usage = 0.0;
+        const char* items[] = {"month", "week", "day"};
+        static int item_current = 0;
+
+        ImGui::Combo("month/week/day", &item_current, items, IM_ARRAYSIZE(items));
+
         if (powerUsageValues.init){
-            for( std::vector<double>::iterator it =powerUsageValues.powerUsages.begin();it!=powerUsageValues.powerUsages.end();++it){
-                    sum_of_usage += *it;
-                }
 
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
-            ImGui::Text("Currently Using %.2f\n", sum_of_usage);
+
+            if (item_current == 0){
+                ImGui::Text("EURO %.2f / %.2f kWh used current month\n", 
+                    ELECTRICY_PRICE *  powerUsageValues.kWhUsedMonth, powerUsageValues.kWhUsedMonth);
+            }else if (item_current == 1) {
+                ImGui::Text("EURO %.2f / %.2f kWh used current week\n", 
+                    ELECTRICY_PRICE * powerUsageValues.kWhUsedWeek, powerUsageValues.kWhUsedWeek);
+            } else {
+                ImGui::Text("EURO %.2f / %.2f kWh used today\n", 
+                    ELECTRICY_PRICE * powerUsageValues.kWhUsedDay, powerUsageValues.kWhUsedDay);
+            }
+
             ImGui::Text(" ");
             ImGui::PopStyleColor();
-        }   else {
-             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Connection Error\n");
+        } else {
+            ImGui::TextColored(ImVec4(1,0,0,1),"%s","Connection Error\n");
             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
         }
 
         // subplots
         if (ImPlot::BeginSubplots("My Subplots",1,2, ImVec2(-1,400), flags)){
+
+            /*
+            void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
+    for (int i = 0; i < signals.size(); i++) {
+        if (signals[i].data.size() > 0) {
+            ImPlot::PlotLine((signals[i].signalName).c_str(),
+                    &signals[i].data[0].x,
+                    &signals[i].data[0].y,
+                    signals[i].data.size(),
+                    0,
+                    signals[i].offset,
+                    2 * sizeof(double));
+        }
+    }
+}            
+            */
+        //    std:vector<double> power_values;
+        //    int count_signals = subscriptionsTimeDomain[0].acquisition.buffers.size();
+        //    for(int i = 0; i < signals.size(); i++) {   
+        //         double signal_value = 0.0;
+        //         if (signals[i].data.size() > 0) {
+        //             signal_value = signals[i].data[0].y;
+        //         }
+        //    }
 
             // power
             if(ImPlot::BeginPlot("Power")){
@@ -232,98 +274,12 @@ static void main_loop(void *arg) {
             }
 
         
-         // bar plot
-            if(ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")){
-
-                static const char*  labels[]    = {"1","2","3","4","5","6","Today"};
-                // dummy values
-                static double kWh[7]            = {80.0, 69.0, 52, 92.0, 72.0, 78.0, 0.0};
-                static double kWhToday[7]       = {0.0, 0.0,0.0, 0.0, 0.0, 0.0, 75.0};
-                static const double positions[] = {0,1,2,3,4,5,6};
-                bool clamp = false;
-
-                ImPlot::SetupAxesLimits(-0.5, 6.5, 0, 110, ImGuiCond_Always);
-                ImPlot::SetupAxes("Day","kWh");
-                ImPlot::SetupAxisTicks(ImAxis_X1,positions, 7, labels);
-                ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.2);
-                ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.2);
-
-                for(int i=0;i<7;i++){
-                    if(i!=6){
-                        ImPlot::Annotation(positions[i], kWh[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWh[i] );
-                    }else{
-                        ImPlot::Annotation(positions[i], kWhToday[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWhToday[i] );
-                    }
-                }
-
-                ImPlot::EndPlot();
-            }
-             ImPlot::EndSubplots();
+            plotter.plotBarchart(powerUsageValues);
+       
+            ImPlot::EndSubplots();
         }
 
-/*
-        // static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-
-
-        // if (powerUsageValues.success == false){
-        //     ImGui::TextColored(ImVec4(1,0.5,0,1),"%s","Connection failed\n");
-        //     if(powerUsageValues.init == true){
-                
-        //         char buff[32];
-        //         char buff_time[32];
-                
-        //         ImPlot::FormatDate(ImPlotTime::FromDouble(powerUsageValues.deliveryTime),buff,32,ImPlotDateFmt_DayMoYr,ImPlot::GetStyle().UseISO8601);
-        //         ImPlot::FormatTime(ImPlotTime::FromDouble(powerUsageValues.deliveryTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-        //         // ImPlot::FormatDateTime(ImPlotTime::FromDouble(powerUsageValues.deliveryTime),buff,32,
-        //         ImGui::TextColored(ImVec4(1,0.5,0,1),"Last delivery time %s %s" , buff, buff_time);
-        //     } else {
-        //         ImGui::TextColored(ImVec4(1,0,0,1),"%s","Connection Error\n");
-        //         ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
-        //     }
-        // }else{       
-            
-        //     ImGui::TextColored(ImVec4(1,1,0,1),"%s","Connection OK\n");
-        //     ImGui::Text(" ");
-        // }
-
-        // // nilm Visualisation
-        // if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1,0))){
-        //     ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        //     ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-        //     ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-        //     ImGui::TableSetupColumn("Relative Usage");
-        //     ImGui::TableHeadersRow();
-        //     ImPlot::PushColormap(ImPlotColormap_Cool);
-        //     //ImPlot::PushColormap(ImPlotColormap_Pink);
-        //     for (int row = 0; row < 4; row++) {
-        //         ImGui::TableNextRow();
-        //         ImGui::TableSetColumnIndex(0);
-        //         ImGui::Text("Device %d", row);
-        //         ImGui::TableSetColumnIndex(1);
-                
-        //         if (powerUsageValues.powerUsages[row] == 0){
-        //             output_simbol = "X";
-        //             ImGui::Text("%s", output_simbol.c_str());
-                    
-        //         }else{ 
-        //             output_simbol = "O";
-        //             ImGui::TextColored(ImVec4(1,0.5,0,1),"%s", output_simbol.c_str());
-        //             ImU32 cell_bg_color = ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 0.0f, 1.00));
-        //             ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, cell_bg_color);               
-        //         }
-                
-        //         ImGui::TableSetColumnIndex(2);
-        //         ImGui::Text("%.2f", powerUsageValues.powerUsages[row] );
-        //         ImGui::TableSetColumnIndex(3);
-        //         double relative = powerUsageValues.powerUsages[row]/sum_of_usage;
-        //         ImGui::Text("%.2f", relative);
-        //     }
-        //     ImPlot::PopColormap();
-        //     ImGui::EndTable();
-        // }
-*/
-        deviceTable.plotTable(powerUsageValues);
-
+        deviceTable.plotTable(powerUsageValues, item_current);
 
         ImGui::End();
     }
