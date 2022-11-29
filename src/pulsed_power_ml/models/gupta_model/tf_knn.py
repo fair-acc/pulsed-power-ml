@@ -73,8 +73,8 @@ class TFKNeighborsClassifier(keras.Model):
         )
 
         # weight classes with distances (similar to scikit learns weights="distance" weighting)
-        # ToDo: This needs to be a tf.matmul (I guess)
-        weighted_label_tensor = label_tensor / k_smallest_distances
+        weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
+                                                              axis=-1)
 
         # Determine the class
         result_index = tf.argmax(tf.reduce_sum(weighted_label_tensor, axis=1))
@@ -102,3 +102,5 @@ if __name__ == "__main__":
     y = model(test_x)
 
     print(y)
+
+    model.save("knn_save_test")

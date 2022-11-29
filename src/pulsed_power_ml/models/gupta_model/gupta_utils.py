@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
+import tensorflow as tf
+
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file
 
 
@@ -282,6 +284,62 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
         feature_vector[i * 3 + 2] = sigma
 
     return feature_vector
+
+
+def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
+    """Calculates the parameters of a gaussian function given the values in x and y.
+
+    This is not a fit(!), but an exact calculation. x and y need to be of length 3.
+
+    Parameters
+    ----------
+    x
+        Tensor of shape (3, 1) containing the x values in ascending order.
+    y
+        Tensor of shape (3, 1) containing the matching y values.
+
+    Returns
+    -------
+    gauss_params
+        Tensor of shape (3, 1) containing the three parameters of a gaussian function.
+    """
+
+    z = tf.math.log(y)
+
+    # Defining a bunch of temporary variables to make the equations less messy
+    e = x[1]**2 - x[2]**2
+    f = z[1] - z[2]
+    g = x[1] - x[2]
+    h = z[0] - z[1]
+    i = x[0]**2 - x[1]**2
+    j = x[0] - x[1]
+
+    print("helpers")
+    for var in (e, f, g, h, i, j):
+        print(var)
+    # calculate parameters of gaussian in quadratic form f(x) = exp(alpha*x^2 + beta*x + gamma)
+    alpha = (f * j - g * h) / (e * j - g * i)
+    beta = (h - alpha * i) / j
+    gamma = z[0] - alpha * x[0]**2 - beta * x[0]
+
+    print("alpha, beta, gamma")
+    for var in (alpha, beta, gamma):
+        print(f"{var}")
+    # calculate the parameters of the gaussian in the exponential form f(x) = a * exp(- (x - b)**2 / 2*c**2)
+    # alpha = tf.math.exp(c + a * b**2)
+    # beta = -2 * a * b
+    # gamma = tf.math.sqrt(-2 * a)
+    #
+    # alpha = tf.math.exp(c - b**2 / 4)
+    # beta = (-1 * b) / (2*a)
+    # gamma = tf.math.sqrt(-1 / (2 * a))
+
+    c = tf.math.sqrt(-1 / (2 * alpha))
+    b = beta * c**2
+    a = tf.math.exp(gamma + (b**2 / (2*c**2)))
+
+    # return tf.constant([alpha, beta, gamma], dtype=tf.float32)
+    return a, b, c, alpha, beta, gamma
 
 
 if __name__ == "__main__":
