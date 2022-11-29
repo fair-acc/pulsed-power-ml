@@ -106,21 +106,22 @@ def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, boo
         Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
         a "switch off" event ist detected.
     """
-
-    # how many bins are above the standard deviation?
-    n_bins_above_thr = res_spectrum[res_spectrum > threshold].__len__()
-
-    # how many bins are below the negative standard deviation?
-    n_bins_below_minus_thr = res_spectrum[res_spectrum < -threshold].__len__()
+  
+    # sum above threshold?
+    sum_above_thr = res_spectrum.sum()>threshold
+    sum_below_minus_thr = res_spectrum.sum()<-1*threshold
 
     switchon = False
     switchoff = False
     
-    if n_bins_above_thr >= 1:
-        switchon = True
-    elif n_bins_below_minus_thr >= 1:
-        switchoff = True
+    if sum_above_thr:# >= 1:
+        #switchon = True # This way for raw specrra minus raw background
+        switchoff = True # This way for normed spectra minus normed background
 
+    elif sum_below_minus_thr:# >= 1:
+        #switchoff = True # This way for raw specrra minus raw background
+        switchon = True # This way for normed spectra minus normed background
+        
     return switchon, switchoff
     
 
