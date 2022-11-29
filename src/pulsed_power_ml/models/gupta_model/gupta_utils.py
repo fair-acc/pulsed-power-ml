@@ -92,7 +92,7 @@ def subtract_background(raw_spectrum: np.ndarray, background: np.ndarray) -> np.
 def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, bool]:
     """
     Scans background subtracted spectrum for switch event 
-    (signal larger than input parameterthreshold value) 
+    (signal larger than input parameter threshold value) 
     to avoid dead time because of background re-calculation.
 
     Parameters
@@ -108,52 +108,24 @@ def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, boo
         Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
         a "switch off" event ist detected.
     """
-
-    # how many bins are above the standard deviation?
-    n_bins_above_thr = res_spectrum[res_spectrum > threshold].__len__()
-
-    # how many bins are below the negative standard deviation?
-    n_bins_below_minus_thr = res_spectrum[res_spectrum < -threshold].__len__()
+  
+    # sum above threshold?
+    sum_above_thr = res_spectrum.sum()>threshold
+    sum_below_minus_thr = res_spectrum.sum()<-1*threshold
 
     switchon = False
     switchoff = False
     
-    if n_bins_above_thr >= 1:
-        switchon = True
-    elif n_bins_below_minus_thr >= 1:
-        switchoff = True
+    if sum_above_thr:# >= 1:
+        #switchon = True # This way for raw specrra minus raw background
+        switchoff = True # This way for normed spectra minus normed background
 
+    elif sum_below_minus_thr:# >= 1:
+        #switchoff = True # This way for raw specrra minus raw background
+        switchon = True # This way for normed spectra minus normed background
+        
     return switchon, switchoff
     
-
-def event_detected(res_spectrum: np.ndarray) -> bool:
-    """
-    Scans background subtracted spectrum for peaks. 
-    Threshold for peak detection is more than one peak above 4 times the standard deviation.
-
-    Parameters
-    ----------
-    res_spectrum
-        Background subtracted spectrum.
-
-    Returns
-    -------
-    Boolean: True if peak was detected, false if no peak was detected
-    """
-    
-    # ToDo: equivalent loop with negative signal to find dips (switch off)
-    
-    peaks, _ = find_peaks(res_spectrum, height=4*res_spectrum.std())
-    negpeaks, __ = find_peaks(-1*res_spectrum, height=4*res_spectrum.std())
-
-    if peaks.__len__() > 1:
-        peak_detected = True
-    elif negpeaks.__len__() > 1:
-        peak_detected = True
-    else:
-        peak_detected = False
-
-    return peak_detected
 
 
 def update_background_vector(old_background_vector: np.ndarray, raw_spectrum: np.ndarray) -> np.ndarray:
@@ -278,7 +250,13 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
     for i, (peak_index, peak_height) in enumerate(peak_height_list):
         frequencies = [j * freq_per_bin + freq_per_bin / 2 for j in [peak_index - 1, peak_index, peak_index + 1]]
         magnitudes = cleaned_spectrum[peak_index - 1:peak_index + 2]
-        a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
+        try:
+            a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
+        except RuntimeError:
+            a=0
+            mu=0
+            sigma=0
+            print("WARNING: FIT NOT POSSIBLE")
         feature_vector[i * 3] = a  # * switch_off_factor For switch off events, amplitudes should be negative
         feature_vector[i * 3 + 1] = mu
         feature_vector[i * 3 + 2] = sigma
@@ -380,7 +358,7 @@ if __name__ == "__main__":
      
     # for spectrum in spectra[170:176]:  # Einschaltvorgang LED
     for spectrum in spectra[218:225]:  # Einschaltvorgang Halo
-        spectrum = 10**spectrum
+        #spectrum = 10**spectrum
         residual = subtract_background(spectrum, current_background)
         # plt.plot(residual)
         # plt.show()

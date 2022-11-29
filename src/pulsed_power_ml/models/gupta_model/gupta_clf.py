@@ -155,6 +155,9 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         # 0. Step: Remove unused information in data point
         spectrum, apparent_power = self.crop_data_point(X)
 
+        # 0.1 Step: Correct spectrum (ToDo: Remove this step once training data w/o log_10 amplitudes are available)
+        #spectrum = 10**spectrum
+
         # 1. Step: Check if background vector is full
         if self.background_n > len(self.background_vector):
             # Add current data point to background vector and return last state vector
@@ -169,9 +172,11 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         cleaned_spectrum = subtract_background(raw_spectrum=spectrum,
                                                background=current_background)
 
+        normed_spectrum = subtract_background(raw_spectrum=spectrum/spectrum.max(),
+                                              background=current_background/current_background.max())
         # 4. Check if appliance has been changed its state
-        event_detected_flag = switch_detected(cleaned_spectrum,
-                                              threshold=1000)
+        event_detected_flag = switch_detected(normed_spectrum,threshold=30)
+#                                              threshold=1000)
         if True not in event_detected_flag:
             # add spectrum to background vector and return last state vector
             self.background_vector.append(spectrum)
