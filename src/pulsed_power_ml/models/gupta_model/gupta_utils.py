@@ -314,32 +314,53 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> tf.Tens
     i = x[0]**2 - x[1]**2
     j = x[0] - x[1]
 
-    print("helpers")
-    for var in (e, f, g, h, i, j):
-        print(var)
     # calculate parameters of gaussian in quadratic form f(x) = exp(alpha*x^2 + beta*x + gamma)
     alpha = (f * j - g * h) / (e * j - g * i)
     beta = (h - alpha * i) / j
     gamma = z[0] - alpha * x[0]**2 - beta * x[0]
 
-    print("alpha, beta, gamma")
-    for var in (alpha, beta, gamma):
-        print(f"{var}")
     # calculate the parameters of the gaussian in the exponential form f(x) = a * exp(- (x - b)**2 / 2*c**2)
-    # alpha = tf.math.exp(c + a * b**2)
-    # beta = -2 * a * b
-    # gamma = tf.math.sqrt(-2 * a)
-    #
-    # alpha = tf.math.exp(c - b**2 / 4)
-    # beta = (-1 * b) / (2*a)
-    # gamma = tf.math.sqrt(-1 / (2 * a))
-
     c = tf.math.sqrt(-1 / (2 * alpha))
     b = beta * c**2
     a = tf.math.exp(gamma + (b**2 / (2*c**2)))
 
-    # return tf.constant([alpha, beta, gamma], dtype=tf.float32)
-    return a, b, c, alpha, beta, gamma
+    return a, b, c
+
+
+def tf_find_peaks(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    """Find peaks in 1-D tensor x.
+
+    Considers three values at a time, if the max value is located at the center of the window (length=3) a peak is found.
+
+    Parameters
+    ----------
+    x
+
+    Returns
+    -------
+    peak_indices, peak_heights
+    """
+
+    # use max pool to get maximum value in a windows of three points
+    max_pool = tf.nn.max_pool1d(tf.reshape(x, (1, -1, 1)),
+                            ksize=3,
+                            strides=1,
+                            padding='VALID')
+    max_pool = tf.reshape(max_pool, (-1))
+
+    # check where the max value in a window of three is equal to the data point at the same position -> peak
+    equal = tf.math.equal(tf.reshape(max_pool, (-1)), x[1:-1])
+
+    # add two false values to match the shape of the input
+    equal = tf.concat([tf.constant([False], dtype=tf.bool), equal, tf.constant([False], dtype=tf.bool)], axis=0)
+
+    # get the peak indices
+    peak_indices = tf.where(equal)
+
+    # get the peak heights
+    peak_heights = tf.gather_nd(params=x, indices=peak_indices)
+
+    return peak_indices, peak_heights
 
 
 if __name__ == "__main__":
