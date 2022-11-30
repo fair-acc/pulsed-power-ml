@@ -1,13 +1,17 @@
+"""
+This module implements the gupta model using the TensorFlow Python API in order to enable an export of
+an instance of this model.
+"""
+from typing import Tuple
+
 import tensorflow as tf
 from tensorflow import keras
 
-from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+import numpy as np
 
-from src.pulsed_power_ml.model_framework.data_io import read_training_files
-
-from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
+from src.pulsed_power_ml.models.gupta_model.tf_knn import TFKNeighborsClassifier
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_background
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_subtract_background
 
 
 class TFGuptaClassifier(keras.Model):
@@ -20,9 +24,9 @@ class TFGuptaClassifier(keras.Model):
                  spectrum_type: tf.Tensor = tf.constant(2, dtype=tf.int32),
                  switching_offset: tf.Tensor = tf.constant(1, dtype=tf.int32),
                  n_peaks_max: tf.Tensor = tf.constant(10, dtype=tf.int32),
-                 apparent_power_list: tf.Tensor = tf.Variable(initial_value=tf.zeros([10])),
-                 n_neighbors: tf.Tensor = 5,
-                 # knn_weights: str = "distance",
+                 apparent_power_list: tf.Tensor = tf.constant(value=tf.zeros([10]),
+                                                              dtype=tf.float32),
+                 n_neighbors: tf.Tensor = tf.constant(5, dtype=tf.int32),
                  distance_threshold: tf.Tensor = tf.constant(10, dtype=tf.float32),
                  name="TFGuptaClassifier",
                  **kwargs
@@ -47,8 +51,8 @@ class TFGuptaClassifier(keras.Model):
         n_peaks_max
             Max. number of peaks, which are used to calculate features.
         apparent_power_list
-            List with one tuple per known appliance containing name and apparent power value:
-            [(name_0, value_0), (name_1, value_1), ...]
+            Tensor containing the apparent power per application. The order of the values is the same as
+            for the labels for the KNN classifier.
         n_neighbors
             Number of nearest neighbors which should be checked during the classification.
         knn_weights
@@ -59,7 +63,6 @@ class TFGuptaClassifier(keras.Model):
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
 
         # Parameters
-        self.background_n = background_n
         self.fft_size_real = fft_size_real
         self.sample_rate = sample_rate
         self.n_known_appliances = n_known_appliances
@@ -68,26 +71,38 @@ class TFGuptaClassifier(keras.Model):
 
         # kNN-Classifier
         self.n_neighbors = n_neighbors
-        # self.knn_weights = knn_weights
         self.distance_threshold = distance_threshold
-        self.clf = neighbors.KNeighborsClassifier(n_neighbors=self.n_neighbors,
-                                                  weights=self.knn_weights)
+        self.clf = TFKNeighborsClassifier(n_neighbors=n_neighbors)
 
         # Containers
-        self.current_state_vector = np.zeros(n_known_appliances + 1)  # one additional for "others"
-        self.background_vector = deque(maxlen=self.background_n)
+        self.current_state_vector = tf.zeros(shape=(n_known_appliances + 1),
+                                             dtype=tf.float32,
+                                             name="current_state_vector")
+
+        # Background attributes
+        self.background_n = background_n
+        self.background_vector = tf.Variable(
+            initial_value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
+            dtype=tf.float32,
+            name="background_vector"
+        )
+        self.current_background_size = tf.Variable(initial_value=0,
+                                                   dtype=tf.int32,
+                                                   name="current_background_size")
 
         # Apparent Power data base
         self.apparent_power_list = apparent_power_list
 
         # Class attributes to accommodate for disturbances due to mechanical switches
         self.switching_offset = switching_offset
-        self.n_data_points_skipped = 0
-        self.skip_data_point = False
+        self.n_data_points_skipped = tf.Variable(initial_value=0,
+                                                 dtype=tf.float32)
+        self.skip_data_point = tf.Variable(initial_value=False,
+                                           dtype=tf.bool)
 
         return
 
-    def fit(self, X: np.array, y: np.array) -> Any:
+    def fit(self, X: tf.Tensor, y: tf.Tensor) -> None:
         """
         Method to fit the internal kNN-Classifier to the provided data.
 
@@ -103,9 +118,9 @@ class TFGuptaClassifier(keras.Model):
         Self
         """
         self.clf.fit(X, y)
-        return self
+        return
 
-    def predict(self, X: np.array) -> np.array:
+    def predict(self, X: tf.Tensor) -> tf.Tensor:
         """
         Prediction method of the Gupta classifier.
 
@@ -131,15 +146,17 @@ class TFGuptaClassifier(keras.Model):
                 spectrum, apparent_power = self.crop_data_point(X)
 
                 # calculate mean background
-                current_background = calculate_background(np.array(self.background_vector))
+                current_background = tf_calculate_background(self.background_vector)
 
                 # Get cleaned spectrum
-                cleaned_spectrum = subtract_background(raw_spectrum=spectrum,
-                                                       background=current_background)
+                cleaned_spectrum = tf_subtract_background(raw_spectrum=spectrum,
+                                                          background=current_background)
 
                 # Classify
-                self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
-                                                                          current_apparent_power=apparent_power)
+                self.current_state_vector = self.classify_switching_event(
+                    cleaned_spectrum=cleaned_spectrum,
+                    current_apparent_power=apparent_power
+                )
 
                 # clear background vector
                 self.background_vector.clear()
@@ -193,7 +210,7 @@ class TFGuptaClassifier(keras.Model):
             # return the current state vector until the classification is done
             return self.current_state_vector
 
-    def crop_data_point(self, X: np.array) -> (np.array, int):
+    def crop_data_point(self, X: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         One data point consists of multiple spectra and quantities. For this algorithm, however, only a subset is
         needed. This functions removes all unnecessary values from a data point.
@@ -307,3 +324,19 @@ class TFGuptaClassifier(keras.Model):
         self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=current_apparent_power)
 
         return self.current_state_vector
+
+
+if __name__ == "__main__":
+
+    dummy_data_point = tf.ones(
+        shape=(2**16 * 3 + 4),
+        dtype=tf.float32,
+        name="dummy_data_point"
+    )
+
+    # Instantiate model (for a simple test, default params seems fine)
+    model = TFGuptaClassifier()
+
+    cropped = model.crop_data_point(dummy_data_point)
+
+    print(cropped)

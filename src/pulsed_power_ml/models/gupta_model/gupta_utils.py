@@ -305,40 +305,177 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> tf.Tens
     return a, b, c
 
 
-def tf_find_peaks(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+def tf_find_peaks(data: tf.Tensor, min_height: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """Find peaks in 1-D tensor x.
 
     Considers three values at a time, if the max value is located at the center of the window (length=3) a peak is found.
 
     Parameters
     ----------
-    x
+    data
+        1-D tensor containing the data
+    min_height
+        Minimum height of peaks
 
     Returns
     -------
     peak_indices, peak_heights
     """
-
     # use max pool to get maximum value in a windows of three points
-    max_pool = tf.nn.max_pool1d(tf.reshape(x, (1, -1, 1)),
-                            ksize=3,
-                            strides=1,
-                            padding='VALID')
-    max_pool = tf.reshape(max_pool, (-1))
+    max_pool = tf.nn.max_pool1d(tf.reshape(data, (1, -1, 1)),
+                                ksize=3,
+                                strides=1,
+                                padding='VALID')
 
     # check where the max value in a window of three is equal to the data point at the same position -> peak
-    equal = tf.math.equal(tf.reshape(max_pool, (-1)), x[1:-1])
+    equal = tf.math.equal(tf.reshape(max_pool, (-1, )), data[1:-1])
+
+    # only consider peaks greater or equal to min_height
+    above_min_height = tf.math.less(x=min_height, y=data)
+
+    equal = tf.math.logical_and(equal, above_min_height[1:-1])
 
     # add two false values to match the shape of the input
-    equal = tf.concat([tf.constant([False], dtype=tf.bool), equal, tf.constant([False], dtype=tf.bool)], axis=0)
+    equal = tf.concat([tf.constant([False], dtype=tf.bool),
+                       equal,
+                       tf.constant([False], dtype=tf.bool)],
+                      axis=0)
 
     # get the peak indices
     peak_indices = tf.where(equal)
 
     # get the peak heights
-    peak_heights = tf.gather_nd(params=x, indices=peak_indices)
+    peak_heights = tf.gather_nd(params=data, indices=peak_indices)
 
     return peak_indices, peak_heights
+
+
+def tf_calculate_background(background_points: tf.Tensor) -> tf.Tensor:
+    """
+    Calculates background from input spectra.
+
+    Parameters
+    ----------
+    background_points
+        2D array of spectra to calculate background from.
+
+    Returns
+    -------
+    Background spectrum.
+    """
+    background = tf.math.reduce_mean(
+        input_tensor=background_points,
+        axis=1,
+        name="calculate_background"
+    )
+    return background
+
+
+def tf_subtract_background(raw_spectrum: tf.Tensor, background: tf.Tensor) -> tf.Tensor:
+    """
+    Subtracts background from spectrum.
+
+    Parameters
+    ----------
+    raw_spectrum
+        Raw spectrum.
+    background
+        Background to be subtracted from raw spectrum -- needs to have same length as spectrum.
+
+    Returns
+    -------
+    Background subtracted spectrum
+    """
+    return tf.math.subtract(x=raw_spectrum, y=background, name="subtract_background")
+
+
+# @tf.function
+def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
+                                n_peaks_max: tf.Tensor,
+                                fft_size_real: tf.Tensor,
+                                sample_rate: tf.Tensor) -> tf.Tensor:
+    """
+    Calculate a feature vector given a cleaned spectrum.
+
+    Parameters
+    ----------
+    cleaned_spectrum
+        Array. Spectrum with background removed.
+    n_peaks_max
+        Max. number of peaks that are used to calculate features.
+    fft_size_real
+        Number of points in the real part of the spectrum.
+    sample_rate
+        Sample rate of the DAQ.
+
+    Returns
+    -------
+    feature_vector
+        Array of length 3 * n_peaks_max of the form: [a_0, mu_0, sigma_0, a_1, mu_1, sigma_1, ...]
+    """
+    min_peak_height = 4 * tf.math.reduce_std(input_tensor=cleaned_spectrum,
+                                             axis=0,
+                                             name="min_peak_height")
+    # Determine if peaks have positive or negative amplitude
+    switch_off_factor = tf.cond(
+        pred=tf.math.less(
+            x=tf.math.abs(tf.math.reduce_min(cleaned_spectrum)),
+            y=tf.math.abs(tf.math.reduce_max(cleaned_spectrum))
+        ),
+        true_fn=lambda: tf.constant([1], dtype=tf.float32, name="switch_off_factor"),
+        false_fn=lambda: tf.constant([-1], dtype=tf.float32, name="switch_off_factor")
+    )
+
+    # Get peaks
+    print(cleaned_spectrum)
+    print(min_peak_height)
+    peak_indices, peak_heights = tf_find_peaks(data=cleaned_spectrum * switch_off_factor,
+                                               min_height=min_peak_height)
+
+
+    # select only the highest n_peaks_max peaks
+    k_largest_peaks, indices = tf.math.top_k(
+        input=peak_heights,
+        k=n_peaks_max,
+        name="k_largest_peaks"
+    )
+
+    print("#####################  peaks #################")
+    print(k_largest_peaks)
+    print(indices)
+    print(peak_heights)
+
+    k_largest_peaks_indices = tf.gather_nd(params=peak_indices,
+                                           indices=indices)
+    k_largest_peaks_lower_indices = k_largest_peaks_indices - 1
+    k_largest_peaks_higher_indices = k_largest_peaks_indices + 1
+
+    # fit gaussian to every peak
+    freq_per_bin = sample_rate / fft_size_real
+    # ToDo: There is probably a more efficient way to implement this loop (see tf.while_loop)
+    feature_vector = list()
+    for i in tf.range(k_largest_peaks_indices):
+        low_index = k_largest_peaks_lower_indices[i]
+        mid_index = k_largest_peaks_indices[i]
+        high_index = k_largest_peaks_higher_indices[i]
+
+        frequencies = tf.constant(value=[low_index, mid_index, high_index],
+                                  dtype=tf.float32) * freq_per_bin
+
+        amplitudes = cleaned_spectrum[low_index:high_index+1]
+
+        a, mu, sigma = tf_calculate_gaussian_params_for_peak(
+            x=frequencies,
+            y=amplitudes
+        )
+
+        feature_vector.append(a)
+        feature_vector.append(mu)
+        feature_vector.append(sigma)
+
+    feature_tensor = tf.concat(feature_vector)
+
+    return feature_tensor
 
 
 if __name__ == "__main__":
