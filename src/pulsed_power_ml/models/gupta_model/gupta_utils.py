@@ -427,40 +427,36 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     )
 
     # Get peaks
-    print(cleaned_spectrum)
-    print(min_peak_height)
     peak_indices, peak_heights = tf_find_peaks(data=cleaned_spectrum * switch_off_factor,
                                                min_height=min_peak_height)
 
-
     # select only the highest n_peaks_max peaks
-    k_largest_peaks, indices = tf.math.top_k(
+    _, indices_unsorted = tf.math.top_k(
         input=peak_heights,
         k=n_peaks_max,
-        name="k_largest_peaks"
+        name="k_largest_peaks",
     )
 
-    print("#####################  peaks #################")
-    print(k_largest_peaks)
-    print(indices)
-    print(peak_heights)
+    indices = tf.sort(values=indices_unsorted)
 
-    k_largest_peaks_indices = tf.gather_nd(params=peak_indices,
-                                           indices=indices)
+    k_largest_peaks_indices = tf.gather_nd(params=tf.reshape(peak_indices, (-1)),
+                                           indices=tf.reshape(indices, (-1, 1)))
     k_largest_peaks_lower_indices = k_largest_peaks_indices - 1
     k_largest_peaks_higher_indices = k_largest_peaks_indices + 1
 
     # fit gaussian to every peak
-    freq_per_bin = sample_rate / fft_size_real
+    freq_per_bin = tf.cast(x=(sample_rate / fft_size_real), dtype=tf.float32)
     # ToDo: There is probably a more efficient way to implement this loop (see tf.while_loop)
     feature_vector = list()
-    for i in tf.range(k_largest_peaks_indices):
+    for i in tf.range(tf.size(k_largest_peaks_indices)):
         low_index = k_largest_peaks_lower_indices[i]
         mid_index = k_largest_peaks_indices[i]
         high_index = k_largest_peaks_higher_indices[i]
 
-        frequencies = tf.constant(value=[low_index, mid_index, high_index],
-                                  dtype=tf.float32) * freq_per_bin
+        frequencies = tf.cast(
+            x=tf.stack([low_index, mid_index, high_index], axis=0),
+            dtype=tf.float32
+        ) * freq_per_bin + freq_per_bin / 2
 
         amplitudes = cleaned_spectrum[low_index:high_index+1]
 
@@ -473,32 +469,40 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
         feature_vector.append(mu)
         feature_vector.append(sigma)
 
-    feature_tensor = tf.concat(feature_vector)
+    feature_tensor = tf.stack(feature_vector, axis=0)
 
     return feature_tensor
 
 
 if __name__ == "__main__":
-    pars = read_parameters("src/pulsed_power_ml/models/gupta_model/parameters.yml")
 
-    # spectra = load_fft_file("../training_data/training_data_2022-10-12/led/LEDOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12",pars['fft_size'])
-    spectra = load_fft_file("../training_data/training_data_2022-10-12/halo/HaloOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12",pars['fft_size'])
-    # spectra = load_fft_file("../training_data/training_data_2022-10-12/tube/TubeOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12",pars['fft_size'])
-    # spectra = load_fft_file("../training_data/training_data_2022-10-12/mixed/MixedOnOff-FFTApparentPower-200KS-FFTSize16k_DAT_2022-10-12",pars['fft_size'])
+    from src.pulsed_power_ml.model_framework.data_io import read_training_files, load_pqsphi_file, load_fft_file, \
+        reshape_one_dim_array
+    from src.pulsed_power_ml.model_framework.visualizations import add_contour_plot, plot_data_point_array, \
+        get_frequencies_from_spectrum
 
-    background_vector = spectra[np.arange(-pars['background_n'],0)]
-    current_background = calculate_background(background_vector)
-    
-    plt.xlim([0,250])
-    plt.imshow(spectra-current_background,aspect="auto")
-    plt.show()
-     
-    # for spectrum in spectra[170:176]:  # Einschaltvorgang LED
-    for spectrum in spectra[218:225]:  # Einschaltvorgang Halo
-        #spectrum = 10**spectrum
-        residual = subtract_background(spectrum, current_background)
-        # plt.plot(residual)
-        # plt.show()
-        switch = switch_detected(residual,pars['threshold'])
+    folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/tube/"
+    p_file = "S_LEDOnOff_FFTSize131072"
+    fft_file = "FFTCurrent_LEDOnOff_FFTSize131072"
+    fft_size = 2 ** 17
 
-        print("Switch detected: {}".format(True in switch))
+    data_point_array = read_training_files(folder, fft_size)
+
+    background_vector = data_point_array[50:75, int(2 * fft_size / 2):int(3 * fft_size / 2)]
+    for i in range(background_vector.shape[0]):
+        background_vector[i] = 10 ** background_vector[i]
+
+    background = calculate_background(background_vector)
+    signal = data_point_array[200, int(2 * fft_size / 2):int(3 * fft_size / 2)]
+    signal = 10 ** signal
+
+    cleaned_spectrum = signal - background
+
+    feature_vector = tf_calculate_feature_vector(
+        tf.constant(cleaned_spectrum, dtype=tf.float32),
+        tf.constant(10, dtype=tf.int32),
+        tf.constant(2 ** 16, dtype=tf.int32),
+        tf.constant(2_000_000, dtype=tf.int32)
+    )
+
+    print(feature_vector)
