@@ -22,6 +22,8 @@ public:
     integration_impl(float step_size);
     ~integration_impl();
 
+    void integrate(float* out, const float* sample, int noutput_items);
+
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);
 

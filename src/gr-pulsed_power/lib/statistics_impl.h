@@ -16,11 +16,19 @@ namespace pulsed_power {
 class statistics_impl : public statistics
 {
 private:
-    // Nothing to declare in this block.
+    float current_mean;
+    float current_min;
+    float current_max;
+    float sum;
 
 public:
     statistics_impl();
     ~statistics_impl();
+
+    void calculate_mean(float* out, float* current_mean, int nitems);
+    void determine_min(float* out, float* current_min);
+    void determine_max(float* out, float* current_max);
+    void calculate_std_deviation(float* out);
 
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);

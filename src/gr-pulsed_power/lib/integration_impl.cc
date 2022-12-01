@@ -52,19 +52,23 @@ int integration_impl::general_work(int noutput_items,
     auto in = static_cast<const input_type*>(input_items[0]);
     auto out = static_cast<output_type*>(output_items[0]);
 
-    double int_value = 0;
-    for (int i = 1; i < noutput_items; i++) {
-        int_value += d_step_size * ((in[i - 1] + in[i]) / 2);
-    }
-    out[0] = int_value;
+    integrate(out, in, noutput_items);
 
-    // Do <+signal processing+>
     // Tell runtime system how many input items we consumed on
     // each input stream.
     consume_each(noutput_items);
 
     // Tell runtime system how many output items we produced.
     return noutput_items;
+}
+
+void integration_impl::integrate(float* out, const float* sample, int noutput_items)
+{
+    double value = 0;
+    for (int i = 1; i < noutput_items; i++) {
+        value += d_step_size * ((sample[i - 1] + sample[i]) / 2);
+    }
+    out[0] = value;
 }
 
 } /* namespace pulsed_power */
