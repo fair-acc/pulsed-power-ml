@@ -11,7 +11,9 @@
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND pulsed_power_sources
-    opencmw_time_sink_impl.cc )
+    opencmw_time_sink_impl.cc
+    integration_impl.cc
+    statistics_impl.cc )
 
 set(pulsed_power_sources "${pulsed_power_sources}" PARENT_SCOPE)
 if(NOT pulsed_power_sources)

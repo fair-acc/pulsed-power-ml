@@ -11,5 +11,7 @@
 ########################################################################
 install(FILES
     api.h
-    opencmw_time_sink.h DESTINATION include/gnuradio/pulsed_power
+    opencmw_time_sink.h
+    integration.h
+    statistics.h DESTINATION include/gnuradio/pulsed_power
 )
