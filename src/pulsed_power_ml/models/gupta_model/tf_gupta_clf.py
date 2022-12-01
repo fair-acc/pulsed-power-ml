@@ -7,11 +7,12 @@ from typing import Tuple
 import tensorflow as tf
 from tensorflow import keras
 
-import numpy as np
+# import numpy as np
 
 from src.pulsed_power_ml.models.gupta_model.tf_knn import TFKNeighborsClassifier
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_subtract_background
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
 
 
 class TFGuptaClassifier(keras.Model):
@@ -232,7 +233,7 @@ class TFGuptaClassifier(keras.Model):
         return spectrum, apparent_power
 
     def calculate_state_vector(self,
-                               event_class: np.array) -> np.array:
+                               event_class: tf.Tensor) -> tf.Tensor:
         """
         Given the current state vector and a classification results, return an updated state vector.
 
@@ -246,28 +247,33 @@ class TFGuptaClassifier(keras.Model):
         updated_state_vector
         """
 
-        updated_state_vector = copy.deepcopy(self.current_state_vector)
+        # updated_state_vector = copy.deepcopy(self.current_state_vector)
 
-        if np.argmax(event_class) < self.n_known_appliances:
-            # Case 1: Known appliance is switched on
-            state_vector_index = np.argmax(event_class)
-            print(state_vector_index)
-            updated_state_vector[state_vector_index] = self.apparent_power_list[state_vector_index][1]
+        event_index = tf.math.argmax(event_class)
 
-        elif self.n_known_appliances <= np.argmax(event_class) < self.n_known_appliances * 2:
-            # Case 2: Known appliance is switched off
-            state_vector_index = int(np.argmax(event_class) - self.n_known_appliances)
-            updated_state_vector[state_vector_index] = 0
+        new_state_vector = tf.case(
+            pred_fn_pairs=[
+                # Case 1: Known appliance is switched on
+                (tf.math.less(event_index, self.n_known_appliances),
+                 lambda: tf.tensor_scatter_nd_update(tensor=self.current_state_vector,
+                                                     indices=[[event_index]],
+                                                     updates=[self.apparent_power_list[event_index]])),
 
-        else:
-            # Case 3: Unknown event
-            pass
+                # Case 2: Known appliance is switched off
+                (tf.math.logical_and(tf.math.greater_equal(event_index, self.n_known_appliances),
+                                     tf.math.less(event_index, self.n_known_appliances * 2)),
+                 lambda: tf.tensor_scatter_nd_update(tensor=self.current_state_vector,
+                                                     indices=[[event_index]],
+                                                     updates=[tf.constant(0, dtype=tf.float32)])),
+            ],
+            default=lambda: self.current_state_vector
+        )
 
-        return updated_state_vector
+        return new_state_vector
 
-    def calculate_unknown_apparent_power(self, current_apparent_power: float) -> np.array:
+    def calculate_unknown_apparent_power(self, current_apparent_power: tf.Tensor) -> tf.Tensor:
         """
-        Update the value of "unknown" in the state vector.
+        Calculate an updated version of the state vector with an updated value of "unknown".
 
         Parameters
         ----------
@@ -278,14 +284,16 @@ class TFGuptaClassifier(keras.Model):
         -------
         updated_state_vector
         """
-        updated_state_vector = copy.deepcopy(self.current_state_vector)
-        known_power = sum(self.current_state_vector[:-1])
-        updated_state_vector[-1] = max(current_apparent_power - known_power, 0)
+        # updated_state_vector = copy.deepcopy(self.current_state_vector)
+        known_power = tf.math.reduce_sum(self.current_state_vector[:-1])
+        unknown_power = tf.math.maximum(current_apparent_power - known_power,
+                                        tf.constant(0, dtype=tf.float32))
+        updated_state_vector = tf.concat([self.current_state_vector[:-1], unknown_power], axis=0)
         return updated_state_vector
 
     def classify_switching_event(self,
-                                 cleaned_spectrum: np.array,
-                                 current_apparent_power: float) -> np.array:
+                                 cleaned_spectrum: tf.Tensor,
+                                 current_apparent_power: tf.Tensor) -> tf.Tensor:
         """
         Classify a switching event based on the cleaned spectrum.
 
@@ -301,21 +309,27 @@ class TFGuptaClassifier(keras.Model):
         """
         # 1. Calculate feature vector
         print("Event detected: Calculate feature vector")
-        feature_vector = calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
-                                                  n_peaks_max=self.n_peaks_max,
-                                                  fft_size_real=self.fft_size_real,
-                                                  sample_rate=self.sample_rate)
+        feature_vector = tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
+                                                     n_peaks_max=self.n_peaks_max,
+                                                     fft_size_real=self.fft_size_real,
+                                                     sample_rate=self.sample_rate)
 
         # 2. Classify event
-        distances, _ = self.clf.kneighbors([feature_vector])
+        distances, event_class = self.clf.kneighbors([feature_vector])
 
         # Check if known or unknown event via the smallest distance
-        if distances.min() > self.distance_threshold:
+        tf.cond(
+            pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),
+            true_fn=lambda:
+        )
+
+        if tf.math.reduce_min(distances) > self.distance_threshold:
             # Case 1: Unknown event
-            event_class = np.zeros(self.n_known_appliances * 2 + 1)[-1] = 1
-        else:
-            # Case 2: Known event
-            event_class = self.clf.predict([feature_vector])
+            event_class = tf.one_hot(
+                indices=self.n_known_appliances,
+                depth=self.n_known_appliances + 1
+            )
+
 
         # 3. Update current state vector accordingly
         self.current_state_vector = self.calculate_state_vector(event_class=event_class)
