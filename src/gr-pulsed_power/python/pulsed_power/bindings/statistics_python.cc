@@ -30,30 +30,14 @@ namespace py = pybind11;
 void bind_statistics(py::module& m)
 {
 
-    using statistics    = gr::pulsed_power::statistics;
+    using statistics = ::gr::pulsed_power::statistics;
 
 
-    py::class_<statistics, gr::block, gr::basic_block,
-        std::shared_ptr<statistics>>(m, "statistics", D(statistics))
+    py::class_<statistics, gr::block, gr::basic_block, std::shared_ptr<statistics>>(
+        m, "statistics", D(statistics))
 
-        .def(py::init(&statistics::make),
-           D(statistics,make)
-        )
-        
-
+        .def(py::init(&statistics::make), D(statistics, make))
 
 
         ;
-
-
-
-
 }
-
-
-
-
-
-
-
-

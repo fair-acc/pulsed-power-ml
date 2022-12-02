@@ -98,3 +98,6 @@ data/*/*.csv
 # Emscripten
 *.o
 web/
+
+# GNU Radio
+/src/gr-pulsed_power/Testing

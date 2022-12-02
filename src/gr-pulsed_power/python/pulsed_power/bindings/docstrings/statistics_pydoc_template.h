@@ -15,13 +15,10 @@
  */
 
 
-
- static const char *__doc_gr_pulsed_power_statistics = R"doc()doc";
-
-
- static const char *__doc_gr_pulsed_power_statistics_statistics = R"doc()doc";
+static const char* __doc_gr_pulsed_power_statistics = R"doc()doc";
 
 
- static const char *__doc_gr_pulsed_power_statistics_make = R"doc()doc";
+static const char* __doc_gr_pulsed_power_statistics_statistics = R"doc()doc";
 
-  
+
+static const char* __doc_gr_pulsed_power_statistics_make = R"doc()doc";

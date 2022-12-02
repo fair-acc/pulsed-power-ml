@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "integration_impl.h"
 #include <gnuradio/attributes.h>
+#include <gnuradio/pulsed_power/integration.h>
 #include <boost/test/unit_test.hpp>
 
 namespace gr {
@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
 {
     // Create instance
     float sample_rate = 100.0;
-    integration_impl integration_block(sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
     // Create pointer and samples
     float sample_float[2] = { 1.0, 1.0 };
     const float* sample = sample_float;
@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     float* out = out_float;
 
     // Call function
-    integration_block.integrate(out, sample, num_samples);
+    integration_block->integrate(out, sample, num_samples);
 
     // Check result
-    BOOST_CHECK(out[0] == (1.0 * 1 / sample_rate));
+    BOOST_TEST(out[0] == (1.0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
 }
 
 } /* namespace pulsed_power */

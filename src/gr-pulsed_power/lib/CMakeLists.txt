@@ -56,7 +56,9 @@ include(GrTest)
 #include_directories()
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_pulsed_power_sources
+qa_integration.cc
 qa_opencmw_time_sink.cc
+qa_statistics.cc
 )
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)

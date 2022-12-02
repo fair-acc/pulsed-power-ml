@@ -32,7 +32,16 @@ public:
      * class. pulsed_power::integration::make is the public interface for
      * creating new instances.
      */
-    static sptr make(float step_size);
+    static sptr make(float sample_rate);
+
+    /*!
+     * @brief Return integral of samples
+     *
+     * @param out Result pointer
+     * @param sample Pointer to samples that shall be integrated
+     * @param noutput_items Number of samples over that is integrated
+     */
+    virtual void integrate(float* out, const float* sample, int noutput_items) = 0;
 };
 
 } // namespace pulsed_power

@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(integration.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(430c29a5787d33e016b88a5ade409115)                     */
+/* BINDTOOL_HEADER_FILE_HASH(cdbba4779436ba6a9565ae67e7824ecf)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,30 +30,21 @@ namespace py = pybind11;
 void bind_integration(py::module& m)
 {
 
-    using integration    = gr::pulsed_power::integration;
+    using integration = ::gr::pulsed_power::integration;
 
 
-    py::class_<integration, gr::block, gr::basic_block,
-        std::shared_ptr<integration>>(m, "integration", D(integration))
+    py::class_<integration, gr::block, gr::basic_block, std::shared_ptr<integration>>(
+        m, "integration", D(integration))
 
-        .def(py::init(&integration::make),
-           D(integration,make)
-        )
-        
+        .def(py::init(&integration::make), py::arg("sample_rate"), D(integration, make))
 
 
+        .def("integrate",
+             &integration::integrate,
+             py::arg("out"),
+             py::arg("sample"),
+             py::arg("noutput_items"),
+             D(integration, integrate))
 
         ;
-
-
-
-
 }
-
-
-
-
-
-
-
-

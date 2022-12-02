@@ -15,13 +15,16 @@
  */
 
 
-
- static const char *__doc_gr_pulsed_power_integration = R"doc()doc";
-
-
- static const char *__doc_gr_pulsed_power_integration_integration = R"doc()doc";
+static const char* __doc_gr_pulsed_power_integration = R"doc()doc";
 
 
- static const char *__doc_gr_pulsed_power_integration_make = R"doc()doc";
+static const char* __doc_gr_pulsed_power_integration_integration_0 = R"doc()doc";
 
-  
+
+static const char* __doc_gr_pulsed_power_integration_integration_1 = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_integration_make = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_integration_integrate = R"doc()doc";

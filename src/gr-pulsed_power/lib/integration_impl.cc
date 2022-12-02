@@ -13,22 +13,22 @@ namespace pulsed_power {
 
 using input_type = float;
 using output_type = float;
-integration::sptr integration::make(float step_size)
+integration::sptr integration::make(float sample_rate)
 {
-    return gnuradio::make_block_sptr<integration_impl>(step_size);
+    return gnuradio::make_block_sptr<integration_impl>(sample_rate);
 }
 
 
 /*
  * The private constructor
  */
-integration_impl::integration_impl(float step_size)
+integration_impl::integration_impl(float sample_rate)
     : gr::block("integration",
                 gr::io_signature::make(
                     1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                 gr::io_signature::make(
                     1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      d_step_size(step_size)
+      d_step_size(1 / sample_rate)
 {
 }
 
