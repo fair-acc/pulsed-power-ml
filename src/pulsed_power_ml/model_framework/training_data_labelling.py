@@ -290,6 +290,86 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
     return(1)
     
 
+def shorten_validation_data(training_labels_folder: str, validation_labels_folder: str, percentage: float=0.7):
+    """
+    Function to shorten the 100% labeled validation data to just the features and labels that are not used for training. 
+
+    Parameters
+    ----------
+    training_labels_folder
+        Path to the folder containing the features and labels used for training the classifier.
+    validation_labels_folder
+        Path to the folder containing the features and labels used for validating the classifier.
+    
+    Returns
+    -------
+    1 if run without errors
+    """
+    X = np.genfromtxt(training_labels_folder + "Features_ApparentPower_{0}_p.csv".format(percentage),
+                      delimiter=",")
+    y = np.genfromtxt(training_labels_folder + "Labels_ApparentPower_{0}_p.csv".format(percentage),
+                      delimiter=",")
+
+    X_total = np.genfromtxt(validation_labels_folder + "Features_ApparentPower_1_p.csv", 
+                          delimiter=",")
+    y_total = np.genfromtxt(validation_labels_folder + "Labels_ApparentPower_1_p.csv",
+                          delimiter=",")
+    
+    keep = []
+    for feat in X_total:
+        ind = np.where((X==feat).all(axis=1))[0]
+        if ind.__len__()==0:
+            keep.append(np.where((X_total==feat).all(axis=1))[0][0])
+            
+    X_val = X_total[keep]
+    y_val = y_total[keep]
+        
+    np.savetxt(validation_labels_folder + "Features_ApparentPower_" + '{:.1f}'.format(1-percentage) + "_p.csv", X_val, delimiter=",")
+    np.savetxt(validation_labels_folder + "Labels_ApparentPower_" + '{:.1f}'.format(1-percentage)+ "_p.csv", y_val, delimiter=",")
+
+    return 1
+
+def make_training_validation_data(path_to_training_data_folders: str,
+                                  training_label_folder: str,
+                                  validation_label_folder: str,
+                                  parameter_file: str,
+                                  percentage: float=0.7):
+    """
+    Function to combine writing of disjunct training and validation data. 
+
+    Parameters
+    ----------
+    path_to_training_data_folders
+        Path to the folder containing the subfolders for all the binary files of one date.
+    training_labels_folder
+        Path to the folder containing the features and labels used for training the classifier.
+    validation_labels_folder
+        Path to the folder containing the features and labels used for validating the classifier.
+    parameter_file
+        Path to the yml file containing the parameters.
+    percentage
+        Percentage of input files to label, e.g. percentage=0.7 for 70% of input file. 
+        Will be rounded down to next spectrum by function.
+    
+    Returns
+    -------
+    1 if run without errors
+    """
+    
+    
+    # write training labels
+    _ = write_training_data_csvs(path_to_training_data_folders,training_label_folder,parameter_file,percentage)
+    
+    # write all labels (percentage = 1)
+    _ = write_training_data_csvs(path_to_training_data_folders,validation_label_folder,parameter_file,1)
+    
+    # write validation labels
+    _ = shorten_validation_data(training_label_folder, validation_label_folder, percentage)
+
+    return 1
+            
+        
+
 if __name__ == "__main__":
     # pars = read_parameters("src/pulsed_power_ml/models/gupta_model/parameters.yml")
     # print(pars)
@@ -305,7 +385,13 @@ if __name__ == "__main__":
     # compl_labels = explode_to_complete_label_vector(labels,1,parameter_file)
     
     path_to_training_data_folders = "../training_data/2022-11-16_training_data/"
-    output_path = "../training_data/labels_20221123_validation/"
+    training_label_folder = "../training_data/labels_20221202_9peaks/"
+    validation_label_folder = "../training_data/labels_20221202_9peaks_validation/"
     parameter_file = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
-    percentage = 1 #0.7
-    _ = write_training_data_csvs(path_to_training_data_folders,output_path,parameter_file,percentage)
+    percentage = 0.7
+    
+    _ = make_training_validation_data(path_to_training_data_folders,
+                                      training_label_folder,
+                                      validation_label_folder,
+                                      parameter_file,
+                                      percentage)
