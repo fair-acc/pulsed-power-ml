@@ -13,6 +13,14 @@
 namespace gr {
 namespace pulsed_power {
 
+struct Statistic {
+public:
+    float mean = 0.0;
+    float min = 0.0;
+    float max = 0.0;
+    float std_deviation = 0.0;
+};
+
 class statistics_impl : public statistics
 {
 private:
@@ -25,6 +33,7 @@ public:
     statistics_impl();
     ~statistics_impl();
 
+    void calculate_statistics(Statistic& statistic, const float* in, int ninput_items);
     void calculate_mean(float* out, float* current_mean, int nitems);
     void determine_min(float* out, float* current_min);
     void determine_max(float* out, float* current_max);

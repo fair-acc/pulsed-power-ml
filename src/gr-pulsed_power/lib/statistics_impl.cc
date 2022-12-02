@@ -50,38 +50,20 @@ int statistics_impl::general_work(int noutput_items,
                                   gr_vector_void_star& output_items)
 {
     auto in = static_cast<const input_type*>(input_items[0]);
-    auto out0 = static_cast<output_type*>(output_items[0]);
-    auto out1 = static_cast<output_type*>(output_items[1]);
-    auto out2 = static_cast<output_type*>(output_items[2]);
-    auto out3 = static_cast<output_type*>(output_items[3]);
+    auto out_mean = static_cast<output_type*>(output_items[0]);
+    auto out_min = static_cast<output_type*>(output_items[1]);
+    auto out_max = static_cast<output_type*>(output_items[2]);
+    auto out_std_deviation = static_cast<output_type*>(output_items[3]);
 
-    float mean = 0.0;
-    float min = in[0];
-    float max = in[0];
-    float variance = 0.0;
-    float std_deviation = 0.0;
-    float sum = 0.0;
-    float sum_of_squares = 0.0;
-    float current = 0.0;
-    for (int i = 0; i < noutput_items; i++) {
-        current = in[i];
-        if (current < min) {
-            min = current;
-        }
-        if (current > max) {
-            max = current;
-        }
-        sum += current;
-        sum_of_squares += current * current;
-    }
-    mean = sum / noutput_items;
-    variance = sum_of_squares - (sum * sum);
-    std_deviation = sqrt(variance);
+    Statistic statistic;
+    statistic.min = in[0];
+    statistic.max = in[0];
+    calculate_statistics(statistic, in, noutput_items);
 
-    out0 = &mean;
-    out1 = &min;
-    out2 = &max;
-    out3 = &std_deviation;
+    out_mean = &statistic.mean;
+    out_min = &statistic.min;
+    out_max = &statistic.max;
+    out_std_deviation = &statistic.std_deviation;
 
     // Tell runtime system how many input items we consumed on
     // each input stream.
@@ -90,6 +72,33 @@ int statistics_impl::general_work(int noutput_items,
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }
+
+void calculate_statistics(Statistic& statistic, const float* in, int num_samples)
+{
+    float variance = 0.0;
+    float sum = 0.0;
+    float sum_of_squares = 0.0;
+    float current = 0.0;
+    for (int i = 0; i < num_samples; i++) {
+        current = in[i];
+        if (current < statistic.min) {
+            statistic.min = current;
+        }
+        if (current > statistic.max) {
+            statistic.max = current;
+        }
+        sum += current;
+        sum_of_squares += current * current;
+    }
+    statistic.mean = sum / num_samples;
+    variance = sum_of_squares - (sum * sum);
+    statistic.std_deviation = sqrt(variance);
+}
+
+void calculate_mean(float* out, float* current_mean, int nitems) {}
+void determine_min(float* out, float* current_min);
+void determine_max(float* out, float* current_max);
+void calculate_std_deviation(float* out);
 
 } /* namespace pulsed_power */
 } /* namespace gr */
