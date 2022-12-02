@@ -12,7 +12,7 @@ public:
     std::vector<T> signals;
     bool           fetchFinished   = true;
     bool           fetchSuccessful = false;
-    double         lastFetchtime;
+    double         lastFetchtime = 0;
 
 
     Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);

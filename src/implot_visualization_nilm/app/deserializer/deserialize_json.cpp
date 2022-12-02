@@ -89,12 +89,12 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-    if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
-        return;
-    }
+    // if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
+    //     return;
+    // }
     std::string modifiedJsonString = this->jsonString;
 
-    modifiedJsonString.erase(0, 14);
+   // modifiedJsonString.erase(0, 14);
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
@@ -113,9 +113,9 @@ void Acquisition::deserialize() {
 
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
+    this->init = true;
+    this->success = true;
 }
-
-// odpatrzec 
 
 AcquisitionSpectra::AcquisitionSpectra() {}
 
@@ -164,15 +164,14 @@ PowerUsage::PowerUsage(int _numSignals){
 
 
 void PowerUsage::deserialize(){
-    
 
-    if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":") { 
-            return;
-    }
+    // if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":") { 
+    //     return;
+    // }
 
     std::string modifiedJsonString = this->jsonString;
 
-    modifiedJsonString.erase(0, 16); 
+    //modifiedJsonString.erase(0, 16); 
 
     auto json_obj = json::parse(modifiedJsonString);
     for( auto &element : json_obj.items()){
@@ -184,9 +183,9 @@ void PowerUsage::deserialize(){
     }
 
     // dummy data TODO - deserialize in for , when structure is known
-    this->powerUsagesDay = {100.0,323.34,234.33, 500.55};
-    this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55};
-    this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89};
+    this->powerUsagesDay = {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33};
+    this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33};
+    this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 };
 
     this->setSumOfUsageDay();
     this->setSumOfUsageWeek();

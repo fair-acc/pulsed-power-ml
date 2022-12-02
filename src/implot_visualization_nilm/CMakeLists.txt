@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
 # set a variable in CMake
-set(projectName "implot_visualization")
+set(projectName "implot_visualization_nilm")
 
 project(${projectName} LANGUAGES C CXX)
 

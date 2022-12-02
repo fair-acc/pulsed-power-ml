@@ -12,7 +12,7 @@
 //ENABLE_REFLECTION_FOR(TestContext, ctx, testFilter, contentType)
 
 struct NilmPowerData {
-    std::vector<double>  values={0.0,25.7,55.5,74.1};
+    std::vector<double>  values={0.0,25.7,55.5,74.1, 89.4, 34.5,23.4,1.0, 45.4, 56.5,76.4};
 };
 
 ENABLE_REFLECTION_FOR(NilmPowerData, values)
@@ -45,12 +45,12 @@ public:
                 context.contentType = opencmw::MIME::JSON;
                 if (counter == 5){
                     counter = 0;
-                    for (std::size_t i=0;i<4;i++){
+                    for (std::size_t i=0;i<11;i++){
                         double value_new = dummy_data.values.at(i) + 25.5;
                         dummy_data.values.at(i) = value_new<=100?value_new :  (value_new -100.0);
                     }
                     dummy_data.values.at(zero_index) = 0.0;
-                    zero_index = zero_index == 3? 0: (zero_index +1);
+                    zero_index = zero_index == 10? 0: (zero_index +1);
                 }
                 counter++;
                 super_t::notify("/nilmData", context, dummy_data);

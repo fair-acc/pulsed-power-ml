@@ -60,12 +60,14 @@ public:
     std::string                  jsonString     = "";
     uint64_t                     lastRefTrigger = 0;
     std::vector<ScrollingBuffer> buffers;
+    bool                         success = false;
+    bool                         init = false;
 
     Acquisition();
     Acquisition(int numSignals);
 
     void deserialize(); 
-    void fail(){};
+    void fail(){this->success = false;};
 
 private:
     uint64_t            refTrigger_ns = 0;
@@ -101,7 +103,7 @@ private:
 class PowerUsage {
 public:
     //dummy devices
-    std::vector<std::string> devices = {"Pump", "DVR", "Sys Laptop", "Others"}; 
+    std::vector<std::string> devices = {"Pump", "DVR", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio", "Others"}; 
     std::vector<double> powerUsages;
     std::vector<double> powerUsagesDay;
     std::vector<double> powerUsagesWeek;

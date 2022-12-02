@@ -120,7 +120,7 @@ int         main(int, char **) {
     // IM_ASSERT(font != NULL);
 #endif
 
-   // ImGui::StyleColorsLight();
+    ImGui::StyleColorsLight();
 
     Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
     Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
@@ -174,19 +174,26 @@ static void main_loop(void *arg) {
         double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
 
         for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages){
-            if(currentTime -powerUsage.lastFetchtime >= 1.0){
+            if(currentTime -powerUsage.lastFetchtime >= 2.0 || !powerUsage.acquisition.init){
                 powerUsage.fetch();
                 powerUsage.lastFetchtime = currentTime;
             }
         }
     
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
-            if(currentTime -subTime.lastFetchtime >= 1.0){
+            if(currentTime -subTime.lastFetchtime >= 0.1){
                 subTime.fetch();
                 subTime.lastFetchtime = currentTime;
             }
         }
         
+        // ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        // ImGuiWindow* window = ImGui::GetCurrentWindow();
+       
+
+        // ImVec4* colors = ImGui::GetStyle().Colors;
+        
+        // const ImVec4& disable_col = Colors[ImGuiCol_TextDisabled];
 
         PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
@@ -194,11 +201,10 @@ static void main_loop(void *arg) {
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
         ImGui::Begin("Eletricity");
 
-        ImGui::ShowStyleSelector("Colors##Selector");
        // ImGui::ShowFontSelector("Font");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 2;
+        static int                rows      = 1;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
@@ -213,14 +219,36 @@ static void main_loop(void *arg) {
         //     ImGui::PopID();
         // }
 
+        deviceTable.drawHeader(currentTime);
+
+        ImGui::ShowStyleSelector("Colors##Selector");
+
         const char* items[] = {"month", "week", "day"};
         static int item_current = 0;
 
+        // subplots
+        if (ImPlot::BeginSubplots("My Subplots",rows,cols, ImVec2(-1,400), flags)){ 
+
+            if(ImPlot::BeginPlot("Power")){
+                // power      
+               // plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers, subscriptionsTimeDomain[0].acquisition.success);
+                plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
+                ImPlot::EndPlot();
+            }
+       
+            plotter.plotBarchart(powerUsageValues);
+       
+            ImPlot::EndSubplots();
+        }
+
+        // TODO -add wrapping
         ImGui::Combo("month/week/day", &item_current, items, IM_ARRAYSIZE(items));
+
+        ImGui::Spacing();
 
         if (powerUsageValues.init){
 
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
             if (item_current == 0){
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n", 
@@ -239,46 +267,7 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Connection Error\n");
             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
         }
-
-        // subplots
-        if (ImPlot::BeginSubplots("My Subplots",1,2, ImVec2(-1,400), flags)){
-
-            /*
-            void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
-    for (int i = 0; i < signals.size(); i++) {
-        if (signals[i].data.size() > 0) {
-            ImPlot::PlotLine((signals[i].signalName).c_str(),
-                    &signals[i].data[0].x,
-                    &signals[i].data[0].y,
-                    signals[i].data.size(),
-                    0,
-                    signals[i].offset,
-                    2 * sizeof(double));
-        }
-    }
-}            
-            */
-        //    std:vector<double> power_values;
-        //    int count_signals = subscriptionsTimeDomain[0].acquisition.buffers.size();
-        //    for(int i = 0; i < signals.size(); i++) {   
-        //         double signal_value = 0.0;
-        //         if (signals[i].data.size() > 0) {
-        //             signal_value = signals[i].data[0].y;
-        //         }
-        //    }
-
-            // power
-            if(ImPlot::BeginPlot("Power")){
-                plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers);
-                ImPlot::EndPlot();
-            }
-
         
-            plotter.plotBarchart(powerUsageValues);
-       
-            ImPlot::EndSubplots();
-        }
-
         deviceTable.plotTable(powerUsageValues, item_current);
 
         ImGui::End();
