@@ -82,6 +82,9 @@ void Acquisition::deserialize() {
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
@@ -94,6 +97,7 @@ void Acquisition::deserialize() {
         }
     }
 
+    lastTimeStamp        = lastRefTrigger + relativeTimestamps.back() * 1e9;
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }
@@ -131,7 +135,7 @@ void AcquisitionSpectra::deserialize() {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-
+    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }
