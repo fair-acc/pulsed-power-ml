@@ -1,6 +1,8 @@
 """
 This module implements a kNN-classifier with the tensorflow API
 """
+from typing import Tuple
+
 import tensorflow as tf
 from tensorflow import keras
 
@@ -42,7 +44,7 @@ class TFKNeighborsClassifier(keras.Model):
         self.training_data_labels = y
         return
 
-    def call(self, input: tf.Tensor) -> tf.Tensor:
+    def call(self, input: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Method to use this model for inference.
 
@@ -53,8 +55,9 @@ class TFKNeighborsClassifier(keras.Model):
 
         Returns
         -------
-        label
-            Tensor containing the classification result.
+        distances, label
+            distances to the nearest neighbors
+            label: Tensor containing the classification result.
         """
         difference_vectors = self.training_data_features - input
         distances = tf.norm(difference_vectors, axis=1)
@@ -83,7 +86,7 @@ class TFKNeighborsClassifier(keras.Model):
         result_tensor = tf.one_hot(indices=result_index,
                                    depth=self.training_data_labels.shape[1])
 
-        return result_tensor
+        return k_smallest_distances, result_tensor
 
 
 if __name__ == "__main__":
