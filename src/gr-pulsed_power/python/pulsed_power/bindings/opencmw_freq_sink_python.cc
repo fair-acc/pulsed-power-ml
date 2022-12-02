@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(opencmw_freq_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(4559a03f8e6522d2222eb7b04a5e377b)                     */
+/* BINDTOOL_HEADER_FILE_HASH(d739200dd11965686039198e7b785915)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -41,10 +41,10 @@ void bind_opencmw_freq_sink(py::module& m)
         m, "opencmw_freq_sink", D(opencmw_freq_sink))
 
         .def(py::init(&opencmw_freq_sink::make),
-             py::arg("signal_name") = "signal_1",
-             py::arg("signal_unit") = "",
-             py::arg("sample_rate") = 0.F,
-             py::arg("bandwidth") = 0.F,
+             py::arg("signal_names"),
+             py::arg("signal_units"),
+             py::arg("sample_rate"),
+             py::arg("bandwidth"),
              py::arg("vector_size") = 1024,
              D(opencmw_freq_sink, make))
 
@@ -65,14 +65,14 @@ void bind_opencmw_freq_sink(py::module& m)
              D(opencmw_freq_sink, get_sample_rate))
 
 
-        .def("get_signal_name",
-             &opencmw_freq_sink::get_signal_name,
-             D(opencmw_freq_sink, get_signal_name))
+        .def("get_signal_names",
+             &opencmw_freq_sink::get_signal_names,
+             D(opencmw_freq_sink, get_signal_names))
 
 
-        .def("get_signal_unit",
-             &opencmw_freq_sink::get_signal_unit,
-             D(opencmw_freq_sink, get_signal_unit))
+        .def("get_signal_units",
+             &opencmw_freq_sink::get_signal_units,
+             D(opencmw_freq_sink, get_signal_units))
 
 
         .def("get_vector_size",

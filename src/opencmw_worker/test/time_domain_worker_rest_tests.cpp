@@ -168,7 +168,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     const std::string signalUnit{ "unit" };
     auto              saw_signal_source         = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SAW_WAVE, SAW_FREQUENCY, SAW_AMPLITUDE, 0, 0);
     auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
-    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, signalName, signalUnit);
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections

@@ -37,10 +37,10 @@ public:
      * class. pulsed_power::opencmw_freq_sink::make is the public interface for
      * creating new instances.
      */
-    static sptr make(std::string signal_name = "signal_1",
-                     std::string signal_unit = "",
-                     float sample_rate = 0.0F,
-                     float bandwidth = 0.0F,
+    static sptr make(std::vector<std::string> signal_names,
+                     std::vector<std::string> signal_units,
+                     float sample_rate,
+                     float bandwidth,
                      size_t vector_size = 1024);
 
     /*!
@@ -64,12 +64,12 @@ public:
     /*!
      * \brief Returns signal name.
      */
-    virtual std::string get_signal_name() = 0;
+    virtual std::vector<std::string> get_signal_names() = 0;
 
     /*!
      * \brief Returns signal unit.
      */
-    virtual std::string get_signal_unit() = 0;
+    virtual std::vector<std::string> get_signal_units() = 0;
 
     /*!
      * \brief Returns vector size.

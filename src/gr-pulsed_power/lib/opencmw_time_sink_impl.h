@@ -17,20 +17,19 @@ class opencmw_time_sink_impl : public opencmw_time_sink
 {
 private:
     float d_sample_rate;
-    std::string d_signal_name;
-    std::string d_signal_unit;
+    std::vector<std::string> d_signal_names;
+    std::vector<std::string> d_signal_units;
     std::vector<cb_copy_data_t> d_cb_copy_data;
 
 public:
     opencmw_time_sink_impl(float sample_rate,
-                           std::string signal_name,
-                           std::string signal_unit);
+                           std::vector<std::string> signal_names,
+                           std::vector<std::string> signal_units);
     ~opencmw_time_sink_impl();
 
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
-             gr_vector_void_star& output_items);
-
+             gr_vector_void_star& output_items) override;
     void register_sink();
 
     void deregister_sink();
@@ -39,9 +38,9 @@ public:
 
     float get_sample_rate() override;
 
-    std::string get_signal_name() override;
+    std::vector<std::string> get_signal_names() override;
 
-    std::string get_signal_unit() override;
+    std::vector<std::string> get_signal_units() override;
 };
 
 } // namespace pulsed_power

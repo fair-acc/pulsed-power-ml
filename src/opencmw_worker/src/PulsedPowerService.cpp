@@ -102,19 +102,19 @@ public:
         // sinus_signal --> throttle --> opencmw_time_sink
         auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "sinus", "V");
+        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, { "sinus", "square" }, { "V", "A" });
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
 
         // saw_signal --> throttle --> opencmw_time_sink
         auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
         auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "saw", "A");
+        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, { "saw" }, { "A" });
         pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
 
         // square_signal --> throttle --> opencmw_time_sink
         auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
         auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, "square", "A");
+        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, { "square" }, { "A" });
         pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
 
         // sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
@@ -129,7 +129,7 @@ public:
         auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / static_cast<float>(vec_length), vec_length);
         auto         complex_to_mag_squared_0         = gr::blocks::complex_to_mag_squared::make(vec_length);
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
-        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make("sinus_fft", "dB", samp_rate_2, bandwidth);
+        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_2, bandwidth);
 
         // connections
         // time-domain sinks
@@ -140,7 +140,7 @@ public:
         top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
 
         top->hier_block2::connect(signal_source_2, 0, throttle_block_2, 0);
-        top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_2, 0);
+        top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_0, 1);
 
         // frequency-domain sinks
         top->hier_block2::connect(signal_source_3, 0, throttle_block_3, 0);
@@ -174,7 +174,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraph flowgraph(160);
+    GRFlowGraph flowgraph(1024);
     flowgraph.start();
 
     // OpenCMW workers
