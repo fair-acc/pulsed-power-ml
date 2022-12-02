@@ -229,6 +229,7 @@ public:
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
+
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
 
                     if (subTopic.path() != "/Acquisition") {
@@ -262,6 +263,7 @@ public:
                 }
 
                 pollingDuration   = std::chrono::system_clock::now() - time_start;
+
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
                 std::this_thread::sleep_for(willSleepFor);
             }
