@@ -126,10 +126,10 @@ private:
 
         void fetchData(const int64_t lastRefTrigger, Acquisition &out) {
             std::vector<float> stridedValues;
-            int64_t            begin = _tail->value();
-            int64_t            end   = _ringBuffer->cursor();
+            int64_t            begin      = _tail->value();
+            int64_t            end        = _ringBuffer->cursor();
+            bool               firstChunk = true;
             for (size_t i = 0; i < _subscriptionNames.size(); i++) {
-                bool firstChunk = true;
                 fmt::print("fetch signal {} from seq {} to {}\n", _subscriptionNames[i], begin, end);
                 out.channelNames.push_back(fmt::format("{}@{}Hz", _subscriptionNames[i], _sampleRate));
 
@@ -191,6 +191,7 @@ private:
                 bool result = _ringBuffer->tryPublishEvent([&input_items, noutput_items, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                     bufferData.nsignals  = input_items.size();
                     bufferData.timestamp = timestamp_ns;
+                    bufferData.chunk.clear();
                     for (size_t i = 0; i < bufferData.nsignals; i++) {
                         const float *in = static_cast<const float *>(input_items[i]);
                         bufferData.chunk.emplace_back(std::vector<float>(in, in + noutput_items));
