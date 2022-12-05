@@ -90,7 +90,6 @@ void Acquisition::deserialize() {
                 std::cout << "Acquired timestamp smaller than last timestamp" << std::endl;
                 std::cout << element.value() << " <- Acquired timestamp" << std::endl;
                 std::cout << this->lastTimeStamp << " <- last timestamp" << std::endl;
-                return;
             }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);

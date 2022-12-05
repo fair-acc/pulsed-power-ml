@@ -325,6 +325,7 @@ public:
                                      TimeDomainContext /* &replyContext */, Acquisition &out) {
             if (rawCtx.request.command() == Command::Get) {
                 handleGetRequest(requestContext, out);
+                // fmt::print("out.refTrigger: {}\n", out.refTriggerStamp);
             }
         });
     }
