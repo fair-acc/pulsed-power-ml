@@ -78,15 +78,17 @@ void Acquisition::deserialize() {
     std::string modifiedJsonString = this->jsonString;
 
     modifiedJsonString.erase(0, 14);
+    // Debug
+    uint64_t workerTimeStamp = 0;
 
-    auto json_obj = json::parse(modifiedJsonString);
+    auto     json_obj        = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
             // debug
-            if (this->refTrigger_ns < this->lastTimeStamp) {
+            if (element.value() < this->lastTimeStamp) {
                 std::cout << "Acquired timestamp smaller than last timestamp" << std::endl;
                 std::cout << element.value() << " <- Acquired timestamp" << std::endl;
                 std::cout << this->lastTimeStamp << " <- last timestamp" << std::endl;
@@ -101,12 +103,20 @@ void Acquisition::deserialize() {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
         }
+        // Debug
+        if (element.key() == "lastTimeStamp") {
+            workerTimeStamp = element.value();
+        }
     }
 
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+    // this->lastTimeStamp = workerTimeStamp;
     std::cout << "lastRefTrigger: " << lastRefTrigger << std::endl;
     std::cout << "lastTimeStamp: " << lastTimeStamp << std::endl;
+    if (workerTimeStamp == lastTimeStamp) {
+        std::cout << "LastTimeStamps are equal" << std::endl;
+    }
     addToBuffers();
 }
 

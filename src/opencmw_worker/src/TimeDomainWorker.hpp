@@ -37,9 +37,10 @@ struct Acquisition {
     std::vector<float>            channelRangeMin;
     std::vector<float>            channelRangeMax;
     std::vector<float>            temperature;
+    int64_t                       lastTimeStamp = 0;
 };
 
-ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)
+ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature, lastTimeStamp)
 
 using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
@@ -154,7 +155,7 @@ private:
                     }
                 }
                 if (!stridedValues.empty()) {
-                    stridedValues[0] = -6.00; // TODO remove
+                    // stridedValues[0] = -6.00; // TODO remove
                 }
             }
             // TODO remove
@@ -192,6 +193,10 @@ private:
             for (size_t i = 0; i < channelValuesSize; ++i) {
                 float relativeTimestamp = static_cast<float>(i) * (1 / _sampleRate);
                 out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
+            }
+            // debug
+            if (channelValuesSize > 0) {
+                out.lastTimeStamp = out.refTriggerStamp + out.channelTimeSinceRefTrigger.back() * 1e9;
             }
         };
 
