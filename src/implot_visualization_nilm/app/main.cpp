@@ -221,7 +221,19 @@ static void main_loop(void *arg) {
 
         deviceTable.drawHeader(currentTime);
 
-        ImGui::ShowStyleSelector("Colors##Selector");
+         static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
+
+         
+        if(ImGui::BeginTable("ComboStyle", 2, tableFlags,ImVec2(-1,0)))
+        {
+            ImGui::TableSetupColumn("style", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
+            ImGui::TableSetupColumn("empty");
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::ShowStyleSelector("Colors##Selector");
+            ImGui::EndTable();
+        }
 
         const char* items[] = {"month", "week", "day"};
         static int item_current = 0;
@@ -241,8 +253,17 @@ static void main_loop(void *arg) {
             ImPlot::EndSubplots();
         }
 
-        // TODO -add wrapping
-        ImGui::Combo("month/week/day", &item_current, items, IM_ARRAYSIZE(items));
+       
+        if(ImGui::BeginTable("ComboTime", 2, tableFlags,ImVec2(-1,0)))
+        {
+            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
+            ImGui::TableSetupColumn("empty");
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Combo("month/week/day", &item_current, items, IM_ARRAYSIZE(items));
+            ImGui::EndTable();
+        }
 
         ImGui::Spacing();
 

@@ -149,6 +149,25 @@ void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w){
     //  on
     const ImVec4& able_col = style.Colors[ImGuiCol_PlotHistogram];
 
+    
+    size_t rows = (int)powerUsage.devices.size();
+
+    int rest = rows % 2;
+    int len  = rows / 2;
+
+    if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody)){
+   
+        ImGui::TableNextColumn();
+
+        plotNestTable(powerUsage, 0, len + rest, m_d_w);
+
+        ImGui::TableNextColumn();
+
+        plotNestTable(powerUsage, len+rest, len, m_d_w);
+
+        ImGui::EndTable();
+    }
+
     if (powerUsage.success == false){
         ImGui::TextColored(ImVec4(1,0.5,0,1),"%s","Connection failed\n");
         if(powerUsage.init == true){
@@ -167,23 +186,6 @@ void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w){
         ImGui::Text(" ");
     }
 
-    size_t rows = (int)powerUsage.devices.size();
-
-    int rest = rows % 2;
-    int len  = rows / 2;
-
-    if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody)){
-   
-        ImGui::TableNextColumn();
-
-        plotNestTable(powerUsage, 0, len + rest, m_d_w);
-
-        ImGui::TableNextColumn();
-
-        plotNestTable(powerUsage, len+rest, len, m_d_w);
-
-        ImGui::EndTable();
-    }
 
 }
 
@@ -278,7 +280,8 @@ void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int
                         break;
                     }
 
-                    ImGui::Text("%.2f", relative);
+                    //ImGui::Text("%.2f", relative);
+                    ImGui::Text("%3.2f %%", relative * 100);
                 }
             }
 
@@ -310,8 +313,7 @@ void DeviceTable::drawHeader(double currentTime){
 
     if(ImGui::BeginTable("Header", 3 , tableFlags, ImVec2(-1,0)) ){
 
-        ImGui::TableSetupColumn("logo", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
-        // ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed,500.f); 
+        ImGui::TableSetupColumn("logo", ImGuiTableColumnFlags_WidthFixed, 400.0f); 
         ImGui::TableSetupColumn("name"); 
         ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed,300.0f);
 
@@ -328,11 +330,13 @@ void DeviceTable::drawHeader(double currentTime){
         ImGui::BeginGroup();
         ImPlot::FormatDate(ImPlotTime::FromDouble(currentTime),buff,32,ImPlotDateFmt_DayMoYr,ImPlot::GetStyle().UseISO8601);
         ImPlot::FormatTime(ImPlotTime::FromDouble(currentTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-        ImGui::TextColored(ImVec4(1,0.5,0,1)," %s %s (local)" , buff, buff_time);
+        //ImGui::TextColored(ImVec4(1,0.5,0,1)," %s %s (local)" , buff, buff_time);
+        ImGui::Text(" %s %s (local)" , buff, buff_time);
 
         ImPlot::GetStyle().UseLocalTime = false;
         ImPlot::FormatTime(ImPlotTime::FromDouble(currentTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-        ImGui::TextColored(ImVec4(1,0.5,0,1),"            %s (UTC)  " , buff_time);
+        //ImGui::TextColored(ImVec4(1,0.5,0,1),"            %s (UTC)  " , buff_time);
+        ImGui::Text("            %s (UTC)  " , buff_time);
         ImPlot::GetStyle().UseLocalTime = true;
         ImGui::EndGroup();   
 
