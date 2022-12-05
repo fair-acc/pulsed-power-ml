@@ -264,7 +264,35 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
     return feature_vector
 
 
-def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
+def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    """
+    Scans background subtracted spectrum for switch event
+    (signal larger than input parameter threshold value)
+    to avoid dead time because of background re-calculation.
+
+    Parameters
+    ----------
+    res_spectrum
+        Background subtracted spectrum.
+    threshold
+        Threshold value
+
+    Returns
+    -------
+    flag_tuple
+        Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
+        a "switch off" event ist detected.
+    """
+
+    # sum above threshold?
+    spectrum_sum = tf.math.reduce_sum(res_spectrum)
+    sum_above_thr = tf.math.greater(spectrum_sum, threshold)
+    sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
+
+    return sum_above_thr, sum_below_minus_thr
+
+
+def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Calculates the parameters of a gaussian function given the values in x and y.
 
     This is not a fit(!), but an exact calculation. x and y need to be of length 3.
@@ -305,7 +333,9 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> tf.Tens
     return a, b, c
 
 
-def tf_find_peaks(data: tf.Tensor, min_height: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+def tf_find_peaks(data: tf.Tensor,
+                  min_height: tf.Tensor,
+                  min_output_length: tf.Tensor = tf.constant(10, dtype=tf.int32)) -> Tuple[tf.Tensor, tf.Tensor]:
     """Find peaks in 1-D tensor x.
 
     Considers three values at a time, if the max value is located at the center of the window (length=3) a peak is found.
@@ -316,6 +346,8 @@ def tf_find_peaks(data: tf.Tensor, min_height: tf.Tensor) -> Tuple[tf.Tensor, tf
         1-D tensor containing the data
     min_height
         Minimum height of peaks
+    min_output_length
+        Minimum length of output tensor
 
     Returns
     -------
@@ -342,12 +374,31 @@ def tf_find_peaks(data: tf.Tensor, min_height: tf.Tensor) -> Tuple[tf.Tensor, tf
                       axis=0)
 
     # get the peak indices
-    peak_indices = tf.where(equal)
+    peak_indices = tf.cast(x=tf.where(equal),
+                           dtype=tf.int32)
 
     # get the peak heights
     peak_heights = tf.gather_nd(params=data, indices=peak_indices)
 
-    return peak_indices, peak_heights
+    # Pad peaks to ensure data independent output shape
+    zero_tensor = tf.zeros(min_output_length,
+                           dtype=tf.int32)
+
+    # ToDo: fix output shape here...
+
+    peak_indices_padded = tf.tensor_scatter_nd_update(
+        tensor=zero_tensor,
+        indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)),
+        updates=peak_indices
+    )
+
+    peak_heights_padded = tf.tensor_scatter_nd_update(
+        tensor=zero_tensor,
+        indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)),
+        updates=peak_heights
+    )
+
+    return peak_indices_padded, peak_heights_padded
 
 
 def tf_calculate_background(background_points: tf.Tensor) -> tf.Tensor:
@@ -365,7 +416,7 @@ def tf_calculate_background(background_points: tf.Tensor) -> tf.Tensor:
     """
     background = tf.math.reduce_mean(
         input_tensor=background_points,
-        axis=1,
+        axis=0,
         name="calculate_background"
     )
     return background
@@ -413,9 +464,12 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     feature_vector
         Array of length 3 * n_peaks_max of the form: [a_0, mu_0, sigma_0, a_1, mu_1, sigma_1, ...]
     """
-    min_peak_height = 4 * tf.math.reduce_std(input_tensor=cleaned_spectrum,
-                                             axis=0,
-                                             name="min_peak_height")
+    # min_peak_height = 4 * tf.math.reduce_std(input_tensor=cleaned_spectrum,
+    #                                          axis=0,
+    #                                          name="min_peak_height")
+
+    # ToDo: Is min peak height necessary?
+    min_peak_height = tf.constant(0, dtype=tf.float32)
     # Determine if peaks have positive or negative amplitude
     switch_off_factor = tf.cond(
         pred=tf.math.less(

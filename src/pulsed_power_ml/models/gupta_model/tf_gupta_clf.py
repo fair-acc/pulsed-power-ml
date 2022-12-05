@@ -7,9 +7,8 @@ from typing import Tuple
 import tensorflow as tf
 from tensorflow import keras
 
-# import numpy as np
-
 from src.pulsed_power_ml.models.gupta_model.tf_knn import TFKNeighborsClassifier
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
@@ -97,7 +96,7 @@ class TFGuptaClassifier(keras.Model):
         # Class attributes to accommodate for disturbances due to mechanical switches
         self.switching_offset = switching_offset
         self.n_data_points_skipped = tf.Variable(initial_value=0,
-                                                 dtype=tf.float32)
+                                                 dtype=tf.int32)
         self.skip_data_point = tf.Variable(initial_value=False,
                                            dtype=tf.bool)
 
@@ -121,7 +120,8 @@ class TFGuptaClassifier(keras.Model):
         self.clf.fit(X, y)
         return
 
-    def predict(self, X: tf.Tensor) -> tf.Tensor:
+    # @tf.function
+    def call(self, X: tf.Tensor) -> tf.Tensor:
         """
         Prediction method of the Gupta classifier.
 
@@ -137,11 +137,13 @@ class TFGuptaClassifier(keras.Model):
         """
         # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
         # a classification
-        if self.skip_data_point is True:
+        # ToDo: Rework if-block
+        if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
             # Not enough data points have been skipped yet
-            if self.n_data_points_skipped < self.switching_offset:
-                self.n_data_points_skipped += 1
+            if tf.math.less(self.n_data_points_skipped, self.switching_offset):
+                self.n_data_points_skipped.assign(tf.math.add(self.n_data_points_skipped, 1))
                 return self.current_state_vector
+
             # Enough data points have been skipped, do the classification now
             else:
                 spectrum, apparent_power = self.crop_data_point(X)
@@ -160,10 +162,10 @@ class TFGuptaClassifier(keras.Model):
                 )
 
                 # clear background vector
-                self.background_vector.clear()
+                self.clear_background_vector()
 
                 # reset skip flag
-                self.skip_data_point = False
+                self.skip_data_point.assign(False)
 
                 # return new state vector
                 return self.current_state_vector
@@ -172,25 +174,39 @@ class TFGuptaClassifier(keras.Model):
         spectrum, apparent_power = self.crop_data_point(X)
 
         # 1. Step: Check if background vector is full
-        if self.background_n > len(self.background_vector):
+        # ToDo: Rework this if-block
+        if tf.math.greater(self.background_n, self.current_background_size):
             # Add current data point to background vector and return last state vector
-            self.background_vector.append(spectrum)
+            # self.background_vector.append(spectrum)
+            tf.cond(
+                pred=tf.math.less(self.current_background_size, self.background_n),
+                true_fn=lambda: self.add_input_to_bk(spectrum),
+                false_fn=lambda: self.replace_input_in_bk(spectrum),
+            )
+
             self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             return self.current_state_vector
 
         # 2. Calculate background
-        current_background = calculate_background(np.array(self.background_vector))
+        current_background = tf_calculate_background(self.background_vector)
 
         # 3. Subtract current background from current spectrum
-        cleaned_spectrum = subtract_background(raw_spectrum=spectrum,
-                                               background=current_background)
+        cleaned_spectrum = tf_subtract_background(raw_spectrum=spectrum,
+                                                  background=current_background)
 
         # 4. Check if appliance has been changed its state
-        event_detected_flag = switch_detected(cleaned_spectrum,
-                                              threshold=1000)
+        event_detected_flag = tf_switch_detected(cleaned_spectrum,
+                                                 threshold=1000)
+
+        # ToDo: Rework if-block
         if True not in event_detected_flag:
             # add spectrum to background vector and return last state vector
-            self.background_vector.append(spectrum)
+            tf.cond(
+                pred=tf.math.less(self.current_background_size, self.background_n),
+                true_fn=lambda: self.add_input_to_bk(spectrum),
+                false_fn=lambda: self.replace_input_in_bk(spectrum),
+            )
+
             self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             return self.current_state_vector
 
@@ -199,17 +215,31 @@ class TFGuptaClassifier(keras.Model):
             self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
                                                                       current_apparent_power=apparent_power)
             # clear background vector
-            self.background_vector.clear()
+            self.clear_background_vector()
 
             # return new state vector
             return self.current_state_vector
 
         # If self.switching_offset is not 0, a number of data points needs to be skipped before a classification
         else:
-            self.skip_data_point = True
-            self.n_data_points_skipped += 1
+            self.skip_data_point.assign(True)
+            self.n_data_points_skipped.assign_add(tf.constant(value=1, dtype=tf.int32))
             # return the current state vector until the classification is done
             return self.current_state_vector
+
+    def predict(self, X: tf.Tensor) -> tf.Tensor:
+        """
+        Wrapper for call method
+
+        Parameters
+        ----------
+        X
+
+        Returns
+        -------
+
+        """
+        return self.call(X)
 
     def crop_data_point(self, X: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
@@ -232,6 +262,20 @@ class TFGuptaClassifier(keras.Model):
         apparent_power = X[-2]
         return spectrum, apparent_power
 
+    def clear_background_vector(self) -> None:
+        """
+        Clear background vector and reset current background size
+        """
+        self.background_vector = tf.Variable(
+            initial_value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
+            dtype=tf.float32,
+            name="background_vector"
+        )
+        self.current_background_size = tf.Variable(initial_value=0,
+                                                   dtype=tf.int32,
+                                                   name="current_background_size")
+        return None
+
     def calculate_state_vector(self,
                                event_class: tf.Tensor) -> tf.Tensor:
         """
@@ -249,7 +293,7 @@ class TFGuptaClassifier(keras.Model):
 
         # updated_state_vector = copy.deepcopy(self.current_state_vector)
 
-        event_index = tf.math.argmax(event_class)
+        event_index = tf.math.argmax(event_class, output_type=tf.int32)
 
         new_state_vector = tf.case(
             pred_fn_pairs=[
@@ -261,7 +305,8 @@ class TFGuptaClassifier(keras.Model):
 
                 # Case 2: Known appliance is switched off
                 (tf.math.logical_and(tf.math.greater_equal(event_index, self.n_known_appliances),
-                                     tf.math.less(event_index, self.n_known_appliances * 2)),
+                                     tf.math.less(event_index, tf.math.multiply(self.n_known_appliances,
+                                                                                tf.constant(2, dtype=tf.int32)))),
                  lambda: tf.tensor_scatter_nd_update(tensor=self.current_state_vector,
                                                      indices=[[event_index]],
                                                      updates=[tf.constant(0, dtype=tf.float32)])),
@@ -288,7 +333,7 @@ class TFGuptaClassifier(keras.Model):
         known_power = tf.math.reduce_sum(self.current_state_vector[:-1])
         unknown_power = tf.math.maximum(current_apparent_power - known_power,
                                         tf.constant(0, dtype=tf.float32))
-        updated_state_vector = tf.concat([self.current_state_vector[:-1], unknown_power], axis=0)
+        updated_state_vector = tf.concat([self.current_state_vector[:-1], tf.reshape(unknown_power, shape=(1))], axis=0)
         return updated_state_vector
 
     def classify_switching_event(self,
@@ -315,21 +360,15 @@ class TFGuptaClassifier(keras.Model):
                                                      sample_rate=self.sample_rate)
 
         # 2. Classify event
-        distances, event_class = self.clf.kneighbors([feature_vector])
+        distances, event_class = self.clf([feature_vector])
 
         # Check if known or unknown event via the smallest distance
         tf.cond(
             pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),
-            true_fn=lambda:
+            true_fn=lambda: tf.one_hot(indices=self.n_known_appliances,
+                                       depth=tf.math.add(self.n_known_appliances, tf.constant(1, dtype=tf.float32))),
+            false_fn=lambda: event_class
         )
-
-        if tf.math.reduce_min(distances) > self.distance_threshold:
-            # Case 1: Unknown event
-            event_class = tf.one_hot(
-                indices=self.n_known_appliances,
-                depth=self.n_known_appliances + 1
-            )
-
 
         # 3. Update current state vector accordingly
         self.current_state_vector = self.calculate_state_vector(event_class=event_class)
@@ -339,18 +378,103 @@ class TFGuptaClassifier(keras.Model):
 
         return self.current_state_vector
 
+    def add_input_to_bk(self, input: tf.Tensor) -> None:
+        """
+        Function to add spectrum to background collection if background collection is not complete, yet.
+
+        Parameters
+        ----------
+        input
+            Spectrum
+        """
+        self.replace_input_in_bk(input)
+
+        self.current_background_size.assign(
+            tf.add(
+                self.current_background_size,
+                tf.constant(1, dtype=tf.int32)
+            )
+        )
+
+        return None
+
+    def replace_input_in_bk(self, input: tf.Tensor) -> None:
+        """
+        Function to replace oldest spectrum in background collection with **input**.
+
+        Parameters
+        ----------
+        input
+            Spectrum to be added to background collection.
+        """
+        self.background_vector.assign(
+            tf.tensor_scatter_nd_update(
+                tensor=tf.roll(input=self.background_vector, shift=1, axis=0),
+                indices=tf.constant([[0]], dtype=tf.int32),
+                updates=tf.reshape(input, shape=(1, -1))
+            )
+        )
+        return None
+
 
 if __name__ == "__main__":
 
-    dummy_data_point = tf.ones(
-        shape=(2**16 * 3 + 4),
-        dtype=tf.float32,
-        name="dummy_data_point"
+    # Model test
+    import sys
+    from typing import Tuple
+
+    sys.path.append("/home/thomas/projects/nilm_at_fair/repository")
+    import numpy as np
+    import tensorflow as tf
+    import matplotlib.pyplot as plt
+    from scipy.signal import find_peaks
+    import pandas as pd
+
+    from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
+    from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
+    from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+    from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_gaussian_params_for_peak, gaussian, \
+        tf_find_peaks
+
+    from src.pulsed_power_ml.model_framework.data_io import read_training_files
+
+    from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
+
+    # load training data
+    training_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/"
+    features_file = f"{training_data_folder}/Features_ApparentPower.csv"
+    labels_file = f"{training_data_folder}/Labels_ApparentPower.csv"
+
+    features = tf.constant(value=pd.read_csv(features_file).values, dtype=tf.float32)
+    labels = tf.constant(value=pd.read_csv(labels_file).values, dtype=tf.float32)
+
+    # load apparent power list
+    apparent_power_list = tf.constant(
+        value=[4.8, 480, 490, 24, 42, 42, 27, 33, 50, 50, 50],
+        dtype=tf.float32
     )
 
-    # Instantiate model (for a simple test, default params seems fine)
-    model = TFGuptaClassifier()
+    # Instantiate model
+    model = TFGuptaClassifier(
+        background_n=tf.constant(5, dtype=tf.int32),
+        n_peaks_max=tf.constant(10, dtype=tf.int32),  # Training data has 10 peaks...
+        apparent_power_list=apparent_power_list,
+        n_neighbors=tf.constant(3, dtype=tf.int32)
+    )
 
-    cropped = model.crop_data_point(dummy_data_point)
+    # Fit KNN
+    model.fit(X=features, y=labels)
 
-    print(cropped)
+    # Load GR data
+    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/mixed/"
+    data_point_array = read_training_files(path_to_folder=gr_data_folder,
+                                           fft_size=2**17)
+
+    # Apply model to data
+    state_vector_list = list()
+    for data_point in data_point_array[:20]:
+        state_vector = model(tf.constant(10**data_point, dtype=tf.float32))
+        state_vector_list.append(state_vector)
+
+    # Save model
+    model.save("TFGuptaSaveTest")
