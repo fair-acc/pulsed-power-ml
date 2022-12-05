@@ -142,10 +142,10 @@ private:
                     if (bufData.timestamp > lastRefTrigger) {
                         assert(bufData.nsignals == _subscriptionNames.size());
                         if (firstChunk) {
-                            fmt::print("first fetch from seq {}\n", seq);
+                            // fmt::print("first fetch from seq {}\n", seq);
                             out.refTriggerStamp = bufData.timestamp;
                             if (bufData.timestamp == 0) {
-                                fmt::print("signal {}, bufData timestamp == 0\n", _subscriptionNames[i]);
+                                // fmt::print("signal {}, bufData timestamp == 0\n", _subscriptionNames[i]);
                             }
 
                             firstChunk = false;
@@ -157,6 +157,15 @@ private:
                     stridedValues[0] = -6.00; // TODO remove
                 }
             }
+            // TODO remove
+            fmt::print("Buffer refTrigger: {}\n", out.refTriggerStamp);
+            fmt::print("lastTimeStamp: {}\n", lastRefTrigger);
+            if (lastRefTrigger < out.refTriggerStamp) {
+                fmt::print("TRUE\n");
+            } else {
+                fmt::print("FALSE\n");
+            }
+
             //     out.channelNames.push_back(signalName);
             //     bool    firstChunk = true;
             //     int64_t begin      = _tail->value();
@@ -267,7 +276,7 @@ public:
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
                 std::this_thread::sleep_for(willSleepFor);
             }
-        });
+           });
 
         _signalDataStatus = std::jthread([this] {
             while (!_shutdownRequested) {
@@ -288,13 +297,13 @@ public:
                         }
                         gatingSequences << fmt::format("{{ {} }}", sequence->value());
                     }
-                    fmt::print("subscription: {:<30}, ringbuffer Cursor: {}, Used {}/{}, {}%, GatingSequences: {}\n",
-                            subscription,
-                            cursor,
-                            used,
-                            size,
-                            used * 100 / size,
-                            gatingSequences.str());
+                    // fmt::print("subscription: {:<30}, ringbuffer Cursor: {}, Used {}/{}, {}%, GatingSequences: {}\n",
+                    //         subscription,
+                    //         cursor,
+                    //         used,
+                    //         size,
+                    //         used * 100 / size,
+                    //         gatingSequences.str());
                 }
             }
         });

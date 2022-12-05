@@ -55,7 +55,7 @@ public:
     void                deserialize();
 
     std::vector<double> relativeTimestamps;
-    uint64_t            lastTimeStamp;
+    uint64_t            lastTimeStamp = 0.0;
 
 private:
     uint64_t    refTrigger_ns = 0;
@@ -78,7 +78,7 @@ public:
     void                deserialize();
 
     std::vector<double> relativeTimestamps = { 0 };
-    uint64_t            lastTimeStamp;
+    uint64_t            lastTimeStamp      = 0.0;
 
 private:
     uint64_t            refTrigger_ns = 0;

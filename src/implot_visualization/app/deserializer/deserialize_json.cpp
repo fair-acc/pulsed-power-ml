@@ -85,6 +85,13 @@ void Acquisition::deserialize() {
             if (element.value() == 0) {
                 return;
             }
+            // debug
+            if (this->refTrigger_ns < this->lastTimeStamp) {
+                std::cout << "Acquired timestamp smaller than last timestamp" << std::endl;
+                std::cout << element.value() << " <- Acquired timestamp" << std::endl;
+                std::cout << this->lastTimeStamp << " <- last timestamp" << std::endl;
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
@@ -97,8 +104,10 @@ void Acquisition::deserialize() {
         }
     }
 
-    lastTimeStamp        = lastRefTrigger + relativeTimestamps.back() * 1e9;
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+    std::cout << "lastRefTrigger: " << lastRefTrigger << std::endl;
+    std::cout << "lastTimeStamp: " << lastTimeStamp << std::endl;
     addToBuffers();
 }
 

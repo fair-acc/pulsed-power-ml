@@ -108,9 +108,9 @@ int         main(int, char **) {
 
     ImGui::StyleColorsLight();
 
-    Subscription<Acquisition>                     grSubscription("http://192.168.56.10:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
-    Subscription<Acquisition>                     powerSubscription("http://192.168.56.10:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    Subscription<AcquisitionSpectra>              frequencySubscription("http://192.168.56.10:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
+    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
