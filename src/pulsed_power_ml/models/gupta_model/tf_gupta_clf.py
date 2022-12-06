@@ -75,9 +75,10 @@ class TFGuptaClassifier(keras.Model):
         self.clf = TFKNeighborsClassifier(n_neighbors=n_neighbors)
 
         # Containers
-        self.current_state_vector = tf.zeros(shape=(n_known_appliances + 1),
-                                             dtype=tf.float32,
-                                             name="current_state_vector")
+        self.current_state_vector = tf.Variable(tf.zeros(shape=(n_known_appliances + 1),
+                                                         dtype=tf.float32),
+                                                dtype=tf.float32,
+                                                name="current_state_vector")
 
         # Background attributes
         self.background_n = background_n
@@ -97,12 +98,15 @@ class TFGuptaClassifier(keras.Model):
         self.switching_offset = switching_offset
         self.n_data_points_skipped = tf.Variable(initial_value=0,
                                                  dtype=tf.int32)
-        self.skip_data_point = tf.Variable(initial_value=False,
-                                           dtype=tf.bool)
+        # self.skip_data_point = tf.Variable(initial_value=False,
+        #                                    dtype=tf.bool)
+        self.skip_data_point = tf.Variable(initial_value=0,
+                                           dtype=tf.int32)
 
         return
 
-    def fit(self, X: tf.Tensor, y: tf.Tensor) -> None:
+    @tf.function
+    def fit_knn(self, X: tf.Tensor, y: tf.Tensor) -> None:
         """
         Method to fit the internal kNN-Classifier to the provided data.
 
@@ -120,7 +124,7 @@ class TFGuptaClassifier(keras.Model):
         self.clf.fit(X, y)
         return
 
-    # @tf.function
+    @tf.function
     def call(self, X: tf.Tensor) -> tf.Tensor:
         """
         Prediction method of the Gupta classifier.
@@ -138,11 +142,13 @@ class TFGuptaClassifier(keras.Model):
         # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
         # a classification
         # ToDo: Rework if-block
-        if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
+        # if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
+        if tf.math.greater(self.skip_data_point, tf.constant(0, dtype=tf.int32)):
             # Not enough data points have been skipped yet
             if tf.math.less(self.n_data_points_skipped, self.switching_offset):
                 self.n_data_points_skipped.assign(tf.math.add(self.n_data_points_skipped, 1))
-                return self.current_state_vector
+                # return self.current_state_vector
+                return self.get_current_state_vector()
 
             # Enough data points have been skipped, do the classification now
             else:
@@ -165,7 +171,8 @@ class TFGuptaClassifier(keras.Model):
                 self.clear_background_vector()
 
                 # reset skip flag
-                self.skip_data_point.assign(False)
+                # self.skip_data_point.assign(False)
+                self.skip_data_point.assign(0)
 
                 # return new state vector
                 return self.current_state_vector
@@ -199,7 +206,9 @@ class TFGuptaClassifier(keras.Model):
                                                  threshold=1000)
 
         # ToDo: Rework if-block
-        if True not in event_detected_flag:
+        # if True not in event_detected_flag:
+        if tf.math.logical_and(tf.math.equal(tf.constant(value=False, dtype=tf.bool), event_detected_flag[0]),
+                               tf.math.equal(tf.constant(value=False, dtype=tf.bool), event_detected_flag[1])):
             # add spectrum to background vector and return last state vector
             tf.cond(
                 pred=tf.math.less(self.current_background_size, self.background_n),
@@ -222,7 +231,8 @@ class TFGuptaClassifier(keras.Model):
 
         # If self.switching_offset is not 0, a number of data points needs to be skipped before a classification
         else:
-            self.skip_data_point.assign(True)
+            # self.skip_data_point.assign(True)
+            self.skip_data_point.assign(0)
             self.n_data_points_skipped.assign_add(tf.constant(value=1, dtype=tf.int32))
             # return the current state vector until the classification is done
             return self.current_state_vector
@@ -266,14 +276,21 @@ class TFGuptaClassifier(keras.Model):
         """
         Clear background vector and reset current background size
         """
-        self.background_vector = tf.Variable(
-            initial_value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
-            dtype=tf.float32,
-            name="background_vector"
+        self.background_vector.assign(tf.zeros(shape=(self.background_n, self.fft_size_real)))
+
+        # self.background_vector.assign(
+        #     tf.constant(
+        #         value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
+        #         dtype=tf.float32,
+        #         name="background_vector"
+        #     )
+        # )
+
+        self.current_background_size.assign(
+            tf.constant(value=0,
+                        dtype=tf.int32,
+                        name="current_background_size")
         )
-        self.current_background_size = tf.Variable(initial_value=0,
-                                                   dtype=tf.int32,
-                                                   name="current_background_size")
         return None
 
     def calculate_state_vector(self,
@@ -314,6 +331,8 @@ class TFGuptaClassifier(keras.Model):
             default=lambda: self.current_state_vector
         )
 
+        self.current_state_vector = new_state_vector
+
         return new_state_vector
 
     def calculate_unknown_apparent_power(self, current_apparent_power: tf.Tensor) -> tf.Tensor:
@@ -331,9 +350,12 @@ class TFGuptaClassifier(keras.Model):
         """
         # updated_state_vector = copy.deepcopy(self.current_state_vector)
         known_power = tf.math.reduce_sum(self.current_state_vector[:-1])
-        unknown_power = tf.math.maximum(current_apparent_power - known_power,
+        power_difference = tf.math.subtract(current_apparent_power, known_power)
+        unknown_power = tf.math.maximum(power_difference,
                                         tf.constant(0, dtype=tf.float32))
-        updated_state_vector = tf.concat([self.current_state_vector[:-1], tf.reshape(unknown_power, shape=(1))], axis=0)
+        updated_state_vector = tf.concat([self.current_state_vector[:-1],
+                                          tf.expand_dims(unknown_power, axis=0)],
+                                         axis=0)
         return updated_state_vector
 
     def classify_switching_event(self,
@@ -353,20 +375,19 @@ class TFGuptaClassifier(keras.Model):
         updated_state_vector
         """
         # 1. Calculate feature vector
-        print("Event detected: Calculate feature vector")
         feature_vector = tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
                                                      n_peaks_max=self.n_peaks_max,
                                                      fft_size_real=self.fft_size_real,
                                                      sample_rate=self.sample_rate)
 
         # 2. Classify event
-        distances, event_class = self.clf([feature_vector])
+        distances, event_class = self.clf(feature_vector)
 
         # Check if known or unknown event via the smallest distance
         tf.cond(
             pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),
             true_fn=lambda: tf.one_hot(indices=self.n_known_appliances,
-                                       depth=tf.math.add(self.n_known_appliances, tf.constant(1, dtype=tf.float32))),
+                                       depth=tf.math.add(self.n_known_appliances, tf.constant(1, dtype=tf.int32))),
             false_fn=lambda: event_class
         )
 
@@ -416,6 +437,9 @@ class TFGuptaClassifier(keras.Model):
         )
         return None
 
+    def get_current_state_vector(self) -> tf.Tensor:
+        return self.current_state_vector
+
 
 if __name__ == "__main__":
 
@@ -463,7 +487,7 @@ if __name__ == "__main__":
     )
 
     # Fit KNN
-    model.fit(X=features, y=labels)
+    model.fit_knn(X=features, y=labels)
 
     # Load GR data
     gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/mixed/"
@@ -475,6 +499,8 @@ if __name__ == "__main__":
     for data_point in data_point_array[:20]:
         state_vector = model(tf.constant(10**data_point, dtype=tf.float32))
         state_vector_list.append(state_vector)
+
+    # print(state_vector_list)
 
     # Save model
     model.save("TFGuptaSaveTest")

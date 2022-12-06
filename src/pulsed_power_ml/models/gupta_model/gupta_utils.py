@@ -291,7 +291,7 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
 
     return sum_above_thr, sum_below_minus_thr
 
-
+@tf.function
 def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Calculates the parameters of a gaussian function given the values in x and y.
 
@@ -332,7 +332,11 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[t
 
     return a, b, c
 
-
+@tf.function(
+    input_signature=[tf.TensorSpec(shape=(2**16), dtype=tf.float32),
+                     tf.TensorSpec(shape=(), dtype=tf.float32),
+                     tf.TensorSpec(shape=(), dtype=tf.int32)]
+)
 def tf_find_peaks(data: tf.Tensor,
                   min_height: tf.Tensor,
                   min_output_length: tf.Tensor = tf.constant(10, dtype=tf.int32)) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -380,25 +384,33 @@ def tf_find_peaks(data: tf.Tensor,
     # get the peak heights
     peak_heights = tf.gather_nd(params=data, indices=peak_indices)
 
-    # Pad peaks to ensure data independent output shape
-    zero_tensor = tf.zeros(min_output_length,
-                           dtype=tf.int32)
+    # # Pad peaks to ensure data independent output shape
+    # zero_tensor = tf.zeros(min_output_length,
+    #                        dtype=tf.int32)
+    #
+    # # ToDo: fix output shape here...
+    #
+    # tf.print("################### TEST ################")
+    # tf.print(tf.reshape(zero_tensor, shape=(-1, 1)).shape)
+    # tf.print(tf.size(peak_indices))
+    # tf.print(tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)))
+    # tf.print(peak_indices.shape)
+    #
+    # peak_indices_padded = tf.tensor_scatter_nd_update(
+    #     tensor=tf.reshape(zero_tensor, shape=(-1, 1)),
+    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
+    #     updates=peak_indices
+    # )
+    #
+    # peak_heights_padded = tf.tensor_scatter_nd_update(
+    #     tensor=tf.reshape(tf.cast(zero_tensor, dtype=tf.float32), shape=(-1, 1)),
+    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
+    #     updates=tf.reshape(peak_heights, shape=(-1, 1))
+    # )
+    #
+    # return peak_indices_padded, peak_heights_padded
 
-    # ToDo: fix output shape here...
-
-    peak_indices_padded = tf.tensor_scatter_nd_update(
-        tensor=zero_tensor,
-        indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)),
-        updates=peak_indices
-    )
-
-    peak_heights_padded = tf.tensor_scatter_nd_update(
-        tensor=zero_tensor,
-        indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)),
-        updates=peak_heights
-    )
-
-    return peak_indices_padded, peak_heights_padded
+    return peak_indices, peak_heights
 
 
 def tf_calculate_background(background_points: tf.Tensor) -> tf.Tensor:
@@ -440,7 +452,7 @@ def tf_subtract_background(raw_spectrum: tf.Tensor, background: tf.Tensor) -> tf
     return tf.math.subtract(x=raw_spectrum, y=background, name="subtract_background")
 
 
-# @tf.function
+@tf.function
 def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
                                 n_peaks_max: tf.Tensor,
                                 fft_size_real: tf.Tensor,
@@ -482,7 +494,8 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
     # Get peaks
     peak_indices, peak_heights = tf_find_peaks(data=cleaned_spectrum * switch_off_factor,
-                                               min_height=min_peak_height)
+                                               min_height=min_peak_height,
+                                               min_output_length=n_peaks_max)
 
     # select only the highest n_peaks_max peaks
     _, indices_unsorted = tf.math.top_k(
@@ -493,15 +506,24 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
     indices = tf.sort(values=indices_unsorted)
 
-    k_largest_peaks_indices = tf.gather_nd(params=tf.reshape(peak_indices, (-1)),
+    # k_largest_peaks_indices = tf.gather_nd(params=tf.reshape(peak_indices, (-1)),
+    #                                        indices=tf.reshape(indices, (-1, 1)))
+
+    k_largest_peaks_indices = tf.gather_nd(peak_indices,
                                            indices=tf.reshape(indices, (-1, 1)))
+
+
     k_largest_peaks_lower_indices = k_largest_peaks_indices - 1
     k_largest_peaks_higher_indices = k_largest_peaks_indices + 1
 
     # fit gaussian to every peak
     freq_per_bin = tf.cast(x=(sample_rate / fft_size_real), dtype=tf.float32)
     # ToDo: There is probably a more efficient way to implement this loop (see tf.while_loop)
-    feature_vector = list()
+    feature_vector = tf.TensorArray(
+        dtype=tf.float32,
+        size=0,
+        dynamic_size=True
+    )
     for i in tf.range(tf.size(k_largest_peaks_indices)):
         low_index = k_largest_peaks_lower_indices[i]
         mid_index = k_largest_peaks_indices[i]
@@ -512,18 +534,20 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
             dtype=tf.float32
         ) * freq_per_bin + freq_per_bin / 2
 
-        amplitudes = cleaned_spectrum[low_index:high_index+1]
+        amplitudes = cleaned_spectrum[low_index[0]:high_index[0]+1]
+
+        tf.print(frequencies, amplitudes)
 
         a, mu, sigma = tf_calculate_gaussian_params_for_peak(
             x=frequencies,
             y=amplitudes
         )
 
-        feature_vector.append(a)
-        feature_vector.append(mu)
-        feature_vector.append(sigma)
+        feature_vector.write(i*3, a)
+        feature_vector.write(i*3+1, mu)
+        feature_vector.write(i*3+2, sigma)
 
-    feature_tensor = tf.stack(feature_vector, axis=0)
+    feature_tensor = feature_vector.stack()
 
     return feature_tensor
 
