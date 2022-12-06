@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(statistics.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(64373006438f9bd7f7f682eecb0ee13b)                     */
+/* BINDTOOL_HEADER_FILE_HASH(59994694bf34f392b68165fc8134a5a0)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -39,32 +39,12 @@ void bind_statistics(py::module& m)
         .def(py::init(&statistics::make), D(statistics, make))
 
 
-        .def("calculate_mean",
-             &statistics::calculate_mean,
-             py::arg("out"),
-             py::arg("current_mean"),
-             py::arg("nitems"),
-             D(statistics, calculate_mean))
-
-
-        .def("determine_min",
-             &statistics::determine_min,
-             py::arg("out"),
-             py::arg("current_min"),
-             D(statistics, determine_min))
-
-
-        .def("determine_max",
-             &statistics::determine_max,
-             py::arg("out"),
-             py::arg("current_max"),
-             D(statistics, determine_max))
-
-
-        .def("calculate_std_deviation",
-             &statistics::calculate_std_deviation,
-             py::arg("out"),
-             D(statistics, calculate_std_deviation))
+        // .def("calculate_mean",
+        //      &statistics::calculate_mean,
+        //      py::arg("out"),
+        //      py::arg("current_mean"),
+        //      py::arg("nitems"),
+        //      D(statistics, calculate_mean))
 
         ;
 }

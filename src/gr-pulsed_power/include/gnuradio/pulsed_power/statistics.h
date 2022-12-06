@@ -34,17 +34,10 @@ public:
      */
     static sptr make();
 
-    /**
-     * @brief Returns the mean of all samples
-     *
-     * @param out Pointer to results
-     * @param current_mean Pointer to the current mean
-     * @param nitems Number of samples
-     */
-    virtual void calculate_mean(float* out, float* current_mean, int nitems) = 0;
-    virtual void determine_min(float* out, float* current_min) = 0;
-    virtual void determine_max(float* out, float* current_max) = 0;
-    virtual void calculate_std_deviation(float* out) = 0;
+    // virtual void calculate_mean(float* out, float* current_mean, int nitems) = 0;
+    // virtual void determine_min(float* out, float* current_min) = 0;
+    // virtual void determine_max(float* out, float* current_max) = 0;
+    // virtual void calculate_std_deviation(float* out) = 0;
 };
 
 } // namespace pulsed_power
