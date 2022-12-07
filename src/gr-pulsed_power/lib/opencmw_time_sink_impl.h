@@ -16,6 +16,7 @@ namespace pulsed_power {
 class opencmw_time_sink_impl : public opencmw_time_sink
 {
 private:
+    int64_t d_timestamp;
     float d_sample_rate;
     std::vector<std::string> d_signal_names;
     std::vector<std::string> d_signal_units;

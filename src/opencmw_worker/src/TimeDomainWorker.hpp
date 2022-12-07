@@ -157,6 +157,9 @@ private:
                 if (!stridedValues.empty()) {
                     // stridedValues[0] = -6.00; // TODO remove
                 }
+                // } else {
+                //     throw std::invalid_argument(fmt::format("No signal data"));
+                // }
             }
             // TODO remove
             fmt::print("Buffer refTrigger: {}\n", out.refTriggerStamp);

@@ -69,6 +69,9 @@ void Acquisition::addToBuffers() {
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
+
+    // debug
+    buffers[0].data[strideArray.dims[1] - 1].y = -6;
 }
 
 void Acquisition::deserialize() {

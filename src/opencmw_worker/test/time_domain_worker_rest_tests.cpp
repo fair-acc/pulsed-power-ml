@@ -200,10 +200,14 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     const char      *path = "test.service/Acquisition?channelNameFilter=saw@200000Hz";
     httplib::Headers headers({ { "X-OPENCMW-METHOD", "POLL" } });
     auto             response = http.Get(path, headers);
+    // auto response = http.Get(path);
     for (size_t i = 0; i < 100; i++) {
+        // response = http.Get(path);
         response = http.Get(path, headers);
         if (response.error() == httplib::Error::Success) {
-            break;
+            if (response->status == 200) {
+                break;
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -218,7 +222,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
-        REQUIRE(data.refTriggerStamp > 0);
+        REQUIRE(data.refTriggerStamp >= 0);
         REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
         REQUIRE(data.channelNames.size() == data.channelValues.n(0));
         REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
@@ -282,68 +286,66 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    std::string      path = "test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger=0";
-    httplib::Headers headers({ { "X-OPENCMW-METHOD", "GET" } });
-    uint64_t         previousRefTrigger = 0;
-    uint64_t         lastTimeStamp      = 0;
-    for (int iChunk = 0; iChunk < 20; iChunk++) {
-        auto response = http.Get(path.c_str(), headers);
+    std::string path = "test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger=0";
+    // httplib::Headers headers({ { "X-OPENCMW-METHOD", "GET" } });
+    uint64_t previousRefTrigger = 0;
+    uint64_t lastTimeStamp      = 0;
+    for (int iChunk = 0; iChunk < 100; iChunk++) {
+        auto response = http.Get(path.c_str());
         for (size_t i = 0; i < 100; i++) {
-            response = http.Get(path, headers);
-            if (response.error() == httplib::Error::Success) {
+            response = http.Get(path);
+            if (response.error() == httplib::Error::Success && response->status == 200) {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
         REQUIRE(response.error() == httplib::Error::Success);
-
         REQUIRE(response->status == 200);
 
-        {
-            opencmw::IoBuffer buffer;
-            buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
-            Acquisition data;
-            auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
-            fmt::print("deserialisation finished: {}\n", result);
-            // REQUIRE(data.refTriggerStamp > 0);
-            REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
-            REQUIRE(data.channelNames.size() == data.channelValues.n(0));
-            REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
+        opencmw::IoBuffer buffer;
+        buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
+        Acquisition data;
+        auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+        fmt::print("deserialisation finished: {}\n", result);
+        // REQUIRE(data.refTriggerStamp > 0);
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
+        REQUIRE(data.channelNames.size() == data.channelValues.n(0));
+        REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
-            // ????? Is this a duplicate to REQUIRE(data.refTriggerStamp > 0); ?????
+        // ????? Is this a duplicate to REQUIRE(data.refTriggerStamp > 0); ?????
+        // check for non-empty data
+        if (data.refTriggerStamp == 0) {
+            continue;
             if (previousRefTrigger == 0) {
-                // Check for non-empty response
-                if (data.refTriggerStamp == 0) {
-                    continue;
-                }
                 previousRefTrigger = data.refTriggerStamp;
             }
-
-            // check if it is actually sawtooth signal
-            for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
-                Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
-                Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
-                Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference
-                if (data.channelValues[i + 1] > data.channelValues[i]) {
-                    REQUIRE(saw_signal_slope == (data.channelValues[i + 1] - data.channelValues[i]));
-                } else {
-                    REQUIRE(data.channelValues[i] == saw_amplitude);
-                }
-                REQUIRE(saw_timebase == (data.channelTimeSinceRefTrigger[i + 1] - data.channelTimeSinceRefTrigger[i]));
-            }
-
-            // Check time-continuity between chunks
-            if (iChunk > 0) {
-                lastTimeStamp                      = previousRefTrigger + data.channelTimeSinceRefTrigger.back() * 1e9;
-                Approx timeDifferenceBetweenChunks = Approx(lastTimeStamp + 1 / SAMPLING_RATE).epsilon(0.01);
-                REQUIRE(data.refTriggerStamp == timeDifferenceBetweenChunks);
-            }
-
-            previousRefTrigger        = data.refTriggerStamp;
-            uint64_t newLastTimeStamp = data.refTriggerStamp + data.channelTimeSinceRefTrigger.back() * 1e9;
-            path                      = fmt::format("test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger={}", newLastTimeStamp);
         }
+
+        // check if it is actually sawtooth signal
+        for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
+            Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
+            Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
+            Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference
+            if (data.channelValues[i + 1] > data.channelValues[i]) {
+                REQUIRE(saw_signal_slope == (data.channelValues[i + 1] - data.channelValues[i]));
+            } else {
+                REQUIRE(data.channelValues[i] == saw_amplitude);
+            }
+            REQUIRE(saw_timebase == (data.channelTimeSinceRefTrigger[i + 1] - data.channelTimeSinceRefTrigger[i]));
+        }
+
+        // Check time-continuity between chunks
+        if (previousRefTrigger != 0) {
+            // lastTimeStamp                    = previousRefTrigger + data.channelTimeSinceRefTrigger.back() * 1e9;
+            Approx calculatedRefTriggerStamp = Approx(static_cast<float>(lastTimeStamp) + 1.0 / SAMPLING_RATE).epsilon(1e-10);
+            REQUIRE(data.refTriggerStamp == calculatedRefTriggerStamp);
+            REQUIRE(data.refTriggerStamp > lastTimeStamp);
+        }
+
+        previousRefTrigger = data.refTriggerStamp;
+        lastTimeStamp      = data.refTriggerStamp + data.channelTimeSinceRefTrigger.back() * 1e9;
+        path               = fmt::format("test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger={}", lastTimeStamp);
     }
 
     top->stop();

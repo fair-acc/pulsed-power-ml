@@ -33,7 +33,8 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
                      gr::io_signature::make(0, 0, 0)),
       d_sample_rate(sample_rate),
       d_signal_names(signal_names),
-      d_signal_units(signal_units)
+      d_signal_units(signal_units),
+      d_timestamp(0)
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
     register_sink();
@@ -49,11 +50,15 @@ int opencmw_time_sink_impl::work(int noutput_items,
                                  gr_vector_const_void_star& input_items,
                                  gr_vector_void_star& output_items)
 {
-    using namespace std::chrono;
-    int64_t timestamp =
-        duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-            .count();
 
+    using namespace std::chrono;
+    if (d_timestamp == 0) {
+        d_timestamp =
+            duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
+                .count();
+    } else {
+        d_timestamp += static_cast<float>(noutput_items) * (1 / d_sample_rate);
+    }
     int nitems_to_process = noutput_items;
 
     for (auto callback : d_cb_copy_data) {
@@ -62,7 +67,7 @@ int opencmw_time_sink_impl::work(int noutput_items,
                     noutput_items,
                     d_signal_names,
                     d_sample_rate,
-                    timestamp);
+                    d_timestamp);
     }
 
     if (noutput_items == 0) {

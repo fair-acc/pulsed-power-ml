@@ -8,8 +8,8 @@ void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
         if (signals[i].data.size() > 0) {
             // debug
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Square, 0.5); //, ImPlot::GetColormapColor(1), IMPLOT_AUTO, ImPlot::GetColormapColor(1));
-            ImPlot::PlotScatter((signals[i].signalName).c_str(),
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 0.5); //, ImPlot::GetColormapColor(1), IMPLOT_AUTO, ImPlot::GetColormapColor(1));
+            ImPlot::PlotLine((signals[i].signalName).c_str(),
                     &signals[i].data[0].x,
                     &signals[i].data[0].y,
                     signals[i].data.size(),
