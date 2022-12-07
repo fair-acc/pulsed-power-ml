@@ -28,6 +28,8 @@ class TFGuptaClassifier(keras.Model):
                                                               dtype=tf.float32),
                  n_neighbors: tf.Tensor = tf.constant(5, dtype=tf.int32),
                  distance_threshold: tf.Tensor = tf.constant(10, dtype=tf.float32),
+                 training_data_features: tf.Tensor = tf.constant(1, dtype=tf.float32),
+                 training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  name="TFGuptaClassifier",
                  **kwargs
                  ) -> None:
@@ -72,12 +74,13 @@ class TFGuptaClassifier(keras.Model):
         # kNN-Classifier
         self.n_neighbors = n_neighbors
         self.distance_threshold = distance_threshold
-        self.clf = TFKNeighborsClassifier(n_neighbors=n_neighbors)
+        # self.clf = TFKNeighborsClassifier(n_neighbors=n_neighbors)
 
         # Containers
         self.current_state_vector = tf.Variable(tf.zeros(shape=(n_known_appliances + 1),
                                                          dtype=tf.float32),
                                                 dtype=tf.float32,
+                                                trainable=False,
                                                 name="current_state_vector")
 
         # Background attributes
@@ -85,10 +88,12 @@ class TFGuptaClassifier(keras.Model):
         self.background_vector = tf.Variable(
             initial_value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
             dtype=tf.float32,
+            trainable=False,
             name="background_vector"
         )
         self.current_background_size = tf.Variable(initial_value=0,
                                                    dtype=tf.int32,
+                                                   trainable=False,
                                                    name="current_background_size")
 
         # Apparent Power data base
@@ -97,34 +102,83 @@ class TFGuptaClassifier(keras.Model):
         # Class attributes to accommodate for disturbances due to mechanical switches
         self.switching_offset = switching_offset
         self.n_data_points_skipped = tf.Variable(initial_value=0,
-                                                 dtype=tf.int32)
+                                                 dtype=tf.int32,
+                                                 trainable=False)
         # self.skip_data_point = tf.Variable(initial_value=False,
         #                                    dtype=tf.bool)
+
         self.skip_data_point = tf.Variable(initial_value=0,
-                                           dtype=tf.int32)
+                                           dtype=tf.int32,
+                                           trainable=False)
+
+        self.training_data_features = training_data_features
+        self.training_data_labels = training_data_labels
 
         return
 
     @tf.function
-    def fit_knn(self, X: tf.Tensor, y: tf.Tensor) -> None:
+    def call_knn(self, input: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
-        Method to fit the internal kNN-Classifier to the provided data.
+        Method to use this model for inference.
 
         Parameters
         ----------
-        X
-            Training data (feature arrays for switching events).
-        y
-            Labels of the switching events (one-hot-encoded).
+        input
+            Tensor consisting of one feature vector.
 
         Returns
         -------
-        Self
+        distances, label
+            distances to the nearest neighbors
+            label: Tensor containing the classification result.
         """
-        self.clf.fit(X, y)
-        return
+        difference_vectors = self.training_data_features - input
+        distances = tf.norm(difference_vectors, axis=1)
 
-    @tf.function
+        k_smallest_distances, k_smallest_indices = tf.math.top_k(
+            input=distances * -1,
+            k=self.n_neighbors,
+            name="FindKNearestNeighbors"
+        )
+
+        label_tensor = tf.gather(
+            params=self.training_data_labels,
+            indices=k_smallest_indices
+        )
+
+        # weight classes with distances (similar to scikit learns weights="distance" weighting)
+        weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
+                                                              axis=-1)
+
+        # Determine the class
+        result_index = tf.argmax(tf.reduce_sum(weighted_label_tensor, axis=1))
+
+        # Create result tensor (one-hot encoded w/ length=N+1)
+        result_tensor = tf.one_hot(indices=result_index,
+                                   depth=self.training_data_labels.shape[1])
+
+        return k_smallest_distances, result_tensor
+
+    # @tf.function
+    # def fit_knn(self, X: tf.Tensor, y: tf.Tensor) -> None:
+    #     """
+    #     Method to fit the internal kNN-Classifier to the provided data.
+    #
+    #     Parameters
+    #     ----------
+    #     X
+    #         Training data (feature arrays for switching events).
+    #     y
+    #         Labels of the switching events (one-hot-encoded).
+    #     """
+    #
+    #     self.training_data_features = X
+    #     self.training_data_labels = y
+    #     return
+
+    @tf.function(
+        input_signature=[tf.TensorSpec(shape=(3 * 2**16 + 4), dtype=tf.float32)]
+    )
     def call(self, X: tf.Tensor) -> tf.Tensor:
         """
         Prediction method of the Gupta classifier.
@@ -162,9 +216,17 @@ class TFGuptaClassifier(keras.Model):
                                                           background=current_background)
 
                 # Classify
-                self.current_state_vector = self.classify_switching_event(
-                    cleaned_spectrum=cleaned_spectrum,
-                    current_apparent_power=apparent_power
+                # self.current_state_vector = self.classify_switching_event(
+                #     cleaned_spectrum=cleaned_spectrum,
+                #     current_apparent_power=apparent_power
+                # )
+
+                # Classify
+                self.current_state_vector.assign(
+                    self.classify_switching_event(
+                        cleaned_spectrum=cleaned_spectrum,
+                        current_apparent_power=apparent_power
+                    )
                 )
 
                 # clear background vector
@@ -191,7 +253,10 @@ class TFGuptaClassifier(keras.Model):
                 false_fn=lambda: self.replace_input_in_bk(spectrum),
             )
 
-            self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            # self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            self.current_state_vector.assign(
+                self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            )
             return self.current_state_vector
 
         # 2. Calculate background
@@ -216,13 +281,20 @@ class TFGuptaClassifier(keras.Model):
                 false_fn=lambda: self.replace_input_in_bk(spectrum),
             )
 
-            self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            # self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            self.current_state_vector.assign(
+                self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+            )
             return self.current_state_vector
 
         # 5. If self.switching_offset is 0, then use the current data point to classify the event
         if self.switching_offset == 0:
-            self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
-                                                                      current_apparent_power=apparent_power)
+            # self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
+            #                                                           current_apparent_power=apparent_power)
+            self.current_state_vector.assign(
+                self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
+                                              current_apparent_power=apparent_power)
+            )
             # clear background vector
             self.clear_background_vector()
 
@@ -331,7 +403,7 @@ class TFGuptaClassifier(keras.Model):
             default=lambda: self.current_state_vector
         )
 
-        self.current_state_vector = new_state_vector
+        # self.current_state_vector = new_state_vector
 
         return new_state_vector
 
@@ -381,7 +453,7 @@ class TFGuptaClassifier(keras.Model):
                                                      sample_rate=self.sample_rate)
 
         # 2. Classify event
-        distances, event_class = self.clf(feature_vector)
+        distances, event_class = self.call_knn(feature_vector)
 
         # Check if known or unknown event via the smallest distance
         tf.cond(
@@ -392,10 +464,12 @@ class TFGuptaClassifier(keras.Model):
         )
 
         # 3. Update current state vector accordingly
-        self.current_state_vector = self.calculate_state_vector(event_class=event_class)
+        self.current_state_vector.assign(self.calculate_state_vector(event_class=event_class))
 
         # 4. Update current state vector's power value for "unknown"
-        self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=current_apparent_power)
+        self.current_state_vector.assign(
+            self.calculate_unknown_apparent_power(current_apparent_power=current_apparent_power)
+        )
 
         return self.current_state_vector
 
@@ -483,11 +557,13 @@ if __name__ == "__main__":
         background_n=tf.constant(5, dtype=tf.int32),
         n_peaks_max=tf.constant(10, dtype=tf.int32),  # Training data has 10 peaks...
         apparent_power_list=apparent_power_list,
-        n_neighbors=tf.constant(3, dtype=tf.int32)
+        n_neighbors=tf.constant(3, dtype=tf.int32),
+        training_data_features=features,
+        training_data_labels=labels
     )
 
     # Fit KNN
-    model.fit_knn(X=features, y=labels)
+    # model.fit_knn(X=features, y=labels)
 
     # Load GR data
     gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/mixed/"
@@ -503,4 +579,5 @@ if __name__ == "__main__":
     # print(state_vector_list)
 
     # Save model
-    model.save("TFGuptaSaveTest")
+    tf.saved_model.save(model, "TFGuptaSaveTest")
+    # model.save("TFGuptaSaveTest")
