@@ -239,3 +239,112 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
 
     top->stop();
 }
+
+TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-domain][opencmw_time_sink]") {
+    // top block
+    auto top = gr::make_top_block("GNURadio");
+
+    // gnuradio blocks
+    // saw_tooth_signal --> throttle --> opencmw_time_sink
+    const double      SAMPLING_RATE = 200'000.0;
+    const double      SAW_AMPLITUDE = 1.0;
+    const double      SAW_FREQUENCY = 50.0;
+    const std::string signalName{ "saw" };
+    const std::string signalUnit{ "unit" };
+    auto              saw_signal_source         = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SAW_WAVE, SAW_FREQUENCY, SAW_AMPLITUDE, 0, 0);
+    auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
+    pulsed_power_opencmw_sink->set_max_noutput_items(640);
+
+    // connections
+    top->hier_block2::connect(saw_signal_source, 0, throttle_block, 0);
+    top->hier_block2::connect(throttle_block, 0, pulsed_power_opencmw_sink, 0);
+
+    // start gnuradio flowgraph
+    top->start();
+
+    // We run both broker and worker inproc
+    Broker                                          broker("TestBroker");
+    auto                                            fs = cmrc::assets::get_filesystem();
+    SimpleTestRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs);
+
+    // The worker uses the same settings for matching, but as it knows about TimeDomainContext, it does this registration automatically.
+    opencmw::query::registerTypes(TimeDomainContext(), broker);
+
+    TimeDomainWorker<"test.service", description<"Time-Domain Worker">> timeDomainWorker(broker);
+
+    // Run worker and broker in separate threads
+    RunInThread brokerRun(broker);
+    RunInThread workerRun(timeDomainWorker);
+
+    REQUIRE(waitUntilServiceAvailable(broker.context, "test.service"));
+
+    httplib::Client http("localhost", DEFAULT_REST_PORT);
+    http.set_keep_alive(true);
+
+    std::string      path = "test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger=0";
+    httplib::Headers headers({ { "X-OPENCMW-METHOD", "GET" } });
+    uint64_t         previousRefTrigger = 0;
+    uint64_t         lastTimeStamp      = 0;
+    for (int iChunk = 0; iChunk < 20; iChunk++) {
+        auto response = http.Get(path.c_str(), headers);
+        for (size_t i = 0; i < 100; i++) {
+            response = http.Get(path, headers);
+            if (response.error() == httplib::Error::Success) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        REQUIRE(response.error() == httplib::Error::Success);
+
+        REQUIRE(response->status == 200);
+
+        {
+            opencmw::IoBuffer buffer;
+            buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
+            Acquisition data;
+            auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+            fmt::print("deserialisation finished: {}\n", result);
+            // REQUIRE(data.refTriggerStamp > 0);
+            REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
+            REQUIRE(data.channelNames.size() == data.channelValues.n(0));
+            REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
+
+            // ????? Is this a duplicate to REQUIRE(data.refTriggerStamp > 0); ?????
+            if (previousRefTrigger == 0) {
+                // Check for non-empty response
+                if (data.refTriggerStamp == 0) {
+                    continue;
+                }
+                previousRefTrigger = data.refTriggerStamp;
+            }
+
+            // check if it is actually sawtooth signal
+            for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
+                Approx saw_signal_slope = Approx(SAW_AMPLITUDE / SAMPLING_RATE * SAW_FREQUENCY).epsilon(0.01); // 1% difference
+                Approx saw_timebase     = Approx(1 / SAMPLING_RATE).epsilon(0.01);                             // 1% difference
+                Approx saw_amplitude    = Approx(SAW_AMPLITUDE).epsilon(0.01);                                 // 1% difference
+                if (data.channelValues[i + 1] > data.channelValues[i]) {
+                    REQUIRE(saw_signal_slope == (data.channelValues[i + 1] - data.channelValues[i]));
+                } else {
+                    REQUIRE(data.channelValues[i] == saw_amplitude);
+                }
+                REQUIRE(saw_timebase == (data.channelTimeSinceRefTrigger[i + 1] - data.channelTimeSinceRefTrigger[i]));
+            }
+
+            // Check time-continuity between chunks
+            if (iChunk > 0) {
+                lastTimeStamp                      = previousRefTrigger + data.channelTimeSinceRefTrigger.back() * 1e9;
+                Approx timeDifferenceBetweenChunks = Approx(lastTimeStamp + 1 / SAMPLING_RATE).epsilon(0.01);
+                REQUIRE(data.refTriggerStamp == timeDifferenceBetweenChunks);
+            }
+
+            previousRefTrigger        = data.refTriggerStamp;
+            uint64_t newLastTimeStamp = data.refTriggerStamp + data.channelTimeSinceRefTrigger.back() * 1e9;
+            path                      = fmt::format("test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger={}", newLastTimeStamp);
+        }
+    }
+
+    top->stop();
+}
