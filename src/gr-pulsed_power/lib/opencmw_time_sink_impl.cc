@@ -50,12 +50,7 @@ int opencmw_time_sink_impl::work(int noutput_items,
             duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
                 .count();
     } else {
-        _timestamp =
-            duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-                .count();
-        // _timestamp +=
-        //     static_cast<double>(noutput_items) * (1 /
-        //     static_cast<double>(_sample_rate));
+        _timestamp += noutput_items * static_cast<int64_t>(1e9 / _sample_rate);
     }
     int nitems_to_process = noutput_items;
 

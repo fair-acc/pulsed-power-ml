@@ -155,7 +155,7 @@ private:
                     }
                 }
                 if (!stridedValues.empty()) {
-                    // stridedValues[0] = -6.00; // TODO remove
+                    stridedValues[0] = 6.00; // TODO remove
                 }
                 // } else {
                 //     throw std::invalid_argument(fmt::format("No signal data"));
@@ -194,7 +194,7 @@ private:
             // out.channelTimeSinceRefTrigger.clear();
             out.channelTimeSinceRefTrigger.reserve(channelValuesSize);
             for (size_t i = 0; i < channelValuesSize; ++i) {
-                float relativeTimestamp = static_cast<float>(i) * (1 / _sampleRate);
+                float relativeTimestamp = static_cast<float>(i) / _sampleRate;
                 out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
             }
             // debug

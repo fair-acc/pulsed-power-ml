@@ -222,7 +222,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
         Acquisition data;
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
-        REQUIRE(data.refTriggerStamp >= 0);
+        REQUIRE(data.refTriggerStamp > 0);
         REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
         REQUIRE(data.channelNames.size() == data.channelValues.n(0));
         REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
@@ -288,8 +288,9 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
 
     std::string path = "test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger=0";
     // httplib::Headers headers({ { "X-OPENCMW-METHOD", "GET" } });
-    uint64_t previousRefTrigger = 0;
-    uint64_t lastTimeStamp      = 0;
+    uint64_t previousRefTrigger       = 0;
+    uint64_t lastTimeStamp            = 0;
+    uint64_t firstTimeStampOfNewChunk = 0;
     for (int iChunk = 0; iChunk < 100; iChunk++) {
         auto response = http.Get(path.c_str());
         for (size_t i = 0; i < 100; i++) {
@@ -339,8 +340,9 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
         if (previousRefTrigger != 0) {
             // lastTimeStamp                    = previousRefTrigger + data.channelTimeSinceRefTrigger.back() * 1e9;
             Approx calculatedRefTriggerStamp = Approx(static_cast<float>(lastTimeStamp) + 1.0 / SAMPLING_RATE).epsilon(1e-10);
-            REQUIRE(data.refTriggerStamp == calculatedRefTriggerStamp);
-            REQUIRE(data.refTriggerStamp > lastTimeStamp);
+            firstTimeStampOfNewChunk         = data.refTriggerStamp + data.channelTimeSinceRefTrigger[0] * 1e9;
+            REQUIRE(firstTimeStampOfNewChunk == calculatedRefTriggerStamp);
+            REQUIRE(firstTimeStampOfNewChunk > lastTimeStamp);
         }
 
         previousRefTrigger = data.refTriggerStamp;

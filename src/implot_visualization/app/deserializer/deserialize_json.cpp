@@ -69,9 +69,6 @@ void Acquisition::addToBuffers() {
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
-
-    // debug
-    buffers[0].data[strideArray.dims[1] - 1].y = -6;
 }
 
 void Acquisition::deserialize() {
@@ -81,20 +78,12 @@ void Acquisition::deserialize() {
     std::string modifiedJsonString = this->jsonString;
 
     modifiedJsonString.erase(0, 14);
-    // Debug
-    uint64_t workerTimeStamp = 0;
 
-    auto     json_obj        = json::parse(modifiedJsonString);
+    auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
-            }
-            // debug
-            if (element.value() < this->lastTimeStamp) {
-                std::cout << "Acquired timestamp smaller than last timestamp" << std::endl;
-                std::cout << element.value() << " <- Acquired timestamp" << std::endl;
-                std::cout << this->lastTimeStamp << " <- last timestamp" << std::endl;
             }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
@@ -106,20 +95,14 @@ void Acquisition::deserialize() {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
         }
-        // Debug
-        if (element.key() == "lastTimeStamp") {
-            workerTimeStamp = element.value();
-        }
     }
 
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    // this->lastTimeStamp = workerTimeStamp;
+    // Debug
     std::cout << "lastRefTrigger: " << lastRefTrigger << std::endl;
     std::cout << "lastTimeStamp: " << lastTimeStamp << std::endl;
-    if (workerTimeStamp == lastTimeStamp) {
-        std::cout << "LastTimeStamps are equal" << std::endl;
-    }
+    this->strideArray.values[1] = -6;
     addToBuffers();
 }
 
