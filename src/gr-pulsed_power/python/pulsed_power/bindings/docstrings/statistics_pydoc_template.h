@@ -27,13 +27,4 @@ static const char* __doc_gr_pulsed_power_statistics_statistics_1 = R"doc()doc";
 static const char* __doc_gr_pulsed_power_statistics_make = R"doc()doc";
 
 
-static const char* __doc_gr_pulsed_power_statistics_calculate_mean = R"doc()doc";
-
-
-static const char* __doc_gr_pulsed_power_statistics_determine_min = R"doc()doc";
-
-
-static const char* __doc_gr_pulsed_power_statistics_determine_max = R"doc()doc";
-
-
-static const char* __doc_gr_pulsed_power_statistics_calculate_std_deviation = R"doc()doc";
+static const char* __doc_gr_pulsed_power_statistics_calculate_statistics = R"doc()doc";

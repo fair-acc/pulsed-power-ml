@@ -55,15 +55,7 @@ int statistics_impl::general_work(int noutput_items,
     auto out_max = static_cast<output_type*>(output_items[2]);
     auto out_std_deviation = static_cast<output_type*>(output_items[3]);
 
-    Statistic statistic;
-    statistic.min = in[0];
-    statistic.max = in[0];
-    calculate_statistics(statistic, in, noutput_items);
-
-    out_mean = &statistic.mean;
-    out_min = &statistic.min;
-    out_max = &statistic.max;
-    out_std_deviation = &statistic.std_deviation;
+    calculate_statistics(out_mean[0], out_min[0], out_max[0], out_std_deviation[0], in, noutput_items);
 
     // Tell runtime system how many input items we consumed on
     // each input stream.
@@ -73,32 +65,31 @@ int statistics_impl::general_work(int noutput_items,
     return noutput_items;
 }
 
-void calculate_statistics(Statistic& statistic, const float* in, int num_samples)
+void statistics_impl::calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items)
 {
-    float variance = 0.0;
     float sum = 0.0;
     float sum_of_squares = 0.0;
-    float current = 0.0;
-    for (int i = 0; i < num_samples; i++) {
+    float current, j;
+    min = in[0];
+    max = in[0];
+    for (int i = 0; i < ninput_items; i++) {
         current = in[i];
-        if (current < statistic.min) {
-            statistic.min = current;
+        if (current < min) {
+            min = current;
         }
-        if (current > statistic.max) {
-            statistic.max = current;
+        if (current > max) {
+            max = current;
         }
         sum += current;
-        sum_of_squares += current * current;
+	j = (float)(i+1);
+	// calculate the sum of squares with the formular of Youngs and Cramer
+	if (j > 1) {
+	    sum_of_squares += (1/(j*(j - 1.0)))*((j*current) - sum)*((j*current) - sum);
+	}
     }
-    statistic.mean = sum / num_samples;
-    variance = sum_of_squares - (sum * sum);
-    statistic.std_deviation = sqrt(variance);
+    mean = sum / ninput_items;
+    std_deviation = sqrt(sum_of_squares/ninput_items);
 }
-
-void calculate_mean(float* out, float* current_mean, int nitems) {}
-void determine_min(float* out, float* current_min);
-void determine_max(float* out, float* current_max);
-void calculate_std_deviation(float* out);
 
 } /* namespace pulsed_power */
 } /* namespace gr */

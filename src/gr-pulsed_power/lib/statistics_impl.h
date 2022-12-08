@@ -13,31 +13,13 @@
 namespace gr {
 namespace pulsed_power {
 
-struct Statistic {
-public:
-    float mean = 0.0;
-    float min = 0.0;
-    float max = 0.0;
-    float std_deviation = 0.0;
-};
-
 class statistics_impl : public statistics
 {
-private:
-    float current_mean;
-    float current_min;
-    float current_max;
-    float sum;
-
 public:
     statistics_impl();
     ~statistics_impl();
 
-    void calculate_statistics(Statistic& statistic, const float* in, int ninput_items);
-    void calculate_mean(float* out, float* current_mean, int nitems);
-    void determine_min(float* out, float* current_min);
-    void determine_max(float* out, float* current_max);
-    void calculate_std_deviation(float* out);
+    void calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items) override;
 
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);
