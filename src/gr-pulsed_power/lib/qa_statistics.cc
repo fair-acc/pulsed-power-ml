@@ -14,10 +14,10 @@ namespace pulsed_power {
 
 BOOST_AUTO_TEST_CASE(test_statistics_replace_with_specific_test_name)
 {
-    auto integration_block = gr::pulsed_power::statistics::make();
-    float sample_float[3] = { 1.0, 1.0, 1.0 };
-    const float* sample = sample_float;
-    int num_samples = 3;
+    // auto integration_block = gr::pulsed_power::statistics::make();
+    // float sample_float[3] = { 1.0, 1.0, 1.0 };
+    // const float* sample = sample_float;
+    // int num_samples = 3;
 }
 
 } /* namespace pulsed_power */
