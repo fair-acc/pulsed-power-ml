@@ -49,8 +49,6 @@ int opencmw_time_sink_impl::work(int noutput_items,
         _timestamp =
             duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
                 .count();
-    } else {
-        _timestamp += noutput_items * static_cast<int64_t>(1e9 / _sample_rate);
     }
     int nitems_to_process = noutput_items;
 
@@ -66,6 +64,7 @@ int opencmw_time_sink_impl::work(int noutput_items,
     if (noutput_items == 0) {
         std::cout << "noutput_items " << nitems_to_process << " -> processed 0 items\n";
     }
+    _timestamp += noutput_items * static_cast<int64_t>(1e9 / _sample_rate);
     return noutput_items;
 }
 void opencmw_time_sink_impl::register_sink() { globalTimeSinksRegistry.push_back(this); }
