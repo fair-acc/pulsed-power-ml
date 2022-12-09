@@ -7,8 +7,6 @@
 void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
         if (signals[i].data.size() > 0) {
-            // debug
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 0.5); //, ImPlot::GetColormapColor(1), IMPLOT_AUTO, ImPlot::GetColormapColor(1));
             ImPlot::PlotLine((signals[i].signalName).c_str(),
                     &signals[i].data[0].x,
                     &signals[i].data[0].y,
@@ -35,12 +33,12 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 }
 
 void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
-    // auto   clock       = std::chrono::system_clock::now();
-    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    // ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);

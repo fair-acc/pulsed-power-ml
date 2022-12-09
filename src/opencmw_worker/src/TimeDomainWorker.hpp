@@ -154,20 +154,9 @@ private:
                         stridedValues.insert(stridedValues.end(), bufData.chunk[i].begin(), bufData.chunk[i].end());
                     }
                 }
-                if (!stridedValues.empty()) {
-                    stridedValues[0] = 6.00; // TODO remove
+                if (stridedValues.empty()) {
+                    // throw std::invalid_argument(fmt::format("No signal data"));
                 }
-                // } else {
-                //     throw std::invalid_argument(fmt::format("No signal data"));
-                // }
-            }
-            // TODO remove
-            fmt::print("Buffer refTrigger: {}\n", out.refTriggerStamp);
-            fmt::print("lastTimeStamp: {}\n", lastRefTrigger);
-            if (lastRefTrigger < out.refTriggerStamp) {
-                fmt::print("TRUE\n");
-            } else {
-                fmt::print("FALSE\n");
             }
 
             //     out.channelNames.push_back(signalName);

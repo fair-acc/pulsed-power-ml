@@ -99,10 +99,6 @@ void Acquisition::deserialize() {
 
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    // Debug
-    std::cout << "lastRefTrigger: " << lastRefTrigger << std::endl;
-    std::cout << "lastTimeStamp: " << lastTimeStamp << std::endl;
-    this->strideArray.values[1] = -6;
     addToBuffers();
 }
 
