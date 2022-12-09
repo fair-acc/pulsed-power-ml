@@ -333,9 +333,6 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
         auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
         fmt::print("deserialisation finished: {}\n", result);
         // REQUIRE(data.refTriggerStamp > 0);
-        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
-        REQUIRE(data.channelNames.size() == data.channelValues.n(0));
-        REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
         // check for non-empty data
         if (data.refTriggerStamp == 0) {
@@ -344,6 +341,10 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
                 previousRefTrigger = data.refTriggerStamp;
             }
         }
+
+        REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));
+        REQUIRE(data.channelNames.size() == data.channelValues.n(0));
+        REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
         // check if it is actually sawtooth signal
         for (uint32_t i = 0; i < data.channelValues.n(1) - 1; ++i) {
