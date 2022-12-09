@@ -83,6 +83,28 @@ std::jthread makeGetRequestResponseCheckerThread(const std::string &address, con
 }
 
 TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
+    // top block
+    auto top = gr::make_top_block("GNURadio");
+
+    // gnuradio blocks
+    // saw_tooth_signal --> throttle --> opencmw_time_sink
+    const double      SAMPLING_RATE   = 20'000.0;
+    const double      SINUS_AMPLITUDE = 1.0;
+    const double      SINUS_FREQUENCY = 50.0;
+    const std::string signalName{ "testSignal" };
+    const std::string signalUnit{ "testUnit" };
+    auto              sinus_signal_source       = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SIN_WAVE, SINUS_FREQUENCY, SINUS_AMPLITUDE, 0, 0);
+    auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
+    pulsed_power_opencmw_sink->set_max_noutput_items(640);
+
+    // connections
+    top->hier_block2::connect(sinus_signal_source, 0, throttle_block, 0);
+    top->hier_block2::connect(throttle_block, 0, pulsed_power_opencmw_sink, 0);
+
+    // start gnuradio flowgraph
+    top->start();
+
     // We run both broker and worker inproc
     Broker                                          broker("TestBroker");
     auto                                            fs = cmrc::assets::get_filesystem();
@@ -102,8 +124,9 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     httplib::Client http("localhost", DEFAULT_REST_PORT);
     http.set_keep_alive(true);
 
-    const char *path     = "test.service/Acquisition";
-    auto        response = http.Get(path);
+    const char *path = "test.service/Acquisition?channelNameFilter=testSignal@20000Hz";
+    // httplib::Headers headers({ { "X-OPENCMW-METHOD", "POLL" } });
+    auto response = http.Get(path);
     for (size_t i = 0; i < 100; i++) {
         response = http.Get(path);
         if (response.error() == httplib::Error::Success) {
