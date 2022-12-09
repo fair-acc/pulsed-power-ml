@@ -4,6 +4,7 @@
 #include <iostream>
 #include <shared_mutex>
 #include <vector>
+#include <span>
 
 class DataPoint {
 public:
@@ -26,20 +27,17 @@ public:
 
 class ScrollingBuffer {
 public:
-    int                 maxSize;
-    int                 offset;
-    ImVector<DataPoint> data;
+    std::size_t         maxSize;
+    std::size_t         offset;
+    std::vector<double> x_data;
+    std::vector<double> y_data;
     std::string         signalName;
 
     ScrollingBuffer(int max_size = 200'000);
 
     void addPoint(double x, double y);
+    void addPoints(std::span<double> x, std::span<double> y);
     void erase();
-};
-
-struct StrideArray {
-    std::vector<int>    dims;
-    std::vector<double> values;
 };
 
 class Acquisition {
@@ -54,15 +52,12 @@ public:
 
     void                deserialize();
 
-    std::vector<double> relativeTimestamps;
     uint64_t            lastTimeStamp = 0.0;
 
 private:
     uint64_t    refTrigger_ns = 0;
-    double      refTrigger_s  = 0.0;
-    StrideArray strideArray;
 
-    void        addToBuffers();
+    void        addToBuffers(std::vector<int>, std::vector<double>, std::vector<double>);
 };
 
 class AcquisitionSpectra {
@@ -82,9 +77,6 @@ public:
 
 private:
     uint64_t            refTrigger_ns = 0;
-    double              refTrigger_s  = 0.0;
-    std::vector<double> channelMagnitudeValues;
-    std::vector<double> channelFrequencyValues;
 
-    void                addToBuffers();
+    void                addToBuffers(std::vector<double> channelMagnitudeValues, std::vector<double> channelFrequencyValues);
 };
