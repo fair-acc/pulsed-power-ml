@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #include "opencmw_freq_sink_impl.h"
 #include <gnuradio/io_signature.h>
 
@@ -39,11 +32,11 @@ opencmw_freq_sink_impl::opencmw_freq_sink_impl(std::vector<std::string> signal_n
                                             10 /* max inputs */,
                                             sizeof(input_type) * vector_size),
                      gr::io_signature::make(0, 0, 0)),
-      d_signal_names(signal_names),
-      d_signal_units(signal_units),
-      d_sample_rate(sample_rate),
-      d_bandwidth(bandwidth),
-      d_vector_size(vector_size)
+      _signal_names(signal_names),
+      _signal_units(signal_units),
+      _sample_rate(sample_rate),
+      _bandwidth(bandwidth),
+      _vector_size(vector_size)
 {
     std::scoped_lock lock(globalFrequencySinksRegistryMutex);
     register_sink();
@@ -69,15 +62,15 @@ int opencmw_freq_sink_impl::work(int noutput_items,
     int64_t timestamp =
         duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
             .count();
-    for (size_t i = 0; i < d_signal_names.size(); i++) {
+    for (size_t i = 0; i < _signal_names.size(); i++) {
         auto in = static_cast<const input_type*>(input_items[i]);
-        for (auto callback : d_cb_copy_data) {
+        for (auto callback : _cb_copy_data) {
             std::invoke(callback,
                         in,
                         noutput_items,
-                        d_vector_size,
-                        d_signal_names[i],
-                        d_sample_rate,
+                        _vector_size,
+                        _signal_names[i],
+                        _sample_rate,
                         timestamp);
         }
     }
@@ -101,24 +94,24 @@ void opencmw_freq_sink_impl::deregister_sink()
 
 void opencmw_freq_sink_impl::set_callback(cb_copy_data_t cb_copy_data)
 {
-    d_cb_copy_data.push_back(cb_copy_data);
+    _cb_copy_data.push_back(cb_copy_data);
 }
 
-float opencmw_freq_sink_impl::get_bandwidth() { return d_bandwidth; }
+float opencmw_freq_sink_impl::get_bandwidth() { return _bandwidth; }
 
-float opencmw_freq_sink_impl::get_sample_rate() { return d_sample_rate; }
+float opencmw_freq_sink_impl::get_sample_rate() { return _sample_rate; }
 
 std::vector<std::string> opencmw_freq_sink_impl::get_signal_names()
 {
-    return d_signal_names;
+    return _signal_names;
 }
 
 std::vector<std::string> opencmw_freq_sink_impl::get_signal_units()
 {
-    return d_signal_units;
+    return _signal_units;
 }
 
-size_t opencmw_freq_sink_impl::get_vector_size() { return d_vector_size; }
+size_t opencmw_freq_sink_impl::get_vector_size() { return _vector_size; }
 
 } /* namespace pulsed_power */
 } /* namespace gr */

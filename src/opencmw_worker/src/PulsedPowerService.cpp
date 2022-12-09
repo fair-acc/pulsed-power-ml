@@ -100,7 +100,7 @@ public:
         // flowgraph setup
         float samp_rate = 4'000.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
-        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 2, 5, 0, 0);
+        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
         auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make(samp_rate, { "sinus", "square" }, { "V", "A" });
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);

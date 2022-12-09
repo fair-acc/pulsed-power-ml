@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #ifndef INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_H
 #define INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_H
 

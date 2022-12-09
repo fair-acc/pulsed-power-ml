@@ -52,15 +52,17 @@ public:
     Acquisition();
     Acquisition(int numSignals);
 
-    void deserialize();
+    void                deserialize();
+
+    std::vector<double> relativeTimestamps;
+    uint64_t            lastTimeStamp = 0.0;
 
 private:
-    uint64_t            refTrigger_ns = 0;
-    double              refTrigger_s  = 0.0;
-    std::vector<double> relativeTimestamps;
-    StrideArray         strideArray;
+    uint64_t    refTrigger_ns = 0;
+    double      refTrigger_s  = 0.0;
+    StrideArray strideArray;
 
-    void                addToBuffers();
+    void        addToBuffers();
 };
 
 class AcquisitionSpectra {
@@ -73,7 +75,10 @@ public:
     AcquisitionSpectra();
     AcquisitionSpectra(int numSignals);
 
-    void deserialize();
+    void                deserialize();
+
+    std::vector<double> relativeTimestamps = { 0 };
+    uint64_t            lastTimeStamp      = 0.0;
 
 private:
     uint64_t            refTrigger_ns = 0;
