@@ -14,22 +14,33 @@
 #include <cppflow/model.h>
 #include <cppflow/tensor.h>
 
-//#define MODEL_PATH "src/model/model_example"
-
-//#include <iostream>
-
 using opencmw::Annotated;
 using opencmw::NoUnit;
 
-
+// context for Dashboard
 struct NilmContext {
     opencmw::TimingCtx      ctx;
-    //std::string             testFilter;
     opencmw::MIME::MimeType contentType = opencmw::MIME::JSON;
 };
 
-//ENABLE_REFLECTION_FOR(NilmContext, ctx, testFilter, contentType)
 ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
+
+// data for Dashboard
+struct NilmPredictData {
+    std::vector<double>  values={0.0,25.7,55.5,74.1, 89.4, 34.5,23.4,1.0, 45.4, 56.5,76.4};
+};
+
+// data from time sink
+struct PQSPHiData{
+    int64_t            timestamp;
+    std::vector<float> pqsphiValues; // 4 Values P Q S Phi
+};
+
+// data from frequency sink
+struct SUIData{
+    int64_t                         timestamp;
+    std::vector<std::vector<float>> suiValues; // three vectors - S U I - len 65538
+};
 
 
 struct RingBufferNilmData {
@@ -37,27 +48,12 @@ struct RingBufferNilmData {
     int64_t            timestamp;
 };
 
-struct SingalNilmTimeData{
-    int64_t            timestamp;
-    float              value;
-};
-
-struct SignalNilmFrequencyData{
-    int64_t             timestamp;
-    std::vector<float>  frequencyValues;
-};
-
-struct NilmPredictData {
-    std::vector<double>  values={0.0,25.7,55.5,74.1, 89.4, 34.5,23.4,1.0, 45.4, 56.5,76.4};
-   // opencmw::MultiArray<float, 2> channelValues;
-};
-
+// input data for model
 struct ModelData {
     int64_t            timestamp;
     std::vector<float> data_point; //(196612) = 4 + 2^16 
 };
 
-// ENABLE_REFLECTION_FOR(NilmPredictData, values, channelValues)
 ENABLE_REFLECTION_FOR(NilmPredictData, values)
 
 using namespace opencmw::disruptor;
@@ -79,6 +75,7 @@ private:
 
     std::shared_ptr<cppflow::model> _model = std::make_shared<cppflow::model>(MODEL_PATH);
  
+    // remove - Test only
     struct SignalData {
         std::string   _signalName;
         std::string   _signalUnit;
@@ -96,46 +93,44 @@ private:
     };
 
     struct SignalTimeData{
-        std::string     _signalName;
-        std::string     _signalUnit;
-        float           _sampleRate;
-        SingalNilmTimeData  _signalValue;
+        std::string         _signalName;
+        std::string         _signalUnit;
+        float               _sampleRate;
+        PQSPHiData          _pqsphiData;
     };
 
-    struct SignalFrequency{
+    struct SignalFrequencyData{
         std::string              _signalName;
         std::string              _signalUnit;
         float                    _sampleRate;
-        SignalNilmFrequencyData  _frequncyValues;
-        SignalFrequencyData(std::string signal_name, _sampleRate sample_rate):_signalName(_signalName),_sampleRate(sample_rate){
+        SUIData                  _suiData;
+    };
 
-        }
-    }
+    std::unordered_map<std::string, SignalData>      _signalsMap; // remove - test only
+    // std::unordered_map<std::string, SignalTimeData>  _signalsTimeMap; // map keys: P, Q,  S, Phi
+    //std::unordered_map<std::string, SignalFrequency> _signalsFrequencyMap; // map S U I
 
-    std::unordered_map<std::string, SignalData>      _signalsMap; 
-    std::unordered_map<std::string, SignalTimeData>  _signalsTimeMap; // map keys: P, Q,  S, Phi
-    std::unordered_map<std::string, SignalFrequency> _signalsFrequencyMap; // map P, Q, S
+    std::shared_ptr<SignalFrequencyData> _suiSignalData = std::make_shared<SignalFrequencyData>(); // P, Q,  S, Phi data
+    std::shared_ptr<SignalTimeData>   _pqsphiSignalData = std::make_shared<SignalTimeData>();      // S U I data
 
     bool                  init;
     int64_t               timestamp_frq;
-
 
 public:
     std::atomic<bool>     shutdownRequested;
     std::jthread          notifyThread;
     NilmPredictData       nilmData;
-    std::time_t           timestamp;
-   
+    std::time_t           timestamp;  
 
     static constexpr auto PROPERTY_NAME = std::string_view("NilmPredicData");
 
     using super_t = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
-    
+
 
     template<typename BrokerType>
     explicit NilmPredictWorker(const BrokerType &broker,
             std::chrono::milliseconds        updateInterval)
-        : super_t(broker, {}),init(false) {
+        : super_t(broker, {}){
     
         notifyThread = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> pollingDuration;
@@ -153,7 +148,7 @@ public:
 
 
                 // TODO - read values
-
+                // test only
                 for(const auto &kv : _signalsMap ){
                     fmt::print("Sginal name from map {}\n", kv.first);
                     fmt::print("Sginal timestamp {}\n", kv.second._nilmData.timestamp);
@@ -164,15 +159,18 @@ public:
                
                 NilmContext context;
 
-                context.contentType = opencmw::MIME::JSON;
+                //TODO merge values
 
-                auto input = cppflow::fill({196612, 1}, 2.0f);
+                // predict
+                auto input = cppflow::fill({196612, 1}, 2.0f); // replace with merge - test only
                 auto output = (*_model)(input);
                 
                 auto values = output.get_data<float>();
 
                 nilmData.values.clear();
 
+
+                // fill data for REST
                 for (auto v : values) {
                     nilmData.values.push_back(static_cast<double>(v));
                 }
@@ -197,12 +195,13 @@ public:
             
                 pollingDuration   = std::chrono::system_clock::now() - time_start;
 
+                // TODO - check this - warning
                 auto willSleepFor = updateInterval - pollingDuration;
-                if (willSleepFor>0){
-                    std::this_thread::sleep_for(willSleepFor);
-                } else {
-                    fmt::print("Data prediction too slow\n");
-                }  
+                // if (willSleepFor>0){
+                //     std::this_thread::sleep_for(willSleepFor);
+                // } else {
+                //     fmt::print("Data prediction too slow\n");
+                // }  
 
                 fmt::print("Sample data sieze: {}\n", _signalsMap.size());
                 std::this_thread::sleep_for(1000ms); 
@@ -212,9 +211,28 @@ public:
 
         });
 
+        // Test PQST
+        (*_pqsphiSignalData)._pqsphiData.pqsphiValues = std::vector<float>({.1f,.2f,.3f,.4f});
+        (*_pqsphiSignalData)._pqsphiData.timestamp = 111;
+
+        fmt::print("P Q S Phi: {}\n", (*_pqsphiSignalData)._pqsphiData.pqsphiValues);
+
+        // Test S U I
+        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.01)); 
+        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.2));
+        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.3));
+        fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.size());
+        //fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.at(0));
+
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);  // in call back machen 
         fmt::print("GR: number of time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
 
+
+        // Test Merge
+        std::vector<float> data_point = mergeValues();
+        fmt::print("Test merge {}\n", data_point);
+
+        // from sink take only P Q S Phi Signal 
         for (auto sink : gr::pulsed_power::globalTimeSinksRegistry) {
 
             // nur für bestimmte Singal 
@@ -226,8 +244,11 @@ public:
             _signalsMap.insert({signal_name, SignalData(signal_name, sample_rate)});
                                         
             // fmt::print("GR: OpenCMW Time Sink '{}' added\n", completeSignalName);
+            // test - remove
             sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-
+            
+            // change
+            //sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkTimeData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
         }
 
         // TODO  -Im Progress
@@ -251,7 +272,6 @@ public:
             out     = nilmData;
 
         });
-
        
     }
 
@@ -262,7 +282,7 @@ public:
 
 
     // data - zeiger auf erste , data_size - große - index operator /// data von gnu radio
-     void callbackCopySinkData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns) {
+    void callbackCopySinkData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns) {
         if (sample_rate > 0) {
             // realign timestamp
             timestamp_ns -= static_cast<int64_t>(1 / sample_rate * 1e9F) * data_size;
@@ -307,50 +327,80 @@ public:
         }
     }
 
+    // copy P Q S Phi data
+    void callbackCopySinkTimeData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns) {
+        // data save into SignalTimeData
+    }
+
+    // copy S U I data
     void callbackCopySinkFrequencyData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns){
         // TODO
-        // copy data to S 
+        // data save into SignalFrequency
         if (sample_rate > 0) {
             // realign timestamp
             timestamp_ns -= static_cast<int64_t>(1 / sample_rate * 1e9F) * data_size;
         }
 
-        if (_signalsFrequencyMap.contains(signal_name)) {
-            // TODO lock
-            SignalFreuncyData &signalData = _signalsFrequencyMap.at(signal_name);
+        // if (_signalsFrequencyMap.contains(signal_name)) {
+        //     // TODO lock
+        //     SignalFreuncyData &signalData = _signalsFrequencyMap.at(signal_name);
 
-            signalData._frequncyValues.timestamp=timestamp_ns;
-            signalData._frequncyValues.frequencyValues.clear();
-            signalData._frequncyValues.frequencyValues.assing(data, data+data_size);
-        }        
+        //     signalData._frequncyValues.timestamp=timestamp_ns;
+        //     signalData._frequncyValues.frequencyValues.clear();
+        //     signalData._frequncyValues.frequencyValues.assing(data, data+data_size);
+        // }        
     }
 
 private:
 
-    
+    // return data_point - input for model
+    std::vector<float> mergeValues(){
 
-    // std::vector<double> mergeValues(std::vector<double> &timeData, std:: vector<double> &frequencyData){
-       
-    //     std::vector<double> output;
-   
-    //     if (timeData.size()!=3 || frequencyData.size() != 3){
-    //         return output;
-    //     } else {
-    //         output.insert(output.end(),timeData.begin(), timeData.end());
-    //         output.insert(output.end(), frequencyData.begin(), frequencyData.end());
-    //         return output;
-    //     }
-    // }
+        // TODO lock
+        PQSPHiData &pqsphiData = (*_pqsphiSignalData)._pqsphiData;
+        SUIData    &suiData    = (*_suiSignalData)._suiData;
 
-    // const std::string getCompleteSignalName(const std::string &signalName, float sampleRate) const {
-    //     return fmt::format("{}{}{}@{}Hz", _deviceName, _deviceName.empty() ? "" : ":", signalName, sampleRate);
-       
-    // }
+        // TODOcheck 
+        std::vector<float> output;
+        if(pqsphiData.pqsphiValues.size() != 4){
 
-    //  void respondWithEmptyResponse(const TimeDomainContext &filter, const std::string_view errorText) {
-    //     fmt::print("{}\n", errorText);
-    //     super_t::notify("/nilmPredictData", filter, nilmPredictData());
-    // }
+            fmt::print("Error: incolmplete P Q S Phi signals {}\n", pqsphiData.pqsphiValues.size());
+            
+            return output;
+        }
+
+        if(suiData.suiValues.size()!= 3)
+        {
+            fmt::print("Error: incomplate S U I vetors {}\n", suiData.suiValues.size());
+            return output;
+        }
+
+        int counter = 0;
+        for(auto suiVector: suiData.suiValues){
+            if(suiVector.size()!= 65536){
+                fmt::print("Error: incorrect sieze {} of vector {} ", suiVector.size(), counter);
+                output.clear();
+                return output;
+            }
+
+            output.insert(output.end(),suiVector.begin(), suiVector.end());
+            counter++;
+        }
+
+        output.insert(output.end(), pqsphiData.pqsphiValues.begin(), pqsphiData.pqsphiValues.end());
+        return output;
+    }
+
+    // Test - remove
+    std::vector<float> generateVector(float init_f){
+
+        std::vector<float> v;
+        for(int i=0; i< 65536;i++){
+            v.push_back(i*init_f);
+        }
+
+        return v;
+    }
 
 };
 
