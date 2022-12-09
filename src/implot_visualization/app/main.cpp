@@ -75,7 +75,6 @@ int         main(int, char **) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
         return 1;
     }
-    SDL_GL_SetSwapInterval(1); // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -119,6 +118,7 @@ int         main(int, char **) {
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
     emscripten_set_main_loop_arg(main_loop, &appState, 0, true);
+    SDL_GL_SetSwapInterval(1); // Enable vsync. Has to be called after emscripten_set_main_loop
 }
 
 static void main_loop(void *arg) {
