@@ -7,6 +7,9 @@
 1. Install Emscripten from https://emscripten.org/docs/getting_started/downloads.html
 2. Set the environment variables as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
 3. Build and install GNU Radio blocks as described in https://github.com/fair-acc/pulsed-power-ml/tree/main/src/gr-pulsed_power
+4. Install tensorflow C from https://www.tensorflow.org/install/lang_c
+5. Set the enviromnet variables as described in https://www.tensorflow.org/install/lang_c
+6. Install cppflow https://github.com/serizba/cppflow
 
 ## Usage
 
