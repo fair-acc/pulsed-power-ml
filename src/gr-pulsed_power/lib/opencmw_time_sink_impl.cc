@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #include "opencmw_time_sink_impl.h"
 #include <gnuradio/io_signature.h>
 
@@ -31,9 +24,10 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
                      gr::io_signature::make(
                          1 /* min inputs */, 10 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-      d_sample_rate(sample_rate),
-      d_signal_names(signal_names),
-      d_signal_units(signal_units)
+      _sample_rate(sample_rate),
+      _signal_names(signal_names),
+      _signal_units(signal_units),
+      _timestamp(0)
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
     register_sink();
@@ -50,24 +44,23 @@ int opencmw_time_sink_impl::work(int noutput_items,
                                  gr_vector_void_star& output_items)
 {
     using namespace std::chrono;
-    int64_t timestamp =
-        duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-            .count();
+    if (_timestamp == 0) {
+        _timestamp =
+            duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
+                .count();
+    }
 
-    int nitems_to_process = noutput_items;
-
-    for (auto callback : d_cb_copy_data) {
+    for (auto callback : _cb_copy_data) {
         std::invoke(callback,
                     input_items,
                     noutput_items,
-                    d_signal_names,
-                    d_sample_rate,
-                    timestamp);
+                    _signal_names,
+                    _sample_rate,
+                    _timestamp);
     }
 
-    if (noutput_items == 0) {
-        std::cout << "noutput_items " << nitems_to_process << " -> processed 0 items\n";
-    }
+    _timestamp += noutput_items * static_cast<int64_t>(1e9 / _sample_rate);
+
     return noutput_items;
 }
 void opencmw_time_sink_impl::register_sink() { globalTimeSinksRegistry.push_back(this); }
@@ -83,19 +76,19 @@ void opencmw_time_sink_impl::deregister_sink()
 
 void opencmw_time_sink_impl::set_callback(cb_copy_data_t cb_copy_data)
 {
-    d_cb_copy_data.push_back(cb_copy_data);
+    _cb_copy_data.push_back(cb_copy_data);
 }
 
-float opencmw_time_sink_impl::get_sample_rate() { return d_sample_rate; }
+float opencmw_time_sink_impl::get_sample_rate() { return _sample_rate; }
 
 std::vector<std::string> opencmw_time_sink_impl::get_signal_names()
 {
-    return d_signal_names;
+    return _signal_names;
 }
 
 std::vector<std::string> opencmw_time_sink_impl::get_signal_units()
 {
-    return d_signal_units;
+    return _signal_units;
 }
 
 } /* namespace pulsed_power */

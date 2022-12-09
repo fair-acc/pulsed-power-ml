@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #ifndef INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_IMPL_H
 #define INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_IMPL_H
 
@@ -16,10 +9,11 @@ namespace pulsed_power {
 class opencmw_time_sink_impl : public opencmw_time_sink
 {
 private:
-    float d_sample_rate;
-    std::vector<std::string> d_signal_names;
-    std::vector<std::string> d_signal_units;
-    std::vector<cb_copy_data_t> d_cb_copy_data;
+    float _sample_rate;
+    std::vector<std::string> _signal_names;
+    std::vector<std::string> _signal_units;
+    int64_t _timestamp;
+    std::vector<cb_copy_data_t> _cb_copy_data;
 
 public:
     opencmw_time_sink_impl(float sample_rate,
