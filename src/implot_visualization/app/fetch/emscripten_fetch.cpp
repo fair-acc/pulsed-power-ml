@@ -78,7 +78,7 @@ void Subscription<T>::fetch() {
 
 template<typename T>
 void Subscription<T>::updateUrl() {
-    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
+    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(acquisition.lastTimeStamp);
 }
 
 template class Subscription<Acquisition>;
