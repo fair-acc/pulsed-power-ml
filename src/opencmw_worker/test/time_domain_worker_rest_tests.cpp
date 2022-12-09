@@ -314,7 +314,6 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
         REQUIRE(data.channelNames.size() == data.channelValues.n(0));
         REQUIRE(data.channelNames[0] == fmt::format("{}@{}Hz", signalName, SAMPLING_RATE));
 
-        // ????? Is this a duplicate to REQUIRE(data.refTriggerStamp > 0); ?????
         // check for non-empty data
         if (data.refTriggerStamp == 0) {
             continue;
@@ -338,8 +337,7 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
 
         // Check time-continuity between chunks
         if (previousRefTrigger != 0) {
-            // lastTimeStamp                    = previousRefTrigger + data.channelTimeSinceRefTrigger.back() * 1e9;
-            Approx calculatedRefTriggerStamp = Approx(static_cast<float>(lastTimeStamp) + 1.0 / SAMPLING_RATE).epsilon(1e-10);
+            Approx calculatedRefTriggerStamp = Approx(static_cast<double>(lastTimeStamp) / 1.0 + SAMPLING_RATE).epsilon(1e-10);
             firstTimeStampOfNewChunk         = data.refTriggerStamp + data.channelTimeSinceRefTrigger[0] * 1e9;
             REQUIRE(firstTimeStampOfNewChunk == calculatedRefTriggerStamp);
             REQUIRE(firstTimeStampOfNewChunk > lastTimeStamp);
