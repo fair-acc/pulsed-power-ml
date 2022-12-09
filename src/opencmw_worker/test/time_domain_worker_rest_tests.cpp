@@ -95,7 +95,7 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
     const std::string signalUnit{ "testUnit" };
     auto              sinus_signal_source       = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SIN_WAVE, SINUS_FREQUENCY, SINUS_AMPLITUDE, 0, 0);
     auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
-    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make({ signalName }, { signalUnit }, SAMPLING_RATE);
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections
@@ -191,7 +191,7 @@ TEST_CASE("gr-opencmw_time_sink", "[daq_api][time-domain][opencmw_time_sink]") {
     const std::string signalUnit{ "unit" };
     auto              saw_signal_source         = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SAW_WAVE, SAW_FREQUENCY, SAW_AMPLITUDE, 0, 0);
     auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
-    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make({ signalName }, { signalUnit }, SAMPLING_RATE);
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections
@@ -280,7 +280,7 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
     const std::string signalUnit{ "unit" };
     auto              saw_signal_source         = gr::analog::sig_source_f::make(SAMPLING_RATE, gr::analog::GR_SAW_WAVE, SAW_FREQUENCY, SAW_AMPLITUDE, 0, 0);
     auto              throttle_block            = gr::blocks::throttle::make(sizeof(float) * 1, SAMPLING_RATE, true);
-    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make(SAMPLING_RATE, { signalName }, { signalUnit });
+    auto              pulsed_power_opencmw_sink = gr::pulsed_power::opencmw_time_sink::make({ signalName }, { signalUnit }, SAMPLING_RATE);
     pulsed_power_opencmw_sink->set_max_noutput_items(640);
 
     // connections
@@ -337,9 +337,6 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
         // check for non-empty data
         if (data.refTriggerStamp == 0) {
             continue;
-            if (previousRefTrigger == 0) {
-                previousRefTrigger = data.refTriggerStamp;
-            }
         }
 
         REQUIRE(data.channelTimeSinceRefTrigger.size() == data.channelValues.n(1));

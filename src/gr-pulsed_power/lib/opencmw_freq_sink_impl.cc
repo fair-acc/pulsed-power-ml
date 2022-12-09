@@ -8,11 +8,12 @@ std::mutex globalFrequencySinksRegistryMutex;
 std::vector<opencmw_freq_sink*> globalFrequencySinksRegistry;
 
 using input_type = float;
-opencmw_freq_sink::sptr opencmw_freq_sink::make(std::vector<std::string> signal_names,
-                                                std::vector<std::string> signal_units,
-                                                float sample_rate,
-                                                float bandwidth,
-                                                size_t vector_size)
+opencmw_freq_sink::sptr
+opencmw_freq_sink::make(const std::vector<std::string>& signal_names,
+                        const std::vector<std::string>& signal_units,
+                        float sample_rate,
+                        float bandwidth,
+                        size_t vector_size)
 {
     return gnuradio::make_block_sptr<opencmw_freq_sink_impl>(
         signal_names, signal_units, sample_rate, bandwidth, vector_size);
@@ -22,11 +23,12 @@ opencmw_freq_sink::sptr opencmw_freq_sink::make(std::vector<std::string> signal_
 /*
  * The private constructor
  */
-opencmw_freq_sink_impl::opencmw_freq_sink_impl(std::vector<std::string> signal_names,
-                                               std::vector<std::string> signal_units,
-                                               float sample_rate,
-                                               float bandwidth,
-                                               size_t vector_size)
+opencmw_freq_sink_impl::opencmw_freq_sink_impl(
+    const std::vector<std::string>& signal_names,
+    const std::vector<std::string>& signal_units,
+    float sample_rate,
+    float bandwidth,
+    size_t vector_size)
     : gr::sync_block("opencmw_freq_sink",
                      gr::io_signature::make(1 /* min inputs */,
                                             10 /* max inputs */,

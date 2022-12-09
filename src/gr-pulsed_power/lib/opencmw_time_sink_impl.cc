@@ -8,25 +8,27 @@ std::mutex globalTimeSinksRegistryMutex;
 std::vector<opencmw_time_sink*> globalTimeSinksRegistry;
 
 using input_type = float;
-opencmw_time_sink::sptr opencmw_time_sink::make(float sample_rate,
-                                                std::vector<std::string> signal_names,
-                                                std::vector<std::string> signal_units)
+opencmw_time_sink::sptr
+opencmw_time_sink::make(const std::vector<std::string>& signal_names,
+                        const std::vector<std::string>& signal_units,
+                        float sample_rate)
 {
     return gnuradio::make_block_sptr<opencmw_time_sink_impl>(
-        sample_rate, signal_names, signal_units);
+        signal_names, signal_units, sample_rate);
 }
 
 
-opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
-                                               std::vector<std::string> signal_names,
-                                               std::vector<std::string> signal_units)
+opencmw_time_sink_impl::opencmw_time_sink_impl(
+    const std::vector<std::string>& signal_names,
+    const std::vector<std::string>& signal_units,
+    float sample_rate)
     : gr::sync_block("opencmw_time_sink",
                      gr::io_signature::make(
                          1 /* min inputs */, 10 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-      _sample_rate(sample_rate),
       _signal_names(signal_names),
       _signal_units(signal_units),
+      _sample_rate(sample_rate),
       _timestamp(0)
 {
     std::scoped_lock lock(globalTimeSinksRegistryMutex);
