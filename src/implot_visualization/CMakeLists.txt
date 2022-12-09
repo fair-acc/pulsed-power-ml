@@ -24,9 +24,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/web)
 add_compile_options(
         -DIMGUI_DISABLE_FILE_FUNCTIONS
         -g
-        -Wall -Wformat -Os
+        -Wall -Wformat -O2
         "SHELL:-s USE_SDL=2"
         "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
+        "$<$<NOT:$<CONFIG:Release>>:--profiling>"
 )
 
 # Enables 32 bit vertex indices for ImGui
