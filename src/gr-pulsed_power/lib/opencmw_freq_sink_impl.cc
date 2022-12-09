@@ -55,25 +55,26 @@ int opencmw_freq_sink_impl::work(int noutput_items,
                                  gr_vector_const_void_star& input_items,
                                  gr_vector_void_star& output_items)
 {
-    size_t nsignals = input_items.size();
-    size_t block_size = input_signature()->sizeof_stream_item(0);
+    // size_t block_size = input_signature()->sizeof_stream_item(0);
 
     using namespace std::chrono;
-    int64_t timestamp =
-        duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-            .count();
-    for (size_t i = 0; i < _signal_names.size(); i++) {
-        auto in = static_cast<const input_type*>(input_items[i]);
-        for (auto callback : _cb_copy_data) {
-            std::invoke(callback,
-                        in,
-                        noutput_items,
-                        _vector_size,
-                        _signal_names[i],
-                        _sample_rate,
-                        timestamp);
-        }
+    if (_timestamp == 0) {
+        _timestamp =
+            duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
+                .count();
     }
+
+    for (auto callback : _cb_copy_data) {
+        std::invoke(callback,
+                    input_items,
+                    noutput_items,
+                    _vector_size,
+                    _signal_names,
+                    _sample_rate,
+                    _timestamp);
+    }
+
+    _timestamp += noutput_items * _vector_size * static_cast<int64_t>(1e9 / _sample_rate);
 
     return noutput_items;
 }

@@ -14,6 +14,7 @@ private:
     float _sample_rate;
     float _bandwidth;
     size_t _vector_size;
+    int64_t _timestamp;
     std::vector<cb_copy_data_t> _cb_copy_data;
 
 public:

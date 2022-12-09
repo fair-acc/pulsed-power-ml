@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(opencmw_freq_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(ee5c24a26eaa74eb9ba53abd1d178fd6)                     */
+/* BINDTOOL_HEADER_FILE_HASH(1968aff23ae020ff8b1ca4051be579ff)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
