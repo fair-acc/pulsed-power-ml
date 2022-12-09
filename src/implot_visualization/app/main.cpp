@@ -42,6 +42,8 @@ public:
 
 static void main_loop(void *);
 
+static void calculate_frame_rate(double &current);
+
 int         main(int, char **) {
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -116,10 +118,12 @@ int         main(int, char **) {
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
-    emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
+    emscripten_set_main_loop_arg(main_loop, &appState, 0, true);
 }
 
 static void main_loop(void *arg) {
+    static double fps_current = 0;
+    calculate_frame_rate(fps_current);
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
@@ -171,6 +175,8 @@ static void main_loop(void *arg) {
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
         ImGui::Begin("Pulsed Power Monitoring");
 
+        ImGui::Text("framerate: %f frames/s", fps_current);
+        ImGui::SameLine();
         ImGui::ShowStyleSelector("Colors##Selector");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
@@ -227,4 +233,18 @@ static void main_loop(void *arg) {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(g_Window);
+}
+
+static void calculate_frame_rate(double &fps_current) {
+    static uint fps_last = SDL_GetTicks();
+    static uint fps_frames = 0;
+    static const double FPS_INTERVAL = 10000.0;
+    fps_frames++;
+    uint timediff =  SDL_GetTicks() - fps_last;
+    if (FPS_INTERVAL < timediff) {
+        fps_last = SDL_GetTicks();
+        fps_current = static_cast<double>(fps_frames) * 1000.0 / static_cast<double>(timediff);
+        fps_frames = 0;
+        std::cout << "Framerate: " << fps_current << "frames/s\n";
+    }
 }
