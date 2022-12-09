@@ -12,7 +12,14 @@
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND pulsed_power_sources
     opencmw_time_sink_impl.cc
-    opencmw_freq_sink_impl.cc )
+    opencmw_freq_sink_impl.cc
+    digitizer_source.cc
+    # picoscope_4000a_source_help_impl.cc
+    picoscope_4000a_source_impl.cc
+    picoscope_base.cc
+    power_calc_ff_impl.cc
+    mains_frequency_calc_impl.cc
+    power_calc_cc_impl.cc )
 
 set(pulsed_power_sources "${pulsed_power_sources}" PARENT_SCOPE)
 if(NOT pulsed_power_sources)
@@ -57,6 +64,10 @@ include(GrTest)
 list(APPEND test_pulsed_power_sources
 qa_opencmw_freq_sink.cc
 qa_opencmw_time_sink.cc
+qa_mains_frequency_calc.cc
+qa_power_calc_cc.cc
+qa_power_calc_ff.cc
+qa_power_calc_mul_ph_ff.cc
 )
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)

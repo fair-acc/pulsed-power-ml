@@ -147,3 +147,7 @@ configure_package_config_file(
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
 
+########################################################################
+# Find picoscope dependencies
+########################################################################
+find_package(picoscope REQUIRED)

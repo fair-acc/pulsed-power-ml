@@ -12,5 +12,21 @@
 install(FILES
     api.h
     opencmw_time_sink.h
-    opencmw_freq_sink.h DESTINATION include/gnuradio/pulsed_power
+    opencmw_freq_sink.h 
+    app_buffer.h
+    digitizer_base.h
+    digitizer_source.h
+    picoscope_base.h
+    ps_4000a_defs.h
+    range.h
+    status.h
+    tags.h
+    utils.h
+    /opt/picoscope/include/libps4000a/ps4000aApi.h
+    /opt/picoscope/include/libps4000a/PicoStatus.h
+    picoscope_4000a_source.h
+    power_calc_ff.h
+    mains_frequency_calc.h
+    power_calc_cc.h 
+    power_cal_mul_ph_ff.cc DESTINATION include/gnuradio/pulsed_power
 )

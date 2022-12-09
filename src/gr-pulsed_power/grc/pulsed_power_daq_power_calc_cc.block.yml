@@ -1,0 +1,58 @@
+id: _power_calc_cc
+label: power_calc_cc
+category: "[]"
+
+templates:
+  imports: import
+  make: .power_calc_cc(${alpha})
+
+#  Make one 'parameters' list entry for every parameter you want settable from the GUI.
+#     Keys include:
+#     * id (makes the value accessible as keyname, e.g. in the make entry)
+#     * label (label shown in the GUI)
+#     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
+#     * default
+parameters:
+  - id: alpha
+    label: Alpha
+    dtype: real
+    default: "0.0001"
+#- id: ...
+#  label: ...
+#  dtype: ...
+
+#  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
+#  Keys include:
+#      * label (an identifier for the GUI)
+#      * domain (optional - stream or message. Default is stream)
+#      * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
+#      * vlen (optional - data stream vector length. Default is 1)
+#      * optional (optional - set to 1 for optional inputs. Default is 0)
+inputs:
+  - label: Voltage
+    dtype: complex
+
+  - label: Current
+    dtype: complex
+
+outputs:
+  - label: P
+    dtype: float
+
+  - label: Q
+    dtype: float
+
+  - label: S
+    dtype: float
+
+  - label: Phi
+    dtype: float
+
+#  'file_format' specifies the version of the GRC yml format used in the file
+#  and should usually not be changed.
+
+documentation: |-
+  "Can't be used effectively since gnuradio's complex band pass filter does not calculate its output values correctly, use power_calc_ff instead.
+  This block calculates Apparent, Active and Reactive power and phase shift. Adapted to work with picoscope 4000a."
+
+file_format: 1

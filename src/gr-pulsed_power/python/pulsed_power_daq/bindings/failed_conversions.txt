@@ -1,0 +1,245 @@
+./include/pulsed_power_daq/picoscope_4000a_source.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/picoscope_4000a_source.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/digitizer_base.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/api.hUnable to find declaration. Matcher: [(decl type==namespace_t) and (name==gr)]
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/ps_4000a_defs.hUnable to find declaration. Matcher: [(decl type==namespace_t) and (name==gr)]
+./include/pulsed_power_daq/digitizer_base.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/app_buffer.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/app_buffer.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/status.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/picoscope_4000a_source.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/app_buffer.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/digitizer_base.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/range.hError occurred while running CASTXML:  status:1
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hUnable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/picoscope_4000a_source.hdecl_wrapper_type.declaration._name: type
+Unable to find out actual class definition: 'type'.
+Class definition has been changed from one compilation to an other.
+Why did it happen to me? Here is a short list of reasons: 
+    1. There are different preprocessor definitions applied on same file during compilation
+    2. Bug in pygccxml.
+./include/pulsed_power_daq/range.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/range_impl.cc.
+./include/pulsed_power_daq/range.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/range_impl.cc.
+./include/pulsed_power_daq/tags.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/tags_impl.cc.
+./include/pulsed_power_daq/digitizer_base.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/digitizer_base_impl.cc.
+./include/pulsed_power_daq/digitizer_base.h'NoneType' object has no attribute 'end'
+./include/pulsed_power_daq/digitizer_base.h'NoneType' object has no attribute 'end'
+./include/pulsed_power_daq/digitizer_base.h'NoneType' object has no attribute 'end'
+./include/pulsed_power_daq/digitizer_base.h'NoneType' object has no attribute 'end'
+./include/pulsed_power_daq/digitizer_source.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/digitizer_source_impl.cc.
+./include/pulsed_power_daq/digitizer_source.h'NoneType' object has no attribute 'end'
+./include/pulsed_power_daq/range.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/range_impl.cc.
+./include/pulsed_power_daq/tags.hCan't open some of the files necessary to parse /home/neumann/Workspace/gr-pulsed_power_daq/lib/tags_impl.cc.
