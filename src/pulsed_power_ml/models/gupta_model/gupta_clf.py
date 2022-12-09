@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
 from sklearn import neighbors
+from sklearn.preprocessing import MaxAbsScaler
 
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
@@ -87,6 +88,9 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         self.n_data_points_skipped = 0
         self.skip_data_point = False
 
+        # Scaler
+        self.scaler = MaxAbsScaler()
+
         return
 
     def fit(self, X: np.array, y: np.array) -> Any:
@@ -96,7 +100,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         Parameters
         ----------
         X
-            Training data (feature arrays for switching events).
+            Unscaled(!) Training data (feature arrays for switching events).
         y
             Labels of the switching events (one-hot-encoded).
 
@@ -104,7 +108,8 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         -------
         Self
         """
-        self.clf.fit(X, y)
+        X_scaled = self.scaler.fit_transform(X)
+        self.clf.fit(X_scaled, y)
         return self
 
     def predict(self, X: np.array) -> np.array:
@@ -155,9 +160,6 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         # 0. Step: Remove unused information in data point
         spectrum, apparent_power = self.crop_data_point(X)
 
-        # 0.1 Step: Correct spectrum (ToDo: Remove this step once training data w/o log_10 amplitudes are available)
-        #spectrum = 10**spectrum
-
         # 1. Step: Check if background vector is full
         if self.background_n > len(self.background_vector):
             # Add current data point to background vector and return last state vector
@@ -175,8 +177,9 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         normed_spectrum = subtract_background(raw_spectrum=spectrum/spectrum.max(),
                                               background=current_background/current_background.max())
         # 4. Check if appliance has been changed its state
-        event_detected_flag = switch_detected(normed_spectrum,threshold=30)
-#                                              threshold=1000)
+        event_detected_flag = switch_detected(normed_spectrum,
+                                              threshold=30)
+
         if True not in event_detected_flag:
             # add spectrum to background vector and return last state vector
             self.background_vector.append(spectrum)
@@ -297,7 +300,8 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
                                                   sample_rate=self.sample_rate)
 
         # 2. Classify event
-        distances, _ = self.clf.kneighbors([feature_vector])
+        scaled_feature_vector = self.scaler.transform([feature_vector])
+        distances, _ = self.clf.kneighbors(scaled_feature_vector)
 
         # Check if known or unknown event via the smallest distance
         if distances.min() > self.distance_threshold:
@@ -305,7 +309,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
             event_class = np.zeros(self.n_known_appliances * 2 + 1)[-1] = 1
         else:
             # Case 2: Known event
-            event_class = self.clf.predict([feature_vector])
+            event_class = self.clf.predict(scaled_feature_vector)
 
         # 3. Update current state vector accordingly
         self.current_state_vector = self.calculate_state_vector(event_class=event_class)

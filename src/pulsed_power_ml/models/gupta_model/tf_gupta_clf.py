@@ -266,9 +266,20 @@ class TFGuptaClassifier(keras.Model):
         cleaned_spectrum = tf_subtract_background(raw_spectrum=spectrum,
                                                   background=current_background)
 
-        # 4. Check if appliance has been changed its state
-        event_detected_flag = tf_switch_detected(cleaned_spectrum,
-                                                 threshold=1000)
+        # 4. Check if a switching event happened
+        current_background_normed = tf.math.divide(current_background,
+                                                   tf.math.reduce_max(current_background))
+
+        spectrum_normed = tf.math.divide(spectrum,
+                                         tf.math.reduce_max(spectrum))
+
+        cleaned_spectrum_normed = tf_subtract_background(
+            raw_spectrum=spectrum_normed,
+            background=current_background_normed
+        )
+
+        event_detected_flag = tf_switch_detected(res_spectrum=cleaned_spectrum_normed,
+                                                 threshold=tf.constant(30, dtype=tf.float32))
 
         # ToDo: Rework if-block
         # if True not in event_detected_flag:
@@ -528,7 +539,7 @@ if __name__ == "__main__":
     from scipy.signal import find_peaks
     import pandas as pd
 
-    from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
+    # from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
     from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
     from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
     from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_gaussian_params_for_peak, gaussian, \
@@ -539,7 +550,7 @@ if __name__ == "__main__":
     from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
 
     # load training data
-    training_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/"
+    training_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-11-16_features_labels/"
     features_file = f"{training_data_folder}/Features_ApparentPower.csv"
     labels_file = f"{training_data_folder}/Labels_ApparentPower.csv"
 
@@ -566,7 +577,7 @@ if __name__ == "__main__":
     # model.fit_knn(X=features, y=labels)
 
     # Load GR data
-    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/mixed/"
+    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-11-16_training_data/mixed1"
     data_point_array = read_training_files(path_to_folder=gr_data_folder,
                                            fft_size=2**17)
 

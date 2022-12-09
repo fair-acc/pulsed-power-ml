@@ -108,7 +108,10 @@ def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, boo
         Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
         a "switch off" event ist detected.
     """
-  
+
+    # Normalize cleaned spectrum
+
+
     # sum above threshold?
     sum_above_thr = res_spectrum.sum()>threshold
     sum_below_minus_thr = res_spectrum.sum()<-1*threshold
@@ -289,7 +292,7 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
     sum_above_thr = tf.math.greater(spectrum_sum, threshold)
     sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
 
-    return sum_above_thr, sum_below_minus_thr
+    return sum_below_minus_thr, sum_above_thr
 
 @tf.function
 def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
