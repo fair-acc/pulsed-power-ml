@@ -136,22 +136,23 @@ public:
         _pollingThread.join();
     }
 
-    void callbackCopySinkData(const float *data, int nitems, size_t vector_size, const std::string &signal_name, float sample_rate, int64_t timestamp) {
-        // write into RingBuffer
-        const auto completeSignalName = fmt::format("{}@{}Hz", signal_name, sample_rate);
+    void callbackCopySinkData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float sample_rate, int64_t timestamp) {
+        const float *in                 = static_cast<const float *>(input_items[0]);
+        const auto   completeSignalName = fmt::format("{}@{}Hz", signal_name[0], sample_rate);
         if (_signalsMap.contains(completeSignalName)) {
             const SignalData &signalData = _signalsMap.at(completeSignalName);
 
             for (int i = 0; i < nitems; i++) {
                 // publish data
-                bool result = signalData.ringBuffer->tryPublishEvent([i, data, vector_size, timestamp](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
+                bool result = signalData.ringBuffer->tryPublishEvent([i, in, vector_size, timestamp](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                     bufferData.timestamp = timestamp;
                     size_t offset        = static_cast<size_t>(i) * vector_size;
-                    bufferData.chunk.assign(data + offset, data + offset + vector_size);
+                    bufferData.chunk.assign(in + offset, in + offset + vector_size);
                 });
 
                 if (!result) {
-                    // fmt::print("freqDomainWorker: error writing into RingBuffer, signal_name: {}\n", signal_name);
+                    // fmt::print("freqDomainWorker: error writing into RingBuffer, signal_name: {}\n", signal_name[0]);
+                    nitems = 0;
                 }
             }
         }
@@ -161,7 +162,7 @@ private:
     bool handleGetRequest(const FreqDomainContext &requestContext, AcquisitionSpectra &out) {
         std::set<std::string, std::less<>> requestedSignals;
         if (!checkRequestedSignals(requestContext, requestedSignals)) {
-            return false; // TODO throw exception
+            return false;
         }
 
         int64_t maxChunksToPoll = chunksToPoll(requestedSignals);
