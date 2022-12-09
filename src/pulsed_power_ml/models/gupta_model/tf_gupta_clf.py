@@ -111,8 +111,18 @@ class TFGuptaClassifier(keras.Model):
                                            dtype=tf.int32,
                                            trainable=False)
 
-        self.training_data_features = training_data_features
+        # Training data for KNN
+        self.training_data_features_raw = training_data_features
         self.training_data_labels = training_data_labels
+
+        self.scale_tensor = tf.reduce_max(
+            input_tensor=tf.math.abs(training_data_features),
+            axis=0,
+            keepdims=False
+        )
+
+        self.training_data_features_scaled = tf.math.divide(self.training_data_features_raw,
+                                                            self.scale_tensor)
 
         return
 
@@ -132,30 +142,48 @@ class TFGuptaClassifier(keras.Model):
             distances to the nearest neighbors
             label: Tensor containing the classification result.
         """
-        difference_vectors = self.training_data_features - input
+        scaled_input = tf.math.divide(input,
+                                      self.scale_tensor)
+
+
+        difference_vectors = tf.math.subtract(
+            self.training_data_features_scaled,
+            scaled_input)
+
+
         distances = tf.norm(difference_vectors, axis=1)
 
-        k_smallest_distances, k_smallest_indices = tf.math.top_k(
+        neg_k_smallest_distances, k_smallest_indices = tf.math.top_k(
             input=distances * -1,
             k=self.n_neighbors,
             name="FindKNearestNeighbors"
         )
+
+        k_smallest_distances = tf.math.multiply(neg_k_smallest_distances,
+                                                tf.constant(-1, dtype=tf.float32))
 
         label_tensor = tf.gather(
             params=self.training_data_labels,
             indices=k_smallest_indices
         )
 
-        # weight classes with distances (similar to scikit learns weights="distance" weighting)
-        weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
-                                                              axis=-1)
+        if tf.math.equal(tf.math.reduce_min(k_smallest_distances), tf.constant(0, dtype=tf.float32)):
+            # if distance to one point is zero, all other points are ignored (similar to scikit-learn implementation)
+            result_tensor = self.training_data_labels[k_smallest_indices[0]]
 
-        # Determine the class
-        result_index = tf.argmax(tf.reduce_sum(weighted_label_tensor, axis=1))
+        else:
+            # weight classes with distances (similar to scikit learns weights="distance" weighting)
 
-        # Create result tensor (one-hot encoded w/ length=N+1)
-        result_tensor = tf.one_hot(indices=result_index,
-                                   depth=self.training_data_labels.shape[1])
+            weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
+                                                                  axis=-1)
+
+            # Determine the class
+            temp_a = tf.reduce_sum(weighted_label_tensor, axis=0)
+            result_index = tf.argmax(temp_a)
+
+            # Create result tensor (one-hot encoded w/ length=N+1)
+            result_tensor = tf.one_hot(indices=result_index,
+                                       depth=self.training_data_labels.shape[1])
 
         return k_smallest_distances, result_tensor
 

@@ -306,8 +306,10 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
         # Check if known or unknown event via the smallest distance
         if distances.min() > self.distance_threshold:
             # Case 1: Unknown event
+            print("unkown event detected")
             event_class = np.zeros(self.n_known_appliances * 2 + 1)[-1] = 1
         else:
+            print("known event detected")
             # Case 2: Known event
             event_class = self.clf.predict(scaled_feature_vector)
 
