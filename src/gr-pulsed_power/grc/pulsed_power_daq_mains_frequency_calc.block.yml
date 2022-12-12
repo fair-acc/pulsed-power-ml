@@ -1,6 +1,6 @@
 id: _mains_frequency_calc
 label: mains_frequency_calc
-category: "[]"
+category: "[pulsed_power]"
 
 templates:
   imports: import

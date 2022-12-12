@@ -1,6 +1,6 @@
 id: _power_calc_ff_prepper
 label: power_calc_ff_prepper
-category: "[]"
+category: "[pulsed_power]"
 
 templates:
   imports: import

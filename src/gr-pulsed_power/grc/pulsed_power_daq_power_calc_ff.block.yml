@@ -1,6 +1,6 @@
 id: _power_calc_ff
 label: power_calc_ff
-category: "[]"
+category: "[pulsed_power]"
 
 templates:
   imports: import

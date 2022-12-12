@@ -2,7 +2,7 @@
 
 id: _picoscope_4000a_source
 label: PicoScope 4000a
-category: "[]"
+category: "[pulsed_power]"
 flags:
   - throttle
 
