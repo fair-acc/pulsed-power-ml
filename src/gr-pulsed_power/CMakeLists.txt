@@ -156,3 +156,5 @@ configure_package_config_file(
 ########################################################################
 find_package(picoscope REQUIRED)
 set(GR_DIGITIZERS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "" FORCE)
+set(PICOSCOPE_INCLUDE_DIR /opt/picoscope/include)
+link_directories(${PICOSCOPE_LIB_DIR})

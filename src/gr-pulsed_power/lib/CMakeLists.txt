@@ -75,7 +75,7 @@ qa_power_calc_mul_ph_ff.cc
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)
 target_link_libraries(gnuradio-pulsed_power 
 #"-Wl,--whole-archive picoscope-base.a -Wl,--no-whole-archive"
-gnuradio::gnuradio-runtime )#picoscope-ps4000a)
+gnuradio::gnuradio-runtime) # picoscope-ps4000a)
 find_package(gnuradio-blocks PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
 find_package(gnuradio-analog PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
 
