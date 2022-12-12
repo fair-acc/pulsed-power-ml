@@ -30,10 +30,34 @@ struct NilmPredictData {
     std::vector<double>  values={0.0,25.7,55.5,74.1, 89.4, 34.5,23.4,1.0, 45.4, 56.5,76.4};
 };
 
+// current structers fro sinks
+struct PQSPhiDataSink{
+    int64_t            timestamp;
+    float              p;
+    float              q;
+    float              s;
+    float              phi;
+};
+
+struct SUIDataSink{
+    int64_t            timestamp;
+    std::vector<float> s;
+    std::vector<float> u;
+    std::vector<float> i;
+};
+
+
+
+// TODO - remove
 // data from time sink
 struct PQSPHiData{
     int64_t            timestamp;
-    std::vector<float> pqsphiValues; // 4 Values P Q S Phi
+    std::vector<float> pqsphiValues; 
+
+    // float p;
+    // float q;
+    // float s;
+    // float phi;
 };
 
 // data from frequency sink
@@ -110,8 +134,14 @@ private:
     // std::unordered_map<std::string, SignalTimeData>  _signalsTimeMap; // map keys: P, Q,  S, Phi
     //std::unordered_map<std::string, SignalFrequency> _signalsFrequencyMap; // map S U I
 
+    // TODO -remove
     std::shared_ptr<SignalFrequencyData> _suiSignalData = std::make_shared<SignalFrequencyData>(); // P, Q,  S, Phi data
     std::shared_ptr<SignalTimeData>   _pqsphiSignalData = std::make_shared<SignalTimeData>();      // S U I data
+
+    
+    std::shared_ptr<PQSPhiDataSink>   _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
+    std::shared_ptr<SUIDataSink>         _suiDataSink = std::make_shared<SUIDataSink>();
+
 
     bool                  init;
     int64_t               timestamp_frq;
@@ -145,17 +175,6 @@ public:
                 //     subs = super_t::activeSubscriptions().size();
                 //     fmt::print("NilmPredicWorker: activeSubs: {}\n", subs);
                 // }
-
-
-                // TODO - read values
-                // test only
-                for(const auto &kv : _signalsMap ){
-                    fmt::print("Sginal name from map {}\n", kv.first);
-                    fmt::print("Sginal timestamp {}\n", kv.second._nilmData.timestamp);
-                    fmt::print("Sitnal chunk {}\n", kv.second._nilmData.chunk);
-
-                    fmt::print("Sginal rate {}\n", kv.second._sampleRate);
-                }
                
                 NilmContext context;
 
@@ -211,56 +230,57 @@ public:
 
         });
 
-        // Test PQST
-        (*_pqsphiSignalData)._pqsphiData.pqsphiValues = std::vector<float>({.1f,.2f,.3f,.4f});
-        (*_pqsphiSignalData)._pqsphiData.timestamp = 111;
+        // // Test PQST
+        // (*_pqsphiSignalData)._pqsphiData.pqsphiValues = std::vector<float>({.1f,.2f,.3f,.4f});
+        // (*_pqsphiSignalData)._pqsphiData.timestamp = 111;
 
-        fmt::print("P Q S Phi: {}\n", (*_pqsphiSignalData)._pqsphiData.pqsphiValues);
+        // fmt::print("P Q S Phi: {}\n", (*_pqsphiSignalData)._pqsphiData.pqsphiValues);
 
-        // Test S U I
-        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.01)); 
-        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.2));
-        (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.3));
-        fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.size());
-        //fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.at(0));
+        // // Test S U I
+        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.01)); 
+        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.2));
+        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.3));
+        // fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.size());
+        // //fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.at(0));
 
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);  // in call back machen 
         fmt::print("GR: number of time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
 
 
-        // Test Merge
-        std::vector<float> data_point = mergeValues();
-        fmt::print("Test merge {}\n", data_point);
+        // // Test Merge TODO - modify
+        // std::vector<float> data_point = mergeValues();
+        // fmt::print("Test merge {}\n", data_point);
 
+        std::vector<std::string> pqsohi_str{"P", "Q", "S", "Phi"};
         // from sink take only P Q S Phi Signal 
         for (auto sink : gr::pulsed_power::globalTimeSinksRegistry) {
 
-            // nur für bestimmte Singal 
-            const auto signal_name = sink->get_signal_name();
-            const auto signal_unit = sink->get_signal_unit();
+            const auto signal_names = sink->get_signal_names();
+            const auto signal_units = sink->get_signal_units();
             const auto sample_rate = sink->get_sample_rate();
 
-            fmt::print("Name {}, unit {}, rate {}", signal_name, signal_unit, sample_rate);
-            _signalsMap.insert({signal_name, SignalData(signal_name, sample_rate)});
-                                        
-            // fmt::print("GR: OpenCMW Time Sink '{}' added\n", completeSignalName);
-            // test - remove
-            sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+            fmt::print("Name {}, unit {}, rate {}", signal_names, signal_units, sample_rate);
+
             
-            // change
-            //sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkTimeData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+            if (signal_names == pqsohi_str){
+                                        
+                sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkTimeData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));           
+            }
         }
 
-        // TODO  -Im Progress
-        // for (auto sink : gr::pulsed_power::frequencySink) {
-            // const auto signal_name = sink->get_signal_name();
-            // const auto signal_unit = sink->get_signal_unit();
-            // const auto sample_rate = sink->get_sample_rate();
+        std::vector<std::string> sui_str{"P", "Q", "S", "Phi"};
+        for (auto sink : gr::pulsed_power::globalFrequencySinksRegistry) {
+            const auto signal_names = sink->get_signal_names();
+            const auto signal_units = sink->get_signal_units();
+            const auto sample_rate = sink->get_sample_rate();
 
-            // fmt::print("Name {}, unit {}, rate {}", signal_name, signal_unit, sample_rate);
-            // _signalsFrequencyMap.insert({signal_name, SignalFrequencyData(signal_name, sample_rate)});
-            // sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkFrequencyData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));                 
-        // }
+            if (signal_names == sui_str){
+
+                fmt::print("Name {}, unit {}, rate {}", signal_names, signal_units, sample_rate);
+                //_signalsFrequencyMap.insert({signal_name, SignalFrequencyData(signal_name, sample_rate)});
+                sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkFrequencyData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));                 
+            }
+        }
 
         super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &,
                                      const Empty &, NilmContext &,
@@ -279,80 +299,39 @@ public:
         shutdownRequested = true;
         notifyThread.join();
     }
-
-
-    // data - zeiger auf erste , data_size - große - index operator /// data von gnu radio
-    void callbackCopySinkData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns) {
-        if (sample_rate > 0) {
-            // realign timestamp
-            timestamp_ns -= static_cast<int64_t>(1 / sample_rate * 1e9F) * data_size;
-        }
-
-        // write into RingBuffer
-        if (_signalsMap.contains(signal_name)) {
-            //const 
-            SignalData &signalData = _signalsMap.at(signal_name);
-
-            //fmt::print("Signal {}\n", signal_name);
-            //fmt::print("data {}\n", data[0]);
-
-            /// schrieben in Fiel in daten
-            // std::vector<float> chunk;
-            // int64_t            timestamp;
-
-            // RingBufferNilmData nilmData;
-            // nilmData.timestamp = timestamp_ns;
-            // nilmData.chunk.assign(data, data + data_size); 
-
-            // fmt::print("NilmData: {},  {}\n", nilmData.timestamp, nilmData.chunk);
-            // signalData._nilmData=nilmData;
-
-
-            signalData._nilmData.timestamp = timestamp_ns;
-            signalData._nilmData.chunk.assign(data, data + data_size);
-
-
-
-            // publish data // data speicher - kann es in 
-            // TODO anpassen - für PQSPHI
-
-            bool result = signalData._ringBuffer->tryPublishEvent([&data, data_size, timestamp_ns](RingBufferNilmData &&bufferData, std::int64_t /*sequence*/) noexcept {
-                bufferData.timestamp = timestamp_ns;
-                bufferData.chunk.assign(data, data + data_size);
-            });
-
-            if (!result) {
-                // fmt::print("error writing into RingBuffer, signal_name: {}\n", signal_name);
-            }
-        }
-    }
-
+    
     // copy P Q S Phi data
-    void callbackCopySinkTimeData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns) {
+    void callbackCopySinkTimeData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) { 
         // data save into SignalTimeData
+        std::vector<std::string> pqsphi_str{"P", "Q", "S", "Phi"};
+        if (signal_names == pqsphi_str){
+            _pqsphiDataSink->timestamp = timestamp_ns;
+            //TODO write values
+            _pqsphiDataSink->p = 0.5; // dummy value
+            _pqsphiDataSink->q = 0.7;  // dummy value
+            _pqsphiDataSink->s = 0.25; // dummy value
+        }
     }
 
     // copy S U I data
-    void callbackCopySinkFrequencyData(const float *data, int data_size, const std::string &signal_name, float sample_rate, int64_t timestamp_ns){
-        // TODO
-        // data save into SignalFrequency
-        if (sample_rate > 0) {
-            // realign timestamp
-            timestamp_ns -= static_cast<int64_t>(1 / sample_rate * 1e9F) * data_size;
+    void callbackCopySinkFrequencyData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float sample_rate, int64_t timestamp) {
+
+        const float *in                 = static_cast<const float *>(input_items[0]);
+
+        std::vector<std::string> sui_str{"P", "Q", "S", "Phi"};
+        if (signal_name == sui_str){
+            _suiDataSink->timestamp = timestamp;
+            // dummy velues TODO - assign 
+            _suiDataSink->s = generateVector(.01);
+            _suiDataSink->u = generateVector(.02);
+            _suiDataSink->i = generateVector(.03);
+
         }
-
-        // if (_signalsFrequencyMap.contains(signal_name)) {
-        //     // TODO lock
-        //     SignalFreuncyData &signalData = _signalsFrequencyMap.at(signal_name);
-
-        //     signalData._frequncyValues.timestamp=timestamp_ns;
-        //     signalData._frequncyValues.frequencyValues.clear();
-        //     signalData._frequncyValues.frequencyValues.assing(data, data+data_size);
-        // }        
     }
 
 private:
 
+    // TODO - use simple structures
     // return data_point - input for model
     std::vector<float> mergeValues(){
 
