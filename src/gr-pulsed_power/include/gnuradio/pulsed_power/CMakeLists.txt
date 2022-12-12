@@ -28,5 +28,5 @@ install(FILES
     power_calc_ff.h
     mains_frequency_calc.h
     power_calc_cc.h 
-    power_cal_mul_ph_ff.cc DESTINATION include/gnuradio/pulsed_power
+    power_calc_mul_ph_ff.h DESTINATION include/gnuradio/pulsed_power
 )

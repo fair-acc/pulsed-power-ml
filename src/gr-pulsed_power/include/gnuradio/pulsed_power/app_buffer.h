@@ -5,6 +5,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 
 // Build-in
