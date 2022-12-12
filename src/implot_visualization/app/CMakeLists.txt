@@ -12,4 +12,6 @@ target_link_libraries(
         deserializer
         fetch
         plot_tools
+        sbt
+        iconfont
 )
