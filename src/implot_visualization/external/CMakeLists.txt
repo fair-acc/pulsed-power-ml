@@ -1,6 +1,19 @@
 include(FetchContent)
 
 FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 8.1.1 # newest: 9.1.0
+)
+
+# the timezone part of the library is not included in the cmake and needs separate installation
+# FetchContent_Declare(
+#         date
+#         GIT_REPOSITORY https://github.com/HowardHinnant/date.git
+#         GIT_TAG v3.0.1
+# )
+
+FetchContent_Declare(
     imgui
     GIT_REPOSITORY  https://github.com/ocornut/imgui.git
     GIT_TAG         v1.88
@@ -30,7 +43,7 @@ FetchContent_Declare( # needed to load images in ImGui
         GIT_TAG 685673dea6fb4012bd2104bf9b8d8da802eade50 # master from Sep 2022
 )
 
-FetchContent_MakeAvailable(nlohmann_json imgui implot stb iconfont)
+FetchContent_MakeAvailable(fmt nlohmann_json imgui implot stb iconfont)
 
 # imgui and implot are not CMake Projects, so we have to define their targets manually here
 add_library(

@@ -1,19 +1,17 @@
 #include <chrono>
-#include <iostream>
 #include <SDL.h>
 #include <SDL_opengles2.h>
-#include <stdio.h>
-#include <string.h>
-#include <thread>
+#include <cstdio>
 #include <vector>
 
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl.h"
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl.h>
 #include <implot.h>
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
+#include <fair_header.h>
 #include <plot_tools.h>
 
 // Emscripten requires to have full control over the main loop. We're going to
@@ -29,6 +27,12 @@ public:
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
     Plotter                                       plotter;
     double                                        lastFrequencyFetchTime = 0.0;
+    struct AppFonts{
+        ImFont *title;
+        ImFont *text;
+        ImFont *fontawesome;
+    };
+    AppState::AppFonts fonts{};
 
     AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency) {
         this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
@@ -94,17 +98,6 @@ int         main(int, char **) {
     ImGui_ImplSDL2_InitForOpenGL(g_Window, g_GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Load Fonts
-    // io.Fonts->AddFontDefault();
-#ifndef IMGUI_DISABLE_FILE_FUNCTIONS
-    io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
-    // io.Fonts->AddFontFromFileTTF("fonts/DroidSans.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("fonts/ProggyTiny.ttf", 10.0f);
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("fonts/ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    // IM_ASSERT(font != NULL);
-#endif
-
     ImGui::StyleColorsLight();
 
     Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
@@ -114,7 +107,20 @@ int         main(int, char **) {
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
 
-    // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
+#ifndef IMGUI_DISABLE_FILE_FUNCTIONS
+    const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
+    // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
+    appState.fonts.text = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
+    appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
+    // appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
+    // io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-solid.ttf", 16.0f);
+    // io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
+
+    // ImFont* font = io.Fonts->AddFontFromFileTTF("fonts/ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    // IM_ASSERT(font != NULL);
+    app_header::load_header_assets();
+#endif
+
     emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
 
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -170,7 +176,8 @@ static void main_loop(void *arg) {
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        ImGui::Begin("Pulsed Power Monitoring");
+        ImGui::Begin("Pulsed Power Monitoring", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+        app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
         ImGui::ShowStyleSelector("Colors##Selector");
 
@@ -203,8 +210,8 @@ static void main_loop(void *arg) {
                 plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
+            ImPlot::EndSubplots();
         }
-        ImPlot::EndSubplots();
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
