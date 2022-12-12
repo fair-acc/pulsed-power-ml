@@ -38,7 +38,7 @@ void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
