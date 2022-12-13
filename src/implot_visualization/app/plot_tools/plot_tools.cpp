@@ -35,12 +35,11 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "U", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 1.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
 }
 
@@ -48,9 +47,12 @@ void Plotter::plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
-    ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Always);
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 1.0, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // plotSignals(signals);
+    plotSignals(signals);
 }
 
 void Plotter::plotPower(std::vector<ScrollingBuffer> &signals) {
@@ -59,7 +61,7 @@ void Plotter::plotPower(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 1.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);

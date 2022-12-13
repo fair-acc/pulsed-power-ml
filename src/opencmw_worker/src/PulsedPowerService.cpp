@@ -175,7 +175,8 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraphThreePhaseSimulated flowgraph(1024);
+    // GRFlowGraph flowgraph(1024);
+    GRFlowGraphOnePhaseSimulated flowgraph(1024);
     flowgraph.start();
 
     // OpenCMW workers

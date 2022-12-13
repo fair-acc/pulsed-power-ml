@@ -107,11 +107,14 @@ int         main(int, char **) {
 
     ImGui::StyleColorsLight();
 
-    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
-    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    // Subscription<Acquisition> powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
+    // Subscription<Acquisition> rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<Acquisition>                     rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@20000Hz", "I@20000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@1000Hz", "Q@1000Hz", "S@1000Hz", "phi@1000Hz" });
+    Subscription<Acquisition>                     bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
     Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = {};
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
@@ -180,7 +183,7 @@ static void main_loop(void *arg) {
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
-            // GR Signals Plot
+            // Raw Signals Plot
             if (ImPlot::BeginPlot("GR Signals")) {
                 plotter.plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
@@ -188,7 +191,7 @@ static void main_loop(void *arg) {
 
             // Bandpass Filter Plot
             if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
-                plotter.plotBandpassFilter(subscriptionsTimeDomain[0].acquisition.buffers);
+                plotter.plotBandpassFilter(subscriptionsTimeDomain[2].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
@@ -200,7 +203,7 @@ static void main_loop(void *arg) {
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("Mains Frequency")) {
-                plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
+                // plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
         }
@@ -208,7 +211,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            plotter.plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            // plotter.plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
             ImPlot::EndPlot();
         }
         ImGui::End();
