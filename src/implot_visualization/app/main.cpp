@@ -15,7 +15,7 @@
 #include <plot_tools.h>
 
 // Emscripten requires to have full control over the main loop. We're going to
-// store our SDL book-keeping variables globally. Having a single function that
+// store our SDL bookkeeping variables globally. Having a single function that
 // acts as a loop prevents us to store state in the stack of said function. So
 // we need some location for this.
 SDL_Window   *g_Window    = NULL;
@@ -25,7 +25,6 @@ class AppState {
 public:
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
-    Plotter                                       plotter;
     double                                        lastFrequencyFetchTime = 0.0;
     struct AppFonts{
         ImFont *title;
@@ -133,7 +132,6 @@ static void main_loop(void *arg) {
     AppState                                      *args                    = static_cast<AppState *>(arg);
     std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain = args->subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency  = args->subscriptionsFrequency;
-    Plotter                                       &plotter                 = args->plotter;
     double                                        &lastFrequencyFetchTime  = args->lastFrequencyFetchTime;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
@@ -189,25 +187,25 @@ static void main_loop(void *arg) {
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // GR Signals Plot
             if (ImPlot::BeginPlot("GR Signals")) {
-                plotter.plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
+                Plotter::plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Bandpass Filter Plot
             if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
-                plotter.plotBandpassFilter(subscriptionsTimeDomain[0].acquisition.buffers);
+                Plotter::plotBandpassFilter(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Power Plot
             if (ImPlot::BeginPlot("Power")) {
-                plotter.plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
+                Plotter::plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("Mains Frequency")) {
-                plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
+                Plotter::plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
             ImPlot::EndSubplots();
@@ -215,7 +213,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            plotter.plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
             ImPlot::EndPlot();
         }
         ImGui::End();
