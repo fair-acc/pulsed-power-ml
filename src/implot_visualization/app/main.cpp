@@ -11,8 +11,9 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
-#include <fair_header.h>
 #include <plot_tools.h>
+#include <IconsFontAwesome6.h>
+#include <fair_header.h>
 
 class AppState {
 public:
@@ -96,19 +97,21 @@ int         main(int, char **) {
 
     ImGui::StyleColorsLight();
 
-#ifndef IMGUI_DISABLE_FILE_FUNCTIONS
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
     // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
     appState.fonts.text = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
     appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
-    // appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-solid.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
+    //appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
 
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("fonts/ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    // IM_ASSERT(font != NULL);
+    ImVector<ImWchar> symbols;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
+    builder.AddText(ICON_FA_CIRCLE_QUESTION);
+    builder.BuildRanges(&symbols);
+    appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-solid-900.ttf", 32.0f, nullptr, symbols.Data);
+    // appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
+
     app_header::load_header_assets();
-#endif
 
     emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
 
@@ -203,7 +206,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, true, args->fonts.fontawesome);
             ImPlot::EndPlot();
         }
         ImGui::End();

@@ -3,8 +3,45 @@
 #include <deserialize_json.h>
 #include <implot.h>
 #include <vector>
+#include <IconsFontAwesome6.h>
 
 namespace Plotter {
+/**
+ * Adds an overlay to the current plot and shows an icon and a message.
+ * @param text the message text shown after the icon
+ * @param fontawesome the icon font to use
+ * @param icon the icon to print
+ * @param icon_color the color to draw the icon with
+ * @param relPos optional relative position inside the plot bounds
+ */
+void addPlotNotice(
+        const std::string_view text,
+        ImFont* fontawesome,
+        const std::string_view icon = ICON_FA_TRIANGLE_EXCLAMATION,
+        const ImVec4 icon_color = {1.0,0,0,1.0}, // red
+        const ImVec2 relPos = {0.15, 0.05}
+        ) {
+    const auto plot_size = ImPlot::GetPlotSize();
+    const auto plot_pos = ImPlot::GetPlotPos();
+    const auto pos = ImVec2(plot_pos.x + plot_size.x * relPos.x, plot_pos.y + plot_size.y * relPos.y);
+    ImGui::SetNextWindowPos(pos);
+    ImGui::PushFont(fontawesome);
+    const auto iconSize = ImGui::CalcTextSize(icon.data(), icon.data() + icon.size()); ImGui::PopFont();
+    const auto textSize = ImGui::CalcTextSize(text.data(), text.data() + text.size());
+    ImVec2 &spacing = ImGui::GetStyle().ItemSpacing;
+    const ImVec2 overlaySize{iconSize.x + textSize.x + 2 * spacing.x, std::max(iconSize.y, textSize.y) + 2 * spacing.y};
+    if (ImGui::BeginChild(text.data(), overlaySize, false,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground)) {
+        ImGui::PushFont(fontawesome);
+        ImGui::TextColored(icon_color, icon.data(), icon.data() + icon.size());
+        ImGui::PopFont();
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + iconSize.y - textSize.y); // bottom align
+        ImGui::Text("%.*s", static_cast<int>(text.size()), text.data());
+    }
+    ImGui::EndChild();
+}
 
 template<typename T>
 static void plotSignals(std::vector<T> &signals) {
@@ -71,11 +108,17 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     // plotSignals(signals);
 }
 
-void plotPowerSpectrum(std::vector<Buffer> &signals) {
+void plotPowerSpectrum(std::vector<Buffer> &signals, const bool violation, ImFont *fontawesome) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
+    if (violation) {
+        addPlotNotice("error: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, {1.0,0,0,1.0}, {0.15, 0.05});
+        addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, {1,0.5,0,1.0}, {0.15, 0.25});
+        addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, {0,0,1.0,1.0}, {0.15, 0.45});
+    }
 }
-} // namespace Plotter
+
+}
