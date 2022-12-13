@@ -6,6 +6,7 @@
 #include <gnuradio/blocks/multiply.h>
 #include <gnuradio/blocks/multiply_const.h>
 #include <gnuradio/blocks/nlog10_ff.h>
+#include <gnuradio/blocks/null_sink.h>
 #include <gnuradio/blocks/stream_to_vector.h>
 #include <gnuradio/blocks/sub.h>
 #include <gnuradio/blocks/throttle.h>
@@ -22,6 +23,8 @@
 #include <gnuradio/pulsed_power/picoscope_4000a_source.h>
 #include <gnuradio/pulsed_power/power_calc_ff.h>
 #include <gnuradio/pulsed_power/power_calc_mul_ph_ff.h>
+
+const float PI = 3.141592653589793238463f;
 
 class GRFlowGraphThreePhaseSimulated {
 private:
@@ -45,12 +48,12 @@ public:
 
         // blocks
         auto analog_sig_source_current0 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 2, 0, 0.2f);
-        auto analog_sig_source_current1 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 2, 0, 0.2f); // 0.2 + pi / 3
-        auto analog_sig_source_current2 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 2, 0, 0.2f); // 0.2 + 2*pi / 3
+        auto analog_sig_source_current1 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 2, 0, 0.2f + PI / 3.0f);
+        auto analog_sig_source_current2 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 2, 0, 0.2f + PI * 2.0f / 3.0f);
 
         auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f);
-        auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // pi/3
-        auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // 2pi/3
+        auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, PI / 3.0f);
+        auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 2.0f * PI / 3.0f);
 
         auto band_pass_filter_current0  = gr::filter::fft_filter_fff::make(
                  bp_decimation,
@@ -262,12 +265,28 @@ public:
 
         auto pulsed_power_power_calc_mul_ph_ff_0_0 = gr::pulsed_power::power_calc_mul_ph_ff::make(0.0001);
 
-        auto pulsed_power_opencmw_time_sink        = gr::pulsed_power::opencmw_time_sink::make(
-                       in_samp_rate,
-                       { "P(t)_1", "Q(t)_1", "S(t)_1", "phi(t)_1",
-                        "P(t)_2", "Q(t)_2", "S(t)_2", "phi(t)_2",
-                        "P(t)_3", "Q(t)_3", "S(t)_3", "phi(t)_3" },
-                       {});
+        auto pulsed_power_opencmw_time_sink_p      = gr::pulsed_power::opencmw_time_sink::make(
+                     { "P" },
+                     {},
+                     in_samp_rate);
+        auto pulsed_power_opencmw_time_sink_q = gr::pulsed_power::opencmw_time_sink::make(
+                { "Q" },
+                {},
+                in_samp_rate);
+        auto null_sink_0  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_1  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_2  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_3  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_4  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_5  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_6  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_7  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_8  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_9  = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_10 = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_11 = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_12 = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_13 = gr::blocks::null_sink::make(sizeof(float));
 
         // Connections:
         // Phase 0:
@@ -302,10 +321,10 @@ public:
         top->hier_block2::connect(analog_sig_source_voltage1, 0, band_pass_filter_voltage1, 0);
         top->hier_block2::connect(band_pass_filter_current1, 0, blocks_multiply_phase1_0, 0);
         top->hier_block2::connect(band_pass_filter_current1, 0, blocks_multiply_phase1_1, 0);
-        top->hier_block2::connect(band_pass_filter_current1, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 4); // ????
+        top->hier_block2::connect(band_pass_filter_current1, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 4);
         top->hier_block2::connect(band_pass_filter_voltage1, 0, blocks_multiply_phase1_2, 0);
         top->hier_block2::connect(band_pass_filter_voltage1, 0, blocks_multiply_phase1_3, 0);
-        top->hier_block2::connect(band_pass_filter_voltage1, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 3); // ???
+        top->hier_block2::connect(band_pass_filter_voltage1, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 3);
         top->hier_block2::connect(analog_sig_source_phase1_sin, 0, blocks_multiply_phase1_0, 1);
         top->hier_block2::connect(analog_sig_source_phase1_sin, 0, blocks_multiply_phase1_2, 1);
         top->hier_block2::connect(analog_sig_source_phase1_cos, 0, blocks_multiply_phase1_1, 1);
@@ -329,10 +348,10 @@ public:
         top->hier_block2::connect(analog_sig_source_voltage2, 0, band_pass_filter_voltage2, 0);
         top->hier_block2::connect(band_pass_filter_current2, 0, blocks_multiply_phase2_0, 0);
         top->hier_block2::connect(band_pass_filter_current2, 0, blocks_multiply_phase2_1, 0);
-        top->hier_block2::connect(band_pass_filter_current2, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 7); // ???
+        top->hier_block2::connect(band_pass_filter_current2, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 7);
         top->hier_block2::connect(band_pass_filter_voltage2, 0, blocks_multiply_phase2_2, 0);
         top->hier_block2::connect(band_pass_filter_voltage2, 0, blocks_multiply_phase2_3, 0);
-        top->hier_block2::connect(band_pass_filter_voltage2, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 6); // ???
+        top->hier_block2::connect(band_pass_filter_voltage2, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 6);
         top->hier_block2::connect(analog_sig_source_phase2_sin, 0, blocks_multiply_phase2_0, 1);
         top->hier_block2::connect(analog_sig_source_phase2_sin, 0, blocks_multiply_phase2_2, 1);
         top->hier_block2::connect(analog_sig_source_phase2_cos, 0, blocks_multiply_phase2_1, 1);
@@ -351,21 +370,24 @@ public:
         top->hier_block2::connect(blocks_transcendental_phase2_1, 0, blocks_sub_phase2, 1);
         top->hier_block2::connect(blocks_sub_phase2, 0, pulsed_power_power_calc_mul_ph_ff_0_0, 8);
 
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 0, pulsed_power_opencmw_time_sink, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 1, pulsed_power_opencmw_time_sink, 1);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 2, pulsed_power_opencmw_time_sink, 2);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 3, pulsed_power_opencmw_time_sink, 3);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 4, pulsed_power_opencmw_time_sink, 4);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 5, pulsed_power_opencmw_time_sink, 5);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 6, pulsed_power_opencmw_time_sink, 6);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 7, pulsed_power_opencmw_time_sink, 7);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 8, pulsed_power_opencmw_time_sink, 8);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 9, pulsed_power_opencmw_time_sink, 9);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 10, pulsed_power_opencmw_time_sink, 10);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 11, pulsed_power_opencmw_time_sink, 11);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 12, pulsed_power_opencmw_time_sink, 12);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 13, pulsed_power_opencmw_time_sink, 13);
-        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 14, pulsed_power_opencmw_time_sink, 14);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 0, pulsed_power_opencmw_time_sink_p, 0);
+        // top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 1, pulsed_power_opencmw_time_sink, 1);
+        // top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 2, pulsed_power_opencmw_time_sink, 2);
+        // top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 3, pulsed_power_opencmw_time_sink, 3);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 1, pulsed_power_opencmw_time_sink_q, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 2, null_sink_12, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 3, null_sink_13, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 4, null_sink_0, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 5, null_sink_1, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 6, null_sink_2, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 7, null_sink_3, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 8, null_sink_4, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 9, null_sink_5, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 10, null_sink_6, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 11, null_sink_7, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 12, null_sink_8, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 13, null_sink_9, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_mul_ph_ff_0_0, 14, null_sink_10, 0);
     }
     ~GRFlowGraphThreePhaseSimulated() { top->stop(); }
     // start gnuradio flowgraph
