@@ -24,9 +24,9 @@
 
 #include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
-#include "TimeDomainWorker.hpp"
 #include "NilmPowerWorker.hpp"
 #include "NilmPredictWorker.hpp"
+#include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
 
@@ -133,6 +133,13 @@ public:
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
         auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_2, bandwidth);
 
+        // nilm worker (time and frequency sink)
+        auto nilm_time_sink = gr::pulsed_power::opencmw_time_sink::make({ "P", "Q", "S", "Phi" }, { "W", "Var", "VA", "deg" }, samp_rate);
+        nilm_time_sink->set_max_noutput_items(noutput_items);
+
+        auto nilm_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "S", "U", "I" }, { "dB", "dB", "dB" }, samp_rate);
+        nilm_freq_sink->set_max_noutput_items(noutput_items);
+
         // connections
         // time-domain sinks
         top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
@@ -152,6 +159,15 @@ public:
         top->hier_block2::connect(multiply_const_xx_0, 0, complex_to_mag_squared_0, 0);
         top->hier_block2::connect(complex_to_mag_squared_0, 0, nlog10_ff_0, 0);
         top->hier_block2::connect(nlog10_ff_0, 0, pulsed_power_opencmw_freq_sink_0, 0);
+
+        // nilm worker (time and frequency sink)
+        top->hier_block2::connect(throttle_block_0, 0, nilm_time_sink, 0);
+        top->hier_block2::connect(throttle_block_1, 0, nilm_time_sink, 1);
+        top->hier_block2::connect(throttle_block_2, 0, nilm_time_sink, 2);
+        top->hier_block2::connect(throttle_block_3, 0, nilm_time_sink, 3);
+        top->hier_block2::connect(nlog10_ff_0, 0, nilm_freq_sink, 0);
+        top->hier_block2::connect(nlog10_ff_0, 0, nilm_freq_sink, 1);
+        top->hier_block2::connect(nlog10_ff_0, 0, nilm_freq_sink, 2);
     }
 
     ~GRFlowGraph() { top->stop(); }
@@ -183,9 +199,8 @@ int main() {
     CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    NilmPowerWorker<"nilm_values", description<"Nilm Data">>            nilmDataWorker(broker, std::chrono::milliseconds(1000));
-    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">>  nilmPredictWorker(broker, std::chrono::milliseconds(1000));
-
+    NilmPowerWorker<"nilm_values", description<"Nilm Data">>                                              nilmDataWorker(broker, std::chrono::milliseconds(1000));
+    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">>                          nilmPredictWorker(broker, std::chrono::milliseconds(1000));
 
     // run workers in separate threads
     std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
@@ -202,5 +217,4 @@ int main() {
     counterWorkerThread.join();
     nilmDataWorkerThread.join();
     nilmPredictWorkerThread.join();
-
 }
