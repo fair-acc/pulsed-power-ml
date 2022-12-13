@@ -22,7 +22,7 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(float sample_rate,
                                                std::vector<std::string> signal_units)
     : gr::sync_block("opencmw_time_sink",
                      gr::io_signature::make(
-                         1 /* min inputs */, 10 /* max inputs */, sizeof(input_type)),
+                         1 /* min inputs */, 15 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
       _sample_rate(sample_rate),
       _signal_names(signal_names),
