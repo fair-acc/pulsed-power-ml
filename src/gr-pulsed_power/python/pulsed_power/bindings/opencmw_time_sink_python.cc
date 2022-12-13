@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(opencmw_time_sink.h)                                       */
-/* BINDTOOL_HEADER_FILE_HASH(ee15af33f8990dfb11f88d579172673d)                     */
+/* BINDTOOL_HEADER_FILE(opencmw_time_sink.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(e98882e0c949209824cc1d74305845d0)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -41,9 +41,9 @@ void bind_opencmw_time_sink(py::module& m)
         m, "opencmw_time_sink", D(opencmw_time_sink))
 
         .def(py::init(&opencmw_time_sink::make),
-             py::arg("sample_rate"),
              py::arg("signal_names"),
              py::arg("signal_units"),
+             py::arg("sample_rate"),
              D(opencmw_time_sink, make))
 
 

@@ -14,11 +14,12 @@ private:
     float _sample_rate;
     float _bandwidth;
     size_t _vector_size;
+    int64_t _timestamp;
     std::vector<cb_copy_data_t> _cb_copy_data;
 
 public:
-    opencmw_freq_sink_impl(std::vector<std::string> signal_names,
-                           std::vector<std::string> signal_units,
+    opencmw_freq_sink_impl(const std::vector<std::string>& signal_names,
+                           const std::vector<std::string>& signal_units,
                            float sample_rate,
                            float bandwidth,
                            size_t vector_size);
