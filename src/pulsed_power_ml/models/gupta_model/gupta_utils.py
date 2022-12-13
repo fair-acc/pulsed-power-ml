@@ -539,14 +539,12 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
         amplitudes = cleaned_spectrum[low_index[0]:high_index[0]+1]
 
-        tf.print(frequencies, amplitudes)
-
         a, mu, sigma = tf_calculate_gaussian_params_for_peak(
             x=frequencies,
-            y=amplitudes
+            y=amplitudes * switch_off_factor
         )
 
-        feature_vector.write(i*3, a)
+        feature_vector.write(i*3, a * switch_off_factor)
         feature_vector.write(i*3+1, mu)
         feature_vector.write(i*3+2, sigma)
 

@@ -20,7 +20,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature
 class GuptaClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self,
-                 background_n: int = 25,
+                 background_n: int = 2,
                  fft_size_real: int = 2**16,
                  sample_rate: int = 2_000_000,
                  n_known_appliances: int = 10,
@@ -28,7 +28,7 @@ class GuptaClassifier(BaseEstimator, ClassifierMixin):
                  switching_offset: int = 1,
                  n_peaks_max: int = 10,
                  apparent_power_list: list = [],
-                 n_neighbors: int = 5,
+                 n_neighbors: int = 3,
                  knn_weights: str = "distance",
                  distance_threshold: float = 10,
                  ) -> None:
