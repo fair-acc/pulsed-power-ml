@@ -5,13 +5,13 @@
 
 class Plotter {
 public:
-    void plotGrSignals(std::vector<ScrollingBuffer> &signals);
-    void plotBandpassFilter(std::vector<ScrollingBuffer> &signals);
-    void plotPower(std::vector<ScrollingBuffer> &signals);
-    void plotMainsFrequency(std::vector<ScrollingBuffer> &signals);
-    void plotPowerSpectrum(std::vector<Buffer> &signals);
+    static void plotGrSignals(std::vector<ScrollingBuffer> &signals);
+    static void plotBandpassFilter(std::vector<ScrollingBuffer> &signals);
+    static void plotPower(std::vector<ScrollingBuffer> &signals);
+    static void plotMainsFrequency(std::vector<ScrollingBuffer> &signals);
+    static void plotPowerSpectrum(std::vector<Buffer> &signals);
 
 private:
-    void plotSignals(std::vector<ScrollingBuffer> &signals);
-    void plotSignals(std::vector<Buffer> &signals);
+    static void plotSignals(std::vector<ScrollingBuffer> &signals);
+    static void plotSignals(std::vector<Buffer> &signals);
 };

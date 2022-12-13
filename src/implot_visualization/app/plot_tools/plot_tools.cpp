@@ -5,26 +5,26 @@
 #include <vector>
 
 void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
-    for (int i = 0; i < signals.size(); i++) {
-        if (signals[i].data.size() > 0) {
-            ImPlot::PlotLine((signals[i].signalName).c_str(),
-                    &signals[i].data[0].x,
-                    &signals[i].data[0].y,
-                    signals[i].data.size(),
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
                     0,
-                    signals[i].offset,
+                    signal.offset,
                     2 * sizeof(double));
         }
     }
 }
 
 void Plotter::plotSignals(std::vector<Buffer> &signals) {
-    for (int i = 0; i < signals.size(); i++) {
-        if (signals[i].data.size() > 0) {
-            ImPlot::PlotLine((signals[i].signalName).c_str(),
-                    &signals[i].data[0].x,
-                    &signals[i].data[0].y,
-                    signals[i].data.size(),
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
                     0,
                     0,
                     2 * sizeof(double));
@@ -37,7 +37,7 @@ void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("UTC Time", "Value", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 30.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
@@ -58,7 +58,7 @@ void Plotter::plotPower(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
@@ -71,7 +71,7 @@ void Plotter::plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
