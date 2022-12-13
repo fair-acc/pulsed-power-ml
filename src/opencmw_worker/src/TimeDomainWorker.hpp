@@ -186,10 +186,6 @@ private:
                 float relativeTimestamp = static_cast<float>(i) / _sampleRate;
                 out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
             }
-            // debug
-            if (channelValuesSize > 0) {
-                out.lastTimeStamp = out.refTriggerStamp + out.channelTimeSinceRefTrigger.back() * 1e9;
-            }
         };
 
         void copySinkData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float sample_rate, int64_t timestamp_ns) {
