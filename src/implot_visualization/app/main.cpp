@@ -14,15 +14,10 @@
 #include <fair_header.h>
 #include <plot_tools.h>
 
-// Emscripten requires to have full control over the main loop. We're going to
-// store our SDL bookkeeping variables globally. Having a single function that
-// acts as a loop prevents us to store state in the stack of said function. So
-// we need some location for this.
-SDL_Window   *g_Window    = NULL;
-SDL_GLContext g_GLContext = NULL;
-
 class AppState {
 public:
+    SDL_Window   *window    = nullptr;
+    SDL_GLContext GLContext = nullptr;
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
     double                                        lastFrequencyFetchTime = 0.0;
@@ -38,7 +33,7 @@ public:
         this->subscriptionsFrequency  = _subscriptionsFrequency;
 
         auto   clock                  = std::chrono::system_clock::now();
-        double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        double currentTime            = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
         this->lastFrequencyFetchTime  = currentTime;
     }
 };
@@ -46,6 +41,13 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
+    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
+    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -69,10 +71,10 @@ int         main(int, char **) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    g_GLContext                  = SDL_GL_CreateContext(g_Window);
-    if (!g_GLContext) {
+    auto window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    appState.window                     = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    appState.GLContext                  = SDL_GL_CreateContext(appState.window);
+    if (!appState.GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
         return 1;
     }
@@ -82,29 +84,17 @@ int         main(int, char **) {
     ImGui::CreateContext();
     ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void) io;
 
     // For an Emscripten build we are disabling file-system access, so let's not
     // attempt to do a fopen() of the imgui.ini file. You may manually call
     // LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = NULL;
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // ImGui::StyleColorsClassic();
+    io.IniFilename = nullptr;
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL2_InitForOpenGL(g_Window, g_GLContext);
+    ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGui::StyleColorsLight();
-
-    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
-    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription };
-    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
 
 #ifndef IMGUI_DISABLE_FILE_FUNCTIONS
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
@@ -129,7 +119,7 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    AppState                                      *args                    = static_cast<AppState *>(arg);
+    auto                                          *args                    = static_cast<AppState *>(arg);
     std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain = args->subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency  = args->subscriptionsFrequency;
     double                                        &lastFrequencyFetchTime  = args->lastFrequencyFetchTime;
@@ -141,8 +131,8 @@ static void main_loop(void *arg) {
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
     ImVec2               window_center = main_viewport->GetWorkCenter();
-    int                  window_height = 2 * window_center.y;
-    int                  window_width  = 2 * window_center.x;
+    float                window_height = 2 * window_center.y;
+    float                window_width  = 2 * window_center.x;
 
     // Poll and handle events (inputs, window resize, etc.)
     SDL_Event event;
@@ -164,7 +154,7 @@ static void main_loop(void *arg) {
 
         // Update frequency domain signals with 1 Hz only
         auto   clock       = std::chrono::system_clock::now();
-        double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
         if (currentTime - lastFrequencyFetchTime >= 1.0) {
             for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
                 subFreq.fetch();
@@ -227,10 +217,10 @@ static void main_loop(void *arg) {
 
     // Rendering
     ImGui::Render();
-    SDL_GL_MakeCurrent(g_Window, g_GLContext);
+    SDL_GL_MakeCurrent(args->window, args->GLContext);
     glViewport(0, 0, (int) io.DisplaySize.x, (int) io.DisplaySize.y);
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(g_Window);
+    SDL_GL_SwapWindow(args->window);
 }
