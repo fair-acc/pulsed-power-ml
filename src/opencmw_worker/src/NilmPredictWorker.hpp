@@ -28,12 +28,12 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 // data for Dashboard
 struct NilmPredictData {
     std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4 };
-    std::vector<std::string> names  = { "defaul1" };
+    std::vector<std::string> names  = { "device 1", "device 2", "device 3", "device 4", "device 5",
+         "device 6", "device 7", "device 8", "device 9", "device 10", "others" };
 };
 
 ENABLE_REFLECTION_FOR(NilmPredictData, values, names)
 
-// current structers fro sinks
 struct PQSPhiDataSink {
     int64_t timestamp;
     float   p;
@@ -47,29 +47,6 @@ struct SUIDataSink {
     std::vector<float> s;
     std::vector<float> u;
     std::vector<float> i;
-};
-
-// TODO - remove
-// data from time sink
-struct PQSPHiData {
-    int64_t            timestamp;
-    std::vector<float> pqsphiValues;
-
-    // float p;
-    // float q;
-    // float s;
-    // float phi;
-};
-
-// data from frequency sink
-struct SUIData {
-    int64_t                         timestamp;
-    std::vector<std::vector<float>> suiValues; // three vectors - S U I - len 65538
-};
-
-struct RingBufferNilmData {
-    std::vector<float> chunk;
-    int64_t            timestamp;
 };
 
 // input data for model
@@ -86,60 +63,19 @@ class NilmPredictWorker
 private:
     static const size_t RING_BUFFER_NILM_SIZE = 4096;
 
-    // const std::string   _deviceName;
-
     // const std::string  MODEL_PATH = "src/model/model_example";
-    const std::string MODEL_PATH           = "src/model/dummy_model";
+    const std::string               MODEL_PATH      = "src/model/dummy_model";
 
-    using ringbuffer_t                     = std::shared_ptr<RingBuffer<RingBufferNilmData, RING_BUFFER_NILM_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
+    std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
-    using eventpoller_t                    = std::shared_ptr<EventPoller<RingBufferNilmData, RING_BUFFER_NILM_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
+    std::shared_ptr<PQSPhiDataSink> _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
+    std::shared_ptr<SUIDataSink>    _suiDataSink    = std::make_shared<SUIDataSink>();
 
-    std::shared_ptr<cppflow::model> _model = std::make_shared<cppflow::model>(MODEL_PATH);
+    bool                            init;
+    int64_t                         timestamp_frq;
 
-    // remove - Test only
-    struct SignalData {
-        std::string        _signalName;
-        std::string        _signalUnit;
-        float              _sampleRate;
-        ringbuffer_t       _ringBuffer;
-        eventpoller_t      _eventPoller;
-        RingBufferNilmData _nilmData;
-
-        SignalData(std::string signalName, float sampleRate)
-            : _signalName(signalName), _sampleRate(sampleRate), _ringBuffer(newRingBuffer<RingBufferNilmData, RING_BUFFER_NILM_SIZE, BusySpinWaitStrategy, ProducerType::Single>()), _eventPoller(_ringBuffer->newPoller()) {
-            _ringBuffer->addGatingSequences({ _eventPoller->sequence() });
-        }
-    };
-
-    struct SignalTimeData {
-        std::string _signalName;
-        std::string _signalUnit;
-        float       _sampleRate;
-        PQSPHiData  _pqsphiData;
-    };
-
-    struct SignalFrequencyData {
-        std::string _signalName;
-        std::string _signalUnit;
-        float       _sampleRate;
-        SUIData     _suiData;
-    };
-
-    std::unordered_map<std::string, SignalData> _signalsMap; // remove - test only
-
-    // TODO -remove
-    std::shared_ptr<SignalFrequencyData> _suiSignalData    = std::make_shared<SignalFrequencyData>(); // P, Q,  S, Phi data
-    std::shared_ptr<SignalTimeData>      _pqsphiSignalData = std::make_shared<SignalTimeData>();      // S U I data
-
-    std::shared_ptr<PQSPhiDataSink>      _pqsphiDataSink   = std::make_shared<PQSPhiDataSink>();
-    std::shared_ptr<SUIDataSink>         _suiDataSink      = std::make_shared<SUIDataSink>();
-
-    bool                                 init;
-    int64_t                              timestamp_frq;
-
-    std::mutex                           nilmTimeSinksRegistryMutex;
-    std::mutex                           nilmFrequencySinksRegistryMutex;
+    std::mutex                      nilmTimeSinksRegistryMutex;
+    std::mutex                      nilmFrequencySinksRegistryMutex;
 
 public:
     std::atomic<bool>     shutdownRequested;
@@ -162,30 +98,24 @@ public:
 
                 timestamp                          = std::time(nullptr);
 
-                // static size_t           subs       = 0;
-                // if (subs != super_t::activeSubscriptions().size()) {
-                //     subs = super_t::activeSubscriptions().size();
-                //     fmt::print("NilmPredicWorker: activeSubs: {}\n", subs);
-                // }
-
                 NilmContext        context;
                 std::vector<float> data_point;
                 {
-                    /// mutex definieren - zwei definieren -
+                    std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
+                    std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
+
                     data_point = mergeValues();
 
-                    fmt::print("Data point: {}\n", data_point);
                     fmt::print("Size of data point {}\n", data_point.size());
                 }
-                // TODO merge values
 
-                // predict - model Test
-                auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
+                // dummy Tensor - model Test
+                // auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
+                // auto output = (*_model)(input);
 
                 cppflow::tensor tensor(data_point, { data_point.size(), 1 });
-                fmt::print("Tensor: {}\n", tensor);
+                // fmt::print("Tensor: {}\n", tensor);
 
-                //auto output = (*_model)(input);
                 auto output = (*_model)(tensor);
 
                 auto values = output.get_data<float>();
@@ -231,25 +161,8 @@ public:
             }
         });
 
-        // // Test PQST
-        // (*_pqsphiSignalData)._pqsphiData.pqsphiValues = std::vector<float>({.1f,.2f,.3f,.4f});
-        // (*_pqsphiSignalData)._pqsphiData.timestamp = 111;
-
-        // fmt::print("P Q S Phi: {}\n", (*_pqsphiSignalData)._pqsphiData.pqsphiValues);
-
-        // // Test S U I
-        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.01));
-        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.2));
-        // (*_suiSignalData)._suiData.suiValues.push_back(generateVector(.3));
-        // fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.size());
-        // //fmt::print("S U I size: {}\n", (*_suiSignalData)._suiData.suiValues.at(0));
-
-        std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex); // in call back machen
+        std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
         fmt::print("GR: number of time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
-
-        // // Test Merge TODO - modify
-        // std::vector<float> data_point = mergeValues();
-        // fmt::print("Test merge {}\n", data_point);
 
         std::vector<std::string> pqsohi_str{ "P", "Q", "S", "Phi" };
         // from sink take only P Q S Phi Signal
@@ -274,7 +187,6 @@ public:
 
             if (signal_names == sui_str) {
                 fmt::print("Name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
-                //_signalsFrequencyMap.insert({signal_name, SignalFrequencyData(signal_name, sample_rate)});
                 sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkFrequencyData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
             }
         }
@@ -297,8 +209,6 @@ public:
 
     // copy P Q S Phi data
     void callbackCopySinkTimeData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) {
-        // data save into SignalTimeData
-
         const float             *p   = static_cast<const float *>(input_items[0]);
         const float             *q   = static_cast<const float *>(input_items[1]);
         const float             *s   = static_cast<const float *>(input_items[2]);
@@ -329,10 +239,8 @@ public:
             fmt::print("Sink {}\n", sui_str);
 
             _suiDataSink->timestamp = timestamp;
-            // dummy velues TODO - assign
 
             for (size_t i = 0; i < nitems; i++) {
-                /* code */
                 auto offset = i * vector_size;
 
                 _suiDataSink->s.assign(s + offset, s + offset + vector_size);
@@ -343,9 +251,7 @@ public:
     }
 
 private:
-    // TODO - use simple structures
     std::vector<float> mergeValues() {
-        // TODO lock
         PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
         SUIDataSink       &suiData    = *_suiDataSink;
 
@@ -357,6 +263,13 @@ private:
             // output.clear();
             // return output;
             output.insert(output.end(), suiData.s.begin(), suiData.s.end());
+            // add 0 at the end
+            if (suiData.s.size() < 65536) {
+                auto               size = 65536 - suiData.s.size();
+                std::vector<float> suffix(size);
+                std::fill(suffix.begin(), suffix.end(), 0);
+                output.insert(output.end(), suffix.begin(), suffix.end());
+            }
         }
 
         if (suiData.u.size() == 65536) {
@@ -366,6 +279,12 @@ private:
             // output.clear();
             // return output;
             output.insert(output.end(), suiData.u.begin(), suiData.u.end());
+            if (suiData.u.size() < 65536) {
+                auto               size = 65536 - suiData.u.size();
+                std::vector<float> suffix(size);
+                std::fill(suffix.begin(), suffix.end(), 0);
+                output.insert(output.end(), suffix.begin(), suffix.end());
+            }
         }
 
         if (suiData.i.size() == 65536) {
@@ -374,7 +293,14 @@ private:
             fmt::print("Warning: incorrect i size {}\n", suiData.i.size());
             // output.clear();
             // return output;
+
             output.insert(output.end(), suiData.i.begin(), suiData.i.end());
+            if (suiData.i.size() < 65536) {
+                auto               size = 65536 - suiData.i.size();
+                std::vector<float> suffix(size);
+                std::fill(suffix.begin(), suffix.end(), 0);
+                output.insert(output.end(), suffix.begin(), suffix.end());
+            }
         }
 
         output.push_back(pqsphiData.p);
@@ -385,7 +311,7 @@ private:
         return output;
     }
 
-    // Test - remove
+    // Test - dummy vector
     std::vector<float> generateVector(float init_f) {
         std::vector<float> v;
         for (int i = 0; i < 65536; i++) {
@@ -393,41 +319,6 @@ private:
         }
 
         return v;
-    }
-
-    // return data_point - input for model
-    std::vector<float> mergeValues_old() {
-        // TODO lock
-        PQSPHiData &pqsphiData = (*_pqsphiSignalData)._pqsphiData;
-        SUIData    &suiData    = (*_suiSignalData)._suiData;
-
-        // TODOcheck
-        std::vector<float> output;
-        if (pqsphiData.pqsphiValues.size() != 4) {
-            fmt::print("Error: incolmplete P Q S Phi signals {}\n", pqsphiData.pqsphiValues.size());
-
-            return output;
-        }
-
-        if (suiData.suiValues.size() != 3) {
-            fmt::print("Error: incomplate S U I vetors {}\n", suiData.suiValues.size());
-            return output;
-        }
-
-        int counter = 0;
-        for (auto suiVector : suiData.suiValues) {
-            if (suiVector.size() != 65536) {
-                fmt::print("Error: incorrect sieze {} of vector {} ", suiVector.size(), counter);
-                output.clear();
-                return output;
-            }
-
-            output.insert(output.end(), suiVector.begin(), suiVector.end());
-            counter++;
-        }
-
-        output.insert(output.end(), pqsphiData.pqsphiValues.begin(), pqsphiData.pqsphiValues.end());
-        return output;
     }
 };
 
