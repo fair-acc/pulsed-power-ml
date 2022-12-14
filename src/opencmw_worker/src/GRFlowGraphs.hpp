@@ -56,15 +56,15 @@ public:
         auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 2.0f * PI / 3.0f);
 
         auto band_pass_filter_current0  = gr::filter::fft_filter_fff::make(
-                 bp_decimation,
-                 gr::filter::firdes::band_pass(
-                         1,
-                         in_samp_rate,
-                         bp_low_cut,
-                         bp_high_cut,
-                         bp_trans,
-                         gr::fft::window::win_type::WIN_HAMMING,
-                         6.76));
+                bp_decimation,
+                gr::filter::firdes::band_pass(
+                        1,
+                        in_samp_rate,
+                        bp_low_cut,
+                        bp_high_cut,
+                        bp_trans,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto band_pass_filter_current1 = gr::filter::fft_filter_fff::make(
                 bp_decimation,
                 gr::filter::firdes::band_pass(
@@ -137,14 +137,14 @@ public:
         auto blocks_multiply_phase2_3     = gr::blocks::multiply_ff::make(1);
 
         auto low_pass_filter_current0_0   = gr::filter::fft_filter_fff::make(
-                  lp_decimation,
-                  gr::filter::firdes::low_pass(
-                          1,
-                          out_samp_rate,
-                          60,
-                          10,
-                          gr::fft::window::win_type::WIN_HAMMING,
-                          6.76));
+                lp_decimation,
+                gr::filter::firdes::low_pass(
+                        1,
+                        out_samp_rate,
+                        60,
+                        10,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
                 lp_decimation,
                 gr::filter::firdes::low_pass(
@@ -279,9 +279,9 @@ public:
         auto throttle_block_bandpass_voltage0      = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
 
         auto pulsed_power_opencmw_time_sink_power  = gr::pulsed_power::opencmw_time_sink::make(
-                 { "P", "Q", "S", "phi" },
-                 {},
-                 out_samp_rate);
+                { "P", "Q", "S", "phi" },
+                {},
+                out_samp_rate);
         pulsed_power_opencmw_time_sink_power->set_max_noutput_items(noutput_items);
         auto pulsed_power_opencmw_time_sink_raw_0 = gr::pulsed_power::opencmw_time_sink::make(
                 { "U", "I" },
@@ -466,15 +466,15 @@ public:
         auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(in_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f);
 
         auto band_pass_filter_current0  = gr::filter::fft_filter_fff::make(
-                 bp_decimation,
-                 gr::filter::firdes::band_pass(
-                         1,
-                         in_samp_rate,
-                         bp_low_cut,
-                         bp_high_cut,
-                         bp_trans,
-                         gr::fft::window::win_type::WIN_HAMMING,
-                         6.76));
+                bp_decimation,
+                gr::filter::firdes::band_pass(
+                        1,
+                        in_samp_rate,
+                        bp_low_cut,
+                        bp_high_cut,
+                        bp_trans,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto band_pass_filter_voltage0 = gr::filter::fft_filter_fff::make(
                 bp_decimation,
                 gr::filter::firdes::band_pass(
@@ -495,14 +495,14 @@ public:
         auto blocks_multiply_phase0_3     = gr::blocks::multiply_ff::make(1);
 
         auto low_pass_filter_current0_0   = gr::filter::fft_filter_fff::make(
-                  lp_decimation,
-                  gr::filter::firdes::low_pass(
-                          1,
-                          out_samp_rate,
-                          60,
-                          10,
-                          gr::fft::window::win_type::WIN_HAMMING,
-                          6.76));
+                lp_decimation,
+                gr::filter::firdes::low_pass(
+                        1,
+                        out_samp_rate,
+                        60,
+                        10,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
                 lp_decimation,
                 gr::filter::firdes::low_pass(
@@ -618,24 +618,51 @@ public:
     GRFlowGraphOnePhasePicoscope(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // parameters
-        float  in_samp_rate              = 20'000.0f;
-        float  in_samp_rate_2            = 32'000.0f;
-        float  out_samp_rate             = 1'000.0f;
-        int    bp_decimation             = 20;
-        double bp_high_cut               = 80;
-        double bp_low_cut                = 20;
-        double bp_trans                  = 10;
-        int    lp_decimation             = 1;
-        double current_correction_factor = 2.5;
-        double voltage_correction_factor = 100;
+        float                                 in_samp_rate                = 20'000.0f;
+        float                                 in_samp_rate_2              = 32'000.0f;
+        float                                 out_samp_rate               = 1'000.0f;
+        int                                   bp_decimation               = 20;
+        double                                bp_high_cut                 = 80;
+        double                                bp_low_cut                  = 20;
+        double                                bp_trans                    = 10;
+        int                                   lp_decimation               = 1;
+        float                                 current_correction_factor   = 2.5f;
+        float                                 voltage_correction_factor   = 100.0f;
+        gr::pulsed_power::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power::DOWNSAMPLING_MODE_NONE;
+        gr::pulsed_power::coupling_t          picoscope_coupling          = gr::pulsed_power::AC_1M;
+        gr::pulsed_power::trigger_direction_t picoscope_trigger_direction = gr::pulsed_power::TRIGGER_DIRECTION_RISING;
 
         // blocks
-        auto picoscope_source          = gr::pulsed_power::picoscope_4000a_source::make("EW413/152", true);
+        auto picoscope_source = gr::pulsed_power::picoscope_4000a_source::make("", true);
+        picoscope_source->set_trigger_once(false);
+        picoscope_source->set_samp_rate(in_samp_rate);
+        picoscope_source->set_downsampling(picoscope_downsampling_mode, 1);
+        picoscope_source->set_aichan_a(true, 5, picoscope_coupling, 0.0);
+        picoscope_source->set_aichan_b(true, 1, picoscope_coupling, 0.0);
+        picoscope_source->set_aichan_c(false, 5.0, picoscope_coupling, 5.0);
+        picoscope_source->set_aichan_d(false, 5.0, picoscope_coupling, 0.0);
+        picoscope_source->set_aichan_e(false, 5, picoscope_coupling, 0.0);
+        picoscope_source->set_aichan_f(false, 5, picoscope_coupling, 0.0);
+        picoscope_source->set_aichan_g(false, 5.0, picoscope_coupling, 5.0);
+        picoscope_source->set_aichan_h(false, 5.0, picoscope_coupling, 0.0);
+
+        if ("None" != "None") {
+            picoscope_source->set_aichan_trigger("None", picoscope_trigger_direction, 2.5);
+        }
+
+        if ("Streaming" == "Streaming") {
+            picoscope_source->set_nr_buffers(64);
+            picoscope_source->set_driver_buffer_size(102400);
+            picoscope_source->set_streaming(0.0005);
+            picoscope_source->set_buffer_size(204800);
+        } else {
+            picoscope_source->set_rapid_block(5);
+        }
 
         auto null_sink_picoscope       = gr::blocks::null_sink::make(sizeof(float));
 
-        auto blocks_multiply_current0  = gr::blocks::multiply_ff::make(current_correction_factor);
-        auto blocks_multiply_voltage0  = gr::blocks::multiply_ff::make(voltage_correction_factor);
+        auto blocks_multiply_current0  = gr::blocks::multiply_const_ff::make(current_correction_factor);
+        auto blocks_multiply_voltage0  = gr::blocks::multiply_const_ff::make(voltage_correction_factor);
 
         auto band_pass_filter_current0 = gr::filter::fft_filter_fff::make(
                 bp_decimation,
@@ -667,14 +694,14 @@ public:
         auto blocks_multiply_phase0_3     = gr::blocks::multiply_ff::make(1);
 
         auto low_pass_filter_current0_0   = gr::filter::fft_filter_fff::make(
-                  lp_decimation,
-                  gr::filter::firdes::low_pass(
-                          1,
-                          out_samp_rate,
-                          60,
-                          10,
-                          gr::fft::window::win_type::WIN_HAMMING,
-                          6.76));
+                lp_decimation,
+                gr::filter::firdes::low_pass(
+                        1,
+                        out_samp_rate,
+                        60,
+                        10,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
                 lp_decimation,
                 gr::filter::firdes::low_pass(
@@ -713,15 +740,6 @@ public:
 
         auto pulsed_power_power_calc_ff_0_0       = gr::pulsed_power::power_calc_ff::make(0.0001);
 
-        auto throttle_block_p                     = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-        auto throttle_block_q                     = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-        auto throttle_block_s                     = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-        auto throttle_block_phi                   = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-        auto throttle_block_raw_current0          = gr::blocks::throttle::make(sizeof(float) * 1, in_samp_rate, true);
-        auto throttle_block_raw_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, in_samp_rate, true);
-        auto throttle_block_bandpass_current0     = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-        auto throttle_block_bandpass_voltage0     = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate, true);
-
         auto pulsed_power_opencmw_time_sink_power = gr::pulsed_power::opencmw_time_sink::make(
                 { "P", "Q", "S", "phi" },
                 {},
@@ -741,37 +759,33 @@ public:
         // Connections:
         // Phase 0:
         top->hier_block2::connect(picoscope_source, 0, blocks_multiply_voltage0, 0);
-        top->hier_block2::connect(picoscope_source, 0, throttle_block_raw_current0, 0);
-        top->hier_block2::connect(picoscope_source, 8, blocks_multiply_current0, 0);
-        top->hier_block2::connect(picoscope_source, 0, throttle_block_raw_voltage0, 0);
+        top->hier_block2::connect(picoscope_source, 2, blocks_multiply_current0, 0);
+        // top->hier_block2::connect(blocks_multiply_voltage0, 0, pulsed_power_opencmw_time_sink_raw_0, 0); // U_0
+        // top->hier_block2::connect(blocks_multiply_current0, 0, pulsed_power_opencmw_time_sink_raw_0, 1); // I_0
         top->hier_block2::connect(picoscope_source, 1, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 2, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 3, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 4, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 5, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 6, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 7, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 9, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 10, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 11, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 12, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 13, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 14, null_sink_picoscope, 0);
-        top->hier_block2::connect(picoscope_source, 15, null_sink_picoscope, 0);
+        top->hier_block2::connect(picoscope_source, 8, null_sink_picoscope, 1);
+        top->hier_block2::connect(picoscope_source, 3, null_sink_picoscope, 2);
+        top->hier_block2::connect(picoscope_source, 4, null_sink_picoscope, 3);
+        top->hier_block2::connect(picoscope_source, 5, null_sink_picoscope, 4);
+        top->hier_block2::connect(picoscope_source, 6, null_sink_picoscope, 5);
+        top->hier_block2::connect(picoscope_source, 7, null_sink_picoscope, 6);
+        top->hier_block2::connect(picoscope_source, 9, null_sink_picoscope, 7);
+        top->hier_block2::connect(picoscope_source, 10, null_sink_picoscope, 8);
+        top->hier_block2::connect(picoscope_source, 11, null_sink_picoscope, 9);
+        top->hier_block2::connect(picoscope_source, 12, null_sink_picoscope, 10);
+        top->hier_block2::connect(picoscope_source, 13, null_sink_picoscope, 11);
+        top->hier_block2::connect(picoscope_source, 14, null_sink_picoscope, 12);
+        top->hier_block2::connect(picoscope_source, 15, null_sink_picoscope, 13);
         top->hier_block2::connect(blocks_multiply_current0, 0, band_pass_filter_current0, 0);
-        top->hier_block2::connect(blocks_multiply_current0, 0, throttle_block_raw_current0, 0);
         top->hier_block2::connect(blocks_multiply_voltage0, 0, band_pass_filter_voltage0, 0);
-        top->hier_block2::connect(blocks_multiply_voltage0, 0, throttle_block_raw_voltage0, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_0, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_1, 0);
+        top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
+        top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_opencmw_time_sink_bpf_0, 1);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_2, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_3, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_power_calc_ff_0_0, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_opencmw_time_sink_bpf_0, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_opencmw_time_sink_bpf_0, 1);
-        top->hier_block2::connect(throttle_block_raw_voltage0, 0, pulsed_power_opencmw_time_sink_raw_0, 0); // U_0
-        top->hier_block2::connect(throttle_block_raw_current0, 0, pulsed_power_opencmw_time_sink_raw_0, 1); // I_0
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_2, 1);
         top->hier_block2::connect(analog_sig_source_phase0_cos, 0, blocks_multiply_phase0_1, 1);
