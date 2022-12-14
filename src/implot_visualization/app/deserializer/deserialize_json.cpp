@@ -56,18 +56,30 @@ Acquisition::Acquisition(int _numSignals) {
 void Acquisition::addToBuffers() {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
+    int    stride            = this->strideArray.dims[1];
 
     // Destride array
-    for (int i = 0; i < signalNames.size(); i++) {
+    for (int i = 0; i < strideArray.dims[0]; i++) {
         this->buffers[i].signalName = this->signalNames[i];
-        int stride                  = this->strideArray.dims[1];
-        int offset                  = i * stride;
+        int offset2                 = i * stride;
 
+        std::cout << "DestrideArray start" << std::endl; // debug
+        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+            std::cout << "So eine Kacke!" << std::endl; // debug
+        }
+        // std::cout << "Array dims: [" << strideArray.dims[0] << ", " << strideArray.dims[1] << "], "; // debug
+        // std::cout << "Array length: " << strideArray.values.size() << std::endl;                     // debug
         for (int j = 0; j < stride; j++) {
+            // std::cout << "Calculate timestamp" << std::endl;
+            // std::cout << "j: " << j << ", relativeTimestamps length: " << relativeTimestamps.size() << std::endl; // debug
             absoluteTimestamp = this->refTrigger_s + this->relativeTimestamps[j];
-            value             = this->strideArray.values[offset + j];
+            // std::cout << "Calculate value" << std::endl;
+            // std::cout << "OffsetIndex: " << (offset + j) << ", Array length: " << strideArray.values.size() << std::endl; // debug
+            value = this->strideArray.values[offset2 + j];
+            // std::cout << "addPoint()" << std::endl;
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
+        std::cout << "DestrideArray finished" << std::endl; // debug
     }
 }
 
@@ -96,10 +108,16 @@ void Acquisition::deserialize() {
             this->strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
+    std::cout << "SetLastTImestamp start" << std::endl; // debug
 
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+    std::cout << "SetLastTImestamp finished" << std::endl; // debug
+
+    std::cout << "AddToBuffers start" << std::endl; // debug
+
     addToBuffers();
+    std::cout << "AddToBuffers finished" << std::endl; // debug
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}

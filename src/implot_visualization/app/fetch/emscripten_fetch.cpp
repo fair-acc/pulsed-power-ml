@@ -10,9 +10,9 @@ template<typename T>
 void Subscription<T>::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     this->acquisition.jsonString.assign(fetch->data, fetch->numBytes);
-    this->fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
+    this->fetchSuccessful = true;
 }
 
 template<typename T>
@@ -65,11 +65,13 @@ void Subscription<T>::fetch() {
     attr.userData   = this;
 
     if (this->fetchFinished) {
-        emscripten_fetch(&attr, this->extendedUrl.c_str());
         this->fetchFinished = false;
+        emscripten_fetch(&attr, this->extendedUrl.c_str());
     }
     if (fetchSuccessful) {
+        std::cout << "Deserialization start" << std::endl; // debug
         this->acquisition.deserialize();
+        std::cout << "Deserialization finished" << std::endl; // debug
         updateUrl();
         this->fetchSuccessful = false;
         this->fetchFinished   = true;
