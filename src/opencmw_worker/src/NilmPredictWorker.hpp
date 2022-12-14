@@ -61,10 +61,8 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker
     : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
 private:
-    static const size_t RING_BUFFER_NILM_SIZE = 4096;
-
     // const std::string  MODEL_PATH = "src/model/model_example";
-    const std::string               MODEL_PATH      = "src/model/dummy_model";
+    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
 
     std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
@@ -251,12 +249,14 @@ public:
     }
 
 private:
+    size_t             fftSize = 131072;
+
     std::vector<float> mergeValues() {
         PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
         SUIDataSink       &suiData    = *_suiDataSink;
 
         std::vector<float> output;
-        if (suiData.s.size() == 65536) {
+        if (suiData.s.size() == fftSize) {
             output.insert(output.end(), suiData.s.begin(), suiData.s.end());
         } else {
             fmt::print("Warning: incorrect s size {}\n", suiData.s.size());
@@ -264,30 +264,30 @@ private:
             // return output;
             output.insert(output.end(), suiData.s.begin(), suiData.s.end());
             // add 0 at the end
-            if (suiData.s.size() < 65536) {
-                auto               size = 65536 - suiData.s.size();
+            if (suiData.s.size() < fftSize) {
+                auto               size = fftSize - suiData.s.size();
                 std::vector<float> suffix(size);
                 std::fill(suffix.begin(), suffix.end(), 0);
                 output.insert(output.end(), suffix.begin(), suffix.end());
             }
         }
 
-        if (suiData.u.size() == 65536) {
+        if (suiData.u.size() == fftSize) {
             output.insert(output.end(), suiData.u.begin(), suiData.u.end());
         } else {
             fmt::print("Warning: incorrect u size {}\n", suiData.u.size());
             // output.clear();
             // return output;
             output.insert(output.end(), suiData.u.begin(), suiData.u.end());
-            if (suiData.u.size() < 65536) {
-                auto               size = 65536 - suiData.u.size();
+            if (suiData.u.size() < fftSize) {
+                auto               size = fftSize - suiData.u.size();
                 std::vector<float> suffix(size);
                 std::fill(suffix.begin(), suffix.end(), 0);
                 output.insert(output.end(), suffix.begin(), suffix.end());
             }
         }
 
-        if (suiData.i.size() == 65536) {
+        if (suiData.i.size() == fftSize) {
             output.insert(output.end(), suiData.i.begin(), suiData.i.end());
         } else {
             fmt::print("Warning: incorrect i size {}\n", suiData.i.size());
@@ -295,8 +295,8 @@ private:
             // return output;
 
             output.insert(output.end(), suiData.i.begin(), suiData.i.end());
-            if (suiData.i.size() < 65536) {
-                auto               size = 65536 - suiData.i.size();
+            if (suiData.i.size() < fftSize) {
+                auto               size = fftSize - suiData.i.size();
                 std::vector<float> suffix(size);
                 std::fill(suffix.begin(), suffix.end(), 0);
                 output.insert(output.end(), suffix.begin(), suffix.end());
@@ -314,7 +314,7 @@ private:
     // Test - dummy vector
     std::vector<float> generateVector(float init_f) {
         std::vector<float> v;
-        for (int i = 0; i < 65536; i++) {
+        for (int i = 0; i < fftSize; i++) {
             v.push_back(i * init_f);
         }
 
