@@ -1,7 +1,7 @@
 #include <chrono>
+#include <cstdio>
 #include <SDL.h>
 #include <SDL_opengles2.h>
-#include <cstdio>
 #include <vector>
 
 #include <imgui.h>
@@ -11,18 +11,18 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
-#include <plot_tools.h>
-#include <IconsFontAwesome6.h>
 #include <fair_header.h>
+#include <IconsFontAwesome6.h>
+#include <plot_tools.h>
 
 class AppState {
 public:
-    SDL_Window   *window    = nullptr;
-    SDL_GLContext GLContext = nullptr;
+    SDL_Window                                   *window    = nullptr;
+    SDL_GLContext                                 GLContext = nullptr;
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
     double                                        lastFrequencyFetchTime = 0.0;
-    struct AppFonts{
+    struct AppFonts {
         ImFont *title;
         ImFont *text;
         ImFont *fontawesome;
@@ -72,9 +72,9 @@ int         main(int, char **) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    auto window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    appState.window                     = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    appState.GLContext                  = SDL_GL_CreateContext(appState.window);
+    auto window_flags  = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    appState.window    = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
         return 1;
@@ -99,11 +99,11 @@ int         main(int, char **) {
 
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
     // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
-    appState.fonts.text = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
+    appState.fonts.text  = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
     appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
-    //appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
+    // appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
 
-    ImVector<ImWchar> symbols;
+    ImVector<ImWchar>        symbols;
     ImFontGlyphRangesBuilder builder;
     builder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
     builder.AddText(ICON_FA_CIRCLE_QUESTION);
