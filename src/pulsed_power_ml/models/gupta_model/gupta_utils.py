@@ -455,7 +455,14 @@ def tf_subtract_background(raw_spectrum: tf.Tensor, background: tf.Tensor) -> tf
     return tf.math.subtract(x=raw_spectrum, y=background, name="subtract_background")
 
 
-@tf.function
+@tf.function(
+    input_signature=[
+        tf.TensorSpec(shape=(2**16), dtype=tf.float32),
+        tf.TensorSpec(shape=(), dtype=tf.int32),
+        tf.TensorSpec(shape=(), dtype=tf.int32),
+        tf.TensorSpec(shape=(), dtype=tf.int32)
+    ]
+)
 def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
                                 n_peaks_max: tf.Tensor,
                                 fft_size_real: tf.Tensor,
@@ -524,8 +531,8 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     # ToDo: There is probably a more efficient way to implement this loop (see tf.while_loop)
     feature_vector = tf.TensorArray(
         dtype=tf.float32,
-        size=0,
-        dynamic_size=True
+        size=n_peaks_max * 3,
+        dynamic_size=False
     )
     for i in tf.range(tf.size(k_largest_peaks_indices)):
         low_index = k_largest_peaks_lower_indices[i]
@@ -544,12 +551,15 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
             y=amplitudes * switch_off_factor
         )
 
-        feature_vector.write(i*3, a * switch_off_factor)
-        feature_vector.write(i*3+1, mu)
-        feature_vector.write(i*3+2, sigma)
+        feature_vector = feature_vector.write(i*3, a * switch_off_factor)
+        feature_vector = feature_vector.write(i*3+1, mu)
+        feature_vector = feature_vector.write(i*3+2, sigma)
+
 
     feature_tensor = feature_vector.stack()
 
+    feature_vector.close()
+    tf.print(feature_tensor)
     return feature_tensor
 
 

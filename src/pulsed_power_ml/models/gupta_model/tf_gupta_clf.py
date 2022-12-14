@@ -135,6 +135,13 @@ class TFGuptaClassifier(keras.Model):
         self.training_data_features_scaled = tf.math.divide(self.training_data_features_raw,
                                                             self.scale_tensor[:,0])
 
+        self.feature_vector = tf.Variable(
+            initial_value=tf.ones(shape=(3 * self.n_peaks_max, 1), dtype=tf.float32),
+            dtype=tf.float32,
+            trainable=False,
+            shape=(3 * self.n_peaks_max, 1)
+        )
+
         return
 
     @tf.function(
@@ -498,16 +505,21 @@ class TFGuptaClassifier(keras.Model):
         updated_state_vector
         """
         # 1. Calculate feature vector
-        feature_vector = tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
-                                                     n_peaks_max=self.n_peaks_max,
-                                                     fft_size_real=self.fft_size_real,
-                                                     sample_rate=self.sample_rate)
+        # feature_vector = tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
+        #                                              n_peaks_max=self.n_peaks_max,
+        #                                              fft_size_real=self.fft_size_real,
+        #                                              sample_rate=self.sample_rate)
+        self.feature_vector.assign(tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
+                                                               n_peaks_max=self.n_peaks_max,
+                                                               fft_size_real=self.fft_size_real,
+                                                               sample_rate=self.sample_rate))
+
 
         # 2. Classify event
-        distances, event_class = self.call_knn(feature_vector)
+        distances, event_class = self.call_knn(self.feature_vector)
 
         # Check if known or unknown event via the smallest distance
-        tf.cond(
+        event_class = tf.cond(
             pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),
             true_fn=lambda: tf.one_hot(indices=self.n_known_appliances,
                                        depth=tf.math.add(self.n_known_appliances, tf.constant(1, dtype=tf.int32))),
@@ -591,9 +603,9 @@ if __name__ == "__main__":
 
     # load training data
     training_data_folder = ("/home/thomas/projects/nilm_at_fair/training_data/training_data_maria/fair/"
-                            "labels_20221202_9peaks_validation")
-    features_file = f"{training_data_folder}/Features_ApparentPower_1_p.csv"
-    labels_file = f"{training_data_folder}/Labels_ApparentPower_1_p.csv"
+                            "labels_20221202_9peaks")
+    features_file = f"{training_data_folder}/Features_ApparentPower_0.7_p.csv"
+    labels_file = f"{training_data_folder}/Labels_ApparentPower_0.7_p.csv"
 
     features = tf.constant(value=pd.read_csv(features_file).values, dtype=tf.float32)
     labels = tf.constant(value=pd.read_csv(labels_file).values, dtype=tf.float32)
@@ -605,32 +617,51 @@ if __name__ == "__main__":
     )
 
     # Instantiate model
-    model = TFGuptaClassifier(
-        background_n=tf.constant(5, dtype=tf.int32),
-        # n_peaks_max=tf.constant(10, dtype=tf.int32),  # Training data has 10 peaks...
+    # model = TFGuptaClassifier(
+    #     background_n=tf.constant(10, dtype=tf.int32),
+    #     # n_peaks_max=tf.constant(10, dtype=tf.int32),  # Training data has 10 peaks...
+    #     apparent_power_list=apparent_power_list,
+    #     n_neighbors=tf.constant(3, dtype=tf.int32),
+    #     training_data_features=features,
+    #     training_data_labels=labels,
+    #     n_known_appliances=tf.constant(11, dtype=tf.int32),
+    # )
+
+    tf_model = TFGuptaClassifier(
+        background_n=tf.constant(10, dtype=tf.int32),
+        n_known_appliances=tf.constant(11, dtype=tf.int32),
         apparent_power_list=apparent_power_list,
         n_neighbors=tf.constant(3, dtype=tf.int32),
-        training_data_features=features,
-        training_data_labels=labels,
-        n_known_appliances=tf.constant(11, dtype=tf.int32),
+        training_data_features=tf.constant(features, dtype=tf.float32),
+        training_data_labels=tf.constant(labels, dtype=tf.float32),
+        switching_offset=tf.constant(1, dtype=tf.int32),
+        distance_threshold=tf.constant(100, dtype=tf.float32)
     )
 
-    # Fit KNN
-    # model.fit_knn(X=features, y=labels)
-
     # Load GR data
-    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-11-16_training_data/mixed1"
+    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-11-16_training_data/r1"
     data_point_array = read_training_files(path_to_folder=gr_data_folder,
                                            fft_size=2**17)
 
     # Apply model to data
     state_vector_list = list()
-    for data_point in data_point_array[:20]:
-        state_vector = model(tf.constant(10**data_point, dtype=tf.float32))
+    for data_point in data_point_array:
+        state_vector = tf_model(tf.constant(data_point, dtype=tf.float32))
         state_vector_list.append(state_vector)
+        print(state_vector)
 
     # print(state_vector_list)
 
     # Save model
-    tf.saved_model.save(model, "TFGuptaSaveTest")
+    tf.saved_model.save(tf_model, "TFGuptaModel_v1-0")
     # model.save("TFGuptaSaveTest")
+
+    loaded_model = tf.saved_model.load("TFGuptaModel_v1-0")
+
+    new_state_vector_list = list()
+
+    for data_point in data_point_array:
+        state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
+        new_state_vector_list.append(state_vector)
+
+    print(loaded_model)
