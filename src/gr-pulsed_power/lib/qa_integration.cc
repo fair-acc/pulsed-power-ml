@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (1.0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (-1.0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (0), boost::test_tools::tolerance(0.001));
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) //What happens if there is no sample?
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (0), boost::test_tools::tolerance(0.001));
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     float* out = out_float;
 
     // Call function
-    integration_block->integrate(out, sample, num_samples);
+    integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
     BOOST_TEST(out[0] == (0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));

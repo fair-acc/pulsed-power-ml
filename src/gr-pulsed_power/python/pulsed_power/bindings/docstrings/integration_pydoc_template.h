@@ -28,3 +28,6 @@ static const char* __doc_gr_pulsed_power_integration_make = R"doc()doc";
 
 
 static const char* __doc_gr_pulsed_power_integration_integrate = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_integration_add_new_steps = R"doc()doc";
