@@ -176,7 +176,7 @@ int main() {
 
     // flowgraph setup
     // GRFlowGraph flowgraph(1024);
-    GRFlowGraphOnePhaseSimulated flowgraph(1024);
+    GRFlowGraphOnePhasePicoscope flowgraph(1024);
     flowgraph.start();
 
     // OpenCMW workers
