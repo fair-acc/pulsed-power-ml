@@ -24,8 +24,12 @@ private:
     time_point<system_clock> last_reset;
     float sum;
 
-    int get_values_from_file(time_point<system_clock>& last_reset, time_point<system_clock>& last_save, float& sum);
-    int write_to_file(time_point<system_clock> last_reset, time_point<system_clock> last_save, float sum);
+    int get_values_from_file(time_point<system_clock>& last_reset,
+                             time_point<system_clock>& last_save,
+                             float& sum);
+    int write_to_file(time_point<system_clock> last_reset,
+                      time_point<system_clock> last_save,
+                      float sum);
 
 public:
     integration_impl(float step_size);
@@ -33,7 +37,10 @@ public:
 
     void add_new_steps(float* out, const float* sample, int noutput_items) override;
 
-    void integrate(float& out, const float* sample, int noutput_items, bool calculate_with_last_value) override;
+    void integrate(float& out,
+                   const float* sample,
+                   int noutput_items,
+                   bool calculate_with_last_value) override;
 
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);

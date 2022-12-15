@@ -41,10 +41,15 @@ public:
      * @param min The result of the min calculation
      * @param max The result of the max calculation
      * @param std_deviation The result of the std_deviation calculation
-     * @param in The inputs 
+     * @param in The inputs
      * @param ninput_items Number of samples
      */
-    virtual void calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items) = 0;
+    virtual void calculate_statistics(float& mean,
+                                      float& min,
+                                      float& max,
+                                      float& std_deviation,
+                                      const float* in,
+                                      int ninput_items) = 0;
 };
 
 } // namespace pulsed_power
