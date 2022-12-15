@@ -9,7 +9,6 @@
 #include <gnuradio/io_signature.h>
 #include <fstream>
 #include <iostream>
-#include <fstream>
 
 namespace gr {
 namespace pulsed_power {
@@ -25,16 +24,17 @@ integration::sptr integration::make(int decimation, int sample_rate)
 /*
  * The private constructor
  */
-  integration_impl::integration_impl(int decimation, int sample_rate)
+integration_impl::integration_impl(int decimation, int sample_rate)
     : gr::sync_decimator("integration",
-                gr::io_signature::make(
-                    1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
-                gr::io_signature::make(
-		    1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)),
-	   decimation)
+                         gr::io_signature::make(
+                             1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
+                         gr::io_signature::make(1 /* min outputs */,
+                                                1 /*max outputs */,
+                                                sizeof(output_type)),
+                         decimation)
 {
     d_decimation = decimation;
-    d_step_size = 1.0/sample_rate;
+    d_step_size = 1.0 / sample_rate;
 }
 
 /*
@@ -43,8 +43,8 @@ integration::sptr integration::make(int decimation, int sample_rate)
 integration_impl::~integration_impl() {}
 
 int integration_impl::work(int noutput_items,
-			   gr_vector_const_void_star& input_items,
-			   gr_vector_void_star& output_items)
+                           gr_vector_const_void_star& input_items,
+                           gr_vector_void_star& output_items)
 {
     auto in = static_cast<const input_type*>(input_items[0]);
     auto out = static_cast<output_type*>(output_items[0]);
@@ -56,8 +56,12 @@ int integration_impl::work(int noutput_items,
     return noutput_items;
 }
 
-void integration_impl::add_new_steps(float* out, const float* sample, int number_of_calculations) {
-    std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+void integration_impl::add_new_steps(float* out,
+                                     const float* sample,
+                                     int number_of_calculations)
+{
+    std::chrono::time_point<std::chrono::system_clock> now =
+        std::chrono::system_clock::now();
     bool calculate_with_last_value = true;
     bool rewrite_save_file;
     // new startup
@@ -74,34 +78,41 @@ void integration_impl::add_new_steps(float* out, const float* sample, int number
     // write current sum to file every 10 minutes
     if (now - last_save > std::chrono::minutes(10)) {
         rewrite_save_file = true;
-	last_save = now;
+        last_save = now;
     }
     // reset every 30 days (also if no vlaues from file?)
     if (now - last_reset > std::chrono::hours(24 * 30)) {
         rewrite_save_file = true;
-	last_save = now;
-	last_reset = now;
-	sum = 0;
+        last_save = now;
+        last_reset = now;
+        sum = 0;
     }
 
     for (int i = 0; i < number_of_calculations; i++) {
         float int_value;
-	integrate(int_value, &sample[i*d_decimation], d_decimation, calculate_with_last_value);
-	sum = sum + int_value;
-	out[i] = sum;
-	last_value = sample[((i+1)*d_decimation)-1];
-	calculate_with_last_value = true;
+        integrate(int_value,
+                  &sample[i * d_decimation],
+                  d_decimation,
+                  calculate_with_last_value);
+        sum = sum + int_value;
+        out[i] = sum;
+        last_value = sample[((i + 1) * d_decimation) - 1];
+        calculate_with_last_value = true;
     }
 
     if (rewrite_save_file) {
         int result = write_to_file(last_reset, last_save, sum);
-	if (result == -1) {
-	    std::cout << "Failed to write to file" << std::endl;
-	}
+        if (result == -1) {
+            std::cout << "Failed to write to file" << std::endl;
+        }
     }
 }
 
-int integration_impl::get_values_from_file(std::chrono::time_point<std::chrono::system_clock>& last_reset, std::chrono::time_point<std::chrono::system_clock>& last_save, float& sum) {
+int integration_impl::get_values_from_file(
+    std::chrono::time_point<std::chrono::system_clock>& last_reset,
+    std::chrono::time_point<std::chrono::system_clock>& last_save,
+    float& sum)
+{
     try {
         long last_reset_duration;
         long last_save_duration;
@@ -153,7 +164,10 @@ int integration_impl::write_to_file(
     }
 }
 
-void integration_impl::integrate(float& out, const float* sample, int n_samples, bool calculate_with_last_value)
+void integration_impl::integrate(float& out,
+                                 const float* sample,
+                                 int n_samples,
+                                 bool calculate_with_last_value)
 {
     double value = 0;
     if (calculate_with_last_value) {
