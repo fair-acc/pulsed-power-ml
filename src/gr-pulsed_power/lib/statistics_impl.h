@@ -16,18 +16,17 @@ namespace pulsed_power {
 class statistics_impl : public statistics
 {
 public:
-    statistics_impl();
+    statistics_impl(int decimation);
     ~statistics_impl();
 
     void calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items) override;
 
-    // Where all the action really happens
-    void forecast(int noutput_items, gr_vector_int& ninput_items_required);
+    int work(int noutput_items,
+	     gr_vector_const_void_star& input_items,
+	     gr_vector_void_star& output_items) override;
 
-    int general_work(int noutput_items,
-                     gr_vector_int& ninput_items,
-                     gr_vector_const_void_star& input_items,
-                     gr_vector_void_star& output_items);
+private:
+  int d_decimation;
 };
 
 } // namespace pulsed_power

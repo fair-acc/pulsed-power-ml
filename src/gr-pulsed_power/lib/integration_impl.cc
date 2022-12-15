@@ -15,23 +15,25 @@ namespace pulsed_power {
 
 using input_type = float;
 using output_type = float;
-integration::sptr integration::make(float sample_rate)
+integration::sptr integration::make(int decimation, int sample_rate)
 {
-    return gnuradio::make_block_sptr<integration_impl>(sample_rate);
+    return gnuradio::make_block_sptr<integration_impl>(decimation, sample_rate);
 }
 
 
 /*
  * The private constructor
  */
-integration_impl::integration_impl(float sample_rate)
-    : gr::block("integration",
+  integration_impl::integration_impl(int decimation, int sample_rate)
+    : gr::sync_decimator("integration",
                 gr::io_signature::make(
                     1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                 gr::io_signature::make(
-                    1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      d_step_size(1 / sample_rate)
+		    1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)),
+	   decimation)
 {
+    d_decimation = decimation;
+    d_step_size = 1.0/sample_rate;
 }
 
 /*
@@ -39,32 +41,20 @@ integration_impl::integration_impl(float sample_rate)
  */
 integration_impl::~integration_impl() {}
 
-void integration_impl::forecast(int noutput_items, gr_vector_int& ninput_items_required)
-{
-#pragma message( \
-    "implement a forecast that fills in how many items on each input you need to produce noutput_items and remove this warning")
-    /* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
-}
-
-int integration_impl::general_work(int noutput_items,
-                                   gr_vector_int& ninput_items,
-                                   gr_vector_const_void_star& input_items,
-                                   gr_vector_void_star& output_items)
+int integration_impl::work(int noutput_items,
+			   gr_vector_const_void_star& input_items,
+			   gr_vector_void_star& output_items)
 {
     auto in = static_cast<const input_type*>(input_items[0]);
     auto out = static_cast<output_type*>(output_items[0]);
 
     add_new_steps(out, in, noutput_items);
 
-    // Tell runtime system how many input items we consumed on
-    // each input stream.
-    consume_each(noutput_items);
-
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }
 
-void integration_impl::add_new_steps(float* out, const float* sample, int noutput_items) {
+void integration_impl::add_new_steps(float* out, const float* sample, int number_of_calculations) {
     std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
     bool calculate_with_last_value = true;
     bool rewrite_save_file;
@@ -91,11 +81,14 @@ void integration_impl::add_new_steps(float* out, const float* sample, int noutpu
 	sum = 0;
     }
 
-    float int_value;
-    integrate(int_value, sample, noutput_items, calculate_with_last_value);
-    sum = sum + int_value;
-    out[0] = sum;
-    last_value = out[noutput_items-1];
+    for (int i = 0; i < number_of_calculations; i++) {
+        float int_value;
+	integrate(int_value, &sample[i*d_decimation], d_decimation, calculate_with_last_value);
+	sum = sum + int_value;
+	out[i] = sum;
+	last_value = sample[((i+1)*d_decimation)-1];
+	calculate_with_last_value = true;
+    }
 
     if (rewrite_save_file) {
         int result = write_to_file(last_reset, last_save, sum);
@@ -150,13 +143,13 @@ int integration_impl::write_to_file(std::chrono::time_point<std::chrono::system_
     }
 }
 
-void integration_impl::integrate(float& out, const float* sample, int noutput_items, bool calculate_with_last_value)
+void integration_impl::integrate(float& out, const float* sample, int n_samples, bool calculate_with_last_value)
 {
     double value = 0;
     if (calculate_with_last_value) {
         value += d_step_size * ((last_value + sample[0] ) / 2 );
     }
-    for (int i = 1; i < noutput_items; i++) {
+    for (int i = 1; i < n_samples; i++) {
         value += d_step_size * ((sample[i - 1] + sample[i]) / 2);
     }
     out = value;

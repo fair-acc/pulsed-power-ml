@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(integration.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(589a0073905ed9a3dbf8a7857fa4864c)                     */
+/* BINDTOOL_HEADER_FILE_HASH(d6386a18f917defbeb0bc37ae76cd2f3)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -36,14 +36,14 @@ void bind_integration(py::module& m)
     py::class_<integration, gr::block, gr::basic_block, std::shared_ptr<integration>>(
         m, "integration", D(integration))
 
-        .def(py::init(&integration::make), py::arg("sample_rate"), D(integration, make))
+      .def(py::init(&integration::make), py::arg("decimation"), py::arg("sample_rate"), D(integration, make))
 
 
         .def("integrate",
              &integration::integrate,
              py::arg("out"),
              py::arg("sample"),
-             py::arg("noutput_items"),
+             py::arg("n_samples"),
 	     py::arg("calculate_with_last_value"),
              D(integration, integrate))
 

@@ -14,22 +14,24 @@ namespace pulsed_power {
 
 using input_type = float;
 using output_type = float;
-statistics::sptr statistics::make()
+statistics::sptr statistics::make(int decimation)
 {
-    return gnuradio::make_block_sptr<statistics_impl>();
+    return gnuradio::make_block_sptr<statistics_impl>(decimation);
 }
 
 
 /*
  * The private constructor
  */
-statistics_impl::statistics_impl()
-    : gr::block("statistics",
+statistics_impl::statistics_impl(int decimation)
+    : gr::sync_decimator("statistics",
                 gr::io_signature::make(
                     1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                 gr::io_signature::make(
-                    4 /* min outputs */, 4 /*max outputs */, sizeof(output_type)))
+				       4 /* min outputs */, 4 /*max outputs */, sizeof(output_type)),
+		decimation)
 {
+    d_decimation = decimation;
 }
 
 /*
@@ -37,17 +39,9 @@ statistics_impl::statistics_impl()
  */
 statistics_impl::~statistics_impl() {}
 
-void statistics_impl::forecast(int noutput_items, gr_vector_int& ninput_items_required)
-{
-#pragma message( \
-    "implement a forecast that fills in how many items on each input you need to produce noutput_items and remove this warning")
-    /* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
-}
-
-int statistics_impl::general_work(int noutput_items,
-                                  gr_vector_int& ninput_items,
-                                  gr_vector_const_void_star& input_items,
-                                  gr_vector_void_star& output_items)
+int statistics_impl::work(int noutput_items,
+			  gr_vector_const_void_star& input_items,
+			  gr_vector_void_star& output_items)
 {
     auto in = static_cast<const input_type*>(input_items[0]);
     auto out_mean = static_cast<output_type*>(output_items[0]);
@@ -55,12 +49,10 @@ int statistics_impl::general_work(int noutput_items,
     auto out_max = static_cast<output_type*>(output_items[2]);
     auto out_std_deviation = static_cast<output_type*>(output_items[3]);
 
-    calculate_statistics(out_mean[0], out_min[0], out_max[0], out_std_deviation[0], in, noutput_items);
-
-    // Tell runtime system how many input items we consumed on
-    // each input stream.
-    consume_each(noutput_items);
-
+    for (int i = 0; i < noutput_items; i++) {
+        calculate_statistics(out_mean[i], out_min[i], out_max[i], out_std_deviation[i], &in[i*d_decimation], d_decimation);
+    }
+    
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }

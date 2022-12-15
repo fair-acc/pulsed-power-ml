@@ -19,6 +19,7 @@ class integration_impl : public integration
 {
 private:
     float d_step_size;
+    int d_decimation;
     float last_value;
     time_point<system_clock> last_save;
     time_point<system_clock> last_reset;
@@ -28,20 +29,16 @@ private:
     int write_to_file(time_point<system_clock> last_reset, time_point<system_clock> last_save, float sum);
 
 public:
-    integration_impl(float step_size);
+    integration_impl(int decimation, int sample_rate);
     ~integration_impl();
 
     void add_new_steps(float* out, const float* sample, int noutput_items) override;
 
-    void integrate(float& out, const float* sample, int noutput_items, bool calculate_with_last_value) override;
+    void integrate(float& out, const float* sample, int n_samples, bool calculate_with_last_value) override;
 
-    // Where all the action really happens
-    void forecast(int noutput_items, gr_vector_int& ninput_items_required);
-
-    int general_work(int noutput_items,
-                     gr_vector_int& ninput_items,
-                     gr_vector_const_void_star& input_items,
-                     gr_vector_void_star& output_items);
+    int work(int noutput_items,
+	     gr_vector_const_void_star& input_items,
+	     gr_vector_void_star& output_items) override;
 };
 
 } // namespace pulsed_power

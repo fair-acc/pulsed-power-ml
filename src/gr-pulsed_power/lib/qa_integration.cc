@@ -17,8 +17,9 @@ namespace pulsed_power {
 BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[2] = { 1.0, 1.0 };
     const float* sample = sample_float;
@@ -31,14 +32,15 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (1.0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (1.0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[2] = { -1.0, -1.0 };
     const float* sample = sample_float;
@@ -51,14 +53,15 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (-1.0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (-1.0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[1] = { 1.0 };
     const float* sample = sample_float;
@@ -77,8 +80,9 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
 BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) //What happens if there is no sample?
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[0] = { };
     const float* sample = sample_float;
@@ -91,14 +95,15 @@ BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) //What happens if there is no sample?
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[2] = { 1.0, -1.0 };
     const float* sample = sample_float;
@@ -117,8 +122,9 @@ BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
 BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
 {
     // Create instance
-    float sample_rate = 100.0;
-    auto integration_block = gr::pulsed_power::integration::make(sample_rate);
+    int sample_rate = 100;
+    int decimation = 1;
+    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
     float sample_float[2] = { 0.0, 0.0 };
     const float* sample = sample_float;
@@ -131,7 +137,7 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (0 * 1 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
 }
 
 // BOOST_AUTO_TEST_SUITE_END();

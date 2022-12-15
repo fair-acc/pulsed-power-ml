@@ -8,7 +8,7 @@
 #ifndef INCLUDED_PULSED_POWER_INTEGRATION_H
 #define INCLUDED_PULSED_POWER_INTEGRATION_H
 
-#include <gnuradio/block.h>
+#include <gnuradio/sync_decimator.h>
 #include <gnuradio/pulsed_power/api.h>
 
 namespace gr {
@@ -19,7 +19,7 @@ namespace pulsed_power {
  * \ingroup pulsed_power
  *
  */
-class PULSED_POWER_API integration : virtual public gr::block
+class PULSED_POWER_API integration : virtual public gr::sync_decimator
 {
 public:
     typedef std::shared_ptr<integration> sptr;
@@ -32,10 +32,10 @@ public:
      * class. pulsed_power::integration::make is the public interface for
      * creating new instances.
      */
-    static sptr make(float sample_rate);
+    static sptr make(int decimation, int sample_rate);
 
     /*!
-     * @brief Return integral of samples
+     * @brief Calculates the integral of the samples
      *
      * @param out Result pointer
      * @param sample Pointer to samples that shall be integrated
@@ -45,11 +45,11 @@ public:
     virtual void integrate(float& out, const float* sample, int noutput_items, bool calculate_with_last_value) = 0;
 
      /*!
-     * @brief Return integral of samples and save the sum of the last integrals in a file
+     * @brief Calculate integrals of samples and save the sum of the last integral in a file
      *
      * @param out Result pointer
      * @param sample Pointer to samples that shall be integrated
-     * @param noutput_items Number of samples over that is integrated
+     * @param noutput_items Number of outputs
      */
 
     virtual void add_new_steps(float* out, const float* sample, int noutput_items) = 0;

@@ -8,7 +8,7 @@
 #ifndef INCLUDED_PULSED_POWER_STATISTICS_H
 #define INCLUDED_PULSED_POWER_STATISTICS_H
 
-#include <gnuradio/block.h>
+#include <gnuradio/sync_decimator.h>
 #include <gnuradio/pulsed_power/api.h>
 
 namespace gr {
@@ -19,7 +19,7 @@ namespace pulsed_power {
  * \ingroup pulsed_power
  *
  */
-class PULSED_POWER_API statistics : virtual public gr::block
+class PULSED_POWER_API statistics : virtual public gr::sync_decimator
 {
 public:
     typedef std::shared_ptr<statistics> sptr;
@@ -32,7 +32,7 @@ public:
      * class. pulsed_power::statistics::make is the public interface for
      * creating new instances.
      */
-    static sptr make();
+    static sptr make(int decimation);
 
     /**
      * @brief Returns the statistics of the samples
