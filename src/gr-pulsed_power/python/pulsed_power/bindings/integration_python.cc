@@ -44,7 +44,7 @@ void bind_integration(py::module& m)
              py::arg("out"),
              py::arg("sample"),
              py::arg("noutput_items"),
-	     py::arg("calculate_with_last_value"),
+             py::arg("calculate_with_last_value"),
              D(integration, integrate))
 
         .def("add_new_steps",
