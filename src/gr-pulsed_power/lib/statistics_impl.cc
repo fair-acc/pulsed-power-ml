@@ -55,7 +55,8 @@ int statistics_impl::general_work(int noutput_items,
     auto out_max = static_cast<output_type*>(output_items[2]);
     auto out_std_deviation = static_cast<output_type*>(output_items[3]);
 
-    calculate_statistics(out_mean[0], out_min[0], out_max[0], out_std_deviation[0], in, noutput_items);
+    calculate_statistics(
+        out_mean[0], out_min[0], out_max[0], out_std_deviation[0], in, noutput_items);
 
     // Tell runtime system how many input items we consumed on
     // each input stream.
@@ -65,7 +66,12 @@ int statistics_impl::general_work(int noutput_items,
     return noutput_items;
 }
 
-void statistics_impl::calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items)
+void statistics_impl::calculate_statistics(float& mean,
+                                           float& min,
+                                           float& max,
+                                           float& std_deviation,
+                                           const float* in,
+                                           int ninput_items)
 {
     float sum = 0.0;
     float sum_of_squares = 0.0;
@@ -81,14 +87,15 @@ void statistics_impl::calculate_statistics(float& mean, float& min, float& max, 
             max = current;
         }
         sum += current;
-	j = (float)(i+1);
-	// calculate the sum of squares with the formular of Youngs and Cramer
-	if (j > 1) {
-	    sum_of_squares += (1/(j*(j - 1.0)))*((j*current) - sum)*((j*current) - sum);
-	}
+        j = (float)(i + 1);
+        // calculate the sum of squares with the formular of Youngs and Cramer
+        if (j > 1) {
+            sum_of_squares +=
+                (1 / (j * (j - 1.0))) * ((j * current) - sum) * ((j * current) - sum);
+        }
     }
     mean = sum / ninput_items;
-    std_deviation = sqrt(sum_of_squares/ninput_items);
+    std_deviation = sqrt(sum_of_squares / ninput_items);
 }
 
 } /* namespace pulsed_power */
