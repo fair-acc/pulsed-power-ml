@@ -9,4 +9,5 @@ install(FILES
     pulsed_power_opencmw_time_sink.block.yml
     pulsed_power_integration.block.yml
     pulsed_power_statistics.block.yml DESTINATION share/gnuradio/grc/blocks
+    pulsed_power_opencmw_freq_sink.block.yml DESTINATION share/gnuradio/grc/blocks
 )
