@@ -23,10 +23,11 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamples)
     float mean;
     float std_deviation;
 
-    statistics_block->calculate_statistics(mean, min, max, std_deviation, sample_float, num_samples); 
+    statistics_block->calculate_statistics(
+        mean, min, max, std_deviation, sample_float, num_samples);
 
     BOOST_TEST(mean == 2.0, boost::test_tools::tolerance(0.001));
-    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));    
+    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(max == 3.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(std_deviation == 0.8165, boost::test_tools::tolerance(0.001));
 }
@@ -42,10 +43,11 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamples)
     float mean;
     float std_deviation;
 
-    statistics_block->calculate_statistics(mean, min, max, std_deviation, sample_float, num_samples); 
+    statistics_block->calculate_statistics(
+        mean, min, max, std_deviation, sample_float, num_samples);
 
     BOOST_TEST(mean == -2.0, boost::test_tools::tolerance(0.001));
-    BOOST_TEST(min == -3.0, boost::test_tools::tolerance(0.001));    
+    BOOST_TEST(min == -3.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(max == -1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(std_deviation == 0.8165, boost::test_tools::tolerance(0.001));
 }
@@ -61,10 +63,11 @@ BOOST_AUTO_TEST_CASE(constantNegativeAndPositiveSamples)
     float mean;
     float std_deviation;
 
-    statistics_block->calculate_statistics(mean, min, max, std_deviation, sample_float, num_samples); 
+    statistics_block->calculate_statistics(
+        mean, min, max, std_deviation, sample_float, num_samples);
 
     BOOST_TEST(mean == 0.0, boost::test_tools::tolerance(0.001));
-    BOOST_TEST(min == -1.0, boost::test_tools::tolerance(0.001));    
+    BOOST_TEST(min == -1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(max == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(std_deviation == 0.8165, boost::test_tools::tolerance(0.001));
 }
@@ -80,10 +83,11 @@ BOOST_AUTO_TEST_CASE(constantSingleSamples)
     float mean;
     float std_deviation;
 
-    statistics_block->calculate_statistics(mean, min, max, std_deviation, sample_float, num_samples); 
+    statistics_block->calculate_statistics(
+        mean, min, max, std_deviation, sample_float, num_samples);
 
     BOOST_TEST(mean == 1.0, boost::test_tools::tolerance(0.001));
-    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));    
+    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(max == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(std_deviation == 0.0, boost::test_tools::tolerance(0.001));
 }
@@ -99,10 +103,11 @@ BOOST_AUTO_TEST_CASE(constantEqualSamples)
     float mean;
     float std_deviation;
 
-    statistics_block->calculate_statistics(mean, min, max, std_deviation, sample_float, num_samples); 
+    statistics_block->calculate_statistics(
+        mean, min, max, std_deviation, sample_float, num_samples);
 
     BOOST_TEST(mean == 1.0, boost::test_tools::tolerance(0.001));
-    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));    
+    BOOST_TEST(min == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(max == 1.0, boost::test_tools::tolerance(0.001));
     BOOST_TEST(std_deviation == 0.0, boost::test_tools::tolerance(0.001));
 }
