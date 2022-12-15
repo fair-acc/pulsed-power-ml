@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(integration.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(589a0073905ed9a3dbf8a7857fa4864c)                     */
+/* BINDTOOL_HEADER_FILE_HASH(f97db87e5030c00070e35b8742a559ed)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -46,6 +46,7 @@ void bind_integration(py::module& m)
              py::arg("noutput_items"),
              py::arg("calculate_with_last_value"),
              D(integration, integrate))
+
 
         .def("add_new_steps",
              &integration::add_new_steps,
