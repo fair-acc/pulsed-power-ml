@@ -139,7 +139,6 @@ TEST_CASE("TimeDomainWorker service", "[daq_api][time-domain]") {
 
     REQUIRE(response->status == 200);
 
-    REQUIRE(response->body.find("Acquisition") != std::string::npos);
     REQUIRE(response->body.find("refTriggerName") != std::string::npos);
     REQUIRE(response->body.find("refTriggerStamp") != std::string::npos);
     REQUIRE(response->body.find("channelTimeSinceRefTrigger") != std::string::npos);

@@ -102,3 +102,9 @@ src/gr-pulsed_power/Testing/
 
 # Other
 *.patch
+
+# jetbrains
+cmake-build*/
+
+# gnuradio-prefix dir for installing
+gr-prefix/
