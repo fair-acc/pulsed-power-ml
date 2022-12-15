@@ -99,38 +99,39 @@ public:
     GRFlowGraph(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // flowgraph setup
-        float samp_rate = 4'000.0f;
+        float samp_rate_1 = 1'000.0f;
+        float samp_rate_2 = 100.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
-        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
-        auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
+        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
+        auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_1, true);
+        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate_1);
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
 
         // saw_signal --> throttle --> opencmw_time_sink
-        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
-        auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make({ "saw" }, { "A" }, samp_rate);
+        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
+        auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
+        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make({ "saw" }, { "A" }, samp_rate_2);
         pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
 
         // square_signal --> throttle --> opencmw_time_sink
-        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
-        auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make({ "square" }, { "A" }, samp_rate);
+        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
+        auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_1, true);
+        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make({ "square" }, { "A" }, samp_rate_1);
         pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
 
         // sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
-        const float  samp_rate_2                      = 32'000.0f;
+        const float  samp_rate_3                      = 32'000.0f;
         const size_t vec_length                       = 1024;
         const size_t fft_size                         = vec_length;
-        const auto   bandwidth                        = samp_rate_2;
-        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SIN_WAVE, 3000.0f, 220.0);
-        auto         throttle_block_3                 = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
+        const auto   bandwidth                        = samp_rate_3;
+        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_3, gr::analog::GR_SIN_WAVE, 3000.0f, 220.0);
+        auto         throttle_block_3                 = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_3, true);
         auto         stream_to_vector_0               = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vec_length);
         auto         fft_vxx_0                        = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(1024), true, 1);
         auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / static_cast<float>(vec_length), vec_length);
         auto         complex_to_mag_squared_0         = gr::blocks::complex_to_mag_squared::make(vec_length);
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
-        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_2, bandwidth);
+        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_3, bandwidth);
 
         // connections
         // time-domain sinks

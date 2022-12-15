@@ -42,8 +42,8 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
-    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
-    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<Acquisition>                     grSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@1000Hz", "square@1000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@100Hz" });
     Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
     Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { grSubscription, powerSubscription };
@@ -180,25 +180,25 @@ static void main_loop(void *arg) {
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // GR Signals Plot
-            if (ImPlot::BeginPlot("GR Signals")) {
+            if (ImPlot::BeginPlot("")) {
                 Plotter::plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Bandpass Filter Plot
-            if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
+            if (ImPlot::BeginPlot("")) {
                 Plotter::plotBandpassFilter(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Power Plot
-            if (ImPlot::BeginPlot("Power")) {
+            if (ImPlot::BeginPlot("")) {
                 Plotter::plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Mains Frequency Plot
-            if (ImPlot::BeginPlot("Mains Frequency")) {
+            if (ImPlot::BeginPlot("")) {
                 Plotter::plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
@@ -206,7 +206,7 @@ static void main_loop(void *arg) {
         }
 
         // Power Spectrum
-        if (ImPlot::BeginPlot("Power Spectrum")) {
+        if (ImPlot::BeginPlot("##")) {
             Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, true, args->fonts.fontawesome);
             ImPlot::EndPlot();
         }

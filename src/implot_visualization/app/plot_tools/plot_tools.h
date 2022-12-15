@@ -76,7 +76,7 @@ void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
 void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("time (ms)", "I(A)", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "I(A)", xflags, yflags);
     ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Always);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     // plotSignals(signals);
@@ -85,7 +85,7 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
 void plotPower(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
@@ -98,7 +98,7 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("time (s)", "Frequency (Hz)", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "Frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 10.0, currentTime, ImGuiCond_Always);
