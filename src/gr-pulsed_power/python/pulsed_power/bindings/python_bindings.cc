@@ -22,7 +22,7 @@ namespace py = pybind11;
 /**************************************/
 // BINDING_FUNCTION_PROTOTYPES(
 void bind_opencmw_time_sink(py::module& m);
-    void bind_opencmw_freq_sink(py::module& m);
+void bind_opencmw_freq_sink(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 

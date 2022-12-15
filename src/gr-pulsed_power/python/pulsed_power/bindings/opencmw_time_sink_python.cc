@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(opencmw_time_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(88406fa1adfdae61d69042e2846feaa1)                     */
+/* BINDTOOL_HEADER_FILE_HASH(e98882e0c949209824cc1d74305845d0)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -41,9 +41,9 @@ void bind_opencmw_time_sink(py::module& m)
         m, "opencmw_time_sink", D(opencmw_time_sink))
 
         .def(py::init(&opencmw_time_sink::make),
+             py::arg("signal_names"),
+             py::arg("signal_units"),
              py::arg("sample_rate"),
-             py::arg("signal_name") = "signal_1",
-             py::arg("signal_unit") = "",
              D(opencmw_time_sink, make))
 
 
@@ -58,14 +58,14 @@ void bind_opencmw_time_sink(py::module& m)
              D(opencmw_time_sink, get_sample_rate))
 
 
-        .def("get_signal_name",
-             &opencmw_time_sink::get_signal_name,
-             D(opencmw_time_sink, get_signal_name))
+        .def("get_signal_names",
+             &opencmw_time_sink::get_signal_names,
+             D(opencmw_time_sink, get_signal_names))
 
 
-        .def("get_signal_unit",
-             &opencmw_time_sink::get_signal_unit,
-             D(opencmw_time_sink, get_signal_unit))
+        .def("get_signal_units",
+             &opencmw_time_sink::get_signal_units,
+             D(opencmw_time_sink, get_signal_units))
 
         ;
 }

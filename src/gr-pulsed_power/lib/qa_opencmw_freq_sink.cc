@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #include <gnuradio/attributes.h>
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <boost/test/unit_test.hpp>

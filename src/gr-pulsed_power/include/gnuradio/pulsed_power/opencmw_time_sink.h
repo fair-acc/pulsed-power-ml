@@ -1,10 +1,3 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2022 fair.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 #ifndef INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_H
 #define INCLUDED_PULSED_POWER_OPENCMW_TIME_SINK_H
 
@@ -26,8 +19,11 @@ class PULSED_POWER_API opencmw_time_sink : virtual public gr::sync_block
 {
 public:
     typedef std::shared_ptr<opencmw_time_sink> sptr;
-    using cb_copy_data_t =
-        std::function<void(const float*, int&, const std::string&, float, int64_t)>;
+    using cb_copy_data_t = std::function<void(std::vector<const void*>&,
+                                              int&,
+                                              const std::vector<std::string>&,
+                                              float,
+                                              int64_t)>;
 
     /*!
      * \brief Return a shared_ptr to a new instance of pulsed_power::opencmw_time_sink.
@@ -37,9 +33,9 @@ public:
      * class. pulsed_power::opencmw_time_sink::make is the public interface for
      * creating new instances.
      */
-    static sptr make(float sample_rate,
-                     std::string signal_name = "signal_1",
-                     std::string signal_unit = "");
+    static sptr make(const std::vector<std::string>& signal_names,
+                     const std::vector<std::string>& signal_units,
+                     float sample_rate);
 
     /*!
      * \brief Registers a callback which is called whenever a predefined number of samples
@@ -55,14 +51,14 @@ public:
     virtual float get_sample_rate() = 0;
 
     /*!
-     * \brief Returns signal name.
+     * \brief Returns signal names.
      */
-    virtual std::string get_signal_name() = 0;
+    virtual std::vector<std::string> get_signal_names() = 0;
 
     /*!
-     * \brief Returns signal unit.
+     * \brief Returns signal units.
      */
-    virtual std::string get_signal_unit() = 0;
+    virtual std::vector<std::string> get_signal_units() = 0;
 };
 
 extern PULSED_POWER_API std::mutex globalTimeSinksRegistryMutex;
