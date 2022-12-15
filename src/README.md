@@ -1,20 +1,21 @@
 # Pulsed Power Monitoring
 
-![image](assets/visualize_multiple_gr_signals_light.png)
+![image](assets/dashboard_screenshot.png)
 
 ## Getting Started
 
 1. Install Emscripten from https://emscripten.org/docs/getting_started/downloads.html
-
 2. Set the environment variables as described in https://emscripten.org/docs/getting_started/downloads.html#installation-instructions
-
-3. Make sure to configure the EMSDK_ROOT_PATH variable in `cmake_build.sh` according to the path of emsdk on your local machine. This makes sure that the environement variables are set correctly and the emscripten toolchain is available for building the project.
+3. Build and install GNU Radio blocks as described in https://github.com/fair-acc/pulsed-power-ml/tree/main/src/gr-pulsed_power
 
 ## Usage
 
-In order to visualize data passed by OpenCMW you need to build and run the OpenCMW worker first and then build and run the ImPlot Visualization.The following explains how to build and run OpenCMW and ImPlot Visualization.
+In order to visualize data passed by OpenCMW, do the following:
 
-### OpenCMW Worker
+1. Build and run the OpenCMW worker
+2. Build and run the ImPlot Visualization.
+
+### OpenCMW
 
 How to Build
 
@@ -42,3 +43,17 @@ How to Run
 - run `cmake --build build --target serve`
 - This will use Python3 to spawn a local webserver
 - Browse http://localhost:8000 to access your build.
+
+# Test Setup
+
+The following pictures show the complete setup for the three phase tests. This setup includes
+
+1. Current clamps - the same used for the one phase demonstrator
+2. Voltage measurement - the same used for the one phase demonstrator
+3. Distribution box - the neutral conductor needs to be multiplied by three for proper connection of voltage measurement
+4. Three phase power connection - enables connection of different loads to the different phases
+5. Three phase current and voltage measurement adapter
+
+![image](assets/three_phase_setup_1.png)
+![image](assets/three_phase_setup_2.png)
+![image](assets/three_phase_setup_3.png)

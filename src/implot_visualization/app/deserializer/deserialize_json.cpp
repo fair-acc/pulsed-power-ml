@@ -3,105 +3,125 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-using json        = nlohmann::json;
-
-double tmp_t_prev = 0.0;
+using json = nlohmann::json;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
 constexpr DataPoint::DataPoint(double _x, double _y)
     : x(_x), y(_y) {}
 
-SignalBuffer::SignalBuffer(int max_size) {
-    maxSize = max_size;
-    offset  = 0;
-    data.reserve(maxSize);
+Buffer::Buffer(int max_size) {
+    this->data.reserve(max_size);
+    this->data.reserve(max_size);
 }
 
-void SignalBuffer::addPoint(double x, double y) {
-    if (data.size() < maxSize)
-        data.push_back(DataPoint(x, y));
+void Buffer::assign(const std::vector<double> &x, const std::vector<double> &y) {
+    if (this->data.size() > 0) {
+        this->data.shrink(0);
+    }
+    for (int i = 0; i < x.size(); i++) {
+        this->data.push_back(DataPoint(x[i], y[i]));
+    }
+}
+
+ScrollingBuffer::ScrollingBuffer(int max_size) {
+    this->maxSize = max_size;
+    this->offset  = 0;
+    this->data.reserve(this->maxSize);
+}
+
+void ScrollingBuffer::addPoint(double x, double y) {
+    if (this->data.size() < this->maxSize)
+        this->data.push_back(DataPoint(x, y));
     else {
-        data[offset] = DataPoint(x, y);
-        offset       = (offset + 1) % maxSize;
+        this->data[this->offset] = DataPoint(x, y);
+        this->offset             = (this->offset + 1) % this->maxSize;
     }
 }
 
-void SignalBuffer::erase() {
-    if (data.size() > 0) {
-        data.shrink(0);
-        offset = 0;
+void ScrollingBuffer::erase() {
+    if (this->data.size() > 0) {
+        this->data.shrink(0);
+        this->offset = 0;
     }
 }
 
-void Deserializer::addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData) {
+Acquisition::Acquisition() {}
+
+Acquisition::Acquisition(int _numSignals) {
+    std::vector<ScrollingBuffer> _buffers(_numSignals);
+    this->buffers = _buffers;
+}
+
+void Acquisition::addToBuffers() {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
 
-    for (int i = 0; i < acquisitionData.signalNames.size(); i++) {
-        signals[i].signalName = acquisitionData.signalNames[i];
-        int stride            = acquisitionData.strideArray.dims[1];
-        int offset            = i * stride;
+    // Destride array
+    for (int i = 0; i < signalNames.size(); i++) {
+        this->buffers[i].signalName = this->signalNames[i];
+        int stride                  = this->strideArray.dims[1];
+        int offset                  = i * stride;
 
         for (int j = 0; j < stride; j++) {
-            absoluteTimestamp = acquisitionData.refTrigger_s + acquisitionData.relativeTimestamps[j];
-            value             = acquisitionData.strideArray.values[offset + j];
-            signals[i].addPoint(absoluteTimestamp, value);
+            absoluteTimestamp = this->refTrigger_s + this->relativeTimestamps[j];
+            value             = this->strideArray.values[offset + j];
+            this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
 }
 
-void Deserializer::deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    Acquisition acquisition;
-
-    std::string modifiedJsonString = jsonString;
-    modifiedJsonString.erase(0, 14);
-
-    auto json_obj = json::parse(modifiedJsonString);
+void Acquisition::deserialize() {
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            acquisition.refTrigger_ns = element.value();
-            acquisition.refTrigger_s  = acquisition.refTrigger_ns / std::pow(10, 9);
+            if (element.value() == 0) {
+                return;
+            }
+            this->refTrigger_ns = element.value();
+            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
-            acquisition.relativeTimestamps.insert(acquisition.relativeTimestamps.begin(), element.value().begin(), element.value().end());
+            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            acquisition.signalNames.insert(acquisition.signalNames.begin(), element.value().begin(), element.value().end());
+            this->signalNames.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
-            acquisition.strideArray.dims   = std::vector<int>(element.value()["dims"]);
-            acquisition.strideArray.values = std::vector<double>(element.value()["values"]);
+            this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
+            this->strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
 
-    addToSignalBuffers(signals, acquisition);
+    this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+    addToBuffers();
 }
 
-void Deserializer::deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    double      timestamp          = 0.0;
-    double      value              = 0.0;
+AcquisitionSpectra::AcquisitionSpectra() {}
 
-    std::string modifiedJsonString = jsonString;
-    modifiedJsonString.erase(0, 14);
+AcquisitionSpectra::AcquisitionSpectra(int _numSignals) {
+    std::vector<Buffer> _buffers(_numSignals);
+    this->buffers = _buffers;
+}
 
-    auto json_obj = json::parse(modifiedJsonString);
+void AcquisitionSpectra::addToBuffers() {
+    this->buffers[0].signalName = this->signalName;
+    this->buffers[0].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+}
+
+void AcquisitionSpectra::deserialize() {
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
-        if (element.key() == "timestamp") {
-            timestamp = element.value();
-        } else {
-            value = element.value();
+        if (element.key() == "refTriggerStamp") {
+            this->refTrigger_ns = element.value();
+            this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
+        } else if (element.key() == "channelName") {
+            this->signalName = element.value();
+        } else if (element.key() == "channelMagnitudeValues") {
+            this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
+        } else if (element.key() == "channelFrequencyValues") {
+            this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-
-    if (timestamp != tmp_t_prev) {
-        signals[0].addPoint(timestamp, value);
-    }
-
-    tmp_t_prev = timestamp;
-}
-
-void Deserializer::deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals) {
-    if (jsonString.substr(1, 11) == "Acquisition") {
-        deserializeAcquisition(jsonString, signals);
-    } else if (jsonString.substr(1, 11) == "CounterData") {
-        deserializeCounter(jsonString, signals);
-    }
+    lastTimeStamp        = lastRefTrigger;
+    this->lastRefTrigger = this->refTrigger_ns;
+    addToBuffers();
 }

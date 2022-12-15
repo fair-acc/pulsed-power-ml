@@ -35,7 +35,7 @@ static const char* __doc_gr_pulsed_power_opencmw_time_sink_set_callback = R"doc(
 static const char* __doc_gr_pulsed_power_opencmw_time_sink_get_sample_rate = R"doc()doc";
 
 
-static const char* __doc_gr_pulsed_power_opencmw_time_sink_get_signal_name = R"doc()doc";
+static const char* __doc_gr_pulsed_power_opencmw_time_sink_get_signal_names = R"doc()doc";
 
 
-static const char* __doc_gr_pulsed_power_opencmw_time_sink_get_signal_unit = R"doc()doc";
+static const char* __doc_gr_pulsed_power_opencmw_time_sink_get_signal_units = R"doc()doc";

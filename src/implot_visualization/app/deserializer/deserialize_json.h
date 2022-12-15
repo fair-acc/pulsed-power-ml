@@ -14,14 +14,24 @@ public:
     constexpr DataPoint(double _x, double _y);
 };
 
-class SignalBuffer {
+class Buffer {
+public:
+    ImVector<DataPoint> data;
+    std::string         signalName;
+
+    Buffer(int max_size = 200'000);
+
+    void assign(const std::vector<double> &x, const std::vector<double> &y);
+};
+
+class ScrollingBuffer {
 public:
     int                 maxSize;
     int                 offset;
     ImVector<DataPoint> data;
     std::string         signalName;
 
-    SignalBuffer(int max_size = 200'000);
+    ScrollingBuffer(int max_size = 200'000);
 
     void addPoint(double x, double y);
     void erase();
@@ -32,26 +42,49 @@ struct StrideArray {
     std::vector<double> values;
 };
 
-struct Acquisition {
-    uint64_t                 refTrigger_ns = 0;
-    double                   refTrigger_s  = 0.0;
-    std::vector<std::string> signalNames;
-    std::vector<double>      relativeTimestamps;
-    StrideArray              strideArray;
-};
-
-class Deserializer {
+class Acquisition {
 public:
-    /**
-     * @brief Deserializes json string
-     *
-     * @param jsonString string of type
-     * "Acquisition": {"value": key, "timestamp": key}
-     */
-    void deserializeJson(const std::string &jsonString, std::vector<SignalBuffer> &signals);
+    std::vector<std::string>     signalNames;
+    std::string                  jsonString     = "";
+    uint64_t                     lastRefTrigger = 0;
+    std::vector<ScrollingBuffer> buffers;
+
+    Acquisition();
+    Acquisition(int numSignals);
+
+    void                deserialize();
+
+    std::vector<double> relativeTimestamps;
+    uint64_t            lastTimeStamp = 0.0;
 
 private:
-    void deserializeAcquisition(const std::string &jsonString, std::vector<SignalBuffer> &signals);
-    void deserializeCounter(const std::string &jsonString, std::vector<SignalBuffer> &signals);
-    void addToSignalBuffers(std::vector<SignalBuffer> &signals, const Acquisition &acquisitionData);
+    uint64_t    refTrigger_ns = 0;
+    double      refTrigger_s  = 0.0;
+    StrideArray strideArray;
+
+    void        addToBuffers();
+};
+
+class AcquisitionSpectra {
+public:
+    std::string         signalName;
+    uint64_t            lastRefTrigger = 0;
+    std::string         jsonString     = "";
+    std::vector<Buffer> buffers;
+
+    AcquisitionSpectra();
+    AcquisitionSpectra(int numSignals);
+
+    void                deserialize();
+
+    std::vector<double> relativeTimestamps = { 0 };
+    uint64_t            lastTimeStamp      = 0.0;
+
+private:
+    uint64_t            refTrigger_ns = 0;
+    double              refTrigger_s  = 0.0;
+    std::vector<double> channelMagnitudeValues;
+    std::vector<double> channelFrequencyValues;
+
+    void                addToBuffers();
 };
