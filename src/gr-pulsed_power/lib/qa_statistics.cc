@@ -14,7 +14,8 @@ namespace pulsed_power {
 
 BOOST_AUTO_TEST_CASE(constantPositiveSamples)
 {
-    auto statistics_block = gr::pulsed_power::statistics::make();
+    int decimation = 1;
+    auto statistics_block = gr::pulsed_power::statistics::make(decimation);
     float sample_float[3] = { 1.0, 3.0, 2.0 };
     int num_samples = 3;
 
@@ -34,7 +35,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamples)
 
 BOOST_AUTO_TEST_CASE(constantNegativeSamples)
 {
-    auto statistics_block = gr::pulsed_power::statistics::make();
+    int decimation = 1;
+    auto statistics_block = gr::pulsed_power::statistics::make(decimation);
     float sample_float[3] = { -1.0, -3.0, -2.0 };
     int num_samples = 3;
 
@@ -54,7 +56,8 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamples)
 
 BOOST_AUTO_TEST_CASE(constantNegativeAndPositiveSamples)
 {
-    auto statistics_block = gr::pulsed_power::statistics::make();
+    int decimation = 1;
+    auto statistics_block = gr::pulsed_power::statistics::make(decimation);
     float sample_float[3] = { 1.0, 0.0, -1.0 };
     int num_samples = 3;
 
@@ -74,7 +77,8 @@ BOOST_AUTO_TEST_CASE(constantNegativeAndPositiveSamples)
 
 BOOST_AUTO_TEST_CASE(constantSingleSamples)
 {
-    auto statistics_block = gr::pulsed_power::statistics::make();
+    int decimation = 1;
+    auto statistics_block = gr::pulsed_power::statistics::make(decimation);
     float sample_float[3] = { 1.0 };
     int num_samples = 1;
 
@@ -94,7 +98,8 @@ BOOST_AUTO_TEST_CASE(constantSingleSamples)
 
 BOOST_AUTO_TEST_CASE(constantEqualSamples)
 {
-    auto statistics_block = gr::pulsed_power::statistics::make();
+    int decimation = 1;
+    auto statistics_block = gr::pulsed_power::statistics::make(decimation);
     float sample_float[3] = { 1.0, 1.0 };
     int num_samples = 2;
 
