@@ -24,9 +24,9 @@
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
-// pulsed_power_daq
-#include <pulsed_power_daq/picoscope_4000a_source.h>
-#include <pulsed_power_daq/power_calc_ff.h>
+// pulsed_power
+#include <gnuradio/pulsed_power/picoscope_4000a_source.h>
+#include <gnuradio/pulsed_power/power_calc_ff.h>
 
 class GRFlowGraph {
 private:
@@ -120,22 +120,22 @@ public:
     GRFlowGraphOnePhasePicoscopeNilm(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // parameters
-        float                                     in_samp_rate                = 2'000'000.0f;
-        float                                     in_samp_rate_2              = 32'000.0f;
-        float                                     out_samp_rate               = 1'000.0f;
-        int                                       bp_decimation               = 20;
-        double                                    bp_high_cut                 = 80;
-        double                                    bp_low_cut                  = 20;
-        double                                    bp_trans                    = 10;
-        int                                       lp_decimation               = 1;
-        float                                     current_correction_factor   = 2.5f;
-        float                                     voltage_correction_factor   = 100.0f;
-        gr::pulsed_power_daq::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power_daq::DOWNSAMPLING_MODE_NONE;
-        gr::pulsed_power_daq::coupling_t          picoscope_coupling          = gr::pulsed_power_daq::AC_1M;
-        gr::pulsed_power_daq::trigger_direction_t picoscope_trigger_direction = gr::pulsed_power_daq::TRIGGER_DIRECTION_RISING;
+        float                                 in_samp_rate                = 2'000'000.0f;
+        float                                 in_samp_rate_2              = 32'000.0f;
+        float                                 out_samp_rate               = 1'000.0f;
+        int                                   bp_decimation               = 20;
+        double                                bp_high_cut                 = 80;
+        double                                bp_low_cut                  = 20;
+        double                                bp_trans                    = 10;
+        int                                   lp_decimation               = 1;
+        float                                 current_correction_factor   = 2.5f;
+        float                                 voltage_correction_factor   = 100.0f;
+        gr::pulsed_power::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power::DOWNSAMPLING_MODE_NONE;
+        gr::pulsed_power::coupling_t          picoscope_coupling          = gr::pulsed_power::AC_1M;
+        gr::pulsed_power::trigger_direction_t picoscope_trigger_direction = gr::pulsed_power::TRIGGER_DIRECTION_RISING;
 
         // blocks
-        auto picoscope_source = gr::pulsed_power_daq::picoscope_4000a_source::make("", true);
+        auto picoscope_source = gr::pulsed_power::picoscope_4000a_source::make("", true);
         picoscope_source->set_trigger_once(false);
         picoscope_source->set_samp_rate(in_samp_rate);
         picoscope_source->set_downsampling(picoscope_downsampling_mode, 1);
@@ -240,7 +240,7 @@ public:
 
         auto blocks_sub_phase0                    = gr::blocks::sub_ff::make(1);
 
-        auto pulsed_power_power_calc_ff_0_0       = gr::pulsed_power_daq::power_calc_ff::make(0.0001);
+        auto pulsed_power_power_calc_ff_0_0       = gr::pulsed_power::power_calc_ff::make(0.0001);
 
         auto pulsed_power_opencmw_time_sink_power = gr::pulsed_power::opencmw_time_sink::make(
                 { "P", "Q", "S", "phi" },

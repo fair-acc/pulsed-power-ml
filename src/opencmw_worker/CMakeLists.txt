@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_CXX_STANDARD 20)
 
 include(cmake/Dependencies.cmake)
+include(cmake/Findpicoscope.cmake)
 
 project(opencmw-worker CXX)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(GNUInstallDirs)
 
-find_package(Gnuradio "3.10" COMPONENTS
+find_package(Gnuradio "3.10.4" COMPONENTS
     blocks
     analog
     filter
@@ -16,7 +17,13 @@ find_package(Gnuradio "3.10" COMPONENTS
 )
 
 find_package(gnuradio-pulsed_power)
-
+#set(PS4000A_EXPORT_NAME ps4000aTargets)
+find_package(picoscope)
+message("PICOSCOPE_LIB_DIR  " ${PICOSCOPE_LIB_DIR})
+#add_library(ps4000a SHARED ${PICOSCOPE_LIB_DIR} )
+add_library(picoscope SHARED IMPORTED)
+set_target_properties(picoscope PROPERTIES IMPORTED_LOCATION ${PICOSCOPE_LIB_DIR})
+target_link_libraries( picoscope)
 # Check for supported compiler versions
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1.0)

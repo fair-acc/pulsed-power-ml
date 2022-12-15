@@ -111,12 +111,14 @@ public:
                 // auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
                 // auto output = (*_model)(input);
 
-                cppflow::tensor tensor(data_point, { data_point.size(), 1 });
-                // fmt::print("Tensor: {}\n", tensor);
+                cppflow::tensor tensor(data_point, { data_point.size() });
+                fmt::print("tensor print: {}\n", tensor);
 
-                auto output = (*_model)(tensor);
+                auto output = (*_model)({ { "serving_default_args_0:0", tensor } }, { "StatefulPartitionedCall:0" });
 
-                auto values = output.get_data<float>();
+                fmt::print("output print: {}\n", output[0]);
+
+                auto values = output[0].get_data<float>();
 
                 nilmData.values.clear();
 
@@ -249,7 +251,7 @@ public:
     }
 
 private:
-    size_t             fftSize = 131072;
+    size_t             fftSize = 65536;
 
     std::vector<float> mergeValues() {
         PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
