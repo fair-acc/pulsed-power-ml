@@ -102,19 +102,19 @@ public:
         float samp_rate_1 = 1'000.0f;
         float samp_rate_2 = 100.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
-        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
+        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0);
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_1, true);
         auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate_1);
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
 
         // saw_signal --> throttle --> opencmw_time_sink
-        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
+        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SAW_WAVE, 0.1, 4, 0, 0);
         auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
         auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make({ "saw" }, { "A" }, samp_rate_2);
         pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
 
         // square_signal --> throttle --> opencmw_time_sink
-        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
+        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate_1, gr::analog::GR_SQR_WAVE, 40, 3, 0, 0);
         auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_1, true);
         auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make({ "square" }, { "A" }, samp_rate_1);
         pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
