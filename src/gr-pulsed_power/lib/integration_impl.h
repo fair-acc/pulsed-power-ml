@@ -25,8 +25,12 @@ private:
     time_point<system_clock> last_reset;
     float sum;
 
-    int get_values_from_file(time_point<system_clock>& last_reset, time_point<system_clock>& last_save, float& sum);
-    int write_to_file(time_point<system_clock> last_reset, time_point<system_clock> last_save, float sum);
+    int get_values_from_file(time_point<system_clock>& last_reset,
+                             time_point<system_clock>& last_save,
+                             float& sum);
+    int write_to_file(time_point<system_clock> last_reset,
+                      time_point<system_clock> last_save,
+                      float sum);
 
 public:
     integration_impl(int decimation, int sample_rate);

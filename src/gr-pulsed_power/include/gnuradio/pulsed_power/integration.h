@@ -40,9 +40,14 @@ public:
      * @param out Result pointer
      * @param sample Pointer to samples that shall be integrated
      * @param noutput_items Number of samples over that is integrated
-     * @param calculate_with_last_value if true the last vlaue of the last sequence is used to calculate the value of the integral since then. Only do this if the last_value variable was set.
+     * @param calculate_with_last_value if true the last vlaue of the last sequence is
+     * used to calculate the value of the integral since then. Only do this if the
+     * last_value variable was set.
      */
-    virtual void integrate(float& out, const float* sample, int noutput_items, bool calculate_with_last_value) = 0;
+    virtual void integrate(float& out,
+                           const float* sample,
+                           int noutput_items,
+                           bool calculate_with_last_value) = 0;
 
      /*!
      * @brief Calculate integrals of samples and save the sum of the last integral in a file

@@ -73,14 +73,15 @@ void statistics_impl::calculate_statistics(float& mean, float& min, float& max, 
             max = current;
         }
         sum += current;
-	j = (float)(i+1);
-	// calculate the sum of squares with the formular of Youngs and Cramer
-	if (j > 1) {
-	    sum_of_squares += (1/(j*(j - 1.0)))*((j*current) - sum)*((j*current) - sum);
-	}
+        j = (float)(i + 1);
+        // calculate the sum of squares with the formular of Youngs and Cramer
+        if (j > 1) {
+            sum_of_squares +=
+                (1 / (j * (j - 1.0))) * ((j * current) - sum) * ((j * current) - sum);
+        }
     }
     mean = sum / ninput_items;
-    std_deviation = sqrt(sum_of_squares/ninput_items);
+    std_deviation = sqrt(sum_of_squares / ninput_items);
 }
 
 } /* namespace pulsed_power */

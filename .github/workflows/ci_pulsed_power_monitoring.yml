@@ -2,7 +2,7 @@ name: build_pulsed_power_monitoring
 
 on:
   push:
-    branches: [main]
+    branches: ["*"]
   pull_request:
     branches: [main]
   release:
@@ -69,6 +69,7 @@ jobs:
           python3 -m pip install gcovr --user --no-warn-script-location
           gcovr --version
 
+      # GNU RADIO
       - name: Install GNU Radio
         shell: bash
         run: |
@@ -79,16 +80,21 @@ jobs:
         shell: bash
         run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
 
-      - name: Configure GNU Radio pulsed-power out of tree module
+      - name: Configure GNU Radio pulsed-power out of tree modules
         shell: bash
         run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
 
-      - name: Build GNU Radio pulsed-power out of tree module
+      - name: Build GNU Radio pulsed-power out of tree modules
         shell: bash
         run: |
           sudo cmake --build ${{env.SRC_DIR_GR}}/build --target install
           sudo ldconfig
 
+      - name: Test GNU Radio pulsed-power out of tree modules
+        shell: bash
+        run: ctest --test-dir ${{env.SRC_DIR_GR}}/build
+
+      # OPENCMW
       - name: Configure CMake
         # Use a bash shell, so we can use the same syntax for environment variable access regardless of the host operating system
         shell: bash
@@ -128,6 +134,7 @@ jobs:
         shell: bash
         run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml --skip --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
+      # IMPLOT
       - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v11
         with:

@@ -35,9 +35,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
-    this->url        = _url;
-    requestedSignals = _requestedSignals;
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
+    : url(_url), requestedSignals(_requestedSignals) {
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -49,7 +48,11 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
     T   _acquisition(numSignals);
     this->acquisition = _acquisition;
 
-    this->extendedUrl = this->url + "&lastRefTrigger=0";
+    if (url.find("channelNameFilter") != std::string::npos) {
+        this->extendedUrl = this->url + "&lastRefTrigger=0";
+    } else {
+        this->extendedUrl = this->url;
+    }
 }
 
 template<typename T>
@@ -70,7 +73,9 @@ void Subscription<T>::fetch() {
     }
     if (fetchSuccessful) {
         this->acquisition.deserialize();
-        updateUrl();
+        if (url.find("channelNameFilter") != std::string::npos) {
+            updateUrl();
+        }
         this->fetchSuccessful = false;
         this->fetchFinished   = true;
     }
@@ -78,7 +83,7 @@ void Subscription<T>::fetch() {
 
 template<typename T>
 void Subscription<T>::updateUrl() {
-    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
+    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(acquisition.lastTimeStamp);
 }
 
 template class Subscription<Acquisition>;

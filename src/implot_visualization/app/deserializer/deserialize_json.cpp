@@ -72,16 +72,12 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-    if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
-        return;
-    }
-    std::string modifiedJsonString = this->jsonString;
-
-    modifiedJsonString.erase(0, 14);
-
-    auto json_obj = json::parse(modifiedJsonString);
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
@@ -95,6 +91,7 @@ void Acquisition::deserialize() {
     }
 
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
 }
 
@@ -111,14 +108,7 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
-        return;
-    }
-    std::string modifiedJsonString = this->jsonString;
-
-    modifiedJsonString.erase(0, 21);
-
-    auto json_obj = json::parse(modifiedJsonString);
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             this->refTrigger_ns = element.value();
@@ -131,7 +121,7 @@ void AcquisitionSpectra::deserialize() {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-
+    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }

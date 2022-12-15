@@ -7,6 +7,7 @@
 
 #include "integration_impl.h"
 #include <gnuradio/io_signature.h>
+#include <fstream>
 #include <iostream>
 #include <fstream>
 
@@ -50,6 +51,7 @@ int integration_impl::work(int noutput_items,
 
     add_new_steps(out, in, noutput_items);
 
+
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }
@@ -59,13 +61,14 @@ void integration_impl::add_new_steps(float* out, const float* sample, int number
     bool calculate_with_last_value = true;
     bool rewrite_save_file;
     // new startup
-    if (last_save.time_since_epoch() == std::chrono::seconds(0) || last_reset.time_since_epoch() == std::chrono::seconds(0)) {
+    if (last_save.time_since_epoch() == std::chrono::seconds(0) ||
+        last_reset.time_since_epoch() == std::chrono::seconds(0)) {
         calculate_with_last_value = false;
-	int result = get_values_from_file(last_reset, last_save, sum);
-	if (result == -1) {
-	    std::cout << "Failed to read file - write a new one" << std::endl;
-	    rewrite_save_file = true;
-	}
+        int result = get_values_from_file(last_reset, last_save, sum);
+        if (result == -1) {
+            std::cout << "Failed to read file - write a new one" << std::endl;
+            rewrite_save_file = true;
+        }
     }
 
     // write current sum to file every 10 minutes
@@ -101,43 +104,50 @@ void integration_impl::add_new_steps(float* out, const float* sample, int number
 int integration_impl::get_values_from_file(std::chrono::time_point<std::chrono::system_clock>& last_reset, std::chrono::time_point<std::chrono::system_clock>& last_save, float& sum) {
     try {
         long last_reset_duration;
-	long last_save_duration;
+        long last_save_duration;
         std::ifstream read_stream;
-	read_stream.open("t.txt", std::ifstream::in);
-	if (!read_stream.is_open()) {
+        read_stream.open("t.txt", std::ifstream::in);
+        if (!read_stream.is_open()) {
             return -1;
         }
-	read_stream >> last_reset_duration;
-	read_stream >> last_save_duration;
-	read_stream >> sum;
-	read_stream.close();
-	std::chrono::seconds last_reset_seconds(last_reset_duration);
-	std::chrono::seconds last_save_seconds(last_reset_duration);
-	std::chrono::time_point<std::chrono::system_clock> last_reset_obj(last_reset_seconds);
-	std::chrono::time_point<std::chrono::system_clock> last_save_obj(last_save_seconds);
-	last_reset = last_reset_obj;
-	last_save = last_save_obj;
-	return 0;
+        read_stream >> last_reset_duration;
+        read_stream >> last_save_duration;
+        read_stream >> sum;
+        read_stream.close();
+        std::chrono::seconds last_reset_seconds(last_reset_duration);
+        std::chrono::seconds last_save_seconds(last_reset_duration);
+        std::chrono::time_point<std::chrono::system_clock> last_reset_obj(
+            last_reset_seconds);
+        std::chrono::time_point<std::chrono::system_clock> last_save_obj(
+            last_save_seconds);
+        last_reset = last_reset_obj;
+        last_save = last_save_obj;
+        return 0;
     } catch (...) {
         return -1;
     }
 }
 
-int integration_impl::write_to_file(std::chrono::time_point<std::chrono::system_clock> last_reset, std::chrono::time_point<std::chrono::system_clock> last_save, float sum) {
+int integration_impl::write_to_file(
+    std::chrono::time_point<std::chrono::system_clock> last_reset,
+    std::chrono::time_point<std::chrono::system_clock> last_save,
+    float sum)
+{
     try {
-        auto last_reset_s = std::chrono::time_point_cast<std::chrono::seconds>(last_reset);
-	auto last_save_s = std::chrono::time_point_cast<std::chrono::seconds>(last_save);
-	long last_reset_duration = last_reset_s.time_since_epoch().count();
-	long last_save_duration = last_save_s.time_since_epoch().count();
+        auto last_reset_s =
+            std::chrono::time_point_cast<std::chrono::seconds>(last_reset);
+        auto last_save_s = std::chrono::time_point_cast<std::chrono::seconds>(last_save);
+        long last_reset_duration = last_reset_s.time_since_epoch().count();
+        long last_save_duration = last_save_s.time_since_epoch().count();
         std::ofstream write_stream;
-	write_stream.open("t.txt", std::ofstream::out | std::ofstream::trunc);
-	if (!write_stream.is_open()) {
+        write_stream.open("t.txt", std::ofstream::out | std::ofstream::trunc);
+        if (!write_stream.is_open()) {
             return -1;
         }
-	write_stream << last_reset_duration << '\n';
-	write_stream << last_save_duration << '\n';
-	write_stream << sum;
-	return 0;
+        write_stream << last_reset_duration << '\n';
+        write_stream << last_save_duration << '\n';
+        write_stream << sum;
+        return 0;
     } catch (...) {
         return -1;
     }
@@ -147,7 +157,7 @@ void integration_impl::integrate(float& out, const float* sample, int n_samples,
 {
     double value = 0;
     if (calculate_with_last_value) {
-        value += d_step_size * ((last_value + sample[0] ) / 2 );
+        value += d_step_size * ((last_value + sample[0]) / 2);
     }
     for (int i = 1; i < n_samples; i++) {
         value += d_step_size * ((sample[i - 1] + sample[i]) / 2);

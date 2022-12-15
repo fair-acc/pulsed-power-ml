@@ -19,7 +19,12 @@ public:
     statistics_impl(int decimation);
     ~statistics_impl();
 
-    void calculate_statistics(float& mean, float& min, float& max, float& std_deviation, const float* in, int ninput_items) override;
+    void calculate_statistics(float& mean,
+                              float& min,
+                              float& max,
+                              float& std_deviation,
+                              const float* in,
+                              int ninput_items) override;
 
     int work(int noutput_items,
 	     gr_vector_const_void_star& input_items,

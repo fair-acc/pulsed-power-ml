@@ -13,7 +13,7 @@ public:
     bool           fetchFinished   = true;
     bool           fetchSuccessful = false;
 
-    Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);
+    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);

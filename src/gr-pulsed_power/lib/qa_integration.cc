@@ -77,14 +77,14 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
     BOOST_TEST(out[0] == (0), boost::test_tools::tolerance(0.001));
 }
 
-BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) //What happens if there is no sample?
+BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) // What happens if there is no sample?
 {
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
     auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
     // Create pointer and samples
-    float sample_float[0] = { };
+    float sample_float[0] = {};
     const float* sample = sample_float;
     int num_samples = 0;
     // Create pointer for output
