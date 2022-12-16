@@ -102,7 +102,7 @@ jobs:
           cmake -S . -B build
           cd build
           make
-          make install
+          sudo make install
 
       - name: Configure GNU Radio pulsed-power out of tree module
         shell: bash
