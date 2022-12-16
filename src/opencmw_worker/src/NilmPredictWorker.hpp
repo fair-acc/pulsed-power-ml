@@ -67,8 +67,8 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker
     : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
 private:
-    const std::string                 MODEL_PATH = "src/model/dummy_model";
-    //const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
+    // const std::string  MODEL_PATH = "src/model/model_example";
+    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
 
     std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
@@ -113,8 +113,7 @@ public:
                     nilmData.week_usage.clear();
                     nilmData.month_usage.clear();
 
-                    {
-                        
+                    {                       
                         std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
                         std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
 
@@ -123,22 +122,26 @@ public:
                         fmt::print("Size of data point {}\n", data_point.size());
                     }
 
-                    // dummy Tensor - model Test
-                    // auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
-                    // auto output = (*_model)(input);
+                    cppflow::tensor tensor(data_point, { data_point.size() });
+                    fmt::print("tensor print: {}\n", tensor);
+
+                    auto output = (*_model)({ { "serving_default_args_0:0", tensor } }, { "StatefulPartitionedCall:0" });
 
                     int64_t size = static_cast<int64_t>(data_point.size());
-                    cppflow::tensor tensor(data_point, { size, 1 });
+                 //   cppflow::tensor tensor(data_point, { size });
                     // fmt::print("Tensor: {}\n", tensor);
 
-                    auto output = (*_model)(tensor);
+                    auto values = output[0].get_data<float>();
 
-                    auto values = output.get_data<float>();
+                    // values print
 
-                   /*  // fill data for REST
+                    nilmData.values.clear();
+
+
+                     // fill data for REST
                     for (auto v : values) {
                         nilmData.values.push_back(static_cast<double>(v));
-                    } */
+                    } 
 
                     fmt::print("Output: {}\n", output);
 
@@ -149,12 +152,10 @@ public:
                 }
                  catch (const std::exception &ex) {
 
-                    fmt::print("caught exception '{}'\n", ex.what());
-
+                    fmt::print("caught exception '{}'\n", ex.what()); 
                 }
-               
-
-                {//nilmData.values - dummy values - remove 
+             
+           /*      {//nilmData.values filled with dummy values                 
 
                     // generierte dummy Werte
                     for (std::size_t i=0;i<nilmData.names.size();i++){
@@ -163,7 +164,7 @@ public:
                     }
                     size_t zero_index = static_cast<size_t>( timestamp_n % 11);
                     nilmData.values.at(zero_index) = 0.0;
-                }
+                } */
 
                 super_t::notify("/nilmPredictData", context, nilmData);
 
@@ -258,7 +259,7 @@ public:
 
         std::vector<std::string> sui_str{ "S", "U", "I" };
         if (signal_name == sui_str) {
-           // fmt::print("Sink {}\n", sui_str);
+            fmt::print("Sink {}\n", sui_str);
 
             _suiDataSink->timestamp = timestamp;
 
@@ -268,7 +269,6 @@ public:
                 _suiDataSink->s.assign(s + offset, s + offset + vector_size);
                 _suiDataSink->u.assign(u + offset, u + offset + vector_size);
                 _suiDataSink->i.assign(i + offset, i + offset + vector_size);
-                
             }
         }
     }
@@ -322,6 +322,21 @@ private:
             output.insert(output.end(), suiData.i.begin(), suiData.i.end());
             if (suiData.i.size() < fftSize) {
                 auto               size = fftSize - suiData.i.size();
+                std::vector<float> suffix(size);
+                std::fill(suffix.begin(), suffix.end(), 0);
+                output.insert(output.end(), suffix.begin(), suffix.end());
+            }
+        }
+        if (suiData.s.size() == fftSize) {
+            output.insert(output.end(), suiData.s.begin(), suiData.s.end());
+        } else {
+            fmt::print("Warning: incorrect s size {}\n", suiData.s.size());
+            // output.clear();
+            // return output;
+            output.insert(output.end(), suiData.s.begin(), suiData.s.end());
+            // add 0 at the end
+            if (suiData.s.size() < fftSize) {
+                auto               size = fftSize - suiData.s.size();
                 std::vector<float> suffix(size);
                 std::fill(suffix.begin(), suffix.end(), 0);
                 output.insert(output.end(), suffix.begin(), suffix.end());

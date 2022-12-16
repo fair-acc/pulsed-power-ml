@@ -90,12 +90,11 @@ void Acquisition::addToBuffers() {
 
 void Acquisition::deserialize() {
 
-    if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
-        return;
-    }
     std::string modifiedJsonString = this->jsonString;
-
-    modifiedJsonString.erase(0, 14);
+    
+    if (this->jsonString.substr(0, 14) == "\"Acquisition\":") {
+        modifiedJsonString.erase(0, 14);
+    }
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
@@ -167,10 +166,10 @@ PowerUsage::PowerUsage(int _numSignals){
 
 void PowerUsage::deserialize(){
 
-    if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") { 
+   /*  if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") { 
         // TODO thorw Exception
         return;
-    }
+    } */
 
     std::string modifiedJsonString = this->jsonString;
 

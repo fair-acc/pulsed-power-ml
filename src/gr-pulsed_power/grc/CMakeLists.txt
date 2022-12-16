@@ -7,5 +7,10 @@
 #
 install(FILES
     pulsed_power_opencmw_time_sink.block.yml
-    pulsed_power_opencmw_freq_sink.block.yml DESTINATION share/gnuradio/grc/blocks
+    pulsed_power_opencmw_freq_sink.block.yml
+    pulsed_power_picoscope_4000a_source.block.yml
+    pulsed_power_power_calc_ff.block.yml
+    pulsed_power_mains_frequency_calc.block.yml
+    pulsed_power_power_calc_cc.block.yml
+    pulsed_power_power_calc_mul_ph_ff.block.yml DESTINATION share/gnuradio/grc/blocks
 )

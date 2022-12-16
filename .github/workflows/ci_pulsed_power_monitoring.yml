@@ -2,7 +2,7 @@ name: build_pulsed_power_monitoring
 
 on:
   push:
-    branches: [main]
+    branches: ["*"]
   pull_request:
     branches: [main]
   release:
