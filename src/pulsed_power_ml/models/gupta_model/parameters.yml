@@ -1,10 +1,22 @@
-background_n: 25
+background_n: 10
 fft_size: 131072
 sample_rate: 2_000_000
 n_peaks: 10
-threshold: 900
+threshold: 30
+#appliances:
+#  - 1: tube
+#  - 2: halo
+#  - 3: led
 appliances:
-  - 1: tube
-  - 2: halo
-  - 3: led
+  - 1: E1 # LED
+  - 2: F1 # Foen
+  - 3: F2
+  - 4: FP1 # Festplatte
+  - 5: H1 # Halogen
+  - 6: H2
+  - 7: L1 # Laptop
+  - 8: L2
+  - 9: PS1 # Power supply
+  - 10: R1 # Fluoreszenzroehren
+  - 11: R2
 switching_offset: 1
