@@ -89,12 +89,13 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-    // if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
-    //     return;
-    // }
+
+    if (this->jsonString.substr(0, 14) != "\"Acquisition\":") {
+        return;
+    }
     std::string modifiedJsonString = this->jsonString;
 
-   // modifiedJsonString.erase(0, 14);
+    modifiedJsonString.erase(0, 14);
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
@@ -115,6 +116,7 @@ void Acquisition::deserialize() {
     addToBuffers();
     this->init = true;
     this->success = true;
+
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
@@ -165,27 +167,59 @@ PowerUsage::PowerUsage(int _numSignals){
 
 void PowerUsage::deserialize(){
 
-    // if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":") { 
-    //     return;
-    // }
+    if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") { 
+        // TODO thorw Exception
+        return;
+    }
 
     std::string modifiedJsonString = this->jsonString;
 
-    //modifiedJsonString.erase(0, 16); 
+    if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":" ){
+        modifiedJsonString.erase(0, 16); 
+    } else if (this->jsonString.substr(0,18) == "\"NilmPredictData\":"){
+        modifiedJsonString.erase(0, 18); 
+    }
 
     auto json_obj = json::parse(modifiedJsonString);
     for( auto &element : json_obj.items()){
-        if (element.key() == "values"){
+        if (element.key() == "values"){        
             this->powerUsages.assign(element.value().begin(), element.value().end());
         }
+        if (element.key() == "names"){
+            this->devices.clear();
+            this->devices.assign(element.value().begin(), element.value().end());
+        }
+
+        if (element.key() == "timestamp")
+        {
+            timestamp = element.value();
+        }
+
+        if (element.key() == "day_usage"){
+            this->powerUsagesDay.clear();
+            this->powerUsagesDay.assign(element.value().begin(), element.value().end());
+        }
+
+        if (element.key() == "week_usage"){
+            this->powerUsagesWeek.clear();
+            this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
+        }
+
+        if (element.key() == "month_usage"){
+            this->powerUsagesMonth.clear();
+            this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
+        }
+
        // TODO - Buffer if needed
        // addToBuffers();
     }
 
+    // check values
+
     // dummy data TODO - deserialize in for , when structure is known
-    this->powerUsagesDay = {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33};
-    this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33};
-    this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 };
+    // this->powerUsagesDay = {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33 ,234};
+    // this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33,938};
+    // this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 ,1893};
 
     this->setSumOfUsageDay();
     this->setSumOfUsageWeek();
@@ -201,7 +235,6 @@ void PowerUsage::deserialize(){
 
 void PowerUsage::fail(){
     this->success = false;
-    printf("Fatch Power Usages failed\n");
 }
 
 double PowerUsage::sumOfUsage(){

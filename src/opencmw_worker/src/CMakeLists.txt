@@ -25,5 +25,5 @@ target_link_libraries(PulsedPowerService PRIVATE
     gnuradio::gnuradio-blocks
     gnuradio::gnuradio-analog
     gnuradio::gnuradio-pulsed_power
-    gnuradio-pulsed_power_daq
+  #  gnuradio-pulsed_power_daq
     tensorflow)

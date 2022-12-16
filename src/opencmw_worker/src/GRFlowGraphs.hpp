@@ -25,8 +25,8 @@
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
 // pulsed_power_daq
-#include <pulsed_power_daq/picoscope_4000a_source.h>
-#include <pulsed_power_daq/power_calc_ff.h>
+//#include <pulsed_power_daq/picoscope_4000a_source.h>
+//#include <pulsed_power_daq/power_calc_ff.h>
 
 class GRFlowGraph {
 private:
@@ -112,6 +112,7 @@ public:
     void start() { top->start(); }
 };
 
+/*
 class GRFlowGraphOnePhasePicoscopeNilm {
 private:
     gr::top_block_sptr top;
@@ -356,5 +357,5 @@ public:
     // start gnuradio flowgraph
     void start() { top->start(); }
 };
-
+*/
 #endif /* GR_FLOWGRAPHS_HPP */

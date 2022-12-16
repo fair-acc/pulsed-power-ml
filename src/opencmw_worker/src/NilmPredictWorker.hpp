@@ -27,12 +27,18 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 
 // data for Dashboard
 struct NilmPredictData {
-    std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4 };
+    int64_t            timestamp;
+    std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
     std::vector<std::string> names  = { "device 1", "device 2", "device 3", "device 4", "device 5",
-         "device 6", "device 7", "device 8", "device 9", "device 10", "others" };
+         "device 6", "device 7", "device 8", "device 9", "device 10", "device 11", "others" };
+    std::vector<double>  day_usage;
+    std::vector<double>  week_usage;
+    std::vector<double>  month_usage;
+    std::string   error;
+    int64_t error_code;
 };
 
-ENABLE_REFLECTION_FOR(NilmPredictData, values, names)
+ENABLE_REFLECTION_FOR(NilmPredictData, values, names, timestamp, day_usage, week_usage, month_usage)
 
 struct PQSPhiDataSink {
     int64_t timestamp;
@@ -61,8 +67,8 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker
     : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
 private:
-    // const std::string  MODEL_PATH = "src/model/model_example";
-    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
+    const std::string                 MODEL_PATH = "src/model/dummy_model";
+    //const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
 
     std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
@@ -79,7 +85,7 @@ public:
     std::atomic<bool>     shutdownRequested;
     std::jthread          notifyThread;
     NilmPredictData       nilmData;
-    std::time_t           timestamp;
+    std::time_t           timestamp_n;
 
     static constexpr auto PROPERTY_NAME = std::string_view("NilmPredicData");
 
@@ -94,52 +100,70 @@ public:
             while (!shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
-                timestamp                          = std::time(nullptr);
+                timestamp_n                         = std::time(nullptr);
 
                 NilmContext        context;
                 std::vector<float> data_point;
-                {
-                    std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
-                    std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
+                
+                try{
 
-                    data_point = mergeValues();
+                    nilmData.timestamp = timestamp_n;
+                    //nilmData.values.clear();
+                    nilmData.day_usage.clear();
+                    nilmData.week_usage.clear();
+                    nilmData.month_usage.clear();
 
-                    fmt::print("Size of data point {}\n", data_point.size());
+                    {
+                        
+                        std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
+                        std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
+
+                        data_point = mergeValues();
+
+                        fmt::print("Size of data point {}\n", data_point.size());
+                    }
+
+                    // dummy Tensor - model Test
+                    // auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
+                    // auto output = (*_model)(input);
+
+                    int64_t size = static_cast<int64_t>(data_point.size());
+                    cppflow::tensor tensor(data_point, { size, 1 });
+                    // fmt::print("Tensor: {}\n", tensor);
+
+                    auto output = (*_model)(tensor);
+
+                    auto values = output.get_data<float>();
+
+                   /*  // fill data for REST
+                    for (auto v : values) {
+                        nilmData.values.push_back(static_cast<double>(v));
+                    } */
+
+                    fmt::print("Output: {}\n", output);
+
+                    fillDayUsage();
+                    fillWeekUsage();
+                    fillMonthUsage();
+                
                 }
+                 catch (const std::exception &ex) {
 
-                // dummy Tensor - model Test
-                // auto            input = cppflow::fill({ 196612, 1 }, 2.0f); // replace with merge - test only
-                // auto output = (*_model)(input);
+                    fmt::print("caught exception '{}'\n", ex.what());
 
-                cppflow::tensor tensor(data_point, { data_point.size(), 1 });
-                // fmt::print("Tensor: {}\n", tensor);
-
-                auto output = (*_model)(tensor);
-
-                auto values = output.get_data<float>();
-
-                nilmData.values.clear();
-
-                // fill data for REST
-                for (auto v : values) {
-                    nilmData.values.push_back(static_cast<double>(v));
                 }
+               
 
-                fmt::print("Output: {}\n", output);
+                {//nilmData.values - dummy values - remove 
 
-                // TODO - fill nilmData.values
-
-                // // generierte dummy Werte
-                // if (counter == 5){
-                //     counter = 0;
-                //     for (std::size_t i=0;i<11;i++){
-                //         double value_new = nilmData.values.at(i) + 25.5;
-                //         nilmData.values.at(i) = value_new<=100?value_new :  (value_new -100.0);
-                //     }
-                //     nilmData.values.at(zero_index) = 0.0;
-                //     zero_index = zero_index == 10? 0: (zero_index +1);
-                // }
-                // counter++;
+                    // generierte dummy Werte
+                    for (std::size_t i=0;i<nilmData.names.size();i++){
+                        double value_new = nilmData.values.at(i) + 25.5;
+                        nilmData.values.at(i) = value_new<=100?value_new :  (value_new -100.0);
+                    }
+                    size_t zero_index = static_cast<size_t>( timestamp_n % 11);
+                    nilmData.values.at(zero_index) = 0.0;
+                }
 
                 super_t::notify("/nilmPredictData", context, nilmData);
 
@@ -155,7 +179,7 @@ public:
 
                 std::this_thread::sleep_for(1000ms);
 
-                std::this_thread::sleep_for(willSleepFor);
+                //std::this_thread::sleep_for(willSleepFor);
             }
         });
 
@@ -227,29 +251,30 @@ public:
     }
 
     // copy S U I data
-    void callbackCopySinkFrequencyData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float sample_rate, int64_t timestamp) {
+    void callbackCopySinkFrequencyData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float /*sample_rate*/, int64_t timestamp) {
         const float             *s = static_cast<const float *>(input_items[0]);
         const float             *u = static_cast<const float *>(input_items[1]);
         const float             *i = static_cast<const float *>(input_items[2]);
 
         std::vector<std::string> sui_str{ "S", "U", "I" };
         if (signal_name == sui_str) {
-            fmt::print("Sink {}\n", sui_str);
+           // fmt::print("Sink {}\n", sui_str);
 
             _suiDataSink->timestamp = timestamp;
 
-            for (size_t i = 0; i < nitems; i++) {
-                auto offset = i * vector_size;
+            for (int64_t k = 0; k < nitems; k++) {
+                auto offset = k * static_cast<int64_t>(vector_size);
 
                 _suiDataSink->s.assign(s + offset, s + offset + vector_size);
                 _suiDataSink->u.assign(u + offset, u + offset + vector_size);
                 _suiDataSink->i.assign(i + offset, i + offset + vector_size);
+                
             }
         }
     }
 
 private:
-    size_t             fftSize = 131072;
+    size_t             fftSize = 65536;
 
     std::vector<float> mergeValues() {
         PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
@@ -309,6 +334,25 @@ private:
         output.push_back(pqsphiData.phi);
 
         return output;
+    }
+
+    void fillDayUsage(){
+        nilmData.day_usage.clear();
+        //dummy data
+        nilmData.day_usage =  {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 21.9};
+    }
+
+    void fillWeekUsage(){
+        nilmData.week_usage.clear();
+        //dummy data
+        nilmData.week_usage =  {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33,100.0};
+    }
+
+    void fillMonthUsage(){
+        nilmData.month_usage.clear();
+        //dummy data
+        nilmData.month_usage =  {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 ,300.0};
+
     }
 
     // Test - dummy vector

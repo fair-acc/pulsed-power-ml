@@ -243,7 +243,7 @@ void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int
                 ImGui::TableSetColumnIndex(0);
                 ImGui::Text("%s", powerUsage.devices[row].c_str());
 
-                if (powerUsage.init){
+                if (powerUsage.init && row <powerUsage.devices.size()){
                 ImGui::TableSetColumnIndex(1);
                 ImVec2 pos = window->DC.CursorPos;
                 
@@ -268,20 +268,27 @@ void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int
                     switch (m_d_w)
                     {
                     case 0:
-                        relative = powerUsage.powerUsagesMonth[row]/sum_of_usage;
+                        if(row < powerUsage.powerUsagesMonth.size()){
+                            relative = powerUsage.powerUsagesMonth[row]/sum_of_usage;
+                            ImGui::Text("%3.2f %%", relative * 100);
+                        }
                         break;
                     case 1:
-                        relative = powerUsage.powerUsagesWeek[row]/sum_of_usage;
+                        if(row < powerUsage.powerUsagesWeek.size()){
+                            relative = powerUsage.powerUsagesWeek[row]/sum_of_usage;
+                            ImGui::Text("%3.2f %%", relative * 100);
+                        }
                         break;
                     case 2:
-                        relative = powerUsage.powerUsagesDay[row]/sum_of_usage;
+                        if(row < powerUsage.powerUsagesDay.size()){
+                            relative = powerUsage.powerUsagesDay[row]/sum_of_usage;
+                            ImGui::Text("%3.2f %%", relative * 100);
+                        }
                         break;
                     default:
                         break;
                     }
 
-                    //ImGui::Text("%.2f", relative);
-                    ImGui::Text("%3.2f %%", relative * 100);
                 }
             }
 

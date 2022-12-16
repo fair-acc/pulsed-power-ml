@@ -121,13 +121,15 @@ int         main(int, char **) {
 
     ImGui::StyleColorsLight();
 
-    Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    //Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_predict_values"});
     Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage = {nilmSubscription};
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { powerSubscription };
     AppState                                      appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
+
     emscripten_set_main_loop_arg(main_loop, &appState, 25, true);
 
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -147,8 +149,8 @@ static void main_loop(void *arg) {
    
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    //static bool   show_demo_window = false;
-    static bool   show_demo_window = true;
+    static bool   show_demo_window = false;
+    //static bool   show_demo_window = true;
     static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options

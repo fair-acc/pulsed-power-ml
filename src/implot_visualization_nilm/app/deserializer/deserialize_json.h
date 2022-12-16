@@ -103,7 +103,7 @@ private:
 class PowerUsage {
 public:
     //dummy devices
-    std::vector<std::string> devices = {"Pump", "DVR", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio", "Others"}; 
+    std::vector<std::string> devices = {"Device 1", "Device 2", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio",  "Others"}; 
     std::vector<double> powerUsages;
     std::vector<double> powerUsagesDay;
     std::vector<double> powerUsagesWeek;
@@ -114,6 +114,8 @@ public:
     bool                success = false;
     bool                init = false; 
     double              deliveryTime;
+    int64_t             timestamp;
+
 
     // dummy values
     std::vector<double> lastWeekUsage   = {85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0}; // other service

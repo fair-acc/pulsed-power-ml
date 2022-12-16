@@ -63,6 +63,7 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
 template<typename T>
 void Subscription<T>::fetch() {
     emscripten_fetch_attr_t attr;
+
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
