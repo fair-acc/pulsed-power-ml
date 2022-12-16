@@ -86,7 +86,14 @@ jobs:
           sudo bash -c 'echo "deb [signed-by=/etc/apt/trusted.gpg.d/picoscope.gpg] https://labs.picotech.com/debian/ picoscope main" >/etc/apt/sources.list.d/picoscope.list'
           sudo apt update
           sudo apt install picoscope
-          
+
+      - name: Install TensorFlow for C
+        shell: bash
+        run: |
+          FILENAME=libtensorflow-cpu-linux-x86_64-2.11.0.tar.gz
+          wget -q --no-check-certificate https://storage.googleapis.com/tensorflow/libtensorflow/${FILENAME}
+          sudo tar -C /usr/local -xzf ${FILENAME}
+
       - name: Install cppflow
         shell: bash
         run: |
