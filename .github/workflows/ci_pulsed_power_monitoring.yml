@@ -86,6 +86,16 @@ jobs:
           sudo bash -c 'echo "deb [signed-by=/etc/apt/trusted.gpg.d/picoscope.gpg] https://labs.picotech.com/debian/ picoscope main" >/etc/apt/sources.list.d/picoscope.list'
           sudo apt update
           sudo apt install picoscope
+          
+      - name: Install cppflow
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v2.0.0 https://github.com/serizba/cppflow
+          cd cppflow
+          cmake -S . -B build
+          cd build
+          make
+          make install
 
       - name: Configure GNU Radio pulsed-power out of tree module
         shell: bash
