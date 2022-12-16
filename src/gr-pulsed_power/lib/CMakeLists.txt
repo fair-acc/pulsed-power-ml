@@ -12,6 +12,8 @@
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND pulsed_power_sources
     opencmw_time_sink_impl.cc
+    integration_impl.cc
+    statistics_impl.cc
     opencmw_freq_sink_impl.cc )
 
 set(pulsed_power_sources "${pulsed_power_sources}" PARENT_SCOPE)
@@ -55,8 +57,10 @@ include(GrTest)
 #include_directories()
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_pulsed_power_sources
+qa_integration.cc
 qa_opencmw_freq_sink.cc
 qa_opencmw_time_sink.cc
+qa_statistics.cc
 )
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)

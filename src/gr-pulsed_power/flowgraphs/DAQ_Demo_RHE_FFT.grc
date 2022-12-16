@@ -1,0 +1,746 @@
+options:
+  parameters:
+    author: p01900
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: DAQ_Demo_RHE_FFT
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Not titled yet
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: decimation
+  id: variable
+  parameters:
+    comment: ''
+    value: '20'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1368, 212.0]
+    rotation: 0
+    state: enabled
+- name: items
+  id: variable
+  parameters:
+    comment: ''
+    value: '2000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1368, 340.0]
+    rotation: 0
+    state: enabled
+- name: low_pass_samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: (samp_rate / decimation)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1368, 276.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '200000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: blocks_null_sink_0
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '15'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [352.0, 728]
+    rotation: 270
+    state: true
+- name: logpwrfft_x_0
+  id: logpwrfft_x
+  parameters:
+    affinity: ''
+    alias: ''
+    average: 'False'
+    avg_alpha: '1.0'
+    comment: ''
+    fft_size: items
+    frame_rate: '30'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    ref_scale: '2'
+    sample_rate: low_pass_samp_rate
+    shift: 'False'
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1096, 484.0]
+    rotation: 0
+    state: enabled
+- name: low_pass_filter_0_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '200'
+    decim: decimation
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_fff
+    width: '100'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [880, 564.0]
+    rotation: 0
+    state: disabled
+- name: pulsed_power_daq_picoscope_4000a_source_0
+  id: pulsed_power_daq_picoscope_4000a_source
+  parameters:
+    acquisition_mode: Streaming
+    affinity: ''
+    alias: ''
+    buff_size: '204800'
+    comment: ''
+    coupling_ai_a: '1'
+    coupling_ai_b: '1'
+    coupling_ai_c: '0'
+    coupling_ai_d: '0'
+    coupling_ai_e: '0'
+    coupling_ai_f: '0'
+    coupling_ai_g: '0'
+    coupling_ai_h: '0'
+    downsampling_factor: '1'
+    downsampling_mode: '0'
+    driver_buff_size: '102400'
+    enable_ai_a: 'True'
+    enable_ai_b: 'True'
+    enable_ai_c: 'False'
+    enable_ai_d: 'False'
+    enable_ai_e: 'False'
+    enable_ai_f: 'False'
+    enable_ai_g: 'False'
+    enable_ai_h: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nr_buffers: '64'
+    nr_waveforms: '5'
+    offset_ai_a: '0.0'
+    offset_ai_b: '0.0'
+    offset_ai_c: '5.0'
+    offset_ai_d: '0.0'
+    offset_ai_e: '0.0'
+    offset_ai_f: '0.0'
+    offset_ai_g: '5.0'
+    offset_ai_h: '0.0'
+    poll_rate: '0.0005'
+    post_samples: '10000'
+    pre_samples: '500000'
+    range_ai_a: '5'
+    range_ai_b: '1'
+    range_ai_c: '5.0'
+    range_ai_d: '5.0'
+    range_ai_e: '5'
+    range_ai_f: '5'
+    range_ai_g: '5.0'
+    range_ai_h: '5.0'
+    samp_rate: samp_rate
+    serial_number: ''
+    trigger_direction: '0'
+    trigger_once: 'False'
+    trigger_source: None
+    trigger_threshold: '2.5'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [80, 152.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_daq_power_calc_ff_0
+  id: pulsed_power_daq_power_calc_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: '0.0001'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [840, 168.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_daq_power_calc_ff_prepper_0
+  id: pulsed_power_daq_power_calc_ff_prepper
+  parameters:
+    affinity: ''
+    alias: ''
+    bp_decimation: '20'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: '200000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 184.0]
+    rotation: 0
+    state: true
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'False'
+    grid: 'False'
+    gui_hint: ''
+    label1: P
+    label10: Signal 10
+    label2: Q
+    label3: S
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '3'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1064, 168.0]
+    rotation: 0
+    state: true
+- name: qtgui_time_sink_x_1
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'False'
+    grid: 'False'
+    gui_hint: ''
+    label1: Phi
+    label10: Signal 10
+    label2: Signal 2
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1064, 276.0]
+    rotation: 0
+    state: true
+- name: qtgui_time_sink_x_2
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'False'
+    grid: 'False'
+    gui_hint: ''
+    label1: Raw I
+    label10: Signal 10
+    label2: Raw U
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [832, 308.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_2_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'False'
+    grid: 'False'
+    gui_hint: ''
+    label1: Raw U
+    label10: Signal 10
+    label2: Raw U
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 500.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_vector_sink_f_0
+  id: qtgui_vector_sink_f
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    average: '1.0'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'True'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Frequency Spectrum"'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'False'
+    update_time: '0.10'
+    vlen: items
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    x_axis_label: '"x-Axis"'
+    x_start: '0'
+    x_step: '0.1'
+    x_units: '""'
+    y_axis_label: '"y-Axis"'
+    y_units: '""'
+    ymax: '60'
+    ymin: '-20'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1352, 508.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [logpwrfft_x_0, '0', qtgui_vector_sink_f_0, '0']
+- [low_pass_filter_0_0, '0', logpwrfft_x_0, '0']
+- [pulsed_power_daq_picoscope_4000a_source_0, '0', pulsed_power_daq_power_calc_ff_prepper_0,
+  '0']
+- [pulsed_power_daq_picoscope_4000a_source_0, '1', blocks_null_sink_0, '0']
+- [pulsed_power_daq_picoscope_4000a_source_0, '10', blocks_null_sink_0, '9']
+- [pulsed_power_daq_picoscope_4000a_source_0, '11', blocks_null_sink_0, '10']
+- [pulsed_power_daq_picoscope_4000a_source_0, '12', blocks_null_sink_0, '11']
+- [pulsed_power_daq_picoscope_4000a_source_0, '13', blocks_null_sink_0, '12']
+- [pulsed_power_daq_picoscope_4000a_source_0, '14', blocks_null_sink_0, '13']
+- [pulsed_power_daq_picoscope_4000a_source_0, '15', blocks_null_sink_0, '14']
+- [pulsed_power_daq_picoscope_4000a_source_0, '2', blocks_null_sink_0, '1']
+- [pulsed_power_daq_picoscope_4000a_source_0, '2', pulsed_power_daq_power_calc_ff_prepper_0,
+  '1']
+- [pulsed_power_daq_picoscope_4000a_source_0, '3', blocks_null_sink_0, '2']
+- [pulsed_power_daq_picoscope_4000a_source_0, '4', blocks_null_sink_0, '3']
+- [pulsed_power_daq_picoscope_4000a_source_0, '5', blocks_null_sink_0, '4']
+- [pulsed_power_daq_picoscope_4000a_source_0, '6', blocks_null_sink_0, '5']
+- [pulsed_power_daq_picoscope_4000a_source_0, '7', blocks_null_sink_0, '6']
+- [pulsed_power_daq_picoscope_4000a_source_0, '8', blocks_null_sink_0, '7']
+- [pulsed_power_daq_picoscope_4000a_source_0, '9', blocks_null_sink_0, '8']
+- [pulsed_power_daq_power_calc_ff_0, '0', qtgui_time_sink_x_0, '0']
+- [pulsed_power_daq_power_calc_ff_0, '1', qtgui_time_sink_x_0, '1']
+- [pulsed_power_daq_power_calc_ff_0, '2', qtgui_time_sink_x_0, '2']
+- [pulsed_power_daq_power_calc_ff_0, '3', qtgui_time_sink_x_1, '0']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '0', pulsed_power_daq_power_calc_ff_0,
+  '2']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '1', pulsed_power_daq_power_calc_ff_0,
+  '1']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '2', pulsed_power_daq_power_calc_ff_0,
+  '0']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '3', qtgui_time_sink_x_2, '0']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '4', logpwrfft_x_0, '0']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '4', low_pass_filter_0_0, '0']
+- [pulsed_power_daq_power_calc_ff_prepper_0, '4', qtgui_time_sink_x_2_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.4.0
