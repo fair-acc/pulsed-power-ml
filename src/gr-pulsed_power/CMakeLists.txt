@@ -27,7 +27,11 @@ endif()
 # Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # Find gnuradio to get access to the cmake modules
-find_package(Gnuradio "3.10" REQUIRED)
+set(GR_REQUIRED_COMPONENTS RUNTIME ANALOG BLOCKS)
+find_package(Gnuradio "3.10.4" REQUIRED COMPONENTS RUNTIME ANALOG BLOCKS)
+link_directories(
+    ${GNURADIO_RUNTIME_LIBRARY_DIRS}
+)
 
 # Set the version information here
 set(VERSION_MAJOR 1)
@@ -147,3 +151,10 @@ configure_package_config_file(
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
 
+########################################################################
+# Find picoscope dependencies
+########################################################################
+find_package(picoscope REQUIRED)
+set(GR_DIGITIZERS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "" FORCE)
+set(PICOSCOPE_INCLUDE_DIR /opt/picoscope/include)
+link_directories(${PICOSCOPE_LIB_DIR})
