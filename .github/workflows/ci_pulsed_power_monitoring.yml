@@ -80,7 +80,7 @@ jobs:
         shell: bash
         run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
 
-        - name: Install Picoscope dependencies
+      - name: Install Picoscope dependencies
         shell: bash
         run: |
           wget -qO- https://labs.picotech.com/debian/dists/picoscope/Release.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/picoscope.gpg
