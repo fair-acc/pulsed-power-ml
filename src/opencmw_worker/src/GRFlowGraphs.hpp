@@ -121,7 +121,6 @@ public:
         : top(gr::make_top_block("GNURadio")) {
         // parameters
         float                                 in_samp_rate                = 2'000'000.0f;
-        float                                 in_samp_rate_2              = 32'000.0f;
         float                                 out_samp_rate               = 1'000.0f;
         int                                   bp_decimation               = 20;
         double                                bp_high_cut                 = 80;
@@ -132,10 +131,11 @@ public:
         float                                 voltage_correction_factor   = 100.0f;
         gr::pulsed_power::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power::DOWNSAMPLING_MODE_NONE;
         gr::pulsed_power::coupling_t          picoscope_coupling          = gr::pulsed_power::AC_1M;
-        gr::pulsed_power::trigger_direction_t picoscope_trigger_direction = gr::pulsed_power::TRIGGER_DIRECTION_RISING;
+        // gr::pulsed_power::trigger_direction_t picoscope_trigger_direction = gr::pulsed_power::TRIGGER_DIRECTION_RISING;
 
         // blocks
         auto picoscope_source = gr::pulsed_power::picoscope_4000a_source::make("", true);
+        // picoscope parameters
         picoscope_source->set_trigger_once(false);
         picoscope_source->set_samp_rate(in_samp_rate);
         picoscope_source->set_downsampling(picoscope_downsampling_mode, 1);
@@ -147,19 +147,11 @@ public:
         picoscope_source->set_aichan_f(false, 5, picoscope_coupling, 0.0);
         picoscope_source->set_aichan_g(false, 5.0, picoscope_coupling, 5.0);
         picoscope_source->set_aichan_h(false, 5.0, picoscope_coupling, 0.0);
-
-        if ("None" != "None") {
-            picoscope_source->set_aichan_trigger("None", picoscope_trigger_direction, 2.5);
-        }
-
-        if ("Streaming" == "Streaming") {
-            picoscope_source->set_nr_buffers(64);
-            picoscope_source->set_driver_buffer_size(102400);
-            picoscope_source->set_streaming(0.0005);
-            picoscope_source->set_buffer_size(204800);
-        } else {
-            picoscope_source->set_rapid_block(5);
-        }
+        // acquisition mode = streaming
+        picoscope_source->set_nr_buffers(64);
+        picoscope_source->set_driver_buffer_size(102400);
+        picoscope_source->set_streaming(0.0005);
+        picoscope_source->set_buffer_size(204800);
 
         auto null_sink_picoscope       = gr::blocks::null_sink::make(sizeof(float));
 
@@ -259,33 +251,33 @@ public:
         pulsed_power_opencmw_time_sink_bpf_0->set_max_noutput_items(noutput_items);
 
         // S U I, fft
-        size_t fft_size = 131072;
+        int    fft_size    = 131072;
+        size_t vector_size = static_cast<size_t>(fft_size);
+        float  bandwidth   = in_samp_rate;
         // S
         auto multiply_voltage_current = gr::blocks::multiply_ff::make(1);
-        auto stream_to_vector_S       = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_size);
+        auto stream_to_vector_S       = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
         auto fft_S                    = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_S         = gr::blocks::complex_to_mag_squared::make(fft_size);
+        auto complex_to_mag_S         = gr::blocks::complex_to_mag_squared::make(vector_size);
 
         // U
-        auto stream_to_vector_U = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_size);
+        auto stream_to_vector_U = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
         auto fft_U              = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_U   = gr::blocks::complex_to_mag_squared::make(fft_size);
+        auto complex_to_mag_U   = gr::blocks::complex_to_mag_squared::make(vector_size);
 
         // I
-        auto stream_to_vector_I = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_size);
+        auto stream_to_vector_I = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
         auto fft_I              = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_I   = gr::blocks::complex_to_mag_squared::make(fft_size);
+        auto complex_to_mag_I   = gr::blocks::complex_to_mag_squared::make(vector_size);
 
         // nilm frequency sink
-        auto nilm_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "S", "U", "I" }, { "dB", "dB", "dB" }, in_samp_rate, in_samp_rate, fft_size);
+        auto nilm_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "S", "U", "I" }, { "dB", "dB", "dB" }, in_samp_rate, bandwidth, vector_size);
         nilm_freq_sink->set_max_noutput_items(noutput_items);
 
         // Connections:
         // Phase 0:
         top->hier_block2::connect(picoscope_source, 0, blocks_multiply_voltage0, 0);
         top->hier_block2::connect(picoscope_source, 2, blocks_multiply_current0, 0);
-        // top->hier_block2::connect(blocks_multiply_voltage0, 0, pulsed_power_opencmw_time_sink_raw_0, 0); // U_0
-        // top->hier_block2::connect(blocks_multiply_current0, 0, pulsed_power_opencmw_time_sink_raw_0, 1); // I_0
         top->hier_block2::connect(picoscope_source, 1, null_sink_picoscope, 0);
         top->hier_block2::connect(picoscope_source, 8, null_sink_picoscope, 1);
         top->hier_block2::connect(picoscope_source, 3, null_sink_picoscope, 2);

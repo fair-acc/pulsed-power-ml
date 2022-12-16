@@ -10,9 +10,9 @@
 #include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
+#include "LimitingCurveWorker.hpp"
 #include "NilmPowerWorker.hpp"
 #include "NilmPredictWorker.hpp"
-#include "LimitingCurveWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -95,7 +95,8 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraph flowgraph(1024);
+    // GRFlowGraph                      flowgraph(1024);
+    GRFlowGraphOnePhasePicoscopeNilm flowgraph(1024);
     flowgraph.start();
 
     // OpenCMW workers
