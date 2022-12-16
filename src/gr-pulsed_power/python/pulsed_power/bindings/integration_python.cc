@@ -36,7 +36,10 @@ void bind_integration(py::module& m)
     py::class_<integration, gr::block, gr::basic_block, std::shared_ptr<integration>>(
         m, "integration", D(integration))
 
-      .def(py::init(&integration::make), py::arg("decimation"), py::arg("sample_rate"), D(integration, make))
+        .def(py::init(&integration::make),
+             py::arg("decimation"),
+             py::arg("sample_rate"),
+             D(integration, make))
 
 
         .def("integrate",
@@ -44,7 +47,7 @@ void bind_integration(py::module& m)
              py::arg("out"),
              py::arg("sample"),
              py::arg("n_samples"),
-	     py::arg("calculate_with_last_value"),
+             py::arg("calculate_with_last_value"),
              D(integration, integrate))
 
         .def("add_new_steps",

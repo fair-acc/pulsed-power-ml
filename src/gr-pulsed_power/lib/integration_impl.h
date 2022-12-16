@@ -38,11 +38,14 @@ public:
 
     void add_new_steps(float* out, const float* sample, int noutput_items) override;
 
-    void integrate(float& out, const float* sample, int n_samples, bool calculate_with_last_value) override;
+    void integrate(float& out,
+                   const float* sample,
+                   int n_samples,
+                   bool calculate_with_last_value) override;
 
     int work(int noutput_items,
-	     gr_vector_const_void_star& input_items,
-	     gr_vector_void_star& output_items) override;
+             gr_vector_const_void_star& input_items,
+             gr_vector_void_star& output_items) override;
 };
 
 } // namespace pulsed_power

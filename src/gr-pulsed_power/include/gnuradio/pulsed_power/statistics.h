@@ -8,8 +8,8 @@
 #ifndef INCLUDED_PULSED_POWER_STATISTICS_H
 #define INCLUDED_PULSED_POWER_STATISTICS_H
 
-#include <gnuradio/sync_decimator.h>
 #include <gnuradio/pulsed_power/api.h>
+#include <gnuradio/sync_decimator.h>
 
 namespace gr {
 namespace pulsed_power {

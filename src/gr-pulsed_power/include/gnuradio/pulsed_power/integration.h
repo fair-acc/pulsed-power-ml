@@ -8,8 +8,8 @@
 #ifndef INCLUDED_PULSED_POWER_INTEGRATION_H
 #define INCLUDED_PULSED_POWER_INTEGRATION_H
 
-#include <gnuradio/sync_decimator.h>
 #include <gnuradio/pulsed_power/api.h>
+#include <gnuradio/sync_decimator.h>
 
 namespace gr {
 namespace pulsed_power {
@@ -49,8 +49,9 @@ public:
                            int n_samples,
                            bool calculate_with_last_value) = 0;
 
-     /*!
-     * @brief Calculate integrals of samples and save the sum of the last integral in a file
+    /*!
+     * @brief Calculate integrals of samples and save the sum of the last integral in a
+     * file
      *
      * @param out Result pointer
      * @param sample Pointer to samples that shall be integrated
@@ -58,7 +59,6 @@ public:
      */
 
     virtual void add_new_steps(float* out, const float* sample, int noutput_items) = 0;
-
 };
 
 } // namespace pulsed_power
