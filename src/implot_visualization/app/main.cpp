@@ -196,7 +196,7 @@ static void main_loop(void *arg) {
             // Bandpass Filter Plot
             if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
                 if (subscriptionsTimeDomain.size() >= 3) {
-                    plotter.plotBandpassFilter(subscriptionsTimeDomain[2].acquisition.buffers);
+                    Plotter::plotBandpassFilter(subscriptionsTimeDomain[2].acquisition.buffers);
                 }
                 ImPlot::EndPlot();
             }
@@ -204,7 +204,7 @@ static void main_loop(void *arg) {
             // Power Plot
             if (ImPlot::BeginPlot("Power")) {
                 if (subscriptionsTimeDomain.size() >= 2) {
-                    plotter.plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
+                    Plotter::plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
                 }
                 ImPlot::EndPlot();
             }
