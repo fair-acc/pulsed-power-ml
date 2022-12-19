@@ -13,6 +13,8 @@ install(FILES
     api.h
     opencmw_time_sink.h
     opencmw_freq_sink.h 
+    integration.h
+    statistics.h
     app_buffer.h
     digitizer_base.h
     digitizer_source.h

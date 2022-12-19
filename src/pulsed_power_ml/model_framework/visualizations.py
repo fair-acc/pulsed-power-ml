@@ -9,8 +9,49 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 
-def plot_data_point_array(list_of_data_points: Union[list, np.array],
-                          fft_size: int) -> matplotlib.figure.Figure:
+plt.style.use("dark_background")
+
+def plot_state_vector_array(state_vector_list: np.array,
+                            label_list: Union[List[str], None] = None,
+                            true_apparent_power: Union[np.array, None] = None) -> matplotlib.figure.Figure:
+    """
+
+    Parameters
+    ----------
+    state_vector_list
+        Array with state_vectors. Shape = (n_vectors, n_appliances)
+    label_list
+        List with names for each device in state vector.
+    true_apparent_power
+        Array w/ true, total apparent power values
+    Returns
+    -------
+    Figure containing one plot per appliance
+    """
+    n_figures = state_vector_list.shape[1]
+    fig = plt.figure(figsize=(16, 4.5 * n_figures))
+
+    if label_list is not None:
+        label_list.append("Other")
+
+    for i in range(n_figures):
+        ax = fig.add_subplot(n_figures, 1, i+1)
+        ax.plot(state_vector_list[:,i],
+                "-")
+
+        if true_apparent_power is not None:
+            ax.plot(true_apparent_power,
+                    "--")
+
+        if label_list is not None:
+            ax.set_title(label_list[i])
+
+    return fig
+
+def plot_data_point_array(list_of_data_points: Union[List, np.array],
+                          fft_size: int,
+                          list_of_state_vectors: Union[List, np.array, None] = None,
+                          plot_spectra: bool = False) -> matplotlib.figure.Figure:
     """
     Add a contour plot for all three spectra, one
     Parameters
@@ -19,37 +60,49 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
         Array of data points.
     fft_size
         (Full) size of the FFT.
+    list_of_state_vectors
+        If provided add a plot showing the predicted power disaggregation.
+    plot_spectra
+        If True, add spectra to plot.
+
     Returns
     -------
-
+    Figure
     """
     # Create figure and axis objects
     fig = plt.figure(figsize=(16, 45 / 2),
                      dpi=400,
                      layout="tight")
-    fft_u_ax = fig.add_subplot(5, 1, 1)
-    fft_i_ax = fig.add_subplot(5, 1, 2)
-    fft_s_ax = fig.add_subplot(5, 1, 3)
-    pqs_ax = fig.add_subplot(5, 1, 4)
-    phi_ax = fig.add_subplot(5, 1, 5)
 
+    if list_of_state_vectors is None:
+        n_fig = 5
+    else:
+        n_fig = 6
+
+    fft_u_ax = fig.add_subplot(n_fig, 1, 1)
+    fft_i_ax = fig.add_subplot(n_fig, 1, 2)
+    fft_s_ax = fig.add_subplot(n_fig, 1, 3)
+    pqs_ax = fig.add_subplot(n_fig, 1, 4)
+    phi_ax = fig.add_subplot(n_fig, 1, 5)
+
+    if plot_spectra:
     # Add spectrum plots
-    min_max_freq = [0, 1_000]
-    spectrum_size = int(fft_size/2)
-    fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
-                                min_max_freq=min_max_freq,
-                                ax=fft_u_ax)
-    fft_u_ax.set_title('Voltage Spectrum')
+        min_max_freq = [0, 1_000]
+        spectrum_size = int(fft_size/2)
+        fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
+                                    min_max_freq=min_max_freq,
+                                    ax=fft_u_ax)
+        fft_u_ax.set_title('Voltage Spectrum')
 
-    fft_i_ax = add_contour_plot(spectrum=list_of_data_points[:, spectrum_size:2*spectrum_size],
-                                min_max_freq=min_max_freq,
-                                ax=fft_i_ax)
-    fft_i_ax.set_title('Current Spectrum')
+        fft_i_ax = add_contour_plot(spectrum=list_of_data_points[:, spectrum_size:2*spectrum_size],
+                                    min_max_freq=min_max_freq,
+                                    ax=fft_i_ax)
+        fft_i_ax.set_title('Current Spectrum')
 
-    fft_s_ax = add_contour_plot(spectrum=list_of_data_points[:, 2*spectrum_size:3*spectrum_size],
-                                min_max_freq=min_max_freq,
-                                ax=fft_s_ax)
-    fft_s_ax.set_title('Apparent Power Spectrum')
+        fft_s_ax = add_contour_plot(spectrum=list_of_data_points[:, 2*spectrum_size:3*spectrum_size],
+                                    min_max_freq=min_max_freq,
+                                    ax=fft_s_ax)
+        fft_s_ax.set_title('Apparent Power Spectrum')
 
     # add PQS plot
     pqs_ax = add_pqs_plot(list_of_data_points[:, -4:-1],
@@ -60,6 +113,13 @@ def plot_data_point_array(list_of_data_points: Union[list, np.array],
     phi_ax = add_phi_plot(list_of_data_points[:, -1],
                           ax=phi_ax)
     phi_ax.set_title("Phase Angle")
+
+    # add prediction plot
+    if list_of_state_vectors is not None:
+        pqs_predicted_ax = fig.add_subplot(n_fig, 1, 6)
+        pqs_predicted_ax = add_prediction_plot(state_vector_array=np.array(list_of_state_vectors),
+                                               pqs_array=list_of_data_points[:, -4:-1],
+                                               ax=pqs_predicted_ax)
 
     return fig
 
@@ -107,7 +167,7 @@ def add_contour_plot(spectrum: np.array,
     """
 
     # add spectrum to axis
-    ax.imshow(X=spectrum.T,
+    ax.imshow(X=np.log10(spectrum.T),
               aspect="auto",
               interpolation="none",
               origin="lower",
@@ -192,5 +252,45 @@ def add_phi_plot(phi_array: np.array,
     ax.grid(True)
     ax.legend()
     ax.set_xlim(0, len(phi_array))
+
+    return ax
+
+
+def add_prediction_plot(state_vector_array: np.array,
+                        pqs_array: np.array,
+                        ax: matplotlib.axis.Axis) -> matplotlib.axis.Axis:
+    """
+    Add a plot containing all predicted appliances incl. the respective predicted values and the actual apparent
+    power versus time.
+
+    Parameters
+    ----------
+    state_vector_array
+        Array of state vectors.
+    pqs_array
+        Array of P, Q ans S values.
+    ax
+        Axis object to add the plot to.
+
+    Returns
+    -------
+    ax
+        the provided axis with the respective plot added.
+    """
+    # Add the total apparent power
+    ax.plot(pqs_array[:, 2],
+            label="Total measured apparent power")
+
+    # Add one line for each appliance and "other"
+    n_appliances = state_vector_array.shape[1]  # incl. "other"
+    for appliance_index in range(n_appliances):
+        ax.plot(state_vector_array[:, appliance_index],
+                label=f"Appliance {appliance_index}")
+
+    ax.set_xlabel("Timestep")
+    ax.set_ylabel("Apparent Power[VA]")
+    ax.grid(True)
+    ax.legend()
+    ax.set_xlim(0, state_vector_array.shape[0])
 
     return ax

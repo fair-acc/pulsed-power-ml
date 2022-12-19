@@ -22,7 +22,6 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/web)
 # proper operation of emscripten)
 
 add_compile_options(
-        -DIMGUI_DISABLE_FILE_FUNCTIONS
         -g
         -Wall -Wformat -Os
         "SHELL:-s USE_SDL=2"
@@ -37,8 +36,8 @@ add_link_options(
         "SHELL:-s ALLOW_MEMORY_GROWTH=1"
         "SHELL:-s NO_EXIT_RUNTIME=0"
         "SHELL:-s ASSERTIONS=1"
-        "SHELL:-s NO_FILESYSTEM=1"
         --shell-file ${PROJECT_SOURCE_DIR}/app/shell_minimal.html
+        --embed-file ${PROJECT_SOURCE_DIR}/app/assets@assets
         "SHELL:-s USE_SDL=2"
         "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
         -sFETCH

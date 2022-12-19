@@ -24,7 +24,6 @@ message("PICOSCOPE_LIB_DIR  " ${PICOSCOPE_LIB_DIR})
 add_library(picoscope SHARED IMPORTED)
 set_target_properties(picoscope PROPERTIES IMPORTED_LOCATION ${PICOSCOPE_LIB_DIR})
 target_link_libraries( picoscope)
-
 # Check for supported compiler versions
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1.0)

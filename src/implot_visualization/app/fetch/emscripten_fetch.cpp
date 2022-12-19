@@ -35,9 +35,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
-    this->url        = _url;
-    requestedSignals = _requestedSignals;
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
+    : url(_url), requestedSignals(_requestedSignals) {
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -49,7 +48,11 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
     T   _acquisition(numSignals);
     this->acquisition = _acquisition;
 
-    this->extendedUrl = this->url + "&lastRefTrigger=0";
+    if (url.find("channelNameFilter") != std::string::npos) {
+        this->extendedUrl = this->url + "&lastRefTrigger=0";
+    } else {
+        this->extendedUrl = this->url;
+    }
 }
 
 template<typename T>

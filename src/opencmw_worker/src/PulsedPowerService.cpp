@@ -2,21 +2,6 @@
 #include <majordomo/Broker.hpp>
 #include <majordomo/RestBackend.hpp>
 
-// Gnu Radio includes
-#include <gnuradio/analog/sig_source.h>
-#include <gnuradio/blocks/complex_to_mag_squared.h>
-#include <gnuradio/blocks/file_sink.h>
-#include <gnuradio/blocks/multiply_const.h>
-#include <gnuradio/blocks/nlog10_ff.h>
-#include <gnuradio/blocks/stream_to_vector.h>
-#include <gnuradio/blocks/throttle.h>
-#include <gnuradio/fft/fft.h>
-#include <gnuradio/fft/fft_v.h>
-#include <gnuradio/fft/window.h>
-#include <gnuradio/pulsed_power/opencmw_freq_sink.h>
-#include <gnuradio/pulsed_power/opencmw_time_sink.h>
-#include <gnuradio/top_block.h>
-
 #include <atomic>
 #include <fstream>
 #include <iomanip>
@@ -25,6 +10,9 @@
 #include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
+#include "LimitingCurveWorker.hpp"
+#include "NilmPowerWorker.hpp"
+#include "NilmPredictWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -91,74 +79,6 @@ public:
     }
 };
 
-class GRFlowGraph {
-private:
-    gr::top_block_sptr top;
-
-public:
-    GRFlowGraph(int noutput_items)
-        : top(gr::make_top_block("GNURadio")) {
-        // flowgraph setup
-        float samp_rate = 4'000.0f;
-        // sinus_signal --> throttle --> opencmw_time_sink
-        auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
-        auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
-        pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
-
-        // saw_signal --> throttle --> opencmw_time_sink
-        auto signal_source_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
-        auto throttle_block_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_1 = gr::pulsed_power::opencmw_time_sink::make({ "saw" }, { "A" }, samp_rate);
-        pulsed_power_opencmw_sink_1->set_max_noutput_items(noutput_items);
-
-        // square_signal --> throttle --> opencmw_time_sink
-        auto signal_source_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
-        auto throttle_block_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_2 = gr::pulsed_power::opencmw_time_sink::make({ "square" }, { "A" }, samp_rate);
-        pulsed_power_opencmw_sink_2->set_max_noutput_items(noutput_items);
-
-        // sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
-        const float  samp_rate_2                      = 32'000.0f;
-        const size_t vec_length                       = 1024;
-        const size_t fft_size                         = vec_length;
-        const auto   bandwidth                        = samp_rate_2;
-        auto         signal_source_3                  = gr::analog::sig_source_f::make(samp_rate_2, gr::analog::GR_SIN_WAVE, 3000.0f, 220.0);
-        auto         throttle_block_3                 = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate_2, true);
-        auto         stream_to_vector_0               = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vec_length);
-        auto         fft_vxx_0                        = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(1024), true, 1);
-        auto         multiply_const_xx_0              = gr::blocks::multiply_const_cc::make(1 / static_cast<float>(vec_length), vec_length);
-        auto         complex_to_mag_squared_0         = gr::blocks::complex_to_mag_squared::make(vec_length);
-        auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
-        auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_2, bandwidth);
-
-        // connections
-        // time-domain sinks
-        top->hier_block2::connect(signal_source_0, 0, throttle_block_0, 0);
-        top->hier_block2::connect(throttle_block_0, 0, pulsed_power_opencmw_sink_0, 0);
-
-        top->hier_block2::connect(signal_source_1, 0, throttle_block_1, 0);
-        top->hier_block2::connect(throttle_block_1, 0, pulsed_power_opencmw_sink_1, 0);
-
-        top->hier_block2::connect(signal_source_2, 0, throttle_block_2, 0);
-        top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_0, 1);
-
-        // frequency-domain sinks
-        top->hier_block2::connect(signal_source_3, 0, throttle_block_3, 0);
-        top->hier_block2::connect(throttle_block_3, 0, stream_to_vector_0, 0);
-        top->hier_block2::connect(stream_to_vector_0, 0, fft_vxx_0, 0);
-        top->hier_block2::connect(fft_vxx_0, 0, multiply_const_xx_0, 0);
-        top->hier_block2::connect(multiply_const_xx_0, 0, complex_to_mag_squared_0, 0);
-        top->hier_block2::connect(complex_to_mag_squared_0, 0, nlog10_ff_0, 0);
-        top->hier_block2::connect(nlog10_ff_0, 0, pulsed_power_opencmw_freq_sink_0, 0);
-    }
-
-    ~GRFlowGraph() { top->stop(); }
-
-    // start gnuradio flowgraph
-    void start() { top->start(); }
-};
-
 int main() {
     Broker                                          broker("Pulsed-Power-Broker");
     auto                                            fs = cmrc::assets::get_filesystem();
@@ -183,11 +103,17 @@ int main() {
     CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
+    NilmPowerWorker<"nilm_values", description<"Nilm Data">>                                              nilmDataWorker(broker, std::chrono::milliseconds(1000));
+    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">>                          nilmPredictWorker(broker, std::chrono::milliseconds(1000));
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
 
     // run workers in separate threads
     std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
-    std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
+    std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
+    std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });
+    std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
 
     brokerThread.join();
 
@@ -195,4 +121,7 @@ int main() {
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     counterWorkerThread.join();
+    nilmDataWorkerThread.join();
+    nilmPredictWorkerThread.join();
+    limitingCurveWorkerThread.join();
 }

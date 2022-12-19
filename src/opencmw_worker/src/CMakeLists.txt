@@ -24,4 +24,5 @@ target_link_libraries(PulsedPowerService PRIVATE
     assets::rest
     gnuradio::gnuradio-blocks
     gnuradio::gnuradio-analog
-    gnuradio::gnuradio-pulsed_power)
+    gnuradio::gnuradio-pulsed_power
+    tensorflow)

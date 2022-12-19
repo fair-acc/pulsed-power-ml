@@ -147,7 +147,7 @@ public:
                 bool result = signalData.ringBuffer->tryPublishEvent([i, in, vector_size, timestamp](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                     bufferData.timestamp = timestamp;
                     size_t offset        = static_cast<size_t>(i) * vector_size;
-                    bufferData.chunk.assign(in + offset, in + offset + vector_size);
+                    bufferData.chunk.assign(in + offset + vector_size / 2, in + offset + vector_size);
                 });
 
                 if (!result) {
@@ -214,8 +214,8 @@ private:
         float  bandwidth  = signalData.sink->get_bandwidth();
         out.channelFrequencyValues.clear();
         out.channelFrequencyValues.reserve(vectorSize);
-        float freqStartValue = -(bandwidth / 2);
-        float freqStepValue  = bandwidth / static_cast<float>(vectorSize);
+        float freqStartValue = 0; //-(bandwidth / 2);
+        float freqStepValue  = 0.5f * bandwidth / static_cast<float>(vectorSize);
         for (size_t i = 0; i < vectorSize; i++) {
             out.channelFrequencyValues.push_back(freqStartValue + static_cast<float>(i) * freqStepValue);
         }
