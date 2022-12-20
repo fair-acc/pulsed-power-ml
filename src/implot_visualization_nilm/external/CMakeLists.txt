@@ -1,6 +1,12 @@
 include(FetchContent)
 
 FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 8.1.1 # newest: 9.1.0
+)
+
+FetchContent_Declare(
     imgui
     GIT_REPOSITORY  https://github.com/ocornut/imgui.git
     GIT_TAG         v1.88
@@ -18,7 +24,21 @@ FetchContent_Declare(
     GIT_TAG         69d744867f8847c91a126fa25e9a6a3d67b3be41 #v3.11.1
 )
 
-FetchContent_MakeAvailable(nlohmann_json imgui implot)
+FetchContent_Declare( # needed to load images in ImGui
+        stb
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_TAG 8b5f1f37b5b75829fc72d38e7b5d4bcbf8a26d55 # master from Sep 2022
+)
+
+FetchContent_Declare( # needed to load images in ImGui
+        iconfont
+        GIT_REPOSITORY https://github.com/juliettef/IconFontCppHeaders.git
+        GIT_TAG 685673dea6fb4012bd2104bf9b8d8da802eade50 # master from Sep 2022
+)
+
+FetchContent_MakeAvailable(fmt nlohmann_json imgui implot stb iconfont)
+
+#FetchContent_MakeAvailable(nlohmann_json imgui implot)
 
 # imgui and implot are not CMake Projects, so we have to define their targets manually here
 add_library(
@@ -51,3 +71,8 @@ target_include_directories(
 )
 target_link_libraries(implot PUBLIC imgui $<TARGET_OBJECTS:imgui>)
 
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+
+add_library(iconfont INTERFACE)
+target_include_directories(iconfont INTERFACE ${iconfont_SOURCE_DIR})

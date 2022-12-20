@@ -57,7 +57,8 @@ void ScrollingBuffer::erase() {
 void BufferPower::updateValues(const std::vector<double> &_values){
     this->values = _values;
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     this->timestamp = currentTime;
     init = true;
 }
@@ -131,13 +132,13 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
-        return;
-    }
     std::string modifiedJsonString = this->jsonString;
+    
+    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
+        modifiedJsonString.erase(0, 21);  
 
-    modifiedJsonString.erase(0, 21);  
-
+    }
+      
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
@@ -227,7 +228,8 @@ void PowerUsage::deserialize(){
     this->success = true;
     this->init    = true;
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
     this->deliveryTime = currentTime;
 
 }

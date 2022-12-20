@@ -62,17 +62,20 @@ public:
     std::vector<ScrollingBuffer> buffers;
     bool                         success = false;
     bool                         init = false;
-
+       
     Acquisition();
     Acquisition(int numSignals);
 
     void deserialize(); 
     void fail(){this->success = false;};
 
+    std::vector<double> relativeTimestamps;
+    uint64_t            lastTimeStamp = 0.0;
+
 private:
     uint64_t            refTrigger_ns = 0;
     double              refTrigger_s  = 0.0;
-    std::vector<double> relativeTimestamps;
+ 
     StrideArray         strideArray;
 
     void                addToBuffers(); 

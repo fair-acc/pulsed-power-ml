@@ -7,7 +7,7 @@
 #include <algorithm>
 
 
-void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
+/* void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
         if (signals[i].data.size() > 0) {
             ImPlot::PlotLine((signals[i].signalName).c_str(),
@@ -17,7 +17,6 @@ void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
                     0,
                     signals[i].offset,
                     2 * sizeof(double));
-            //ImPlot::TagY(signals[0].data.back().y, ImVec4(0,1,1,1), "Current Power: \n%.2f",  signals[0].data.back().y);
         }
     }
 }
@@ -34,7 +33,7 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
                     2 * sizeof(double));
         }
     }
-}
+} */
 
 // void Plotter::plotGrSignals(std::vector<ScrollingBuffer> &signals) {
 //     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
@@ -57,23 +56,23 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 //     // plotSignals(signals);
 // }
 
-void Plotter::plotPower(std::vector<ScrollingBuffer> &signals, bool success) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 60.0, currentTime, ImGuiCond_Always);
-    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
-    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    plotSignals(signals);
-    if(!success){
-        ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(1,0.5,0,1));
-        ImPlot::PlotText("Connection failed", currentTime-30, 2.0f);
-        ImPlot::PopStyleColor();
-    }
-}
+// void Plotter::plotPower(std::vector<ScrollingBuffer> &signals, bool success) {
+//     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+//     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+//     ImPlot::SetupAxes("time (s)", "P(W), Q(Var), S(VA)", xflags, yflags);
+//     auto   clock       = std::chrono::system_clock::now();
+//     double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+//     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 60.0, currentTime, ImGuiCond_Always);
+//     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+//     ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
+//     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+//     plotSignals(signals);
+//     if(!success){
+//         ImPlot::PushStyleColor(ImPlotCol_InlayText, ImVec4(1,0.5,0,1));
+//         ImPlot::PlotText("Connection failed", currentTime-30, 2.0f);
+//         ImPlot::PopStyleColor();
+//     }
+// }
 
 // void Plotter::plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
 //     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
@@ -93,46 +92,46 @@ void Plotter::plotPower(std::vector<ScrollingBuffer> &signals, bool success) {
 //     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
 //     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
 //     plotSignals(signals);
-// }
+// // }
 
-void Plotter::plotBarchart(PowerUsage &powerUsage){
-    if(ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")){
+// void Plotter::plotBarchart(PowerUsage &powerUsage){
+//     if(ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")){
 
-        // Todo - dates
-        //auto   clock       = std::chrono::system_clock::now();
-        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+//         // Todo - dates
+//         //auto   clock       = std::chrono::system_clock::now();
+//         //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
         
-        static const char*  labels[]    = {"1","2","3","4","5","6","Today"};
-        static double       kWh[7];
-        static double       kWhToday[7] = {0.0, 0.0,0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back()};
-        static const double positions[] = {0,1,2,3,4,5,6};
-        bool clamp = false;
+//         static const char*  labels[]    = {"1","2","3","4","5","6","Today"};
+//         static double       kWh[7];
+//         static double       kWhToday[7] = {0.0, 0.0,0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back()};
+//         static const double positions[] = {0,1,2,3,4,5,6};
+//         bool clamp = false;
 
-        std::copy(powerUsage.lastWeekUsage.begin(),  powerUsage.lastWeekUsage.end()-1, kWh);
-        kWh[6] = 0;
+//         std::copy(powerUsage.lastWeekUsage.begin(),  powerUsage.lastWeekUsage.end()-1, kWh);
+//         kWh[6] = 0;
 
-        double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
+//         double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
 
-        //ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
+//         //ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
 
 
-        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element+20, ImGuiCond_Always);
-        ImPlot::SetupAxes("Day","kWh");
-        ImPlot::SetupAxisTicks(ImAxis_X1,positions, 7, labels);
-        ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
-        ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
+//         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element+20, ImGuiCond_Always);
+//         ImPlot::SetupAxes("Day","kWh");
+//         ImPlot::SetupAxisTicks(ImAxis_X1,positions, 7, labels);
+//         ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
+//         ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
 
-        for(int i=0;i<7;i++){
-            if(i!=6){
-                ImPlot::Annotation(positions[i], kWh[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWh[i] );
-            }else{
-                ImPlot::Annotation(positions[i], kWhToday[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWhToday[i] );
-            }
-        }
+//         for(int i=0;i<7;i++){
+//             if(i!=6){
+//                 ImPlot::Annotation(positions[i], kWh[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWh[i] );
+//             }else{
+//                 ImPlot::Annotation(positions[i], kWhToday[i], ImVec4(0,0,0,0),ImVec2(0,-5),clamp, "%.2f", kWhToday[i] );
+//             }
+//         }
 
-        ImPlot::EndPlot();
-    }
-}
+//         ImPlot::EndPlot();
+//     }
+// }
 
 void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w){
 
@@ -294,61 +293,5 @@ void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int
 
         ImGui::EndTable();
     }
-
-}
-
-void DeviceTable::drawHeader(double currentTime){
-
-    static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
-
-    // https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples image logo
-            // std::string  filename = "picture/77612335.png";
-
-            // static ImVec2 bmin(0,0);
-            // static ImVec2 bmax(1,1);
-            // static ImVec2 uv0(0,0);
-            // static ImVec2 uv1(1,1);
-            // static ImVec4 tint(1,1,1,1);
-
-            // bool ret = LoadTextureFromFile("../../MyImage01.jpg", &my_image_texture, &my_image_width, &my_image_height);
-
-            // if (ImPlot::BeginPlot("##image")) {
-            //     ImPlot::PlotImage("Logo",ImGui::GetIO().Fonts->TexID, bmin, bmax, uv0, uv1, tint);
-            //     ImPlot::EndPlot();
-            // }
-
-
-    if(ImGui::BeginTable("Header", 3 , tableFlags, ImVec2(-1,0)) ){
-
-        ImGui::TableSetupColumn("logo", ImGuiTableColumnFlags_WidthFixed, 400.0f); 
-        ImGui::TableSetupColumn("name"); 
-        ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed,300.0f);
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(1);
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Non Intrusive Load Monitoring @ FAIR"); ImGui::SameLine();
-
-        char buff[32];
-        char buff_time[32];
-        
-        ImGui::TableSetColumnIndex(2);
-
-        ImGui::BeginGroup();
-        ImPlot::FormatDate(ImPlotTime::FromDouble(currentTime),buff,32,ImPlotDateFmt_DayMoYr,ImPlot::GetStyle().UseISO8601);
-        ImPlot::FormatTime(ImPlotTime::FromDouble(currentTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-        //ImGui::TextColored(ImVec4(1,0.5,0,1)," %s %s (local)" , buff, buff_time);
-        ImGui::Text(" %s %s (local)" , buff, buff_time);
-
-        ImPlot::GetStyle().UseLocalTime = false;
-        ImPlot::FormatTime(ImPlotTime::FromDouble(currentTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-        //ImGui::TextColored(ImVec4(1,0.5,0,1),"            %s (UTC)  " , buff_time);
-        ImGui::Text("            %s (UTC)  " , buff_time);
-        ImPlot::GetStyle().UseLocalTime = true;
-        ImGui::EndGroup();   
-
-        ImGui::EndTable();
-    
-    } 
 
 }

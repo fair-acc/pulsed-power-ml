@@ -15,40 +15,59 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
-// TODO - barchart
+
 #include <plot_tools.h>
+#include <fair_header.h>
+#include <IconsFontAwesome6.h>
 
 #define ELECTRICY_PRICE 30
 
-// Emscripten requires to have full control over the main loop. We're going to
-// store our SDL book-keeping variables globally. Having a single function that
-// acts as a loop prevents us to store state in the stack of said function. So
-// we need some location for this.
-SDL_Window   *g_Window    = NULL;
-SDL_GLContext g_GLContext = NULL;
-
 class AppState {
 public:
+    SDL_Window                                    *window   = nullptr;
+    SDL_GLContext                                 GLContext = nullptr;
     std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage;
-    // TODO barchart
-    Plotter                                       plotter;
-    DeviceTable                                   deviceTable;
+    //Plotter                                       plotter;
+    //DeviceTable                                   deviceTable;
     double                                        lastFrequencyFetchTime = 0.0;
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
+
+    struct AppFonts {
+        ImFont *title;
+        ImFont *text;
+        ImFont *fontawesome;
+    };
+    AppState::AppFonts fonts{};
 
     AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain) {
         this->subscritpionsPowerUsage = _powerUsages;
         this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
 
         auto   clock                  = std::chrono::system_clock::now();
-        double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        //double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        double currentTime            = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
         this->lastFrequencyFetchTime  = currentTime;
     }
 };
 
+// Emscripten requires to have full control over the main loop. We're going to
+// store our SDL book-keeping variables globally. Having a single function that
+// acts as a loop prevents us to store state in the stack of said function. So
+// we need some location for this.
+
+
+
 static void main_loop(void *);
 
 int         main(int, char **) {
+
+    //Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_predict_values"});
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage = {nilmSubscription};
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { powerSubscription };
+    AppState                                      appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -72,10 +91,10 @@ int         main(int, char **) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    SDL_WindowFlags window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    g_Window                     = SDL_CreateWindow("Nilm Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    g_GLContext                  = SDL_GL_CreateContext(g_Window);
-    if (!g_GLContext) {
+    auto window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    appState.window                     = SDL_CreateWindow("Nilm Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    appState.GLContext                  = SDL_GL_CreateContext(appState.window);
+    if (!appState.GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
         return 1;
     }
@@ -85,48 +104,42 @@ int         main(int, char **) {
     ImGui::CreateContext();
     ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void) io;
+    //(void) io;
 
     // For an Emscripten build we are disabling file-system access, so let's not
     // attempt to do a fopen() of the imgui.ini file. You may manually call
     // LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = NULL;
+    io.IniFilename = nullptr;
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL2_InitForOpenGL(g_Window, g_GLContext);
+    ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+     // Setup Dear ImGui style
+    ImGui::StyleColorsLight();
 
-    // time format
+    const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
+    // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
+    appState.fonts.text  = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
+    appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
+    // appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
+
+   
+    ImVector<ImWchar>        symbols;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
+    builder.AddText(ICON_FA_CIRCLE_QUESTION);
+    builder.BuildRanges(&symbols);
+    appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-solid-900.ttf", 32.0f, nullptr, symbols.Data);
+    // appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
+
+    app_header::load_header_assets();
+
+     // time format
     ImPlot::GetStyle().UseISO8601 = true;
     ImPlot::GetStyle().UseLocalTime = true;
     ImPlot::GetStyle().Use24HourClock = true;
-
-
-    // Load Fonts
-     //io.Fonts->AddFontDefault();
-#ifndef IMGUI_DISABLE_FILE_FUNCTIONS
-    io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
-   // io.Fonts->AddFontFromFileTTF("fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("fonts/ProggyTiny.ttf", 10.0f);
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("fonts/ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    // IM_ASSERT(font != NULL);
-#endif
-
-    ImGui::StyleColorsLight();
-
-    //Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
-    Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_predict_values"});
-    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage = {nilmSubscription};
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { powerSubscription };
-    AppState                                      appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
 
@@ -143,8 +156,8 @@ static void main_loop(void *arg) {
     std::vector<Subscription<PowerUsage>>         &subscriptionsPowerUsages = args->subscritpionsPowerUsage;
     std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
     // TODO
-    Plotter                                       &plotter                  = args->plotter;
-    DeviceTable                                   &deviceTable              = args->deviceTable;
+    //Plotter                                       &plotter                  = args->plotter;
+    //DeviceTable                                   &deviceTable              = args->deviceTable;
     double                                        &lastFrequencyFetchTime   = args->lastFrequencyFetchTime;
    
 
@@ -173,21 +186,31 @@ static void main_loop(void *arg) {
 
     // Nilm Power Monitoring Dashboard
     {
+        //draw_header_bar
+
         auto   clock       = std::chrono::system_clock::now();
-        double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count());
+        double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+
 
         for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages){
-            if(currentTime -powerUsage.lastFetchtime >= 2.0 || !powerUsage.acquisition.init){
+            if(currentTime -powerUsage.lastFetchtime >= 1.0 || !powerUsage.acquisition.init){
                 powerUsage.fetch();
                 powerUsage.lastFetchtime = currentTime;
             }
         }
-    
+   /*  
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
             if(currentTime -subTime.lastFetchtime >= 0.1){
                 subTime.fetch();
                 subTime.lastFetchtime = currentTime;
             }
+        } */
+        
+        for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
+                subTime.fetch();
+                subTime.lastFetchtime = currentTime;
         }
         
         // ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -203,6 +226,8 @@ static void main_loop(void *arg) {
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
         ImGui::Begin("Eletricity");
+
+        app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
        // ImGui::ShowFontSelector("Font");
 
@@ -222,9 +247,10 @@ static void main_loop(void *arg) {
         //     ImGui::PopID();
         // }
 
-        deviceTable.drawHeader(currentTime);
 
-         static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
+        // deviceTable.drawHeader(currentTime);
+
+        static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
 
          
         if(ImGui::BeginTable("ComboStyle", 2, tableFlags,ImVec2(-1,0)))
@@ -247,11 +273,13 @@ static void main_loop(void *arg) {
             if(ImPlot::BeginPlot("Power")){
                 // power      
                // plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers, subscriptionsTimeDomain[0].acquisition.success);
-                plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
+                //plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
+                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
                 ImPlot::EndPlot();
             }
        
-            plotter.plotBarchart(powerUsageValues);
+            // plotter.plotBarchart(powerUsageValues);
+            Plotter::plotBarchart(powerUsageValues);
        
             ImPlot::EndSubplots();
         }
@@ -292,7 +320,8 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
         }
         
-        deviceTable.plotTable(powerUsageValues, item_current);
+        //deviceTable.plotTable(powerUsageValues, item_current);
+        Plotter::plotTable(powerUsageValues, item_current);
 
         ImGui::End();
     }
@@ -305,10 +334,10 @@ static void main_loop(void *arg) {
 
     // Rendering
     ImGui::Render();
-    SDL_GL_MakeCurrent(g_Window, g_GLContext);
+    SDL_GL_MakeCurrent(args->window, args->GLContext);
     glViewport(0, 0, (int) io.DisplaySize.x, (int) io.DisplaySize.y);
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(g_Window);
+    SDL_GL_SwapWindow(args->window);
 }
