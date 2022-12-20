@@ -559,7 +559,6 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     feature_tensor = feature_vector.stack()
 
     feature_vector.close()
-    tf.print(feature_tensor)
     return feature_tensor
 
 
