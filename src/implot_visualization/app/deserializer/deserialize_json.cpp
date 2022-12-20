@@ -46,11 +46,43 @@ void ScrollingBuffer::erase() {
     }
 }
 
+template<typename T>
+IAcquisition<T>::IAcquisition() {}
+
+template<typename T>
+IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
+    : signalNames(_signalNames) {
+    int            numSignals = _signalNames.size();
+    std::vector<T> _buffers(numSignals);
+    this->buffers = _buffers;
+    // for (auto name : signalNames) {
+    //     std::cout << "IAcquisition: " << name << std::endl;
+    // }
+}
+
+template<typename T>
+bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = this->signalNames;
+    if (receivedSignals.size() != expectedSignals.size()) {
+        std::cout << "Requested: " << receivedSignals.size() << ", Received: " << expectedSignals.size() << std::endl;
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            std::cout << "Requested: " << receivedSignals[i] << ", Received: " << expectedSignals[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 Acquisition::Acquisition() {}
 
-Acquisition::Acquisition(int _numSignals) {
-    std::vector<ScrollingBuffer> _buffers(_numSignals);
-    this->buffers = _buffers;
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {
+    for (auto name : signalNames) {
+        std::cout << "Acquisition: " << name << std::endl;
+    }
 }
 
 void Acquisition::addToBuffers() {
@@ -63,23 +95,13 @@ void Acquisition::addToBuffers() {
         this->buffers[i].signalName = this->signalNames[i];
         int offset2                 = i * stride;
 
-        std::cout << "DestrideArray start" << std::endl; // debug
         if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
-            std::cout << "So eine Kacke!" << std::endl; // debug
         }
-        // std::cout << "Array dims: [" << strideArray.dims[0] << ", " << strideArray.dims[1] << "], "; // debug
-        // std::cout << "Array length: " << strideArray.values.size() << std::endl;                     // debug
         for (int j = 0; j < stride; j++) {
-            // std::cout << "Calculate timestamp" << std::endl;
-            // std::cout << "j: " << j << ", relativeTimestamps length: " << relativeTimestamps.size() << std::endl; // debug
             absoluteTimestamp = this->refTrigger_s + this->relativeTimestamps[j];
-            // std::cout << "Calculate value" << std::endl;
-            // std::cout << "OffsetIndex: " << (offset + j) << ", Array length: " << strideArray.values.size() << std::endl; // debug
-            value = this->strideArray.values[offset2 + j];
-            // std::cout << "addPoint()" << std::endl;
+            value             = this->strideArray.values[offset2 + j];
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
-        std::cout << "DestrideArray finished" << std::endl; // debug
     }
 }
 
@@ -95,34 +117,32 @@ void Acquisition::deserialize() {
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            this->signalNames.assign(element.value().begin(), element.value().end());
+            if (!this->receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested" << std::endl;
+                return;
+            }
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
-    std::cout << "SetLastTImestamp start" << std::endl; // debug
 
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    std::cout << "SetLastTImestamp finished" << std::endl; // debug
-
-    std::cout << "AddToBuffers start" << std::endl; // debug
-
     addToBuffers();
-    std::cout << "AddToBuffers finished" << std::endl; // debug
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
 
-AcquisitionSpectra::AcquisitionSpectra(int _numSignals) {
-    std::vector<Buffer> _buffers(_numSignals);
-    this->buffers = _buffers;
+AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {
 }
 
 void AcquisitionSpectra::addToBuffers() {
-    this->buffers[0].signalName = this->signalName;
-    this->buffers[0].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+    for (int i = 0; i < signalNames.size(); i++) {
+        this->buffers[i].signalName = this->signalNames[i];
+        this->buffers[i].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+    }
 }
 
 void AcquisitionSpectra::deserialize() {
@@ -132,7 +152,10 @@ void AcquisitionSpectra::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            this->signalName = element.value();
+            if (this->receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested" << std::endl;
+                return;
+            }
         } else if (element.key() == "channelMagnitudeValues") {
             this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
@@ -143,3 +166,6 @@ void AcquisitionSpectra::deserialize() {
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }
+
+template class IAcquisition<Buffer>;
+template class IAcquisition<ScrollingBuffer>;

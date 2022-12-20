@@ -42,20 +42,35 @@ struct StrideArray {
     std::vector<double> values;
 };
 
-class Acquisition {
+template<typename T>
+class IAcquisition {
 public:
-    std::vector<std::string>     signalNames;
-    std::string                  jsonString     = "";
-    uint64_t                     lastRefTrigger = 0;
-    std::vector<ScrollingBuffer> buffers;
+    std::vector<std::string> signalNames;
+    std::string              jsonString    = "";
+    uint64_t                 lastTimeStamp = 0.0;
+    std::vector<T>           buffers;
+
+    IAcquisition();
+    IAcquisition(const std::vector<std::string> _signalNames);
+
+    virtual void deserialize() = 0;
+
+private:
+    virtual void addToBuffers() = 0;
+
+protected:
+    bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
+};
+
+class Acquisition : public IAcquisition<ScrollingBuffer> {
+public:
+    uint64_t            lastRefTrigger = 0;
+    std::vector<double> relativeTimestamps;
 
     Acquisition();
-    Acquisition(int numSignals);
+    Acquisition(const std::vector<std::string> &_signalNames);
 
-    void                deserialize();
-
-    std::vector<double> relativeTimestamps;
-    uint64_t            lastTimeStamp = 0.0;
+    void deserialize();
 
 private:
     uint64_t    refTrigger_ns = 0;
@@ -65,20 +80,15 @@ private:
     void        addToBuffers();
 };
 
-class AcquisitionSpectra {
+class AcquisitionSpectra : public IAcquisition<Buffer> {
 public:
-    std::string         signalName;
-    uint64_t            lastRefTrigger = 0;
-    std::string         jsonString     = "";
-    std::vector<Buffer> buffers;
+    uint64_t            lastRefTrigger     = 0;
+    std::vector<double> relativeTimestamps = { 0 };
 
     AcquisitionSpectra();
-    AcquisitionSpectra(int numSignals);
+    AcquisitionSpectra(const std::vector<std::string> &_signalNames);
 
-    void                deserialize();
-
-    std::vector<double> relativeTimestamps = { 0 };
-    uint64_t            lastTimeStamp      = 0.0;
+    void deserialize();
 
 private:
     uint64_t            refTrigger_ns = 0;

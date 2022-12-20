@@ -42,10 +42,12 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
+    // Simulated Data
     // Subscription<Acquisition> powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
     // Subscription<Acquisition> rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    Subscription<Acquisition>              rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@20000Hz", "I@20000Hz" });
-    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@1000Hz", "Q@1000Hz", "S@1000Hz", "phi@1000Hz" });
+    //  Picoscope Data
+    Subscription<Acquisition>              rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz" });
+    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
     Subscription<Acquisition>              bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
     Subscription<AcquisitionSpectra>       frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
     Subscription<AcquisitionSpectra>       limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
@@ -156,21 +158,19 @@ static void main_loop(void *arg) {
 
     // Pulsed Power Monitoring Dashboard
     {
-        std::cout << "Fetch start" << std::endl; // debug
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
             subTime.fetch();
         }
-        std::cout << "Fetch finished" << std::endl; // debug
 
         // Update frequency domain signals with 1 Hz only
-        // auto   clock       = std::chrono::system_clock::now();
-        // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-        // if (currentTime - lastFrequencyFetchTime >= 1.0) {
-        //     for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
-        //         subFreq.fetch();
-        //         lastFrequencyFetchTime = currentTime;
-        //     }
-        // }
+        auto   clock       = std::chrono::system_clock::now();
+        double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+        if (currentTime - lastFrequencyFetchTime >= 1.0) {
+            for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
+                subFreq.fetch();
+                lastFrequencyFetchTime = currentTime;
+            }
+        }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -185,16 +185,14 @@ static void main_loop(void *arg) {
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
-            std::cout << "Plots start" << std::endl; // debug
-
             // Raw Signals Plot
-            if (ImPlot::BeginPlot("GR Signals")) {
-                // plotter.plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
+            if (ImPlot::BeginPlot("")) {
+                Plotter::plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
             // Bandpass Filter Plot
-            if (ImPlot::BeginPlot("U/I Bandpass Filter")) {
+            if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() >= 3) {
                     Plotter::plotBandpassFilter(subscriptionsTimeDomain[2].acquisition.buffers);
                 }
@@ -202,7 +200,7 @@ static void main_loop(void *arg) {
             }
 
             // Power Plot
-            if (ImPlot::BeginPlot("Power")) {
+            if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() >= 2) {
                     Plotter::plotPower(subscriptionsTimeDomain[1].acquisition.buffers);
                 }
@@ -210,8 +208,8 @@ static void main_loop(void *arg) {
             }
 
             // Mains Frequency Plot
-            if (ImPlot::BeginPlot("Mains Frequency")) {
-                // plotter.plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
+            if (ImPlot::BeginPlot("")) {
+                // Plotter::plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
                 ImPlot::EndPlot();
             }
             ImPlot::EndSubplots();
@@ -219,10 +217,9 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            // plotter.plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            // Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
             ImPlot::EndPlot();
         }
-        std::cout << "Plots finished" << std::endl; // debug
 
         ImGui::End();
     }

@@ -44,8 +44,8 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
         this->url.pop_back();
     }
 
-    int numSignals = _requestedSignals.size();
-    T   _acquisition(numSignals);
+    std::cout << "Fetch: " << _requestedSignals.size() << std::endl;
+    T _acquisition(_requestedSignals);
     this->acquisition = _acquisition;
 
     if (url.find("channelNameFilter") != std::string::npos) {
@@ -72,9 +72,7 @@ void Subscription<T>::fetch() {
         emscripten_fetch(&attr, this->extendedUrl.c_str());
     }
     if (fetchSuccessful) {
-        std::cout << "Deserialization start" << std::endl; // debug
         this->acquisition.deserialize();
-        std::cout << "Deserialization finished" << std::endl; // debug
         updateUrl();
         this->fetchSuccessful = false;
         this->fetchFinished   = true;
