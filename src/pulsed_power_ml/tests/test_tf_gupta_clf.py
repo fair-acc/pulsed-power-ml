@@ -69,6 +69,28 @@ class TestTFGuptaClassifier:
     def test_save_load_model_equality(self, tf_gupta_model, data_point_array, tmp_path):
 
         original_state_vector_list = list()
+        for data_point in data_point_array[:50]:
+            original_state_vector = tf_gupta_model(tf.constant(data_point, dtype=tf.float32))
+            original_state_vector_list.append(original_state_vector)
+
+        tf.saved_model.save(tf_gupta_model, tmp_path / "test_gupta_original_model")
+
+        loaded_model = tf.saved_model.load(tmp_path / "test_gupta_original_model")
+
+        print("\n\n####################################################################\n\n")
+
+        loaded_state_vector_list = list()
+        for data_point in data_point_array[:50]:
+            loaded_state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
+            loaded_state_vector_list.append(loaded_state_vector)
+
+        assert np.allclose(np.array(original_state_vector_list),
+                           np.array(loaded_state_vector_list),
+                           rtol=0.01,
+                           atol=0.1)
+
+    def test_save_load_model_internal_states_equality(self,tf_gupta_model, data_point_array, tmp_path):
+        original_state_vector_list = list()
         for data_point in data_point_array:
             original_state_vector = tf_gupta_model(tf.constant(data_point, dtype=tf.float32))
             original_state_vector_list.append(original_state_vector)
@@ -77,12 +99,16 @@ class TestTFGuptaClassifier:
 
         loaded_model = tf.saved_model.load(tmp_path / "test_gupta_original_model")
 
-        loaded_state_vector_list = list()
-        for data_point in data_point_array:
-            loaded_state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
-            loaded_state_vector_list.append(loaded_state_vector)
+        assert tf.math.reduce_all(
+            tf.math.equal(
+                tf_gupta_model.scale_tensor,
+                loaded_model.scale_tensor
+            )
+        )
 
-        assert np.allclose(np.array(original_state_vector_list),
-                           np.array(loaded_state_vector_list),
-                           rtol=0.1,
-                           atol=10)
+        # assert tf.math.reduce_all(
+        #     tf.math.equal(
+        #         tf_gupta_model.training_data_features_raw,
+        #         loaded_model.training_data_features_raw
+        #     )
+        # )

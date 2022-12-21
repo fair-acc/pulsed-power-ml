@@ -242,6 +242,8 @@ class TFGuptaClassifier(keras.Model):
         """
         # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
         # a classification
+        tf.print(self.training_data_features_raw)
+        print(self.training_data_features_raw)
         # ToDo: Rework if-block
         if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
         # if tf.math.greater(self.skip_data_point, tf.constant(0, dtype=tf.int32)):
