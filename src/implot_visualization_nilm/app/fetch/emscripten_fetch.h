@@ -12,10 +12,10 @@ public:
     std::vector<T> signals;
     bool           fetchFinished   = true;
     bool           fetchSuccessful = false;
-    double         lastFetchtime = 0;
+    // double         lastFetchtime = 0;
 
 
-    Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals);
+    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);

@@ -33,7 +33,7 @@ public:
     ImVector<DataPoint> data;
     std::string         signalName;
 
-    ScrollingBuffer(int max_size = 400'000); //200'000
+    ScrollingBuffer(int max_size = 500'000); //200'000
 
     void addPoint(double x, double y);
     void erase();
@@ -94,6 +94,9 @@ public:
     void deserialize();
     void fail(){};
 
+    std::vector<double> relativeTimestamps = { 0 };
+    uint64_t            lastTimeStamp      = 0.0;
+
 private:
     uint64_t            refTrigger_ns = 0;
     double              refTrigger_s  = 0.0;
@@ -118,6 +121,7 @@ public:
     bool                init = false; 
     double              deliveryTime;
     int64_t             timestamp;
+    uint64_t            lastTimeStamp      = 0.0;
 
 
     // dummy values

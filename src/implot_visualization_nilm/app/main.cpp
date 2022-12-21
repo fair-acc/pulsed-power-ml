@@ -15,10 +15,9 @@
 
 #include <deserialize_json.h>
 #include <emscripten_fetch.h>
-
-#include <plot_tools.h>
 #include <fair_header.h>
 #include <IconsFontAwesome6.h>
+#include <plot_tools.h>
 
 #define ELECTRICY_PRICE 30
 
@@ -44,7 +43,6 @@ public:
         this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
 
         auto   clock                  = std::chrono::system_clock::now();
-        //double currentTime            = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
         double currentTime            = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
         this->lastFrequencyFetchTime  = currentTime;
     }
@@ -61,7 +59,7 @@ static void main_loop(void *);
 
 int         main(int, char **) {
 
-    //Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    //Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
     Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_predict_values"});
     Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage = {nilmSubscription};
@@ -91,9 +89,9 @@ int         main(int, char **) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    auto window_flags = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    appState.window                     = SDL_CreateWindow("Nilm Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    appState.GLContext                  = SDL_GL_CreateContext(appState.window);
+    auto window_flags  = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    appState.window    = SDL_CreateWindow("Nilm Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
         return 1;
@@ -110,7 +108,6 @@ int         main(int, char **) {
     // attempt to do a fopen() of the imgui.ini file. You may manually call
     // LoadIniSettingsFromMemory() to load settings from your own storage.
     io.IniFilename = nullptr;
-
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
@@ -155,11 +152,8 @@ static void main_loop(void *arg) {
     AppState                                      *args                     = static_cast<AppState *>(arg);
     std::vector<Subscription<PowerUsage>>         &subscriptionsPowerUsages = args->subscritpionsPowerUsage;
     std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
-    // TODO
-    //Plotter                                       &plotter                  = args->plotter;
-    //DeviceTable                                   &deviceTable              = args->deviceTable;
-    double                                        &lastFrequencyFetchTime   = args->lastFrequencyFetchTime;
-   
+    double                                        &lastFrequencyFetchTime  = args->lastFrequencyFetchTime;
+  
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool   show_demo_window = false;
@@ -169,8 +163,8 @@ static void main_loop(void *arg) {
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
     ImVec2               window_center = main_viewport->GetWorkCenter();
-    int                  window_height = 2 * window_center.y;
-    int                  window_width  = 2 * window_center.x;
+    float                window_height = 2 * window_center.y;
+    float                window_width  = 2 * window_center.x;
 
     // Poll and handle events (inputs, window resize, etc.)
     SDL_Event event;
@@ -186,18 +180,15 @@ static void main_loop(void *arg) {
 
     // Nilm Power Monitoring Dashboard
     {
-        //draw_header_bar
 
         auto   clock       = std::chrono::system_clock::now();
-        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-        //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count());
         double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
 
 
         for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages){
-            if(currentTime -powerUsage.lastFetchtime >= 1.0 || !powerUsage.acquisition.init){
+            if(currentTime -powerUsage.acquisition.lastTimeStamp >= 1.0 || !powerUsage.acquisition.init){
                 powerUsage.fetch();
-                powerUsage.lastFetchtime = currentTime;
+                //powerUsage.lastFetchtime = currentTime;
             }
         }
    /*  
@@ -210,26 +201,18 @@ static void main_loop(void *arg) {
         
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
                 subTime.fetch();
-                subTime.lastFetchtime = currentTime;
+                //subTime.acquisition.lastFetchtime = currentTime;
         }
-        
-        // ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        // ImGuiWindow* window = ImGui::GetCurrentWindow();
-       
-
-        // ImVec4* colors = ImGui::GetStyle().Colors;
-        
-        // const ImVec4& disable_col = Colors[ImGuiCol_TextDisabled];
 
         PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        ImGui::Begin("Eletricity");
+        //ImGui::Begin("Eletricity");
+	    ImGui::Begin("Eletricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
-       // ImGui::ShowFontSelector("Font");
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
         static int                rows      = 1;
@@ -239,16 +222,6 @@ static void main_loop(void *arg) {
 
         std::string               output_simbol;    
 
-        // ImFont* font_current = ImGui::GetFont();
-        // for(int n=0; n<io.Fonts->Fonts.Size; n++){
-        //     ImFont* font = io.Fonts->Fonts[n];
-        //     ImGui::PushID((void*)font);
-        //     ImGui::Text("Font test %d",n);
-        //     ImGui::PopID();
-        // }
-
-
-        // deviceTable.drawHeader(currentTime);
 
         static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
 
@@ -271,14 +244,10 @@ static void main_loop(void *arg) {
         if (ImPlot::BeginSubplots("My Subplots",rows,cols, ImVec2(-1,400), flags)){ 
 
             if(ImPlot::BeginPlot("Power")){
-                // power      
-               // plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers, subscriptionsTimeDomain[0].acquisition.success);
-                //plotter.plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
                 Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
                 ImPlot::EndPlot();
             }
-       
-            // plotter.plotBarchart(powerUsageValues);
+
             Plotter::plotBarchart(powerUsageValues);
        
             ImPlot::EndSubplots();
@@ -320,7 +289,6 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
         }
         
-        //deviceTable.plotTable(powerUsageValues, item_current);
         Plotter::plotTable(powerUsageValues, item_current);
 
         ImGui::End();
