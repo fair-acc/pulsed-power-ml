@@ -16,6 +16,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feat
 
 # Define some constants
 N_PEAKS_MAX = 9
+DATA_POINT_SIZE = 3 * 2**16 + 4
 
 class TFGuptaClassifier(keras.Model):
 
@@ -224,7 +225,7 @@ class TFGuptaClassifier(keras.Model):
     #     return
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=(3 * 2**16 + 4), dtype=tf.float32)]
+        input_signature=[tf.TensorSpec(shape=(DATA_POINT_SIZE), dtype=tf.float32)]
     )
     def call(self, X: tf.Tensor) -> tf.Tensor:
         """
@@ -240,10 +241,13 @@ class TFGuptaClassifier(keras.Model):
         y
             state_vector containing the current estimated power for each appliance.
         """
+        # If data point is all exactly -1, reset internal states
+        if tf.math.reduce_all(tf.math.equal(x=X, y=tf.math.multiply(-1.0, tf.ones_like(X, dtype=tf.float32)))):
+            self.reset_internal_states()
+            return self.current_state_vector
+
         # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
         # a classification
-        tf.print(self.training_data_features_raw)
-        print(self.training_data_features_raw)
         # ToDo: Rework if-block
         if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
         # if tf.math.greater(self.skip_data_point, tf.constant(0, dtype=tf.int32)):
@@ -578,6 +582,18 @@ class TFGuptaClassifier(keras.Model):
 
     def get_current_state_vector(self) -> tf.Tensor:
         return self.current_state_vector
+
+    def reset_internal_states(self) -> None:
+        """
+        Function to reset state vector, background and skipped frames variables.
+        """
+        self.clear_background_vector()
+        self.current_state_vector.assign(
+            tf.zeros(shape=(self.n_known_appliances + 1), dtype=tf.float32)
+        )
+        self.n_data_points_skipped.assign(0)
+        self.skip_data_point.assign(False)
+        return
 
 
 if __name__ == "__main__":

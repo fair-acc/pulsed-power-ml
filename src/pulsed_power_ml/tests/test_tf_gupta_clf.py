@@ -48,7 +48,8 @@ def data_point_array(parameter_dict):
 def tf_gupta_model(features,
                    labels,
                    apparent_power_list,
-                   parameter_dict):
+                   parameter_dict,
+                   data_point_array):
     model = TFGuptaClassifier(
         background_n=tf.constant(parameter_dict["background_n"], dtype=tf.int32),
         n_known_appliances=tf.constant(parameter_dict["n_known_appliances"], dtype=tf.int32),
@@ -62,43 +63,51 @@ def tf_gupta_model(features,
         training_data_features=features,
         training_data_labels=labels
     )
+
+    _ = model(tf.constant(data_point_array[0], dtype=tf.float32))
+
+    # reset model
+    reset_tensor = tf.math.multiply(
+        -1.0,
+        tf.ones_like(
+            tf.constant(
+                data_point_array[0],
+                dtype=tf.float32),
+            dtype=tf.float32
+        )
+    )
+    _ = model(reset_tensor)
+
     return model
+
+@pytest.fixture
+def loaded_model(tf_gupta_model, tmp_path):
+
+    tf.saved_model.save(tf_gupta_model, tmp_path / "test_gupta_original_model")
+
+    loaded_model = tf.saved_model.load(tmp_path / "test_gupta_original_model")
+
+    return loaded_model
 
 class TestTFGuptaClassifier:
 
-    def test_save_load_model_equality(self, tf_gupta_model, data_point_array, tmp_path):
-
-        original_state_vector_list = list()
-        for data_point in data_point_array[:50]:
-            original_state_vector = tf_gupta_model(tf.constant(data_point, dtype=tf.float32))
-            original_state_vector_list.append(original_state_vector)
-
-        tf.saved_model.save(tf_gupta_model, tmp_path / "test_gupta_original_model")
-
-        loaded_model = tf.saved_model.load(tmp_path / "test_gupta_original_model")
-
-        print("\n\n####################################################################\n\n")
-
-        loaded_state_vector_list = list()
-        for data_point in data_point_array[:50]:
-            loaded_state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
-            loaded_state_vector_list.append(loaded_state_vector)
-
-        assert np.allclose(np.array(original_state_vector_list),
-                           np.array(loaded_state_vector_list),
-                           rtol=0.01,
-                           atol=0.1)
-
-    def test_save_load_model_internal_states_equality(self,tf_gupta_model, data_point_array, tmp_path):
+    def test_save_load_model_equality(self, tf_gupta_model, loaded_model, data_point_array):
         original_state_vector_list = list()
         for data_point in data_point_array:
             original_state_vector = tf_gupta_model(tf.constant(data_point, dtype=tf.float32))
             original_state_vector_list.append(original_state_vector)
 
-        tf.saved_model.save(tf_gupta_model, tmp_path / "test_gupta_original_model")
+        loaded_state_vector_list = list()
+        for data_point in data_point_array:
+            loaded_state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
+            loaded_state_vector_list.append(loaded_state_vector)
 
-        loaded_model = tf.saved_model.load(tmp_path / "test_gupta_original_model")
+        assert np.allclose(np.array(original_state_vector_list),
+                           np.array(loaded_state_vector_list),
+                           rtol=0.001,
+                           atol=0.01)
 
+    def test_save_load_model_internal_states_equality(self, tf_gupta_model, loaded_model):
         assert tf.math.reduce_all(
             tf.math.equal(
                 tf_gupta_model.scale_tensor,
@@ -106,9 +115,68 @@ class TestTFGuptaClassifier:
             )
         )
 
-        # assert tf.math.reduce_all(
-        #     tf.math.equal(
-        #         tf_gupta_model.training_data_features_raw,
-        #         loaded_model.training_data_features_raw
-        #     )
-        # )
+    def test_reset_functionality(self, tf_gupta_model, loaded_model, data_point_array):
+
+        # Process some data to change internal states of model
+        for data_point in data_point_array[:50]:
+            _ = tf_gupta_model(tf.constant(data_point, dtype=tf.float32))
+            _ = loaded_model(tf.constant(data_point, dtype=tf.float32))
+
+        # Make sure, that internal states are not zero
+        for model in (tf_gupta_model, loaded_model):
+            assert not tf.math.reduce_all(
+                tf.math.equal(
+                    x=model.background_vector,
+                    y=tf.zeros_like(model.background_vector, dtype=tf.float32)
+                )
+            )
+
+        # Reset both models and check all internal states
+        reset_tensor = tf.math.multiply(
+            -1.0,
+            tf.ones_like(
+                tf.constant(
+                    data_point_array[0],
+                    dtype=tf.float32),
+                dtype=tf.float32
+            )
+        )
+
+        for model in (tf_gupta_model, loaded_model):
+            # reset model
+            _ = model(reset_tensor)
+
+            # check background_vector
+            assert tf.math.reduce_all(
+                tf.math.equal(
+                    x=model.background_vector,
+                    y=tf.zeros_like(model.background_vector, dtype=tf.float32)
+                )
+            )
+
+            # check current_background_size
+            assert tf.math.reduce_all(
+                tf.math.equal(
+                    x=model.current_background_size,
+                    y=tf.zeros_like(model.current_background_size, dtype=tf.int32)
+                )
+            )
+
+            # check n_data_points_skipped
+            assert tf.math.reduce_all(
+                tf.math.equal(
+                    x=model.n_data_points_skipped,
+                    y=tf.zeros_like(model.n_data_points_skipped, dtype=tf.int32)
+                )
+            )
+
+            # check skip_data_point (must be False)
+            assert not model.skip_data_point
+
+            # check current_state_vector
+            assert tf.math.reduce_all(
+                tf.math.equal(
+                    x=model.current_state_vector,
+                    y=tf.zeros_like(model.current_state_vector, dtype=tf.float32)
+                )
+            )
