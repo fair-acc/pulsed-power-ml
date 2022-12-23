@@ -9,12 +9,43 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 
-plt.style.use("dark_background")
+# plt.style.use("dark_background")
+
+
+def make_eval_plot(power_array: Union[np.array, List],
+                   state_array: Union[np.array, List],
+                   appliance_power: float = 1) -> matplotlib.figure.Figure:
+    """
+    This function creates a single plot showing the raw data and the state of one appliance versus time step
+
+    Parameters
+    ----------
+    power_array
+        Array of power values
+    state_array
+        Array containing zeros (off) and ones (on), indicating the state of the appliance.
+    appliance_power
+        Data base power value of the appliances
+
+    Returns
+    -------
+    fig
+        Figure containing the plot
+    """
+    fig = plt.Figure(figsize=(8, 4.5))
+    ax = fig.add_subplot()
+    ax.plot(power_array,
+            label="Measured Power")
+    ax.plot(state_array * appliance_power,
+            label="Predicted Power")
+
+    return fig
 
 def plot_state_vector_array(state_vector_list: np.array,
                             label_list: Union[List[str], None] = None,
                             true_apparent_power: Union[np.array, None] = None) -> matplotlib.figure.Figure:
     """
+    Function to make one subplot for all appliances known to the model.
 
     Parameters
     ----------
