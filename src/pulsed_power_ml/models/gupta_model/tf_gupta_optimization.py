@@ -124,8 +124,10 @@ def get_raw_data(name: str) -> List[tf.Tensor]:
 
 def main():
 
+    appliance = "h1"
+
     # load raw data
-    raw_data_list = get_raw_data("r1")
+    raw_data_list = get_raw_data(appliance)
 
     # instantiate model
     model = instantiate_model()
@@ -144,10 +146,12 @@ def main():
 
     # Make plot
     fig = make_eval_plot(power_array=np.array(raw_data_list)[start_frame:stop_frame, -2],
-                         state_array=np.array(state_vector_list)[:,10])
+                         state_array=np.array(state_vector_list)[:,3])
+
+    print(state_vector_list)
 
     # Save figure
-    fig.savefig(f"{OUTPUT_PATH}/tf_gupta_optimization.pdf")
+    fig.savefig(f"{OUTPUT_PATH}/tf_gupta_check_switch_detection_{appliance}.pdf")
     return
 
 if __name__ == "__main__":

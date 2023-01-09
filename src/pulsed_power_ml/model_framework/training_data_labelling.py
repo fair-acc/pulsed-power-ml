@@ -4,7 +4,7 @@ from src.pulsed_power_ml.model_framework.data_io import load_fft_file
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background, read_parameters, subtract_background, switch_detected, update_background_vector, calculate_feature_vector
 
 
-def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
+def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.ndarray:
     """
     Function to automatically label training spectra (from GNU Radio).
 
@@ -63,7 +63,7 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict):
     return switch_positions
 
 
-def get_switch_features(spectra, switch_positions, parameters):
+def get_switch_features(spectra: np.ndarray, switch_positions: np.ndarray, parameters: dict) -> np.ndarray:
     """
     Function to get clean spectra for switch events. Please make sure that
     there are at least 26 regular spectra for background calculation.
