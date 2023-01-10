@@ -15,6 +15,8 @@ list(APPEND pulsed_power_sources
     mains_frequency_calc_impl.cc
     opencmw_freq_sink_impl.cc
     opencmw_time_sink_impl.cc
+    integration_impl.cc
+    statistics_impl.cc
     # picoscope_4000a_source_help_impl.cc
     picoscope_4000a_source_impl.cc
     picoscope_base.cc
@@ -34,8 +36,7 @@ target_include_directories(gnuradio-pulsed_power
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
   )
-set_target_properties(gnuradio-pulsed_power 
-    PROPERTIES DEFINE_SYMBOL "gnuradio_pulsed_power_EXPORTS")
+set_target_properties(gnuradio-pulsed_power PROPERTIES DEFINE_SYMBOL "gnuradio_pulsed_power_EXPORTS")
 
 if(APPLE)
     set_target_properties(gnuradio-pulsed_power PROPERTIES
@@ -64,12 +65,14 @@ include(GrTest)
 #include_directories()
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_pulsed_power_sources
+qa_integration.cc
 qa_mains_frequency_calc.cc
 qa_opencmw_freq_sink.cc
 qa_opencmw_time_sink.cc
 qa_power_calc_cc.cc
 qa_power_calc_ff.cc
 qa_power_calc_mul_ph_ff.cc
+qa_statistics.cc
 )
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)

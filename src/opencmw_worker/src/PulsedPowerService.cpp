@@ -95,7 +95,8 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    GRFlowGraph flowgraph(1024);
+    GRFlowGraph                      flowgraph(1024);
+    //GRFlowGraphOnePhasePicoscopeNilm flowgraph(1024);
     flowgraph.start();
 
     // OpenCMW workers

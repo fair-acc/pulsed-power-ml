@@ -4,6 +4,7 @@
 #include <disruptor/RingBuffer.hpp>
 #include <majordomo/Worker.hpp>
 
+#include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
 #include <chrono>
@@ -27,15 +28,15 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 
 // data for Dashboard
 struct NilmPredictData {
-    int64_t            timestamp;
+    int64_t                  timestamp;
     std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
     std::vector<std::string> names  = { "device 1", "device 2", "device 3", "device 4", "device 5",
          "device 6", "device 7", "device 8", "device 9", "device 10", "device 11", "others" };
-    std::vector<double>  day_usage;
-    std::vector<double>  week_usage;
-    std::vector<double>  month_usage;
-    std::string   error;
-    int64_t error_code;
+    std::vector<double>      day_usage;
+    std::vector<double>      week_usage;
+    std::vector<double>      month_usage;
+    std::string              error;
+    int64_t                  error_code;
 };
 
 ENABLE_REFLECTION_FOR(NilmPredictData, values, names, timestamp, day_usage, week_usage, month_usage)
@@ -50,9 +51,9 @@ struct PQSPhiDataSink {
 
 struct SUIDataSink {
     int64_t            timestamp;
-    std::vector<float> s;
     std::vector<float> u;
     std::vector<float> i;
+    std::vector<float> s;
 };
 
 // input data for model
@@ -100,20 +101,19 @@ public:
             while (!shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
-                timestamp_n                         = std::time(nullptr);
+                timestamp_n                        = std::time(nullptr);
 
                 NilmContext        context;
                 std::vector<float> data_point;
-                
-                try{
 
+                try {
                     nilmData.timestamp = timestamp_n;
                     //nilmData.values.clear();
                     nilmData.day_usage.clear();
                     nilmData.week_usage.clear();
                     nilmData.month_usage.clear();
 
-                    {                       
+                    {
                         std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
                         std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
 
@@ -122,19 +122,25 @@ public:
                         fmt::print("Size of data point {}\n", data_point.size());
                     }
 
-                    cppflow::tensor tensor(data_point, { data_point.size() });
-                    fmt::print("tensor print: {}\n", tensor);
+                    int64_t         size = static_cast<int64_t>(data_point.size());
+                    cppflow::tensor input(data_point, { size });
+
+                    //fmt::print("tensor print: {}\n", tensor);
+
+                    fmt::print("input:  {}\n", input);
 
                     auto output = (*_model)({ { "serving_default_args_0:0", tensor } }, { "StatefulPartitionedCall:0" });
 
-                    int64_t size = static_cast<int64_t>(data_point.size());
+                    //int64_t size = static_cast<int64_t>(data_point.size());
                  //   cppflow::tensor tensor(data_point, { size });
                     // fmt::print("Tensor: {}\n", tensor);
 
                     auto values = output[0].get_data<float>();
 
                     // values print
+                    fmt::print("output: {}\n", output[0]);
 
+                    // fill data for REST
                     nilmData.values.clear();
 
 
@@ -143,7 +149,7 @@ public:
                         nilmData.values.push_back(static_cast<double>(v));
                     } 
 
-                    fmt::print("Output: {}\n", output);
+                    //fmt::print("Output: {}\n", output);
 
                     fillDayUsage();
                     fillWeekUsage();
@@ -151,7 +157,6 @@ public:
                 
                 }
                  catch (const std::exception &ex) {
-
                     fmt::print("caught exception '{}'\n", ex.what()); 
                 }
              
@@ -168,7 +173,7 @@ public:
 
                 super_t::notify("/nilmPredictData", context, nilmData);
 
-                pollingDuration = std::chrono::system_clock::now() - time_start;
+                pollingDuration   = std::chrono::system_clock::now() - time_start;
 
                 // TODO - check this - warning
                 auto willSleepFor = updateInterval - pollingDuration;
@@ -178,9 +183,15 @@ public:
                 //     fmt::print("Data prediction too slow\n");
                 // }
 
-                std::this_thread::sleep_for(1000ms);
+                //std::this_thread::sleep_for(1000ms);
 
                 //std::this_thread::sleep_for(willSleepFor);
+		
+		if (willSleepFor > 0ms) {
+                    std::this_thread::sleep_for(willSleepFor);
+                } else {
+                    fmt::print("Data prediction too slow\n");
+                }
             }
         });
 
@@ -196,6 +207,7 @@ public:
 
             fmt::print("Name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
 
+            //std::vector<std::string> pqsohi_str{ "P", "Q", "S", "Phi" };
             if (signal_names == pqsohi_str) {
                 sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkTimeData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
             }
@@ -208,6 +220,7 @@ public:
             const auto signal_units = sink->get_signal_units();
             const auto sample_rate  = sink->get_sample_rate();
 
+            //std::vector<std::string> sui_str{ "S", "U", "I" };
             if (signal_names == sui_str) {
                 fmt::print("Name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
                 sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkFrequencyData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
@@ -353,14 +366,14 @@ private:
 
     void fillDayUsage(){
         nilmData.day_usage.clear();
-        //dummy data
-        nilmData.day_usage =  {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 21.9};
+        // dummy data
+        nilmData.day_usage = { 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 21.9};
     }
 
     void fillWeekUsage(){
         nilmData.week_usage.clear();
         //dummy data
-        nilmData.week_usage =  {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33,100.0};
+        nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55,700.0,2123.34,1434.33,100.0};
     }
 
     void fillMonthUsage(){

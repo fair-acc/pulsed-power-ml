@@ -69,6 +69,7 @@ jobs:
           python3 -m pip install gcovr --user --no-warn-script-location
           gcovr --version
 
+      # GNU RADIO
       - name: Install GNU Radio
         shell: bash
         run: |
@@ -79,16 +80,46 @@ jobs:
         shell: bash
         run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
 
-      - name: Configure GNU Radio pulsed-power out of tree module
+      - name: Install Picoscope dependencies
+        shell: bash
+        run: |
+          wget -qO- https://labs.picotech.com/debian/dists/picoscope/Release.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/picoscope.gpg
+          sudo bash -c 'echo "deb [signed-by=/etc/apt/trusted.gpg.d/picoscope.gpg] https://labs.picotech.com/debian/ picoscope main" >/etc/apt/sources.list.d/picoscope.list'
+          sudo apt update
+          sudo apt install picoscope
+
+      - name: Install TensorFlow for C
+        shell: bash
+        run: |
+          FILENAME=libtensorflow-cpu-linux-x86_64-2.11.0.tar.gz
+          wget -q --no-check-certificate https://storage.googleapis.com/tensorflow/libtensorflow/${FILENAME}
+          sudo tar -C /usr/local -xzf ${FILENAME}
+
+      - name: Install cppflow
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v2.0.0 https://github.com/serizba/cppflow
+          cd cppflow
+          cmake -S . -B build
+          cd build
+          make
+          sudo make install
+
+      - name: Configure GNU Radio pulsed-power out of tree modules
         shell: bash
         run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
 
-      - name: Build GNU Radio pulsed-power out of tree module
+      - name: Build GNU Radio pulsed-power out of tree modules
         shell: bash
         run: |
           sudo cmake --build ${{env.SRC_DIR_GR}}/build --target install
           sudo ldconfig
 
+      - name: Test GNU Radio pulsed-power out of tree modules
+        shell: bash
+        run: ctest --test-dir ${{env.SRC_DIR_GR}}/build
+
+      # OPENCMW
       - name: Configure CMake
         # Use a bash shell, so we can use the same syntax for environment variable access regardless of the host operating system
         shell: bash
@@ -128,6 +159,7 @@ jobs:
         shell: bash
         run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml --skip --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
+      # IMPLOT
       - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v11
         with:
@@ -142,3 +174,4 @@ jobs:
 
       - name: Build visualization
         run: cd ${{env.SRC_DIR_VIS}}/build && emmake make
+
