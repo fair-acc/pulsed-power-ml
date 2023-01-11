@@ -109,7 +109,7 @@ private:
 class PowerUsage {
 public:
     //dummy devices
-    std::vector<std::string> devices = {"Device 1", "Device 2", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio",  "Others"}; 
+    std::vector<std::string> devices; // = {"Device 1", "Device 2", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio",  "Others"}; 
     std::vector<double> powerUsages;
     std::vector<double> powerUsagesDay;
     std::vector<double> powerUsagesWeek;
@@ -127,24 +127,24 @@ public:
     // dummy values
     std::vector<double> lastWeekUsage   = {85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0}; // other service
 
+     // dummy value
+    double              powerUsageToday ; //= 45.9;
+
+    //dummy value
+    double              kWhUsedDay   ;//   = 1098.99;
+
+    //dummy value
+    double              kWhUsedMonth   ;// = 1098.99;
+
+    //dummy value
+    double              costPerMonth  ;//  = 3919.45;
+
     // dummy value
-    double              powerUsageToday = 45.9;
-
-    //dummy value
-    double              kWhUsedDay      = 1098.99;
-
-    //dummy value
-    double              kWhUsedMonth    = 1098.99;
-
-    //dummy value
-    double              costPerMonth    = 3919.45;
-
-    // dummy value
-    double              kWhUsedWeek     = 398.99;
+    double              kWhUsedWeek;//    = 398.99;
 
     // dummy value 
-    double              costPerWeek     = 1238.98;
-
+    double              costPerWeek; //     = 1238.98;
+ 
 
     PowerUsage();
     PowerUsage(int numSignals);

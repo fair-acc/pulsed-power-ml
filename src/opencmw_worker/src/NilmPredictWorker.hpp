@@ -29,7 +29,7 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 // data for Dashboard
 struct NilmPredictData {
     int64_t                  timestamp;
-    std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
+    std::vector<double>      values; // = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
     std::vector<std::string> names  = { "device 1", "device 2", "device 3", "device 4", "device 5",
          "device 6", "device 7", "device 8", "device 9", "device 10", "device 11", "others" };
     std::vector<double>      day_usage;
@@ -129,7 +129,7 @@ public:
 
                     fmt::print("input:  {}\n", input);
 
-                    auto output = (*_model)({ { "serving_default_args_0:0", tensor } }, { "StatefulPartitionedCall:0" });
+                    auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
                     //int64_t size = static_cast<int64_t>(data_point.size());
                  //   cppflow::tensor tensor(data_point, { size });

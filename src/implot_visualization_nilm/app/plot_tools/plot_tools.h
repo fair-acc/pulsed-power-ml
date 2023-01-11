@@ -116,6 +116,7 @@ void plotBarchart(PowerUsage &powerUsage){
 
 void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w){
 
+    printf("plot nested table\n");
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -224,6 +225,8 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w){
 
 void plotTable(PowerUsage &powerUsage, int m_d_w){
 
+    printf("Ploting Table, init %d\n", powerUsage.init);
+
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -237,14 +240,20 @@ void plotTable(PowerUsage &powerUsage, int m_d_w){
     //  on
     const ImVec4& able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    
-    size_t rows = (int)powerUsage.devices.size();
+    int rest = 0;
+    int len = 0;
 
-    int rest = rows % 2;
-    int len  = rows / 2;
+    if (powerUsage.init){
+        size_t rows = (int)powerUsage.devices.size();
+
+        rest = rows % 2;
+        len  = rows / 2;
+    }
 
     if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody)){
-   
+
+        
+
         ImGui::TableNextColumn();
 
         plotNestTable(powerUsage, 0, len + rest, m_d_w);
@@ -252,6 +261,7 @@ void plotTable(PowerUsage &powerUsage, int m_d_w){
         ImGui::TableNextColumn();
 
         plotNestTable(powerUsage, len+rest, len, m_d_w);
+    
 
         ImGui::EndTable();
     }

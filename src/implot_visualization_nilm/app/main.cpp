@@ -191,13 +191,6 @@ static void main_loop(void *arg) {
                 //powerUsage.lastFetchtime = currentTime;
             }
         }
-   /*  
-        for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
-            if(currentTime -subTime.lastFetchtime >= 0.1){
-                subTime.fetch();
-                subTime.lastFetchtime = currentTime;
-            }
-        } */
         
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
                 subTime.fetch();

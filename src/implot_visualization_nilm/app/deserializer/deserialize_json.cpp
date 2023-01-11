@@ -164,7 +164,11 @@ void AcquisitionSpectra::deserialize() {
 }
 
 // Power Usage class
-PowerUsage::PowerUsage(){}
+PowerUsage::PowerUsage(){
+    printf("PowerUsage created\n");
+    printf("Devices: %s\n", devices[0].c_str());
+    // add values to controle
+}
 PowerUsage::PowerUsage(int _numSignals){
     std::vector<Buffer> _buffers(_numSignals);
     this->buffers = _buffers;
@@ -178,6 +182,7 @@ void PowerUsage::deserialize(){
         return;
     } */
 
+    printf("Deserialize powerUsage\n");
     std::string modifiedJsonString = this->jsonString;
 
     if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":" ){
@@ -216,6 +221,7 @@ void PowerUsage::deserialize(){
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
 
+        printf("After deserialization %s\n", this->devices[0].c_str());
        // TODO - Buffer if needed
        // addToBuffers();
     }
