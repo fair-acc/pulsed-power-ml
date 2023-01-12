@@ -18,8 +18,8 @@ FEATURES_FILE_PATH = f"{BASE_FOLDER}/training_data/labels_20221202_9peaks/Featur
 LABELS_FILE_PATH = f"{BASE_FOLDER}/training_data/labels_20221202_9peaks/Labels_ApparentPower_0.7_p.csv"
 RAW_DATA_FOLDER = f"{BASE_FOLDER}/raw_data/2022-11-16_training_data/h1/"
 
-APPARENT_POWER_LIST_PATH = "src/pulsed_power_ml/models/gupta_model/apparent_power_data_base.yml"
-PARAMETER_FILE_PATH = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
+APPARENT_POWER_LIST_PATH = "src/pulsed_power_ml/models/gupta_model/apparent_power_data_base_individual_appliances.yml"
+PARAMETER_FILE_PATH = "src/pulsed_power_ml/models/gupta_model/parameters_individual_appliances.yml"
 
 @pytest.fixture
 def features():

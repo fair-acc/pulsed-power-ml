@@ -226,13 +226,14 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
         Array of length 3 * n_peaks_max of the form: [a_0, mu_0, sigma_0, a_1, mu_1, sigma_1, ...]
     """
     # get peaks
-    min_peak_height = 4 * cleaned_spectrum.std()  # This could probably be optimized.
+    min_peak_height = 0 * cleaned_spectrum.std()  # This could probably be optimized.
     if abs(cleaned_spectrum.min()) > abs(cleaned_spectrum.max()):
         switch_off_factor = -1
     else:
         switch_off_factor = 1
     peak_indices, peak_properties = find_peaks(x=cleaned_spectrum * switch_off_factor,
                                                height=min_peak_height)
+
 
     # remove peaks in the first and last bin of the spectrum (cannot be used for gaussian fit)
     peak_height_list = [(peak_index, peak_height)
@@ -291,7 +292,13 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
     spectrum_sum = tf.math.reduce_sum(res_spectrum)
     sum_above_thr = tf.math.greater(spectrum_sum, threshold)
     sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
-
+    # # ToDo: Remove print
+    # tf.print("\n\n ###########")
+    # tf.print("In tf_switch_detected")
+    # tf.print("spectrum_sum = ", spectrum_sum)
+    # tf.print(f"Result = {sum_above_thr, sum_below_minus_thr}")
+    # tf.print("############\n\n")
+    # #
     return sum_below_minus_thr, sum_above_thr
 
 @tf.function

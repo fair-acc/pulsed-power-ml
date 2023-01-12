@@ -3,6 +3,7 @@ This module contains functions for the model framework concerning data I/O.
 """
 
 import glob
+import warnings
 
 import numpy as np
 
@@ -33,8 +34,15 @@ def load_fft_file(path_to_file: str,
     -------
     Array with timestep versus real part of the spectrum
     """
-    full_spectrum = np.fromfile(path_to_file, dtype=np.float32).reshape((-1, fft_size))
-    real_part = full_spectrum[:, 0:int(fft_size/2)]
+    spectrum = np.fromfile(path_to_file, dtype=np.float32)
+    remainder = len(spectrum) % fft_size
+    if remainder != 0:
+        warnings.warn(f"Length of array in file {path_to_file} is not a multiple of FFT Size ({fft_size})!\n"
+                      f"Ignoring last {remainder} entries to continue.")
+        reshaped_spectrum = spectrum[:-remainder].reshape((-1, fft_size))
+    else:
+        reshaped_spectrum = spectrum.reshape((-1, fft_size))
+    real_part = reshaped_spectrum[:, 0:int(fft_size/2)]
     return real_part
 
 

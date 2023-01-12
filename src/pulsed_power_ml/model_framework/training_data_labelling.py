@@ -47,7 +47,7 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.nd
                 current_background = None
             else:
                 background_vector = update_background_vector(background_vector,
-                                                            spectrum)
+                                                             spectrum)
                 current_background = calculate_background(background_vector)
         else:
             if background_vector.__len__() == 0:

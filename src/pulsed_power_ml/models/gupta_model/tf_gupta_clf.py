@@ -65,6 +65,10 @@ class TFGuptaClassifier(keras.Model):
             How to weight the distance of al neighbors.
         distance_threshold
             If distance to the nearest neighbor is above this threshold, an event is classified as "other"
+        training_data_features
+            Unscaled (!) features of the training data
+        training_data_labels
+            Corresponding labels for the provided training data
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
 
@@ -133,8 +137,8 @@ class TFGuptaClassifier(keras.Model):
             )
         )
 
-        self.training_data_features_scaled = tf.math.divide(self.training_data_features_raw,
-                                                            self.scale_tensor[:,0])
+        self.training_data_features_scaled = tf.math.divide_no_nan(self.training_data_features_raw,
+                                                                   self.scale_tensor[:,0])
 
         self.feature_vector = tf.Variable(
             initial_value=tf.ones(shape=(3 * self.n_peaks_max, 1), dtype=tf.float32),
@@ -167,9 +171,18 @@ class TFGuptaClassifier(keras.Model):
         scaled_input = tf.math.divide_no_nan(input,
                                              self.scale_tensor)
 
+        # tf.print(input, summarize=-1)
+        # tf.print(scaled_input, summarize=-1)
+        # tf.print(self.scale_tensor, summarize=-1)
+
         difference_vectors = tf.math.subtract(
             self.training_data_features_scaled,
             scaled_input[:,0])
+
+        # tf.print(self.training_data_features_raw, summarize=-1)
+        # tf.print(self.training_data_features_scaled, summarize=-1)
+        #
+        # tf.print(difference_vectors, summarize=-1)
 
         distances = tf.norm(difference_vectors, axis=1)
 
@@ -204,6 +217,9 @@ class TFGuptaClassifier(keras.Model):
             # Create result tensor (one-hot encoded w/ length=N+1)
             result_tensor = tf.one_hot(indices=result_index,
                                        depth=self.training_data_labels.shape[1])
+
+        tf.print("Classification result = ", result_tensor, summarize=-1)
+        tf.print("Smallest distance = ", k_smallest_distances)
 
         return k_smallest_distances, result_tensor
 
@@ -351,6 +367,7 @@ class TFGuptaClassifier(keras.Model):
             )
             return self.current_state_vector
 
+        tf.print("Event detected!")
         # 5. If self.switching_offset is 0, then use the current data point to classify the event
         if self.switching_offset == 0:
             # self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
