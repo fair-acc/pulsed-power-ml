@@ -541,6 +541,13 @@ class TFGuptaClassifier(keras.Model):
         # 2. Classify event
         distances, event_class = self.call_knn(self.feature_vector)
 
+        # If any of the distances is nan, do not change the state vector. Just return the current
+        # state vector instead.
+        if tf.math.equal(tf.math.reduce_any(tf.math.is_nan(distances)),
+                         tf.constant(True)):
+            tf.print("NANs in distances! Do not change state vector!")
+            return self.current_state_vector
+
         # Check if known or unknown event via the smallest distance
         event_class = tf.cond(
             pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),

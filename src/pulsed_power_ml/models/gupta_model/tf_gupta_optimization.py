@@ -128,7 +128,7 @@ def get_raw_data(name: str) -> Tuple[List[tf.Tensor], List]:
 
 def main():
 
-    appliance = "r1"
+    appliance = "fp1"
 
     # Load parameters
     parameter_dict = read_parameters(PARAMETER_FILE_PATH)
@@ -161,9 +161,9 @@ def main():
 
     # Make plot
     fig = make_eval_plot(power_array=np.array(raw_data_list)[start_frame:stop_frame, -2],
-                         state_array=np.array(state_vector_list)[:,6])
+                         state_array=np.array(state_vector_list)[:,0])
 
-    fig.savefig(f"{OUTPUT_PATH}/knn_debugging_tf_gupta_{appliance}_r1_.pdf")
+    fig.savefig(f"{OUTPUT_PATH}/nan_test_tf_gupta_{appliance}_e1_.pdf")
 
     del raw_data_list
 
@@ -172,7 +172,7 @@ def main():
     fig_model_switches = plt.Figure()
     ax_model_switches = fig_model_switches.add_subplot()
     ax_model_switches.plot(model_switching_events)
-    fig_model_switches.savefig(f"{OUTPUT_PATH}/knn_debugging_tf_gupta_model_switch_positions_{appliance}.pdf")
+    fig_model_switches.savefig(f"{OUTPUT_PATH}/nan_test_tf_gupta_model_switch_positions_{appliance}.pdf")
 
     # print(state_vector_list)
     # print(switch_positions)
@@ -181,7 +181,7 @@ def main():
     ax = fig_2.add_subplot()
     ax.plot(switch_positions[0])
     ax.plot(switch_positions[1])
-    fig_2.savefig(f"{OUTPUT_PATH}/knn_debugging_tf_gupta_check_switch_positions_{appliance}.pdf")
+    fig_2.savefig(f"{OUTPUT_PATH}/nan_test_tf_gupta_check_switch_positions_{appliance}.pdf")
 
     # Save figure
 
