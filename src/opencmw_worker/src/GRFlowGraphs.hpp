@@ -140,8 +140,8 @@ public:
         int   decimation_out_long_term  = 60'000;
 
         // blocks
-        auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f);  // U_raw
-        auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 200, 0, 1.57f); // I_raw
+        auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
+        auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
 
         auto band_pass_filter_current0  = gr::filter::fft_filter_fff::make(
                  decimation_bpf,
@@ -221,22 +221,16 @@ public:
 
         auto throttle_block_raw_current0    = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
         auto throttle_block_raw_voltage0    = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-        // auto throttle_block_bandpass_current0 = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate_high, true);
-        // auto throttle_block_bandpass_voltage0 = gr::blocks::throttle::make(sizeof(float) * 1, out_samp_rate_high, true);
-        // auto throttle_block_p                 = gr::blocks::throttle::make(sizeof(float) * 1, lpf_out_samp_rate, true);
-        // auto throttle_block_q                 = gr::blocks::throttle::make(sizeof(float) * 1, lpf_out_samp_rate, true);
-        // auto throttle_block_s                 = gr::blocks::throttle::make(sizeof(float) * 1, lpf_out_samp_rate, true);
-        // auto throttle_block_phi               = gr::blocks::throttle::make(sizeof(float) * 1, lpf_out_samp_rate, true);
 
-        auto out_decimation_current0 = gr::filter::fft_filter_fff::make(
-                decimation_out_raw,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
+        auto out_decimation_current0        = gr::filter::fft_filter_fff::make(
+                       decimation_out_raw,
+                       gr::filter::firdes::low_pass(
+                               1,
+                               source_samp_rate,
+                               400,
+                               10,
+                               gr::fft::window::win_type::WIN_HAMMING,
+                               6.76));
         auto out_decimation_voltage0 = gr::filter::fft_filter_fff::make(
                 decimation_out_raw,
                 gr::filter::firdes::low_pass(
@@ -331,10 +325,14 @@ public:
         top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_opencmw_time_sink_bpf_0, 0); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_opencmw_time_sink_bpf_0, 1); // I_bpf
         // Calculate phase shift
-        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_2, 0);
-        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_3, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_0, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_1, 0);
+        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_2, 0);
+        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_3, 0);
+        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_0, 0);
+        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_1, 0);
+        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_0, 0);
+        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_1, 0);
+        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_2, 0);
+        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_3, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_power_calc_ff_0_0, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_0, 1);
