@@ -64,25 +64,61 @@ static void plotSignals(std::vector<T> &signals) {
 void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "I(A), U(V)", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "U(V)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+    ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    Plotter::plotSignals(signals);
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            if (signal.signalName.find("I") != std::string::npos) {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+        }
+    }
 }
 
 void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "I(A), U(V)", xflags, yflags);
+    ImPlot::SetupAxes("UTC Time", "U(V)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+    ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    plotSignals(signals);
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            if (signal.signalName.find("I") != std::string::npos) {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+        }
+    }
 }
 
 void plotPower(std::vector<ScrollingBuffer> &signals) {
@@ -93,9 +129,26 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 300.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
+    ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    plotSignals(signals);
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            if (signal.signalName.find("phi") != std::string::npos) {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+        }
+    }
 }
 
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
