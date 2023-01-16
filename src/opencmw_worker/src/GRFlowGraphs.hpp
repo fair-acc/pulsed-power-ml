@@ -36,7 +36,7 @@ public:
     GRFlowGraph(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // flowgraph setup
-        float samp_rate = 4'000.0f;
+        const float samp_rate = 4'000.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
         auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
@@ -251,9 +251,9 @@ public:
         pulsed_power_opencmw_time_sink_bpf_0->set_max_noutput_items(noutput_items);
 
         // S U I, fft
-        int    fft_size    = 131072;
-        size_t vector_size = static_cast<size_t>(fft_size);
-        float  bandwidth   = in_samp_rate;
+        const int fft_size    = 131072;
+        size_t    vector_size = static_cast<size_t>(fft_size);
+        float     bandwidth   = in_samp_rate;
         // S
         auto multiply_voltage_current = gr::blocks::multiply_ff::make(1);
         auto stream_to_vector_S       = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);

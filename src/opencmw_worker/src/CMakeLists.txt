@@ -17,12 +17,25 @@ file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_private.key" DESTINATION "${CMA
 file(COPY "${CMAKE_SOURCE_DIR}/demo_sslcert/demo_public.crt" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/")
 
 add_executable(PulsedPowerService PulsedPowerService.cpp)
-target_link_libraries(PulsedPowerService PRIVATE 
+target_link_libraries(PulsedPowerService PRIVATE
     majordomo
-    disruptor 
-    project_warnings 
+    disruptor
+    project_warnings
     assets::rest
     gnuradio::gnuradio-blocks
     gnuradio::gnuradio-analog
+    gnuradio::gnuradio-filter
+    gnuradio::gnuradio-pulsed_power
+    tensorflow)
+
+add_executable(InferenceTool InferenceTool.cpp)
+target_link_libraries(InferenceTool PRIVATE
+    majordomo
+    disruptor
+    project_warnings
+    assets::rest
+    gnuradio::gnuradio-blocks
+    gnuradio::gnuradio-analog
+    gnuradio::gnuradio-filter
     gnuradio::gnuradio-pulsed_power
     tensorflow)

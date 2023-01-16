@@ -15,6 +15,8 @@
 #include <cppflow/ops.h>
 #include <cppflow/tensor.h>
 
+#include "TimeDomainWorker.hpp"
+
 using opencmw::Annotated;
 using opencmw::NoUnit;
 
@@ -85,6 +87,7 @@ private:
 public:
     std::atomic<bool>     shutdownRequested;
     std::jthread          notifyThread;
+    std::jthread          fetchThread;
     NilmPredictData       nilmData;
     std::time_t           timestamp_n;
 
@@ -93,9 +96,36 @@ public:
     using super_t                       = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
 
     template<typename BrokerType>
-    explicit NilmPredictWorker(const BrokerType &broker,
-            std::chrono::milliseconds            updateInterval)
+    explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
         : super_t(broker, {}) {
+        fetchThread  = std::jthread([this] {
+            std::chrono::duration<double, std::milli> fetchDuration;
+            while (!shutdownRequested) {
+                std::chrono::time_point time_start = std::chrono::system_clock::now();
+
+                // fetch data from PulsedPowerService endpoint
+                fmt::print("fetchThread: fetching data...\n");
+                httplib::Client fetchClient("localhost", DEFAULT_REST_PORT);
+                fetchClient.set_keep_alive(true);
+                const char *path     = "pulsed_power/Acquisition?channelNameFilter=P@1000Hz,Q@1000Hz,S@1000Hz,phi@1000Hz";
+
+                auto        response = fetchClient.Get(path);
+                if (response.error() == httplib::Error::Success && response->status == 200) {
+                    opencmw::IoBuffer buffer;
+                    buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
+                    Acquisition data;
+                    auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+                    fmt::print("deserialisation finished: {}\n", result);
+                    fmt::print("signal_names: {}\n", data.channelNames);
+                }
+
+                fetchDuration     = std::chrono::system_clock::now() - time_start;
+                auto willSleepFor = std::chrono::milliseconds(500) - fetchDuration;
+                if (willSleepFor > 0ms) {
+                    std::this_thread::sleep_for(willSleepFor);
+                }
+            }
+        });
         notifyThread = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!shutdownRequested) {
@@ -251,7 +281,7 @@ public:
     }
 
 private:
-    size_t             fftSize = 65536;
+    const size_t       fftSize = 65536;
 
     std::vector<float> mergeValues() {
         PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
