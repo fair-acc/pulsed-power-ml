@@ -270,7 +270,7 @@ public:
         auto out_decimation_q_shortterm = gr::filter::fft_filter_fff::make(
                 decimation_out_short_term,
                 gr::filter::firdes::low_pass(
-                        10,
+                        1,
                         bpf_out_samp_rate,
                         400,
                         1,
@@ -307,7 +307,7 @@ public:
         pulsed_power_opencmw_time_sink_bpf_0->set_max_noutput_items(noutput_items);
         auto pulsed_power_opencmw_time_sink_power = gr::pulsed_power::opencmw_time_sink::make(
                 { "P", "Q", "S", "phi" },
-                { "W", "Var", "VA", "deg" },
+                { "W", "Var", "VA", "rad" },
                 out_samp_rate_low);
         pulsed_power_opencmw_time_sink_power->set_max_noutput_items(noutput_items);
 
@@ -325,10 +325,6 @@ public:
         top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_opencmw_time_sink_bpf_0, 0); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_opencmw_time_sink_bpf_0, 1); // I_bpf
         // Calculate phase shift
-        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_2, 0);
-        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_3, 0);
-        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_0, 0);
-        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_1, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_0, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_1, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_2, 0);
