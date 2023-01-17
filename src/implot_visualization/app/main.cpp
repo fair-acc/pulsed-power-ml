@@ -49,9 +49,10 @@ int         main(int, char **) {
     Subscription<Acquisition>              rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz" });
     Subscription<Acquisition>              bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
     Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
+    Subscription<Acquisition>              mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@100Hz" });
     Subscription<AcquisitionSpectra>       frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
     Subscription<AcquisitionSpectra>       limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription };
+    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription, mainsFreqSubscription };
     // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
@@ -209,7 +210,9 @@ static void main_loop(void *arg) {
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("")) {
-                // Plotter::plotMainsFrequency(subscriptionsTimeDomain[1].acquisition.buffers);
+                if (subscriptionsTimeDomain.size() >= 3) {
+                    Plotter::plotMainsFrequency(subscriptionsTimeDomain[3].acquisition.buffers);
+                }
                 ImPlot::EndPlot();
             }
             ImPlot::EndSubplots();

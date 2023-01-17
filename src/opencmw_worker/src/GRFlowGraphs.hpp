@@ -20,6 +20,7 @@
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/top_block.h>
 
+#include <gnuradio/pulsed_power/mains_frequency_calc.h>
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 #include <gnuradio/pulsed_power/picoscope_4000a_source.h>
@@ -135,6 +136,7 @@ public:
         float out_samp_rate_high        = 1'000.0f;
         float out_samp_rate_low         = 100.0f;
         int   decimation_out_raw        = 200;
+        int   decimation_out_mains_freq = 2'000;
         int   decimation_out_short_term = 10;
         int   decimation_out_mid_term   = 1'000;
         int   decimation_out_long_term  = 60'000;
@@ -142,6 +144,8 @@ public:
         // blocks
         auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
         auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+
+        auto calc_mains_frequency       = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
         auto band_pass_filter_current0  = gr::filter::fft_filter_fff::make(
                  decimation_bpf,
@@ -240,6 +244,15 @@ public:
                         10,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
+        auto out_decimation_mains_frequency = gr::filter::fft_filter_fff::make(
+                decimation_out_mains_freq,
+                gr::filter::firdes::low_pass(
+                        1,
+                        source_samp_rate,
+                        400,
+                        10,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto out_decimation_current_bpf = gr::filter::fft_filter_fff::make(
                 1,
                 gr::filter::firdes::low_pass(
@@ -300,6 +313,10 @@ public:
                 { "V", "A" },
                 out_samp_rate_high);
         pulsed_power_opencmw_time_sink_raw_0->set_max_noutput_items(noutput_items);
+        auto pulsed_power_opencmw_time_sink_mains_freq = gr::pulsed_power::opencmw_time_sink::make(
+                { "mains_freq" },
+                { "Hz" },
+                out_samp_rate_low);
         auto pulsed_power_opencmw_time_sink_bpf_0 = gr::pulsed_power::opencmw_time_sink::make(
                 { "U_bpf", "I_bpf" },
                 { "V", "A" },
@@ -319,6 +336,10 @@ public:
         top->hier_block2::connect(throttle_block_raw_current0, 0, out_decimation_current0, 0);
         top->hier_block2::connect(out_decimation_voltage0, 0, pulsed_power_opencmw_time_sink_raw_0, 0); // U_raw
         top->hier_block2::connect(out_decimation_current0, 0, pulsed_power_opencmw_time_sink_raw_0, 1); // I_raw
+        // Mains frequency
+        top->hier_block2::connect(throttle_block_raw_voltage0, 0, calc_mains_frequency, 0);
+        top->hier_block2::connect(calc_mains_frequency, 0, out_decimation_mains_frequency, 0);
+        top->hier_block2::connect(out_decimation_mains_frequency, 0, pulsed_power_opencmw_time_sink_mains_freq, 0); // mains_freq
         // Bandpass filter
         top->hier_block2::connect(throttle_block_raw_voltage0, 0, band_pass_filter_voltage0, 0);
         top->hier_block2::connect(throttle_block_raw_current0, 0, band_pass_filter_current0, 0);

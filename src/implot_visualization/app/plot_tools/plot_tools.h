@@ -147,8 +147,12 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
                     0,
                     offset,
                     2 * sizeof(double));
+            // Debug
         }
     }
+    // Debug
+    ImVec4 col = ImPlot::GetLastItemColor();
+    ImPlot::Annotation(1.25, 0.75, ImVec4(2, 2, 2, 2), ImVec2(2, 12), true, "Roland[%d]=%.2f", 5, 6);
 }
 
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
@@ -160,7 +164,7 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 300.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // plotSignals(signals);
+    plotSignals(signals);
 }
 
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {

@@ -55,21 +55,16 @@ IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     int            numSignals = _signalNames.size();
     std::vector<T> _buffers(numSignals);
     this->buffers = _buffers;
-    // for (auto name : signalNames) {
-    //     std::cout << "IAcquisition: " << name << std::endl;
-    // }
 }
 
 template<typename T>
 bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = this->signalNames;
     if (receivedSignals.size() != expectedSignals.size()) {
-        std::cout << "Requested: " << receivedSignals.size() << ", Received: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
         if (receivedSignals[i] != expectedSignals[i]) {
-            std::cout << "Requested: " << receivedSignals[i] << ", Received: " << expectedSignals[i] << std::endl;
             return false;
         }
     }
@@ -79,11 +74,7 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
 Acquisition::Acquisition() {}
 
 Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-    for (auto name : signalNames) {
-        std::cout << "Acquisition: " << name << std::endl;
-    }
-}
+    : IAcquisition(_signalNames) {}
 
 void Acquisition::addToBuffers() {
     double absoluteTimestamp = 0.0;

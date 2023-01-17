@@ -64,7 +64,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [232, 364.0]
+    coordinate: [240, 556.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_0_0_0
@@ -86,7 +86,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [816, 668.0]
+    coordinate: [824, 860.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_1_0
@@ -108,7 +108,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [816, 460.0]
+    coordinate: [824, 652.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_1_0
@@ -130,7 +130,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [224, 572.0]
+    coordinate: [232, 764.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_0_0
@@ -155,7 +155,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [672, 348.0]
+    coordinate: [680, 540.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_1
@@ -180,7 +180,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [672, 556.0]
+    coordinate: [680, 748.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_0_0
@@ -198,7 +198,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1576, 688.0]
+    coordinate: [1584, 880.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_1
@@ -216,7 +216,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1568, 376.0]
+    coordinate: [1576, 568.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_0_0
@@ -234,7 +234,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1192, 648.0]
+    coordinate: [1200, 840.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_1_0
@@ -252,7 +252,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1192, 480.0]
+    coordinate: [1200, 672.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_2_0
@@ -270,7 +270,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1192, 584.0]
+    coordinate: [1200, 776.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_3
@@ -288,7 +288,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1192, 416.0]
+    coordinate: [1200, 608.0]
     rotation: 0
     state: true
 - name: blocks_sub_xx_0_0
@@ -306,7 +306,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1840, 536.0]
+    coordinate: [1848, 728.0]
     rotation: 0
     state: enabled
 - name: blocks_throttle_0
@@ -318,14 +318,14 @@ blocks:
     ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samples_per_second: samp_rate
+    samples_per_second: in_samp_rate
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [456, 612.0]
+    coordinate: [464, 804.0]
     rotation: 0
     state: true
 - name: blocks_throttle_0_0
@@ -337,14 +337,14 @@ blocks:
     ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samples_per_second: samp_rate
+    samples_per_second: in_samp_rate
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [448, 404.0]
+    coordinate: [456, 596.0]
     rotation: 0
     state: true
 - name: blocks_transcendental_0_0_0
@@ -361,7 +361,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1708.0, 640]
+    coordinate: [1716.0, 832]
     rotation: 90
     state: true
 - name: blocks_transcendental_0_1
@@ -378,7 +378,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1708.0, 368]
+    coordinate: [1716.0, 560]
     rotation: 270
     state: true
 - name: bp_decimantion
@@ -463,7 +463,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [352, 108.0]
+    coordinate: [176, 212.0]
     rotation: 0
     state: true
 - name: in_samp_rate
@@ -504,7 +504,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [568, 84.0]
+    coordinate: [680, 4.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_0
@@ -528,7 +528,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [544, 940.0]
+    coordinate: [688, 1180.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1
@@ -552,7 +552,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2288, 428.0]
+    coordinate: [2296, 620.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0
@@ -576,7 +576,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2288, 572.0]
+    coordinate: [2296, 764.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0_0
@@ -600,7 +600,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 740.0]
+    coordinate: [1360, 932.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_1
@@ -624,7 +624,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2288, 716.0]
+    coordinate: [2296, 908.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_1_0
@@ -648,7 +648,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 436.0]
+    coordinate: [1360, 628.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_2
@@ -672,7 +672,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2288, 284.0]
+    coordinate: [2296, 476.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_2_0
@@ -696,7 +696,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 580.0]
+    coordinate: [1360, 772.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_3
@@ -720,7 +720,31 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1352, 276.0]
+    coordinate: [1360, 468.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_2
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: '2000'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: in_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 220.0]
     rotation: 0
     state: true
 - name: lp_decimantion
@@ -757,6 +781,24 @@ blocks:
     coordinate: [8, 692.0]
     rotation: 0
     state: true
+- name: pulsed_power_mains_frequency_calc_0
+  id: pulsed_power_mains_frequency_calc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    expected_sample_rate: '200000'
+    high_threshold: '100'
+    low_threshold: '-100'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [672, 252.0]
+    rotation: 0
+    state: true
 - name: pulsed_power_opencmw_time_sink_0_0
   id: pulsed_power_opencmw_time_sink
   parameters:
@@ -770,7 +812,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2488, 316.0]
+    coordinate: [2496, 508.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_1_0
@@ -786,7 +828,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2488, 460.0]
+    coordinate: [2496, 652.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_2_0
@@ -802,7 +844,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2488, 604.0]
+    coordinate: [2496, 796.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_3_0
@@ -818,10 +860,26 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2496, 748.0]
+    coordinate: [2504, 940.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_4
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1000'
+    signal_name: voltage
+    signal_unit: Volt
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [888, 36.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_5
   id: pulsed_power_opencmw_time_sink
   parameters:
     affinity: ''
@@ -834,23 +892,23 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [744, 116.0]
+    coordinate: [944, 484.0]
     rotation: 0
     state: true
-- name: pulsed_power_opencmw_time_sink_5
+- name: pulsed_power_opencmw_time_sink_5_0
   id: pulsed_power_opencmw_time_sink
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '100'
     signal_name: voltage
-    signal_unit: vVolt
+    signal_unit: Volt
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1288, 116.0]
+    coordinate: [1176, 252.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_6_0
@@ -859,14 +917,14 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '1000'
     signal_name: current
     signal_unit: Ampere
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [752, 972.0]
+    coordinate: [896, 1212.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_7_0
@@ -875,14 +933,14 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '1000'
     signal_name: current_bpf
     signal_unit: Ampere
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1320, 972.0]
+    coordinate: [944, 1020.0]
     rotation: 0
     state: true
 - name: pulsed_power_power_calc_ff_0
@@ -898,7 +956,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2048, 504.0]
+    coordinate: [2056, 696.0]
     rotation: 0
     state: true
 - name: voltage_correction_factor
@@ -945,6 +1003,7 @@ connections:
 - [blocks_throttle_0, '0', low_pass_filter_0_0, '0']
 - [blocks_throttle_0_0, '0', band_pass_filter_0_0_0, '0']
 - [blocks_throttle_0_0, '0', low_pass_filter_0, '0']
+- [blocks_throttle_0_0, '0', pulsed_power_mains_frequency_calc_0, '0']
 - [blocks_transcendental_0_0_0, '0', blocks_sub_xx_0_0, '1']
 - [blocks_transcendental_0_1, '0', blocks_sub_xx_0_0, '0']
 - [low_pass_filter_0, '0', pulsed_power_opencmw_time_sink_4, '0']
@@ -957,6 +1016,8 @@ connections:
 - [low_pass_filter_0_1_2, '0', pulsed_power_opencmw_time_sink_0_0, '0']
 - [low_pass_filter_0_1_2_0, '0', blocks_divide_xx_0_0_0, '0']
 - [low_pass_filter_0_1_3, '0', blocks_divide_xx_0_1, '0']
+- [low_pass_filter_0_2, '0', pulsed_power_opencmw_time_sink_5_0, '0']
+- [pulsed_power_mains_frequency_calc_0, '0', low_pass_filter_0_2, '0']
 - [pulsed_power_power_calc_ff_0, '0', low_pass_filter_0_1_2, '0']
 - [pulsed_power_power_calc_ff_0, '1', low_pass_filter_0_1, '0']
 - [pulsed_power_power_calc_ff_0, '2', low_pass_filter_0_1_0, '0']
