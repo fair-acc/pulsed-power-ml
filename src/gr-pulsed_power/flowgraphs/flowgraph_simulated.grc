@@ -33,18 +33,6 @@ options:
     state: enabled
 
 blocks:
-- name: samp_rate
-  id: variable
-  parameters:
-    comment: ''
-    value: '32000'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [184, 12]
-    rotation: 0
-    state: enabled
 - name: analog_sig_source_x_0_0
   id: analog_sig_source_x
   parameters:
@@ -64,7 +52,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [240, 556.0]
+    coordinate: [224, 1060.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_0_0_0
@@ -79,14 +67,14 @@ blocks:
     minoutbuf: '0'
     offset: '0'
     phase: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: float
     waveform: analog.GR_COS_WAVE
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [824, 860.0]
+    coordinate: [808, 1364.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_1_0
@@ -101,14 +89,14 @@ blocks:
     minoutbuf: '0'
     offset: '0'
     phase: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: float
     waveform: analog.GR_SIN_WAVE
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [824, 652.0]
+    coordinate: [808, 1156.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_1_0
@@ -130,7 +118,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [232, 764.0]
+    coordinate: [216, 1268.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_0_0
@@ -140,7 +128,7 @@ blocks:
     alias: ''
     beta: '6.76'
     comment: ''
-    decim: bp_decimantion
+    decim: bp_decimation
     gain: '1'
     high_cutoff_freq: bp_high_cut
     interp: '1'
@@ -155,7 +143,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [680, 540.0]
+    coordinate: [664, 1044.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_1
@@ -165,7 +153,7 @@ blocks:
     alias: ''
     beta: '6.76'
     comment: ''
-    decim: bp_decimantion
+    decim: bp_decimation
     gain: '1'
     high_cutoff_freq: bp_high_cut
     interp: '1'
@@ -180,7 +168,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [680, 748.0]
+    coordinate: [664, 1252.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_0_0
@@ -198,7 +186,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1584, 880.0]
+    coordinate: [1568, 1384.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_1
@@ -216,7 +204,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1576, 568.0]
+    coordinate: [1560, 1072.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_0_0
@@ -234,7 +222,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1200, 840.0]
+    coordinate: [1184, 1344.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_1_0
@@ -252,7 +240,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1200, 672.0]
+    coordinate: [1184, 1176.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_2_0
@@ -270,7 +258,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1200, 776.0]
+    coordinate: [1184, 1280.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_3
@@ -288,7 +276,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1200, 608.0]
+    coordinate: [1184, 1112.0]
     rotation: 0
     state: true
 - name: blocks_sub_xx_0_0
@@ -306,7 +294,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1848, 728.0]
+    coordinate: [1832, 1232.0]
     rotation: 0
     state: enabled
 - name: blocks_throttle_0
@@ -325,7 +313,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [464, 804.0]
+    coordinate: [448, 1308.0]
     rotation: 0
     state: true
 - name: blocks_throttle_0_0
@@ -344,7 +332,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [456, 596.0]
+    coordinate: [440, 1100.0]
     rotation: 0
     state: true
 - name: blocks_transcendental_0_0_0
@@ -361,7 +349,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1716.0, 832]
+    coordinate: [1700.0, 1336]
     rotation: 90
     state: true
 - name: blocks_transcendental_0_1
@@ -378,24 +366,24 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1716.0, 560]
+    coordinate: [1700.0, 1064]
     rotation: 270
     state: true
-- name: bp_decimantion
+- name: bp_decimation
   id: parameter
   parameters:
     alias: ''
     comment: ''
     hide: none
-    label: band pass decimantion
+    label: band pass decimation
     short_id: ''
     type: intx
-    value: '20'
+    value: '200'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 212.0]
+    coordinate: [704, 12.0]
     rotation: 0
     state: true
 - name: bp_high_cut
@@ -412,7 +400,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 404.0]
+    coordinate: [704, 108.0]
     rotation: 0
     state: true
 - name: bp_low_cut
@@ -429,7 +417,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 308.0]
+    coordinate: [872, 12.0]
     rotation: 0
     state: true
 - name: bp_trans
@@ -446,24 +434,58 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 500.0]
+    coordinate: [872, 108.0]
     rotation: 0
     state: true
-- name: current_correction_factor
+- name: decimation_long_term
   id: parameter
   parameters:
     alias: ''
     comment: ''
     hide: none
-    label: Current Correction Factor
+    label: Decimation Long Term
     short_id: ''
     type: eng_float
-    value: '2.5'
+    value: '60000'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [176, 212.0]
+    coordinate: [1600, 108.0]
+    rotation: 0
+    state: true
+- name: decimation_mid_term
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Decimation Mid Term
+    short_id: ''
+    type: eng_float
+    value: '1000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1680, 12.0]
+    rotation: 0
+    state: true
+- name: decimation_short_term
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Decimation Long Term
+    short_id: ''
+    type: eng_float
+    value: '10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1512, 12.0]
     rotation: 0
     state: true
 - name: in_samp_rate
@@ -480,7 +502,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 108.0]
+    coordinate: [264, 12.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0
@@ -504,7 +526,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [680, 4.0]
+    coordinate: [656, 292.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_0
@@ -528,7 +550,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [688, 1180.0]
+    coordinate: [672, 1684.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1
@@ -539,12 +561,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '400'
-    decim: '100'
+    decim: decimation_short_term
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: '10000'
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -552,7 +574,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2296, 620.0]
+    coordinate: [2288, 284.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0
@@ -563,12 +585,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '400'
-    decim: '100'
+    decim: decimation_short_term
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: '10000'
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -576,7 +598,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2296, 764.0]
+    coordinate: [2288, 428.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0_0
@@ -587,12 +609,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '60'
-    decim: lp_decimantion
+    decim: lp_decimation
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -600,7 +622,55 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1360, 932.0]
+    coordinate: [1344, 1436.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_0_1
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_mid_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1052.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_0_2
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_long_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1692.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_1
@@ -611,12 +681,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '400'
-    decim: '100'
+    decim: decimation_short_term
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: '10000'
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -624,7 +694,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2296, 908.0]
+    coordinate: [2288, 572.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_1_0
@@ -635,12 +705,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '60'
-    decim: lp_decimantion
+    decim: lp_decimation
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -648,7 +718,55 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1360, 628.0]
+    coordinate: [1344, 1116.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_1_1
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_mid_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1196.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_1_2
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_long_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1836.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_2
@@ -659,12 +777,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '400'
-    decim: '100'
+    decim: decimation_short_term
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: '10000'
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -672,7 +790,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2296, 476.0]
+    coordinate: [2288, 140.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_2_0
@@ -683,12 +801,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '60'
-    decim: lp_decimantion
+    decim: lp_decimation
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -696,7 +814,55 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1360, 772.0]
+    coordinate: [1344, 1292.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_2_1
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_mid_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 764.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_2_2
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_long_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1404.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_3
@@ -707,12 +873,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '60'
-    decim: lp_decimantion
+    decim: lp_decimation
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: out_samp_rate
+    samp_rate: samp_rate_delta_phi_calc
     type: fir_filter_fff
     width: '10'
     win: window.WIN_HAMMING
@@ -720,7 +886,55 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1360, 468.0]
+    coordinate: [1344, 972.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_4
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_mid_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 908.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_5
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: decimation_long_term
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate_delta_phi_calc
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2288, 1548.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_2
@@ -744,16 +958,64 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [960, 220.0]
+    coordinate: [952, 468.0]
     rotation: 0
     state: true
-- name: lp_decimantion
+- name: low_pass_filter_0_2_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: '200000'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: in_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [952, 612.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_2_1
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '400'
+    decim: '12000000'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: in_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [952, 756.0]
+    rotation: 0
+    state: true
+- name: lp_decimation
   id: parameter
   parameters:
     alias: ''
     comment: ''
     hide: none
-    label: low pass decimantion
+    label: low pass decimation
     short_id: ''
     type: intx
     value: '1'
@@ -761,24 +1023,41 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 596.0]
+    coordinate: [1120, 12.0]
     rotation: 0
     state: true
-- name: out_samp_rate
+- name: out_samp_rate_high
   id: parameter
   parameters:
     alias: ''
     comment: ''
     hide: none
-    label: out-going samp rate
+    label: Out Sample Rate High
     short_id: ''
     type: eng_float
-    value: '10000'
+    value: '1000'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 692.0]
+    coordinate: [432, 108.0]
+    rotation: 0
+    state: true
+- name: out_samp_rate_low
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Out Sample Rate Low
+    short_id: ''
+    type: eng_float
+    value: '100'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [424, 12.0]
     rotation: 0
     state: true
 - name: pulsed_power_mains_frequency_calc_0
@@ -796,7 +1075,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [672, 252.0]
+    coordinate: [648, 644.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0
@@ -805,14 +1084,46 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '100'
     signal_name: active_power
     signal_unit: ''
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2496, 508.0]
+    coordinate: [2488, 172.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_0_0_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1'
+    signal_name: active_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 796.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_0_0_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: 1/60
+    signal_name: active_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 1436.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_1_0
@@ -821,14 +1132,46 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '100'
     signal_name: reactive_power
     signal_unit: ''
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2496, 652.0]
+    coordinate: [2488, 316.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_1_0_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1'
+    signal_name: reactive_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 940.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_1_0_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: 1/60
+    signal_name: reactive_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 1580.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_2_0
@@ -837,14 +1180,46 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '100'
     signal_name: apparent_power
     signal_unit: ''
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2496, 796.0]
+    coordinate: [2488, 460.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_2_0_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1'
+    signal_name: apparent_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 1084.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_2_0_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: 1/60
+    signal_name: apparent_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2488, 1724.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_3_0
@@ -853,14 +1228,46 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: '100'
     signal_name: phi
     signal_unit: rad
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2504, 940.0]
+    coordinate: [2496, 604.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_3_0_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1'
+    signal_name: phi
+    signal_unit: rad
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2496, 1228.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_3_0_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: 1/60
+    signal_name: phi
+    signal_unit: rad
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2496, 1868.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_4
@@ -876,7 +1283,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [888, 36.0]
+    coordinate: [864, 324.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5
@@ -885,14 +1292,14 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    sample_rate: samp_rate
+    sample_rate: out_samp_rate_high
     signal_name: voltage
     signal_unit: Volt
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [944, 484.0]
+    coordinate: [928, 988.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5_0
@@ -902,13 +1309,45 @@ blocks:
     alias: ''
     comment: ''
     sample_rate: '100'
-    signal_name: voltage
-    signal_unit: Volt
+    signal_name: mains_freq
+    signal_unit: Hz
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 252.0]
+    coordinate: [1168, 500.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_5_0_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: '1'
+    signal_name: mains_freq
+    signal_unit: Hz
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1168, 644.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_5_0_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: 1/60
+    signal_name: mains_freq
+    signal_unit: Hz
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1168, 788.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_6_0
@@ -924,7 +1363,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [896, 1212.0]
+    coordinate: [880, 1716.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_7_0
@@ -940,7 +1379,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [944, 1020.0]
+    coordinate: [928, 1524.0]
     rotation: 0
     state: true
 - name: pulsed_power_power_calc_ff_0
@@ -956,24 +1395,24 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2056, 696.0]
+    coordinate: [2040, 1200.0]
     rotation: 0
     state: true
-- name: voltage_correction_factor
+- name: samp_rate_delta_phi_calc
   id: parameter
   parameters:
     alias: ''
     comment: ''
     hide: none
-    label: Voltage Correction Factor
+    label: Sample Rate for Delta Phi Calculation
     short_id: ''
     type: eng_float
-    value: '100'
+    value: '1000'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [176, 108.0]
+    coordinate: [264, 108.0]
     rotation: 0
     state: true
 
@@ -1011,17 +1450,37 @@ connections:
 - [low_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_1_0, '0']
 - [low_pass_filter_0_1_0, '0', pulsed_power_opencmw_time_sink_2_0, '0']
 - [low_pass_filter_0_1_0_0, '0', blocks_divide_xx_0_0_0, '1']
+- [low_pass_filter_0_1_0_1, '0', pulsed_power_opencmw_time_sink_2_0_0, '0']
+- [low_pass_filter_0_1_0_2, '0', pulsed_power_opencmw_time_sink_2_0_1, '0']
 - [low_pass_filter_0_1_1, '0', pulsed_power_opencmw_time_sink_3_0, '0']
 - [low_pass_filter_0_1_1_0, '0', blocks_divide_xx_0_1, '1']
+- [low_pass_filter_0_1_1_1, '0', pulsed_power_opencmw_time_sink_3_0_0, '0']
+- [low_pass_filter_0_1_1_2, '0', pulsed_power_opencmw_time_sink_3_0_1, '0']
 - [low_pass_filter_0_1_2, '0', pulsed_power_opencmw_time_sink_0_0, '0']
 - [low_pass_filter_0_1_2_0, '0', blocks_divide_xx_0_0_0, '0']
+- [low_pass_filter_0_1_2_1, '0', pulsed_power_opencmw_time_sink_0_0_0, '0']
+- [low_pass_filter_0_1_2_2, '0', pulsed_power_opencmw_time_sink_0_0_1, '0']
 - [low_pass_filter_0_1_3, '0', blocks_divide_xx_0_1, '0']
+- [low_pass_filter_0_1_4, '0', pulsed_power_opencmw_time_sink_1_0_0, '0']
+- [low_pass_filter_0_1_5, '0', pulsed_power_opencmw_time_sink_1_0_1, '0']
 - [low_pass_filter_0_2, '0', pulsed_power_opencmw_time_sink_5_0, '0']
+- [low_pass_filter_0_2_0, '0', pulsed_power_opencmw_time_sink_5_0_0, '0']
+- [low_pass_filter_0_2_1, '0', pulsed_power_opencmw_time_sink_5_0_1, '0']
 - [pulsed_power_mains_frequency_calc_0, '0', low_pass_filter_0_2, '0']
+- [pulsed_power_mains_frequency_calc_0, '0', low_pass_filter_0_2_0, '0']
+- [pulsed_power_mains_frequency_calc_0, '0', low_pass_filter_0_2_1, '0']
 - [pulsed_power_power_calc_ff_0, '0', low_pass_filter_0_1_2, '0']
+- [pulsed_power_power_calc_ff_0, '0', low_pass_filter_0_1_2_1, '0']
+- [pulsed_power_power_calc_ff_0, '0', low_pass_filter_0_1_2_2, '0']
 - [pulsed_power_power_calc_ff_0, '1', low_pass_filter_0_1, '0']
+- [pulsed_power_power_calc_ff_0, '1', low_pass_filter_0_1_4, '0']
+- [pulsed_power_power_calc_ff_0, '1', low_pass_filter_0_1_5, '0']
 - [pulsed_power_power_calc_ff_0, '2', low_pass_filter_0_1_0, '0']
+- [pulsed_power_power_calc_ff_0, '2', low_pass_filter_0_1_0_1, '0']
+- [pulsed_power_power_calc_ff_0, '2', low_pass_filter_0_1_0_2, '0']
 - [pulsed_power_power_calc_ff_0, '3', low_pass_filter_0_1_1, '0']
+- [pulsed_power_power_calc_ff_0, '3', low_pass_filter_0_1_1_1, '0']
+- [pulsed_power_power_calc_ff_0, '3', low_pass_filter_0_1_1_2, '0']
 
 metadata:
   file_format: 1
