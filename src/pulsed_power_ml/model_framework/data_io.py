@@ -141,14 +141,25 @@ def read_training_files(path_to_folder: str,
     phase_difference = load_pqsphi_file(phase_difference_file_name,
                                         fft_apparent_power.shape[0])
 
+    list_of_data_arrays = [fft_voltage,
+                           fft_current,
+                           fft_apparent_power,
+                           active_power,
+                           reactive_power,
+                           apparent_power,
+                           phase_difference]
+    # Take care of some minor errors during recording.
+
+    min_length = min([len(data_array) for data_array in list_of_data_arrays])
+
     # Glue these arrays together accordingly (stack horizontally)
-    data_array = np.hstack([fft_voltage,
-                            fft_current,
-                            fft_apparent_power,
-                            active_power,
-                            reactive_power,
-                            apparent_power,
-                            phase_difference])
+    data_array = np.hstack([fft_voltage[:min_length],
+                            fft_current[:min_length],
+                            fft_apparent_power[:min_length],
+                            active_power[:min_length],
+                            reactive_power[:min_length],
+                            apparent_power[:min_length],
+                            phase_difference[:min_length]])
 
     return data_array
 

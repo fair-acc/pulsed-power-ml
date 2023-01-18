@@ -43,7 +43,8 @@ def make_eval_plot(power_array: Union[np.array, List],
 
 def plot_state_vector_array(state_vector_list: np.array,
                             label_list: Union[List[str], None] = None,
-                            true_apparent_power: Union[np.array, None] = None) -> matplotlib.figure.Figure:
+                            true_apparent_power: Union[np.array, None] = None,
+                            v_line: Union[float, None] = None) -> matplotlib.figure.Figure:
     """
     Function to make one subplot for all appliances known to the model.
 
@@ -54,13 +55,15 @@ def plot_state_vector_array(state_vector_list: np.array,
     label_list
         List with names for each device in state vector.
     true_apparent_power
-        Array w/ true, total apparent power values
+        Array w/ true, total apparent power values (S from raw data).
+    v_line:
+        Plot a vertical line in all plots to indicate which part of the data is unseen by the model.
     Returns
     -------
     Figure containing one plot per appliance
     """
     n_figures = state_vector_list.shape[1]
-    fig = plt.figure(figsize=(16, 4.5 * n_figures))
+    fig = plt.figure(figsize=(16, 4.5 * n_figures), tight_layout=True)
 
     if label_list is not None:
         label_list.append("Other")
@@ -68,14 +71,28 @@ def plot_state_vector_array(state_vector_list: np.array,
     for i in range(n_figures):
         ax = fig.add_subplot(n_figures, 1, i+1)
         ax.plot(state_vector_list[:,i],
-                "-")
+                "-",
+                label='Predicted')
 
         if true_apparent_power is not None:
             ax.plot(true_apparent_power,
-                    "--")
+                    "--",
+                    label='Measured Apparent Power')
 
         if label_list is not None:
             ax.set_title(label_list[i])
+
+        if v_line is not None:
+            ax.axvline(x=int(len(state_vector_list) * v_line),
+                       label="Training Data | Test Data",
+                       color="C2",
+                       linestyle=':',
+                       linewidth=3)
+
+        ax.grid(True)
+        ax.set_ylabel("Apparent Power [VA]")
+        ax.set_xlabel("Time [au]")
+        ax.legend(loc='upper left')
 
     return fig
 

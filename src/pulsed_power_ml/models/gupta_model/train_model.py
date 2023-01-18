@@ -13,6 +13,7 @@ sys.path.append("../../../../")
 
 from src.pulsed_power_ml.models.gupta_model.tf_gupta_clf import TFGuptaClassifier
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 
 
 def main():
@@ -37,16 +38,24 @@ def main():
                         "--parameters",
                         help="Path to parameter file.",
                         required=True)
+    parser.add_argument('-d',
+                        '--power-data-base',
+                        help='Path to data base containing apparent power for each known appliance.',
+                        required=True)
     args = parser.parse_args()
 
     # Load parameters
-    print(f'Read parameters from {args.parameters}')
+    print(f'\nRead parameters from {args.parameters}')
     parameter_dict = read_parameters(args.parameters)
 
+    # Load data base for apparent power values
+    print(f'\nRead apparent power values from {args.power_data_base}')
+    _, apparent_power_list = list(zip(*read_power_data_base(args.power_data_base)))
+
     # Load features and labels
-    print(f'Load features from {args.features}')
+    print(f'\nLoad features from {args.features}')
     features = np.loadtxt(args.features, delimiter=',')
-    print(f'Load labels from {args.labels}')
+    print(f'\nLoad labels from {args.labels}')
     labels = np.loadtxt(args.labels, delimiter=',')
 
     # Instantiate model
@@ -57,17 +66,22 @@ def main():
         n_known_appliances=parameter_dict["n_known_appliances"],
         spectrum_type=parameter_dict["spectrum_type"],
         switching_offset=parameter_dict["switching_offset"],
+        apparent_power_list=tf.constant(apparent_power_list, dtype=np.float32),
         n_neighbors=parameter_dict["n_neighbors"],
         distance_threshold=parameter_dict["distance_threshold"],
         training_data_features=tf.constant(features, dtype=np.float32),
         training_data_labels=tf.constant(labels, dtype=np.float32)
     )
 
+    # Reset model
+    reset_tensor = tf.ones(shape=(parameter_dict['fft_size_real'] * 3 + 4)) * -1
+    _ = gupta_model(reset_tensor)
+
     # Store model
-    print(f'Store model in {args.output}')
+    print(f'\nStore model in {args.output}')
     tf.saved_model.save(gupta_model, args.output)
 
-    print('All done :-)')
+    print('\nAll done :-)')
     return
 
 

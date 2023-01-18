@@ -171,18 +171,9 @@ class TFGuptaClassifier(keras.Model):
         scaled_input = tf.math.divide_no_nan(input,
                                              self.scale_tensor)
 
-        # tf.print(input, summarize=-1)
-        # tf.print(scaled_input, summarize=-1)
-        # tf.print(self.scale_tensor, summarize=-1)
-
         difference_vectors = tf.math.subtract(
             self.training_data_features_scaled,
             scaled_input[:,0])
-
-        # tf.print(self.training_data_features_raw, summarize=-1)
-        # tf.print(self.training_data_features_scaled, summarize=-1)
-        #
-        # tf.print(difference_vectors, summarize=-1)
 
         distances = tf.norm(difference_vectors, axis=1)
 
@@ -217,9 +208,6 @@ class TFGuptaClassifier(keras.Model):
             # Create result tensor (one-hot encoded w/ length=N+1)
             result_tensor = tf.one_hot(indices=result_index,
                                        depth=self.training_data_labels.shape[1])
-
-        tf.print("Classification result = ", result_tensor, summarize=-1)
-        tf.print("Smallest distance = ", k_smallest_distances)
 
         return k_smallest_distances, result_tensor
 
@@ -367,7 +355,6 @@ class TFGuptaClassifier(keras.Model):
             )
             return self.current_state_vector
 
-        tf.print("Event detected!")
         # 5. If self.switching_offset is 0, then use the current data point to classify the event
         if self.switching_offset == 0:
             # self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
@@ -545,7 +532,6 @@ class TFGuptaClassifier(keras.Model):
         # state vector instead.
         if tf.math.equal(tf.math.reduce_any(tf.math.is_nan(distances)),
                          tf.constant(True)):
-            tf.print("NANs in distances! Do not change state vector!")
             return self.current_state_vector
 
         # Check if known or unknown event via the smallest distance
