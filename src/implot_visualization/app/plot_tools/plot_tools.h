@@ -131,6 +131,8 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    // Debug
+    int i = 0;
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -148,11 +150,12 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
                     offset,
                     2 * sizeof(double));
             // Debug
+            ImVec4    col       = ImPlot::GetLastItemColor();
+            DataPoint lastPoint = signal.data.back();
+            ImPlot::Annotation(currentTime - 350.0, lastPoint.y, ImVec4(2, 2, 2, 2), ImVec2(0, -(i * 5)), true, "%s=%2f", signal.signalName.c_str(), lastPoint.y);
+            i++;
         }
     }
-    // Debug
-    ImVec4 col = ImPlot::GetLastItemColor();
-    ImPlot::Annotation(1.25, 0.75, ImVec4(2, 2, 2, 2), ImVec2(2, 12), true, "Roland[%d]=%.2f", 5, 6);
 }
 
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {

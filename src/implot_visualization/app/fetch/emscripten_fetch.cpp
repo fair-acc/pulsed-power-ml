@@ -44,7 +44,6 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
         this->url.pop_back();
     }
 
-    std::cout << "Fetch: " << _requestedSignals.size() << std::endl;
     T _acquisition(_requestedSignals);
     this->acquisition = _acquisition;
 
