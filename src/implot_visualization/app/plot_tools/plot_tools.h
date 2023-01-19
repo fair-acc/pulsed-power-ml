@@ -150,9 +150,9 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
                     offset,
                     2 * sizeof(double));
             // Debug
-            ImVec4    col       = ImPlot::GetLastItemColor();
             DataPoint lastPoint = signal.data.back();
-            ImPlot::Annotation(currentTime - 350.0, lastPoint.y, ImVec4(2, 2, 2, 2), ImVec2(0, -(i * 5)), true, "%s=%2f", signal.signalName.c_str(), lastPoint.y);
+            ImVec4    col       = ImPlot::GetLastItemColor();
+            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
             i++;
         }
     }
