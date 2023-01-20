@@ -6,12 +6,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <time.h>
 #include <vector>
-
-#ifndef POWER_USAGE_PATH
-#define POWER_USAGE_PATH "src/data/"
-#endif
 
 class PowerIntegrator {
 private:
@@ -21,13 +18,13 @@ private:
     const std::string               _data_path;
 
     int64_t                         last_timestamp;
+    int64_t                         start_timestamp;
 
     std::vector<int64_t>            _timestamps;
     std::vector<int64_t>            _timestamps_week;
 
     std::vector<std::vector<float>> _devices_values;
     std::vector<std::vector<float>> _devices_values_last_week;
-    std::vector<std::vector<float>> _devices_values_current_month;
 
     int                             _month[2]; // 0 - month, 1 year
 
@@ -35,7 +32,6 @@ private:
     std::vector<float> power_usages_month;
     std::vector<float> power_usages_week;
     std::vector<float> power_usages_day;
-    std::vector<float> power_usages_calendar_day;
 
     bool               init         = false;
     bool               _init_usage  = false;
@@ -45,9 +41,6 @@ private:
 
     const float        _unit_faktor = 0.000000000000001f / 3.6f;
 
-    // power values
-    std::vector<float> power_values;
-
     // bool               read_values_from_file(std::string file_name, std::vector<float> &values, int64_t &time);
     bool              read_values_from_file(std::string file_name, int64_t &time);
     void              save_values_to_file(std::string file_name, int64_t time);
@@ -55,8 +48,6 @@ private:
     bool              read_values_from_file();
     void              save_month_usage();
     bool              read_month_usage();
-
-    void              check_last_powers_usages();
 
     const std::string file_month  = "month_usage.txt";
     const std::string file_week   = "week_usage.txt";
@@ -69,15 +60,15 @@ private:
     bool              check_same_calendar_day(int64_t t_0, int64_t t_1);
     bool              check_month(int64_t timestamp);
 
+    //   void              calculate_usage_device(size_t index)
     // void              init_month(int64_t timestamp);
     void reset_month(int64_t timestamp);
 
 public:
     void                                  update(int64_t timestamp, std::vector<float> &values);
-    const std::vector<float>              get_power_usages_month(); // not implemented
-    const std::vector<float>              get_power_usages_week();  // not implemented
-    const std::vector<float>              get_power_usages_day();   // not implemented
-    const std::vector<float>              get_power_values();
+    const std::vector<float>              get_power_usages_month();
+    const std::vector<float>              get_power_usages_week();
+    const std::vector<float>              get_power_usages_day();
     bool                                  get_init();
     const std::vector<std::vector<float>> get_devices_values();
     const std::vector<std::vector<float>> get_devices_values_last_week();
@@ -85,24 +76,25 @@ public:
     float                                 calculate_current_usage(int64_t t_0, float last_value,
                                             int64_t t_1, float current_value);
 
-    PowerIntegrator(std::vector<std::string> &devices, const int save_interval = 100);
-    PowerIntegrator(const std::string data_path, const size_t amount_of_devices, const int save_interval = 1000000000);
+    PowerIntegrator(std::vector<std::string> &devices, const std::string data_path = "./", const int save_interval = 100);
+    PowerIntegrator(const std::string data_path, const size_t amount_of_devices, const int save_interval = 100);
     ~PowerIntegrator();
 };
 
-PowerIntegrator::PowerIntegrator(std::vector<std::string> &devices, const int save_interval)
-    : _devices(devices), _save_interval(save_interval), _data_path(POWER_USAGE_PATH), _amount_of_devices(devices.size()) {
+PowerIntegrator::PowerIntegrator(std::vector<std::string> &devices, const std::string data_path, const int save_interval)
+    : _devices(devices), _save_interval(save_interval), _data_path(data_path), _amount_of_devices(devices.size()) {
     fmt::print("PowerIntegrator constructor\n");
     fmt::print("\tcurrent path {0}\n", std::filesystem::current_path());
 
     std::vector<float> temp_values;
     int64_t            time;
 
-    // bool               month_bool = read_values_from_file("month_usage.txt", time);
-    // fmt::print("\ttime {0}  \n", time);
-    // fmt::print("\tvalues {0}  \n", power_usages_month);
+    start_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
-    // _amount_of_devices = _devices.size();
+    for (size_t i = 0; i < _amount_of_devices; i++) {
+        power_usages_day.push_back(0.0f);
+        power_usages_week.push_back(0.0f);
+    }
 
     last_timestamp = time;
 
@@ -117,21 +109,16 @@ PowerIntegrator::PowerIntegrator(std::vector<std::string> &devices, const int sa
     init            = month_bool && week_bool && day_bool;
 
     fmt::print("\t init {0}  \n", init);
-
-    // save_values_to_file("day_usage.txt",power_usages_month, time);
 }
 
 PowerIntegrator::PowerIntegrator(const std::string data_path, const size_t amount_of_devices, const int save_interval)
     : _amount_of_devices(amount_of_devices), _data_path(data_path), _save_interval(save_interval) {
-    int64_t                                                  time;
+    int64_t time;
 
-    const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    // const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    start_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
     fmt::print("\tcurrent path {0}\n", std::filesystem::current_path());
-
-    //  bool month_bool = read_values_from_file("month_usage.txt", time);
-    // fmt::print("\ttime {0}  \n", time);
-    // fmt::print("\tvalues {0}  \n", power_usages_month);
 
     last_timestamp  = time;
 
@@ -275,9 +262,6 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
     }
 }
 
-void PowerIntegrator::check_last_powers_usages() {
-}
-
 float PowerIntegrator::calculate_current_usage(int64_t t_0, float last_value, int64_t t_1, float current_value) {
     int64_t delta_time_int = t_1 - t_0;
     float   delta_time     = static_cast<float>(delta_time_int);
@@ -293,6 +277,19 @@ float PowerIntegrator::calculate_current_usage(int64_t t_0, float last_value, in
         return temp + 0.5f * (-delta_values) * delta_time;
     }
 }
+
+// void PowerIntegrator::calculate_usage_device(size_t index) {
+//     float temp_24h          = 0;
+//     float temp_week         = 0;
+//     power_usages_week.at(i) = 0;
+//     power_usages_day.at(i)  = 0;
+
+//     for (auto it_time = _timestamps.begin(), auto it_values = _devices_values.at(index).begin();
+//             it_time != _timestamps.end() && it_values != _devices_values.at(index).end(); it_time++.it_values++) {
+//     }
+//     power_usages_week.at(index) = temp_week;
+//     power_usages_day.at(index)  = temp_24h;
+// }
 
 bool PowerIntegrator::read_values_from_file(std::string file_name, int64_t &time) {
     std::string file_path = _data_path + file_name;
@@ -319,7 +316,98 @@ bool PowerIntegrator::read_values_from_file(std::string file_name, int64_t &time
     return false;
 }
 
-bool PowerIntegrator read_values_from_file() {
+bool PowerIntegrator::read_values_from_file() {
+    std::string file_path = _data_path + file_values;
+    // fmt::print("read_values_from_file, data_path: {0}\n", file_path);
+
+    std::ifstream      values_file(file_path.c_str(), std::ios_base::in);
+
+    std::vector<float> previous_values;
+    int64_t            previous_timestamp;
+
+    if (values_file.good()) {
+        int64_t     time_saved;
+        std::string line;
+        if (std::getline(values_file, line)) {
+            if (line.length() > 0) {
+                std::istringstream iss(line);
+                iss >> time_saved;
+            } else {
+                values_file.close();
+                return false;
+            }
+        } else {
+            values_file.close();
+            return false;
+        }
+
+        // the data are to old
+        if (!check_same_week(time_saved, start_timestamp)) {
+            values_file.close();
+            return false;
+        }
+
+        for (size_t i = 0; i < _amount_of_devices; i++) {
+            std::vector<float> values;
+            _devices_values.push_back(values);
+            std::vector<float> values_week;
+            _devices_values_last_week.push_back(values_week);
+        }
+
+        while (std::getline(values_file, line)) {
+            if (line.length() > 0) {
+                int64_t            timestamp;
+                std::istringstream iss(line);
+                iss >> timestamp;
+                // same week
+                if (check_same_week(timestamp, start_timestamp)) {
+                    if (check_same_day(timestamp, start_timestamp)) {
+                        _timestamps.push_back(timestamp);
+                        for (size_t i = 0; i < _amount_of_devices; i++) {
+                            float value;
+                            iss >> value;
+                            _devices_values.at(i).push_back(value);
+
+                            if (previous_values.size() == _amount_of_devices) {
+                                float usage = calculate_current_usage(previous_timestamp, previous_values.at(i),
+                                        timestamp, value);
+                                power_usages_day.at(i) += usage;
+
+                                previous_values.at(i) = value;
+                            } else {
+                                previous_values.push_back(value);
+                            }
+                        }
+                        previous_timestamp = timestamp;
+                    } else {
+                        _timestamps_week.push_back(timestamp);
+                        for (size_t i = 0; i < _amount_of_devices; i++) {
+                            float value;
+                            iss >> value;
+                            _devices_values_last_week.at(i).push_back(value);
+
+                            if (previous_values.size() == _amount_of_devices) {
+                                float usage = calculate_current_usage(previous_timestamp, previous_values.at(i),
+                                        timestamp, value);
+                                power_usages_day.at(i) += usage;
+                                power_usages_week.at(i) += usage;
+                                previous_values.at(i) = value;
+                            } else {
+                                previous_values.push_back(value);
+                            }
+                        }
+                        previous_timestamp = timestamp;
+                    }
+                }
+            }
+        }
+
+        values_file.close();
+        return true;
+    } else {
+        return false;
+    }
+    return false;
 }
 
 bool PowerIntegrator::read_month_usage() {
@@ -327,8 +415,6 @@ bool PowerIntegrator::read_month_usage() {
     std::ifstream values_file(file_path.c_str(), std::ios_base::in);
 
     if (values_file.good()) {
-        int   month;
-        int   year;
         float value;
 
         int   counter = 1;

@@ -82,6 +82,49 @@ TEST_CASE("integrator-update-test-add-values", "[update][inital values exists]")
     // no power yet
     REQUIRE(powerIntegrator.get_devices_values().at(0).size() == 1);
 }
+
+TEST_CASE("time_now") {
+    const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    fmt::print("Now: {}", now.time_since_epoch());
+    fmt::print("As number {}: ", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+}
+
+TEST_CASE("integrator-read-data") {
+    PowerIntegrator powerIntegrator("../../test/data/", 11, 20);
+    // PowerIntegrator    powerIntegrator("data/", 11, 20);
+    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
+    powerIntegrator.update(1674221552500000000, values);
+
+    int64_t time_interval = 500000000;
+    int64_t time_point    = 1674221552500000000;
+    for (size_t i = 0; i < 3000; i++) {
+        auto value = values.front();
+        values.erase(values.begin());
+        values.push_back(value);
+        time_point += time_interval;
+        powerIntegrator.update(time_point, values);
+    }
+}
+
+/*
+TEST_CASE("integrator-save-data") {
+    PowerIntegrator powerIntegrator("../../test/data/", 11, 20);
+    // PowerIntegrator    powerIntegrator("data/", 11, 20);
+    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
+    powerIntegrator.update(1643607514469647654, values);
+
+    int64_t time_interval = 500000000;
+    int64_t time_point    = 1643607514469647654;
+    for (size_t i = 0; i < 3000; i++) {
+        auto value = values.front();
+        values.erase(values.begin());
+        values.push_back(value);
+        time_point += time_interval;
+        powerIntegrator.update(time_point, values);
+    }
+}
+*/
+
 /*
 TEST_CASE("update-values-3_cases-times") {
     PowerIntegrator    powerIntegrator("./", 11);
@@ -209,22 +252,6 @@ TEST_CASE("integrator-change-month-times") {
     fmt::print("power sage month: {}\n", powerIntegrator.get_power_usages_month());
 }
 */
-TEST_CASE("integrator-save-data") {
-    PowerIntegrator powerIntegrator("../../test/data/", 11, 20);
-    // PowerIntegrator    powerIntegrator("data/", 11, 20);
-    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1643607514469647654, values);
-
-    int64_t time_interval = 500000000;
-    int64_t time_point    = 1643607514469647654;
-    for (size_t i = 0; i < 3000; i++) {
-        auto value = values.front();
-        values.erase(values.begin());
-        values.push_back(value);
-        time_point += time_interval;
-        powerIntegrator.update(time_point, values);
-    }
-}
 
 // TEST_CASE("integrator-read_month") {
 //     std::string path = "../../test/data/month_usage.txt";
