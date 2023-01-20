@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <deserialize_json.h>
 #include <emscripten.h>
 #include <emscripten/fetch.h>
@@ -13,7 +14,7 @@ public:
     bool           fetchFinished   = true;
     bool           fetchSuccessful = false;
 
-    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals);
+    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const float _updateFrequency);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);
@@ -22,6 +23,9 @@ public:
 private:
     std::vector<std::string> requestedSignals;
     std::string              extendedUrl;
+    float                    updateFrequency;
+    double                   lastFetchTime;
+    ;
 
-    void                     updateUrl();
+    void updateUrl();
 };
