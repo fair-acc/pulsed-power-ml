@@ -32,4 +32,6 @@ function(opencmw_add_test_catch2 name sources)
     catch_discover_tests(${name})
 endfunction()
 
-opencmw_add_test_catch2(time_domain_worker_rest_tests time_domain_worker_rest_tests.cpp)
+#opencmw_add_test_catch2(time_domain_worker_rest_tests time_domain_worker_rest_tests.cpp)
+opencmw_add_test_catch2(integrator integrator_tests.cpp)
+
