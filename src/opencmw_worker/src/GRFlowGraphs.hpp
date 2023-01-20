@@ -5,6 +5,7 @@
 #include <gnuradio/blocks/complex_to_mag_squared.h>
 #include <gnuradio/blocks/divide.h>
 #include <gnuradio/blocks/file_sink.h>
+#include <gnuradio/blocks/keep_one_in_n.h>
 #include <gnuradio/blocks/multiply.h>
 #include <gnuradio/blocks/multiply_const.h>
 #include <gnuradio/blocks/nlog10_ff.h>
@@ -244,24 +245,16 @@ public:
                         10,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
-        auto out_decimation_mains_frequency = gr::filter::fft_filter_fff::make(
-                decimation_out_mains_freq,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_current_bpf = gr::filter::fft_filter_fff::make(
-                1,
-                gr::filter::firdes::low_pass(
-                        1,
-                        bpf_out_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
+        auto out_decimation_mains_frequency = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq);
+        auto out_decimation_current_bpf     = gr::filter::fft_filter_fff::make(
+                    1,
+                    gr::filter::firdes::low_pass(
+                            1,
+                            bpf_out_samp_rate,
+                            400,
+                            10,
+                            gr::fft::window::win_type::WIN_HAMMING,
+                            6.76));
         auto out_decimation_voltage_bpf = gr::filter::fft_filter_fff::make(
                 1,
                 gr::filter::firdes::low_pass(
@@ -271,43 +264,10 @@ public:
                         10,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
-        auto out_decimation_p_shortterm = gr::filter::fft_filter_fff::make(
-                decimation_out_short_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        bpf_out_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_q_shortterm = gr::filter::fft_filter_fff::make(
-                decimation_out_short_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        bpf_out_samp_rate,
-                        400,
-                        1,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_s_shortterm = gr::filter::fft_filter_fff::make(
-                decimation_out_short_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        bpf_out_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_phi_shortterm = gr::filter::fft_filter_fff::make(
-                decimation_out_short_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        bpf_out_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-
+        auto out_decimation_p_shortterm           = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_q_shortterm           = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_s_shortterm           = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_phi_shortterm         = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
         auto pulsed_power_opencmw_time_sink_raw_0 = gr::pulsed_power::opencmw_time_sink::make(
                 { "U", "I" },
                 { "V", "A" },
