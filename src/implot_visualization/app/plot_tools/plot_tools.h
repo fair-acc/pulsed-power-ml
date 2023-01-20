@@ -6,6 +6,11 @@
 #include <vector>
 
 namespace Plotter {
+
+enum DataInterval { Short,
+    Mid,
+    Long };
+
 /**
  * Adds an overlay to the current plot and shows an icon and a message.
  * @param text the message text shown after the icon
@@ -40,6 +45,22 @@ void addPlotNotice(
         ImGui::Text("%.*s", static_cast<int>(text.size()), text.data());
     }
     ImGui::EndChild();
+}
+
+double setTimeInterval(DataInterval Interval) {
+    double dt = 0;
+    switch (Interval) {
+    case Short:
+        dt = 300.0; // 5 minutes
+        break;
+    case Mid:
+        dt = 3'600.0; // 1 hour
+        break;
+    case Long:
+        dt = 68'400.0; // 24 hours
+        break;
+    }
+    return dt;
 }
 
 template<typename T>
@@ -121,18 +142,17 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     }
 }
 
-void plotPower(std::vector<ScrollingBuffer> &signals) {
+void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 300.0, currentTime, ImGuiCond_Always);
+    double dt          = setTimeInterval(Interval);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // Debug
-    int i = 0;
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -149,25 +169,45 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
                     0,
                     offset,
                     2 * sizeof(double));
-            // Debug
+
+            // Add tags with signal value
             DataPoint lastPoint = signal.data.back();
             ImVec4    col       = ImPlot::GetLastItemColor();
             ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
-            i++;
         }
     }
 }
 
-void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
+void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     ImPlot::SetupAxes("UTC Time", "Frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 300.0, currentTime, ImGuiCond_Always);
+    double dt          = setTimeInterval(Interval);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    plotSignals(signals);
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+
+            // Add tags with signal value
+            DataPoint lastPoint = signal.data.back();
+            ImVec4    col       = ImPlot::GetLastItemColor();
+            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+        }
+    }
 }
 
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {
