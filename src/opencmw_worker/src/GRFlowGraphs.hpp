@@ -125,7 +125,7 @@ public:
         float freq_samp_rate   = 32'000.0f;
         // parameters band pass filter
         int   decimation_bpf    = 200;
-        float bpf_out_samp_rate = source_samp_rate / decimation_bpf;
+        float bpf_out_samp_rate = source_samp_rate / (float) decimation_bpf;
         float bpf_high_cut      = 80;
         float bpf_low_cut       = 20;
         float bpf_trans         = 10;
@@ -380,18 +380,11 @@ public:
         picoscope_source->set_aichan_g(false, 5.0, picoscope_coupling, 5.0);
         picoscope_source->set_aichan_h(false, 5.0, picoscope_coupling, 0.0);
 
-        if ("None" != "None") {
-            picoscope_source->set_aichan_trigger("None", picoscope_trigger_direction, 2.5);
-        }
-
-        if ("Streaming" == "Streaming") {
-            picoscope_source->set_nr_buffers(64);
-            picoscope_source->set_driver_buffer_size(102400);
-            picoscope_source->set_streaming(0.0005);
-            picoscope_source->set_buffer_size(204800);
-        } else {
-            picoscope_source->set_rapid_block(5);
-        }
+        // mode = streaming
+        picoscope_source->set_nr_buffers(64);
+        picoscope_source->set_driver_buffer_size(102400);
+        picoscope_source->set_streaming(0.0005);
+        picoscope_source->set_buffer_size(204800);
 
         auto null_sink_picoscope       = gr::blocks::null_sink::make(sizeof(float));
 
