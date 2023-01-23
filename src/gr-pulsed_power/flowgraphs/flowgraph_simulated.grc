@@ -922,7 +922,9 @@ blocks:
 - name: lp_decimation
   id: parameter
   parameters:
+    affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
     hide: none
     label: low pass decimation
@@ -939,7 +941,9 @@ blocks:
 - name: out_samp_rate_high
   id: parameter
   parameters:
+    affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
     hide: none
     label: Out Sample Rate High
@@ -956,7 +960,9 @@ blocks:
 - name: out_samp_rate_low
   id: parameter
   parameters:
+    affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
     hide: none
     label: Out Sample Rate Low
@@ -975,12 +981,17 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
     expected_sample_rate: '200000'
     high_threshold: '100'
     low_threshold: '-100'
     maxoutbuf: '0'
     minoutbuf: '0'
+    samp_rate: out_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
@@ -993,6 +1004,7 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
+    beta: '6.76'
     comment: ''
     sample_rate: '100'
     signal_name: active_power
