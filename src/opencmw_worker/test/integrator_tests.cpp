@@ -46,12 +46,12 @@ using opencmw::majordomo::PLAIN_HTTP;
 // }
 
 TEST_CASE("integrator-constructor-not-exists", "[constuctor][file does not exist]") {
-    PowerIntegrator powerIntegrator("./", 3);
+    PowerIntegrator powerIntegrator(7, "./");
     REQUIRE(powerIntegrator.get_init() == false);
 }
 
 TEST_CASE("integrator-calculate-same-value", "[calculate][same values") {
-    PowerIntegrator powerIntegrator("../../test/data/", 3);
+    PowerIntegrator powerIntegrator(11, "../../test/data/");
 
     double          power_usage = powerIntegrator.calculate_current_usage(1673858501452341457, 50, 1673858501460000000, 50);
     fmt::print("integrator-calculate-same-value power\n", power_usage);
@@ -59,15 +59,15 @@ TEST_CASE("integrator-calculate-same-value", "[calculate][same values") {
 }
 
 TEST_CASE("integrator-calculate-old-greater-value", "[calculate][old greater values") {
-    PowerIntegrator powerIntegrator("../../test/data/", 3);
-    double          power_usage = powerIntegrator.calculate_current_usage(673858501452341457, 50,
+    PowerIntegrator powerIntegrator(3, "../../test/data/");
+    double          power_usage = powerIntegrator.calculate_current_usage(1673858501452341457, 50,
                      1673858501460000000, 60);
     fmt::print("integrator-calculate-old-greater-value\n", power_usage);
     REQUIRE(power_usage > 0);
 }
 
 TEST_CASE("integrator-calculate-old-less-value", "[calculate][less values") {
-    PowerIntegrator powerIntegrator("../../test/data/", 3);
+    PowerIntegrator powerIntegrator(3, "../../test/data/");
     double          power_usage = powerIntegrator.calculate_current_usage(673858501452341457, 50,
                      1673858501460000000, 10);
     fmt::print("integrator-calculate-old-less-value\n", power_usage);
@@ -75,7 +75,7 @@ TEST_CASE("integrator-calculate-old-less-value", "[calculate][less values") {
 }
 
 TEST_CASE("integrator-update-test-add-values", "[update][inital values exists]") {
-    PowerIntegrator    powerIntegrator("./", 3);
+    PowerIntegrator    powerIntegrator(3, "./");
     std::vector<float> values = { 1.2, 0.4, 8.3 };
     powerIntegrator.update(12342144, values);
     fmt::print("Size: {}\n", powerIntegrator.get_devices_values().size());
@@ -90,7 +90,7 @@ TEST_CASE("time_now") {
 }
 
 TEST_CASE("integrator-read-data") {
-    PowerIntegrator powerIntegrator("../../test/data/", 11, 20);
+    PowerIntegrator powerIntegrator(11, "../../test/data/", 20);
     // PowerIntegrator    powerIntegrator("data/", 11, 20);
     std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
     powerIntegrator.update(1674221552500000000, values);
@@ -125,9 +125,8 @@ TEST_CASE("integrator-save-data") {
 }
 */
 
-/*
 TEST_CASE("update-values-3_cases-times") {
-    PowerIntegrator    powerIntegrator("./", 11);
+    PowerIntegrator    powerIntegrator(11, "./");
     std::vector<float> values = { 1.2, 0.4, 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0 };
     powerIntegrator.update(1674044238450644654, values);
 
@@ -154,7 +153,7 @@ TEST_CASE("update-values-3_cases-times") {
     REQUIRE(power_values_day.size() == 11);
     REQUIRE(device_values.at(0).size() == 3);
 }
-*/
+
 /*
 TEST_CASE("update-values-200000-times") {
     PowerIntegrator    powerIntegrator("./", 11);

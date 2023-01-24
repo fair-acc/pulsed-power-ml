@@ -99,7 +99,8 @@ public:
     explicit NilmPredictWorker(const BrokerType &broker,
             std::chrono::milliseconds            updateInterval)
         : super_t(broker, {}) {
-        _powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names);
+        //_powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names);
+        _powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names.size(), "./src/data/", 10);
 
         notifyThread     = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> pollingDuration;
