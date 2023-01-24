@@ -57,7 +57,7 @@ double setTimeInterval(DataInterval Interval) {
         dt = 3'600.0; // 1 hour
         break;
     case Long:
-        dt = 68'400.0; // 24 hours
+        dt = 86'400.0; // 24 hours
         break;
     }
     return dt;

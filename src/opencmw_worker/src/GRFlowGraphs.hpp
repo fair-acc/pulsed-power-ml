@@ -249,33 +249,6 @@ public:
                         10,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
-        auto out_decimation_mains_frequency_shortterm = gr::filter::fft_filter_fff::make(
-                decimation_out_mains_freq_short_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_mains_frequency_midterm = gr::filter::fft_filter_fff::make(
-                decimation_out_mains_freq_mid_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_mains_frequency_longterm = gr::filter::fft_filter_fff::make(
-                decimation_out_mains_freq_long_term,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
         auto out_decimation_current_bpf = gr::filter::fft_filter_fff::make(
                 1,
                 gr::filter::firdes::low_pass(
@@ -295,23 +268,27 @@ public:
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
 
-        auto out_decimation_p_shortterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
-        auto out_decimation_q_shortterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
-        auto out_decimation_s_shortterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
-        auto out_decimation_phi_shortterm = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
-        auto out_decimation_p_midterm     = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
-        auto out_decimation_q_midterm     = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
-        auto out_decimation_s_midterm     = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
-        auto out_decimation_phi_midterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
-        auto out_decimation_p_longterm    = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
-        auto out_decimation_q_longterm    = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
-        auto out_decimation_s_longterm    = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
-        auto out_decimation_phi_longterm  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
+        auto out_decimation_mains_frequency_shortterm = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_short_term);
+        auto out_decimation_mains_frequency_midterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_mid_term);
+        auto out_decimation_mains_frequency_longterm  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_long_term);
 
-        auto opencmw_time_sink_raw_0      = gr::pulsed_power::opencmw_time_sink::make(
-                     { "U", "I" },
-                     { "V", "A" },
-                     out_samp_rate_ui);
+        auto out_decimation_p_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_q_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_s_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_phi_shortterm             = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
+        auto out_decimation_p_midterm                 = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
+        auto out_decimation_q_midterm                 = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
+        auto out_decimation_s_midterm                 = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
+        auto out_decimation_phi_midterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
+        auto out_decimation_p_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
+        auto out_decimation_q_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
+        auto out_decimation_s_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
+        auto out_decimation_phi_longterm              = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
+
+        auto opencmw_time_sink_raw_0                  = gr::pulsed_power::opencmw_time_sink::make(
+                                 { "U", "I" },
+                                 { "V", "A" },
+                                 out_samp_rate_ui);
         opencmw_time_sink_raw_0->set_max_noutput_items(noutput_items);
         auto opencmw_time_sink_bpf_0 = gr::pulsed_power::opencmw_time_sink::make(
                 { "U_bpf", "I_bpf" },
