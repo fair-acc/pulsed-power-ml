@@ -155,10 +155,6 @@ public:
                             nilmData.values.push_back(static_cast<double>(v));
                         }
 
-                        // PQSPhiDataSink &pqsphiData       = *_pqsphiDataSink;
-
-                        // int64_t         time_from_pqsphi = pqsphiData.timestamp;
-
                         _powerIntegrator->update(time_from_pqsphi, values);
                     }
                     fillDayUsage();
@@ -368,7 +364,11 @@ private:
     void fillDayUsage() {
         nilmData.day_usage.clear();
         // dummy data
-        nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        // nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        auto power_day = _powerIntegrator->get_power_usages_day();
+        for (auto v : power_day) {
+            nilmData.day_usage.push_back(v);
+        }
     }
 
     void fillWeekUsage() {
