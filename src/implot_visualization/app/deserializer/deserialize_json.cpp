@@ -61,10 +61,12 @@ template<typename T>
 bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = this->signalNames;
     if (receivedSignals.size() != expectedSignals.size()) {
+        std::cout << "received: " << receivedSignals.size() << ", expected: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
-        if (receivedSignals[i] != expectedSignals[i]) {
+        if (strcmp(receivedSignals[i].c_str(), expectedSignals[i].c_str()) != 0) {
+            std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
             return false;
         }
     }
@@ -97,7 +99,7 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -112,6 +114,7 @@ void Acquisition::deserialize() {
                 std::cout << "Received other signals than requested" << std::endl;
                 return;
             }
+            std::cout << "Received expected signal" << std::endl;
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -126,8 +129,7 @@ void Acquisition::deserialize() {
 AcquisitionSpectra::AcquisitionSpectra() {}
 
 AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-}
+    : IAcquisition(_signalNames) {}
 
 void AcquisitionSpectra::addToBuffers() {
     for (int i = 0; i < signalNames.size(); i++) {
@@ -137,24 +139,34 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            if (this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested" << std::endl;
-                return;
+            std::string              testString     = element.value();
+            std::vector<std::string> channelNames_2 = { testString };
+            std::cout << "received: " << channelNames_2[0] << ", expected: " << this->signalNames[0] << std::endl;
+            for (auto names : signalNames) {
+                std::cout << names << ", ";
             }
+            // if (this->receivedRequestedSignals(channelNames_2)) {
+            //     std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
+            //     return;
+            // }
+            std::cout << "Received expected signal" << std::endl;
         } else if (element.key() == "channelMagnitudeValues") {
             this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
 }
 
