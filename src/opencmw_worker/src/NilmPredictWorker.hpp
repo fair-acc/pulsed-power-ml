@@ -132,15 +132,9 @@ public:
                         int64_t         size             = static_cast<int64_t>(data_point.size());
                         cppflow::tensor input(data_point, { size });
 
-                        // fmt::print("tensor print: {}\n", tensor);
-
                         fmt::print("input:  {}\n", input);
 
                         auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
-
-                        // int64_t size = static_cast<int64_t>(data_point.size());
-                        //   cppflow::tensor tensor(data_point, { size });
-                        // fmt::print("Tensor: {}\n", tensor);
 
                         auto values = output[0].get_data<float>();
 
@@ -154,9 +148,9 @@ public:
                         for (auto v : values) {
                             nilmData.values.push_back(static_cast<double>(v));
                         }
-
                         _powerIntegrator->update(time_from_pqsphi, values);
                     }
+
                     fillDayUsage();
                     fillWeekUsage();
                     fillMonthUsage();
@@ -167,19 +161,9 @@ public:
 
                 super_t::notify("/nilmPredictData", context, nilmData);
 
-                pollingDuration = std::chrono::system_clock::now() - time_start;
+                pollingDuration   = std::chrono::system_clock::now() - time_start;
 
-                // TODO - check this - warning
                 auto willSleepFor = updateInterval - pollingDuration;
-                // if (willSleepFor>0){
-                //     std::this_thread::sleep_for(willSleepFor);
-                // } else {
-                //     fmt::print("Data prediction too slow\n");
-                // }
-
-                // std::this_thread::sleep_for(1000ms);
-
-                // std::this_thread::sleep_for(willSleepFor);
 
                 if (willSleepFor > 0ms) {
                     std::this_thread::sleep_for(willSleepFor);
@@ -239,8 +223,6 @@ public:
 
     // copy P Q S Phi data
     void callbackCopySinkTimeData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) {
-        fmt::print("--callbackCopySinkTimeData: timestamp: {}\n", timestamp_ns);
-
         const float             *p   = static_cast<const float *>(input_items[0]);
         const float             *q   = static_cast<const float *>(input_items[1]);
         const float             *s   = static_cast<const float *>(input_items[2]);
@@ -374,13 +356,21 @@ private:
     void fillWeekUsage() {
         nilmData.week_usage.clear();
         // dummy data
-        nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        // nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        auto power_week = _powerIntegrator->get_power_usages_week();
+        for (auto v : power_week) {
+            nilmData.week_usage.push_back(v);
+        }
     }
 
     void fillMonthUsage() {
         nilmData.month_usage.clear();
         // dummy data
-        nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        // nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        auto power_month = _powerIntegrator->get_power_usages_month();
+        for (auto v : power_month) {
+            nilmData.month_usage.push_back(v);
+        }
     }
 
     // Test - dummy vector

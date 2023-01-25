@@ -67,7 +67,10 @@ public:
     const std::vector<std::vector<float>> get_devices_values();
     const std::vector<std::vector<float>> get_devices_values_last_week();
 
-    float                                 calculate_current_usage(int64_t t_0, float last_value,
+    const std::vector<int64_t>            get_timestamps();
+    const std::vector<int64_t>            get_timestamps_week();
+
+    float                                 calculate_usage(int64_t t_0, float last_value,
                                             int64_t t_1, float current_value);
 
     PowerIntegrator(std::vector<std::string> &devices, const std::string data_path = "./", const int save_interval = 100);
@@ -130,7 +133,7 @@ PowerIntegrator::~PowerIntegrator() {
 }
 
 void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
-    fmt::print("Integrator: Update\n");
+    // fmt::print("Integrator: Update\n");
     if (timestamp == 0) return;
 
     if (last_timestamp == timestamp) return;
@@ -145,7 +148,7 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
     for (size_t i = 0; i < _amount_of_devices; i++) {
         auto  last_power         = _devices_values.at(i).back();
 
-        float last_segment_usage = calculate_current_usage(last_timestamp, last_power,
+        float last_segment_usage = calculate_usage(last_timestamp, last_power,
                 timestamp, values[i]);
 
         power_usages_day.at(i) += last_segment_usage;
@@ -172,7 +175,7 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
                 _devices_values_last_week.push_back(week_values);
             }
 
-            float old_usage = calculate_current_usage(headTimestamp, value, _timestamps.front(), _devices_values.at(i).front());
+            float old_usage = calculate_usage(headTimestamp, value, _timestamps.front(), _devices_values.at(i).front());
             power_usages_day.at(i) -= old_usage;
         }
 
@@ -188,7 +191,7 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
             auto removedValue = _devices_values_last_week.at(i).front();
             _devices_values_last_week.at(i).erase(_devices_values_last_week.at(i).begin());
 
-            auto powerValue = calculate_current_usage(headWeekTimestamp, removedValue,
+            auto powerValue = calculate_usage(headWeekTimestamp, removedValue,
                     _timestamps_week.front(), _devices_values_last_week.at(i).front());
 
             power_usages_week.at(i) -= powerValue;
@@ -213,7 +216,7 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
     }
 }
 
-float PowerIntegrator::calculate_current_usage(int64_t t_0, float last_value, int64_t t_1, float current_value) {
+float PowerIntegrator::calculate_usage(int64_t t_0, float last_value, int64_t t_1, float current_value) {
     int64_t delta_time_int = t_1 - t_0;
     float   delta_time     = static_cast<float>(delta_time_int);
     float   delta_values   = current_value - last_value;
@@ -277,7 +280,7 @@ bool PowerIntegrator::read_values_from_file() {
                             _devices_values.at(i).push_back(value);
 
                             if (previous_values.size() == _amount_of_devices) {
-                                float usage = calculate_current_usage(previous_timestamp, previous_values.at(i),
+                                float usage = calculate_usage(previous_timestamp, previous_values.at(i),
                                         timestamp, value);
                                 power_usages_day.at(i) += usage;
                                 power_usages_week.at(i) += usage;
@@ -298,7 +301,7 @@ bool PowerIntegrator::read_values_from_file() {
                             _devices_values_last_week.at(i).push_back(value);
 
                             if (previous_values.size() == _amount_of_devices) {
-                                float usage = calculate_current_usage(previous_timestamp, previous_values.at(i),
+                                float usage = calculate_usage(previous_timestamp, previous_values.at(i),
                                         timestamp, value);
                                 power_usages_week.at(i) += usage;
                                 previous_values.at(i) = value;
@@ -427,6 +430,13 @@ const std::vector<std::vector<float>> PowerIntegrator::get_devices_values() {
 
 const std::vector<std::vector<float>> PowerIntegrator::get_devices_values_last_week() {
     return _devices_values_last_week;
+}
+
+const std::vector<int64_t> PowerIntegrator::get_timestamps() {
+    return _timestamps;
+}
+const std::vector<int64_t> PowerIntegrator::get_timestamps_week() {
+    return _timestamps_week;
 }
 
 bool PowerIntegrator::check_same_day(int64_t t_0, int64_t t_1) {

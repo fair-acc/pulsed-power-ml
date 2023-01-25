@@ -21,6 +21,10 @@
 
 #include "helpers.hpp"
 #include "integrator/PowerIntegrator.hpp"
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 using opencmw::majordomo::Broker;
 using opencmw::majordomo::BrokerMessage;
@@ -33,70 +37,110 @@ using opencmw::majordomo::Worker;
 using opencmw::majordomo::DEFAULT_REST_PORT;
 using opencmw::majordomo::PLAIN_HTTP;
 
-// 2023-01-19 - new Implementation
-// TEST_CASE("integrator-constuctor-exist", "[constuctor][file exist]") {
-//     PowerIntegrator powerIntegrator("../../test/data/", 3);
-//     fmt::print("\tcurrent path {0}\n", std::filesystem::current_path());
-//     REQUIRE(powerIntegrator.get_init() == true);
-//     REQUIRE(powerIntegrator.get_power_usages_month().size() == 3);
-//     REQUIRE(powerIntegrator.get_power_usages_week().size() == 3);
-//     REQUIRE(powerIntegrator.get_power_usages_day().size() == 3);
-//     // check values
-//     // check time
-// }
+TEST_CASE("integrator-constructor-not-exists-1", "[constuctor][file does not exist]") {
+    size_t                          size = 7;
+    PowerIntegrator                 powerIntegrator(size, "../../test/data/test_no_init_file/");
 
-TEST_CASE("integrator-constructor-not-exists", "[constuctor][file does not exist]") {
-    PowerIntegrator powerIntegrator(7, "./");
-    REQUIRE(powerIntegrator.get_init() == false);
+    std::vector<float>              usage_day       = powerIntegrator.get_power_usages_day();
+    std::vector<float>              usage_week      = powerIntegrator.get_power_usages_week();
+    std::vector<float>              usage_month     = powerIntegrator.get_power_usages_month();
+
+    std::vector<int64_t>            timestamps      = powerIntegrator.get_timestamps();
+    std::vector<int64_t>            timestamps_week = powerIntegrator.get_timestamps_week();
+
+    std::vector<std::vector<float>> values_day      = powerIntegrator.get_devices_values();
+    std::vector<std::vector<float>> values_week     = powerIntegrator.get_devices_values_last_week();
+
+    REQUIRE(usage_day.size() == size);
+    REQUIRE(usage_week.size() == size);
+    REQUIRE(usage_month.size() == size);
+    REQUIRE(timestamps.size() == 1);
+    REQUIRE(timestamps_week.size() == 0);
+
+    for (size_t i = 0; i < size; i++) {
+        REQUIRE(usage_month.at(i) == 0);
+        REQUIRE(usage_day.at(i) == 0);
+        REQUIRE(usage_week.at(i) == 0);
+        REQUIRE(values_day.at(i).size() == 1);
+        REQUIRE(values_week.at(i).size() == 0);
+    }
 }
 
-TEST_CASE("integrator-calculate-same-value", "[calculate][same values") {
-    PowerIntegrator powerIntegrator(11, "../../test/data/");
+TEST_CASE("integrator-calculate-same-value-2", "[calculate][same values") {
+    size_t          size = 7;
+    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
 
-    double          power_usage = powerIntegrator.calculate_current_usage(1673858501452341457, 50, 1673858501460000000, 50);
+    double          power_usage = powerIntegrator.calculate_usage(1673858501452341457, 50, 1673858501460000000, 50);
     fmt::print("integrator-calculate-same-value power\n", power_usage);
     REQUIRE(power_usage > 0);
 }
 
-TEST_CASE("integrator-calculate-old-greater-value", "[calculate][old greater values") {
-    PowerIntegrator powerIntegrator(3, "../../test/data/");
-    double          power_usage = powerIntegrator.calculate_current_usage(1673858501452341457, 50,
+TEST_CASE("integrator-calculate-old-greater-value-3", "[calculate][old greater values") {
+    size_t          size = 7;
+    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    double          power_usage = powerIntegrator.calculate_usage(1673858501452341457, 50,
                      1673858501460000000, 60);
     fmt::print("integrator-calculate-old-greater-value\n", power_usage);
     REQUIRE(power_usage > 0);
 }
 
-TEST_CASE("integrator-calculate-old-less-value", "[calculate][less values") {
-    PowerIntegrator powerIntegrator(3, "../../test/data/");
-    double          power_usage = powerIntegrator.calculate_current_usage(673858501452341457, 50,
+TEST_CASE("integrator-calculate-old-less-value-4", "[calculate][less values") {
+    size_t          size = 7;
+    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    double          power_usage = powerIntegrator.calculate_usage(673858501452341457, 50,
                      1673858501460000000, 10);
     fmt::print("integrator-calculate-old-less-value\n", power_usage);
     REQUIRE(power_usage > 0);
 }
 
-TEST_CASE("integrator-update-test-add-values", "[update][inital values exists]") {
-    PowerIntegrator    powerIntegrator(3, "./");
-    std::vector<float> values = { 1.2, 0.4, 8.3 };
-    powerIntegrator.update(12342144, values);
+TEST_CASE("integrator-update-test-add-values-5", "[update][inital values does not  exists]") {
+    size_t             size = 7;
+    PowerIntegrator    powerIntegrator(size, "../../test/data/test_update_values/");
+    std::vector<float> values      = { 1.2, 0.4, 8.3, 30.0, 1.2, 0.4, 27.0 };
+    int64_t            nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    powerIntegrator.update(nanoseconds, values);
+
     fmt::print("Size: {}\n", powerIntegrator.get_devices_values().size());
-    // no power yet
-    REQUIRE(powerIntegrator.get_devices_values().at(0).size() == 1);
+    fmt::print("Amount of measerement: {}\n", powerIntegrator.get_devices_values().at(0).size());
+
+    nanoseconds += 1000000;
+    powerIntegrator.update(nanoseconds, values);
+
+    std::vector<float>              usage_day       = powerIntegrator.get_power_usages_day();
+    std::vector<float>              usage_week      = powerIntegrator.get_power_usages_week();
+    std::vector<float>              usage_month     = powerIntegrator.get_power_usages_month();
+
+    std::vector<int64_t>            timestamps      = powerIntegrator.get_timestamps();
+    std::vector<int64_t>            timestamps_week = powerIntegrator.get_timestamps_week();
+
+    std::vector<std::vector<float>> values_day      = powerIntegrator.get_devices_values();
+    std::vector<std::vector<float>> values_week     = powerIntegrator.get_devices_values_last_week();
+
+    REQUIRE(usage_day.size() == size);
+    REQUIRE(usage_week.size() == size);
+    REQUIRE(usage_month.size() == size);
+    REQUIRE(timestamps.size() == 3);
+    REQUIRE(timestamps_week.size() == 0);
+
+    for (size_t i = 0; i < size; i++) {
+        REQUIRE(usage_month.at(i) > 0);
+        REQUIRE(usage_day.at(i) > 0);
+        REQUIRE(usage_week.at(i) > 0);
+        REQUIRE(values_day.at(i).size() == timestamps.size());
+        REQUIRE(values_week.at(i).size() == timestamps_week.size());
+    }
 }
 
-TEST_CASE("time_now") {
-    const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
-    fmt::print("Now: {}", now.time_since_epoch());
-    fmt::print("As number {}: ", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
-}
+TEST_CASE("integrator-save-data-6") {
+    std::string        datapath = "../../test/data/test_save_data/";
+    PowerIntegrator    powerIntegrator(11, datapath, 20);
 
-TEST_CASE("integrator-read-data") {
-    PowerIntegrator powerIntegrator(11, "../../test/data/", 20);
-    // PowerIntegrator    powerIntegrator("data/", 11, 20);
-    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1674221552500000000, values);
+    int64_t            time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    std::vector<float> values     = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
+    powerIntegrator.update(time_point, values);
 
     int64_t time_interval = 500000000;
-    int64_t time_point    = 1674221552500000000;
     for (size_t i = 0; i < 3000; i++) {
         auto value = values.front();
         values.erase(values.begin());
@@ -104,184 +148,81 @@ TEST_CASE("integrator-read-data") {
         time_point += time_interval;
         powerIntegrator.update(time_point, values);
     }
+
+    // check files existence
+
+    std::string month_file  = datapath + "month_usage.txt";
+    std::string values_file = datapath + "time_values.txt";
+    REQUIRE(std::filesystem::exists(month_file));
+    std::remove(month_file.c_str()); // clean for next test
+    REQUIRE(std::filesystem::exists(values_file));
+    std::remove(values_file.c_str()); // clean for next test
 }
 
-/*
-TEST_CASE("integrator-save-data") {
-    PowerIntegrator powerIntegrator("../../test/data/", 11, 20);
-    // PowerIntegrator    powerIntegrator("data/", 11, 20);
-    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1643607514469647654, values);
+//   std::this_thread::sleep_for(willSleepFor);
 
-    int64_t time_interval = 500000000;
-    int64_t time_point    = 1643607514469647654;
-    for (size_t i = 0; i < 3000; i++) {
+TEST_CASE("integrator-save_read-data-7") {
+    std::string        datapath = "../../test/data/test_save_read_data/";
+    PowerIntegrator    powerIntegrator(11, datapath);
+    int64_t            time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    std::vector<float> values     = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
+    powerIntegrator.update(time_point, values);
+
+    for (size_t i = 0; i < 200; i++) {
+        auto value = values.front();
+        values.erase(values.begin());
+        values.push_back(value);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        powerIntegrator.update(time_point, values);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+
+    PowerIntegrator      powerIntegratorReader(11, datapath, 20);
+
+    std::vector<int64_t> timestamps = powerIntegrator.get_timestamps();
+    // std::vector<int64_t> timestamps_week = powerIntegrator.get_timestamps_week();
+
+    std::vector<int64_t> timestamps_reader = powerIntegrator.get_timestamps();
+    // std::vector<int64_t> timestamps_week_reader = powerIntegrator.get_timestamps_week();
+
+    fmt::print("timestamps saved first: {}\n", timestamps.front());
+    fmt::print("timestamps readed first: {}\n", timestamps_reader.front());
+
+    fmt::print("timestamps size saved: {}\n", timestamps.size());
+    fmt::print("timestamps size readed : {}\n", timestamps_reader.size());
+
+    std::string month_file  = datapath + "month_usage.txt";
+    std::string values_file = datapath + "time_values.txt";
+    REQUIRE(std::filesystem::exists(month_file));
+    std::remove(month_file.c_str()); // clean for next test
+    REQUIRE(std::filesystem::exists(values_file));
+    std::remove(values_file.c_str()); // clean for next test
+}
+
+//  stress test
+/*
+TEST_CASE("update-values-n-times") {
+     // change if needed
+    size_t             n        = 300000;
+    std::string        datapath = "../../test/data/test_n_times";
+    PowerIntegrator    powerIntegrator(11, datapath, 1000);
+
+    int64_t            time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    std::vector<float> values     = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
+    powerIntegrator.update(time_point, values);
+    // change if needed
+    int64_t time_interval = 500000;
+
+    for (size_t i = 0; i < n; i++) {
         auto value = values.front();
         values.erase(values.begin());
         values.push_back(value);
         time_point += time_interval;
         powerIntegrator.update(time_point, values);
     }
-}
-*/
-
-TEST_CASE("update-values-3_cases-times") {
-    PowerIntegrator    powerIntegrator(11, "./");
-    std::vector<float> values = { 1.2, 0.4, 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0 };
-    powerIntegrator.update(1674044238450644654, values);
-
-    auto power_values_day = powerIntegrator.get_power_usages_day();
-    auto device_values    = powerIntegrator.get_devices_values();
-
-    REQUIRE(power_values_day.size() == 0); // not initated
-    REQUIRE(device_values.at(0).size() == 1);
-    fmt::print("length: {}\n", power_values_day.size());
-
-    values = { 0.4, 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2 };
-    powerIntegrator.update(1674044238450647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 2);
-
-    values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1674044238459647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 3);
-}
-
-/*
-TEST_CASE("update-values-200000-times") {
-    PowerIntegrator    powerIntegrator("./", 11);
-    std::vector<float> values = { 1.2, 0.4, 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0 };
-    powerIntegrator.update(1674044238450644654, values);
-
-    auto power_values_day = powerIntegrator.get_power_usages_day();
-    auto device_values    = powerIntegrator.get_devices_values();
-
-    REQUIRE(power_values_day.size() == 0); // not initated
-    REQUIRE(device_values.at(0).size() == 1);
-    fmt::print("length: {}\n", power_values_day.size());
-
-    values = { 0.4, 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2 };
-    powerIntegrator.update(1674044238450647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 2);
-
-    values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1674044238459647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 3);
-
-    int64_t time_interval = 500000000;
-    int64_t time_point    = 1674044238469647654;
-    for (size_t i = 0; i < 200000; i++) {
-        auto value = values.front();
-        values.erase(values.begin());
-        values.push_back(value);
-        time_point += time_interval;
-        powerIntegrator.update(time_point, values);
-    }
-}
-*/
-/*
-TEST_CASE("update-values-300000-times") {
-    PowerIntegrator    powerIntegrator("./", 11);
-    std::vector<float> values = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-    powerIntegrator.update(1674044238450644654, values);
-
-    auto power_values_day = powerIntegrator.get_power_usages_day();
-    auto device_values    = powerIntegrator.get_devices_values();
-
-    REQUIRE(power_values_day.size() == 0); // not initated
-    REQUIRE(device_values.at(0).size() == 1);
-    fmt::print("length: {}\n", power_values_day.size());
-
-    powerIntegrator.update(1674044238450647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 2);
-
-    powerIntegrator.update(1674044238459647654, values);
-
-    power_values_day = powerIntegrator.get_power_usages_day();
-    device_values    = powerIntegrator.get_devices_values();
-    REQUIRE(power_values_day.size() == 11);
-    REQUIRE(device_values.at(0).size() == 3);
-
-    int64_t time_interval = 500000000;
-    int64_t time_point    = 1674044238469647654;
-    for (size_t i = 0; i < 300000; i++) {
-        time_point += time_interval;
-        powerIntegrator.update(time_point, values);
-    }
-
-    fmt::print("day usage size: {}", powerIntegrator.get_devices_values().at(0).size());
-    fmt::print("week usage size: {}", powerIntegrator.get_devices_values_last_week().at(0).size());
-}
-*/
-/*
-TEST_CASE("integrator-change-month-times") {
-    PowerIntegrator    powerIntegrator("./", 11);
-    std::vector<float> values = { 8.3, 1.2, 0.4, 0.0, 1.2, 0.4, 8.3, 1.2, 0.0, 1.2, 0.4 };
-    powerIntegrator.update(1643607514469647654, values);
-
-    int64_t time_interval = 500000000;
-    int64_t time_point    = 1643607514469647654;
-    for (size_t i = 0; i < 200000; i++) {
-        auto value = values.front();
-        values.erase(values.begin());
-        values.push_back(value);
-        time_point += time_interval;
-        powerIntegrator.update(time_point, values);
-    }
-
-    fmt::print("power sage month: {}\n", powerIntegrator.get_power_usages_month());
-}
-*/
-
-// TEST_CASE("integrator-read_month") {
-//     std::string path = "../../test/data/month_usage.txt";
-//     read_month_usage(path);
-// }
-
-/*
-TEST_CASE("integrator", "[update][inital values exists]") {
-}
-
-
-TEST_CASE("integrator", "[update][inital does not exists values exists]") {
-}
-
-TEST_CASE("integrator", "[write_to_disk][inital does not exists values exists]") {
-}
-
-TEST_CASE("integrator", "[calculate_current_usage][same values]") {
-}
-
-TEST_CASE("integrator", "[calculate_current_usage][fist less]") {
-}
-
-TEST_CASE("integrator", "[calculate_current_usage][fist greater]") {
-}
-
-TEST_CASE("integrator", "[update][new day]") {
-}
-
-TEST_CASE("integrator", "[update][new week]") {
-}
-
-TEST_CASE("Integrator", "[update][new month]") {
-} */
+}*/
