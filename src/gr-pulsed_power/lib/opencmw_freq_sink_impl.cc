@@ -65,7 +65,12 @@ int opencmw_freq_sink_impl::work(int noutput_items,
             duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
                 .count();
     }
-
+    std::cout << _signal_names[0] << std::endl;
+    auto in = static_cast<const input_type*>(input_items[0]);
+    for (int i = 0; i < noutput_items; i++) {
+        std::cout << in[i] << ",";
+    }
+    std::cout << std::endl;
     for (auto callback : _cb_copy_data) {
         std::invoke(callback,
                     input_items,
