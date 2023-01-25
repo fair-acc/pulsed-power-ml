@@ -76,8 +76,8 @@ int         main(int argc, char **argv) {
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-                printf("Error: %s\n", SDL_GetError());
-                return -1;
+        printf("Error: %s\n", SDL_GetError());
+        return -1;
     }
 
     // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
@@ -101,8 +101,8 @@ int         main(int argc, char **argv) {
     appState.window    = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
-                fprintf(stderr, "Failed to initialize WebGL context!\n");
-                return 1;
+        fprintf(stderr, "Failed to initialize WebGL context!\n");
+        return 1;
     }
 
     // Setup Dear ImGui context
@@ -231,7 +231,9 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, false, nullptr);
+            if (subscriptionsFrequency.size() >= 2) {
+                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, true, args->fonts.fontawesome);
+            }
             ImPlot::EndPlot();
         }
 

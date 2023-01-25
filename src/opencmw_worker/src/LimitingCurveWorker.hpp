@@ -7,7 +7,7 @@ class LimitingCurve {
 public:
     std::string        refTriggerName         = { "NO_REF_TRIGGER" };
     int64_t            refTriggerStamp        = 0;
-    std::string        channelName            = "limit";
+    std::string        channelName            = "limiting_curve";
     std::vector<float> channelMagnitudeValues = {};
     std::vector<float> channelFrequencyValues = {};
     std::string        channelUnit;
