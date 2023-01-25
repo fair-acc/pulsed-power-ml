@@ -31,7 +31,7 @@ public:
     ImVector<DataPoint> data;
     std::string         signalName;
 
-    ScrollingBuffer(int max_size = 200'000);
+    ScrollingBuffer(int max_size = 50'000);
 
     void addPoint(double x, double y);
     void erase();

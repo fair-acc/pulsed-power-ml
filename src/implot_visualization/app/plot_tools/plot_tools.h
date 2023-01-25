@@ -108,6 +108,8 @@ void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
                     0,
                     offset,
                     2 * sizeof(double));
+
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
 }
@@ -174,6 +176,73 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
             DataPoint lastPoint = signal.data.back();
             ImVec4    col       = ImPlot::GetLastItemColor();
             ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+        }
+    }
+}
+
+void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
+    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    double dt          = setTimeInterval(Interval);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
+    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+
+    for (auto signal : signals) {
+        if (signal.data.empty()) {
+            return;
+        }
+    }
+
+    static float alpha = 0.25f;
+    ImGui::DragFloat("Alpha", &alpha, 0.01f, 0, 1);
+    if (signals.size() == 12) {
+        int offset = 0;
+        if constexpr (requires { signals[0].offset; }) {
+            offset = signals[0].offset;
+        }
+
+        // Plot min and max as shaded
+        ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, alpha);
+        for (int i = 0; i < 12; i += 3) {
+            if (signals[i].signalName.find("phi") != std::string::npos) {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            }
+            ImPlot::PlotShaded((signals[i].signalName).c_str(),
+                    &signals[i].data[0].x,
+                    &signals[i + 2].data[0].y,
+                    &signals[i + 1].data[0].y,
+                    signals[i].data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+        }
+        ImPlot::PopStyleVar();
+
+        // Plot mean as line
+        for (int i = 0; i < 12; i += 3) {
+            if (signals[i].signalName.find("phi") != std::string::npos) {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            }
+            // ImPlot::PushStyleColor(ImPlotCol_Line, col);
+            ImPlot::PlotLine((signals[i].signalName).c_str(),
+                    &signals[i].data[0].x,
+                    &signals[i].data[0].y,
+                    signals[i].data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+
+            // Add tags with signal value
+            ImVec4    col       = ImPlot::GetLastItemColor();
+            DataPoint lastPoint = signals[i].data.back();
+            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
 }

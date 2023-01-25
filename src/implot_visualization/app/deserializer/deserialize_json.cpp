@@ -105,13 +105,14 @@ void Acquisition::deserialize() {
             }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
-        } else if (element.key() == "channelTimeSinceRefTrigger") {
-            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested" << std::endl;
                 return;
             }
+            std::cout << "Receive expected signals" << std::endl;
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
