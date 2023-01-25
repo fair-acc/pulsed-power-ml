@@ -42,25 +42,25 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
-    // Simulated Data
+            // Simulated Data
     // Subscription<Acquisition> powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "sinus@4000Hz", "square@4000Hz" });
     // Subscription<Acquisition> rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     //  Picoscope Data
-    Subscription<Acquisition>              rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz" });
-    Subscription<Acquisition>              bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
-    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
-    Subscription<Acquisition>              mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@100Hz" });
-    Subscription<AcquisitionSpectra>       frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
-    Subscription<AcquisitionSpectra>       limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription, mainsFreqSubscription };
-    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
-    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency);
+    Subscription<Acquisition>                     rawSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz" });
+    Subscription<Acquisition>                     bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
+    Subscription<Acquisition>                     mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@100Hz" });
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" });
+    Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription, mainsFreqSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
+    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
+    AppState appState(subscriptionsTimeDomain, subscriptionsFrequency);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
+                printf("Error: %s\n", SDL_GetError());
+                return -1;
     }
 
     // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
@@ -84,8 +84,8 @@ int         main(int, char **) {
     appState.window    = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
-        fprintf(stderr, "Failed to initialize WebGL context!\n");
-        return 1;
+                fprintf(stderr, "Failed to initialize WebGL context!\n");
+                return 1;
     }
 
     // Setup Dear ImGui context
@@ -220,7 +220,7 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            // Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, false, nullptr);
             ImPlot::EndPlot();
         }
 
