@@ -96,7 +96,7 @@ int main() {
 
     // flowgraph setup
     // GRFlowGraph flowgraph(1024);
-    FlowgraphSimulated flowgraph(1024);
+    FlowgraphSimulated flowgraph(1024, true);
     flowgraph.start();
 
     // OpenCMW workers
