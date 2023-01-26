@@ -10,7 +10,9 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl.h"
+
 #include <implot.h>
+
 #include "implot_internal.h"
 
 #include <deserialize_json.h>
@@ -23,13 +25,13 @@
 
 class AppState {
 public:
-    SDL_Window                                    *window   = nullptr;
-    SDL_GLContext                                 GLContext = nullptr;
-    std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage;
-    //Plotter                                       plotter;
-    //DeviceTable                                   deviceTable;
-    double                                        lastFrequencyFetchTime = 0.0;
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
+    SDL_Window                           *window    = nullptr;
+    SDL_GLContext                         GLContext = nullptr;
+    std::vector<Subscription<PowerUsage>> subscritpionsPowerUsage;
+    // Plotter                                       plotter;
+    // DeviceTable                                   deviceTable;
+    double                                 lastFrequencyFetchTime = 0.0;
+    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain;
 
     struct AppFonts {
         ImFont *title;
@@ -53,18 +55,18 @@ public:
 // acts as a loop prevents us to store state in the stack of said function. So
 // we need some location for this.
 
-
-
 static void main_loop(void *);
 
 int         main(int, char **) {
+    // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    Subscription<PowerUsage> nilmSubscription("http://localhost:8080/", { "nilm_predict_values" });
+    // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
+    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz",
+                                                                                                                                                  "Phi@100Hz" });
 
-    //Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
-    Subscription<PowerUsage>                      nilmSubscription("http://localhost:8080/", {"nilm_predict_values"});
-    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    std::vector<Subscription<PowerUsage>>         subscritpionsPowerUsage = {nilmSubscription};
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { powerSubscription };
-    AppState                                      appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
+    std::vector<Subscription<PowerUsage>>  subscritpionsPowerUsage = { nilmSubscription };
+    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription };
+    AppState                               appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -113,7 +115,7 @@ int         main(int, char **) {
     ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-     // Setup Dear ImGui style
+    // Setup Dear ImGui style
     ImGui::StyleColorsLight();
 
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
@@ -122,7 +124,6 @@ int         main(int, char **) {
     appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
     // appState.fonts.mono = io.Fonts->AddFontFromFileTTF("", 16.0f);
 
-   
     ImVector<ImWchar>        symbols;
     ImFontGlyphRangesBuilder builder;
     builder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
@@ -133,9 +134,9 @@ int         main(int, char **) {
 
     app_header::load_header_assets();
 
-     // time format
-    ImPlot::GetStyle().UseISO8601 = true;
-    ImPlot::GetStyle().UseLocalTime = true;
+    // time format
+    ImPlot::GetStyle().UseISO8601     = true;
+    ImPlot::GetStyle().UseLocalTime   = true;
     ImPlot::GetStyle().Use24HourClock = true;
 
     // This function call won't return, and will engage in an infinite loop, processing events from the browser, and dispatching them.
@@ -149,16 +150,15 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    AppState                                      *args                     = static_cast<AppState *>(arg);
-    std::vector<Subscription<PowerUsage>>         &subscriptionsPowerUsages = args->subscritpionsPowerUsage;
-    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
-    double                                        &lastFrequencyFetchTime  = args->lastFrequencyFetchTime;
-  
+    AppState                               *args                     = static_cast<AppState *>(arg);
+    std::vector<Subscription<PowerUsage>>  &subscriptionsPowerUsages = args->subscritpionsPowerUsage;
+    std::vector<Subscription<Acquisition>> &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
+    double                                 &lastFrequencyFetchTime   = args->lastFrequencyFetchTime;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = false;
-    //static bool   show_demo_window = true;
-    static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    static bool show_demo_window = false;
+    // static bool   show_demo_window = true;
+    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
     const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
@@ -180,32 +180,29 @@ static void main_loop(void *arg) {
 
     // Nilm Power Monitoring Dashboard
     {
-
         auto   clock       = std::chrono::system_clock::now();
         double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
 
-
-        for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages){
-            if(currentTime -powerUsage.acquisition.lastTimeStamp >= 1.0 || !powerUsage.acquisition.init){
+        for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages) {
+            if (currentTime - powerUsage.acquisition.lastTimeStamp >= 1.0 || !powerUsage.acquisition.init) {
                 powerUsage.fetch();
-                //powerUsage.lastFetchtime = currentTime;
+                // powerUsage.lastFetchtime = currentTime;
             }
         }
-        
+
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
-                subTime.fetch();
-                //subTime.acquisition.lastFetchtime = currentTime;
+            subTime.fetch();
+            // subTime.acquisition.lastFetchtime = currentTime;
         }
 
         PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        //ImGui::Begin("Eletricity");
-	    ImGui::Begin("Eletricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+        // ImGui::Begin("Eletricity");
+        ImGui::Begin("Eletricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
-
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
         static int                rows      = 1;
@@ -213,14 +210,11 @@ static void main_loop(void *arg) {
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
 
-        std::string               output_simbol;    
+        std::string               output_simbol;
 
+        static ImGuiTableFlags    tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody;
 
-        static ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody;
-
-         
-        if(ImGui::BeginTable("ComboStyle", 2, tableFlags,ImVec2(-1,0)))
-        {
+        if (ImGui::BeginTable("ComboStyle", 2, tableFlags, ImVec2(-1, 0))) {
             ImGui::TableSetupColumn("style", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
             ImGui::TableSetupColumn("empty");
             ImGui::TableNextRow();
@@ -230,25 +224,22 @@ static void main_loop(void *arg) {
             ImGui::EndTable();
         }
 
-        const char* items[] = {"month", "week", "day"};
-        static int item_current = 0;
+        const char *items[]      = { "month", "week", "day" };
+        static int  item_current = 0;
 
         // subplots
-        if (ImPlot::BeginSubplots("My Subplots",rows,cols, ImVec2(-1,400), flags)){ 
-
-            if(ImPlot::BeginPlot("Power")){
-                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);// subscriptionsTimeDomain[0].acquisition.success);
+        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, 400), flags)) {
+            if (ImPlot::BeginPlot("Power")) {
+                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers); // subscriptionsTimeDomain[0].acquisition.success);
                 ImPlot::EndPlot();
             }
 
             Plotter::plotBarchart(powerUsageValues);
-       
+
             ImPlot::EndSubplots();
         }
 
-       
-        if(ImGui::BeginTable("ComboTime", 2, tableFlags,ImVec2(-1,0)))
-        {
+        if (ImGui::BeginTable("ComboTime", 2, tableFlags, ImVec2(-1, 0))) {
             ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
             ImGui::TableSetupColumn("empty");
             ImGui::TableNextRow();
@@ -260,28 +251,27 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
-        if (powerUsageValues.init){
-
+        if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
-            if (item_current == 0){
-                ImGui::Text("EURO %.2f / %.2f kWh used current month\n", 
-                    ELECTRICY_PRICE *  powerUsageValues.kWhUsedMonth, powerUsageValues.kWhUsedMonth);
-            }else if (item_current == 1) {
-                ImGui::Text("EURO %.2f / %.2f kWh used current week\n", 
-                    ELECTRICY_PRICE * powerUsageValues.kWhUsedWeek, powerUsageValues.kWhUsedWeek);
+            if (item_current == 0) {
+                ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
+                        ELECTRICY_PRICE * powerUsageValues.kWhUsedMonth, powerUsageValues.kWhUsedMonth);
+            } else if (item_current == 1) {
+                ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
+                        ELECTRICY_PRICE * powerUsageValues.kWhUsedWeek, powerUsageValues.kWhUsedWeek);
             } else {
-                ImGui::Text("EURO %.2f / %.2f kWh used today\n", 
-                    ELECTRICY_PRICE * powerUsageValues.kWhUsedDay, powerUsageValues.kWhUsedDay);
+                ImGui::Text("EURO %.2f / %.2f kWh used today\n",
+                        ELECTRICY_PRICE * powerUsageValues.kWhUsedDay, powerUsageValues.kWhUsedDay);
             }
 
             ImGui::Text(" ");
             ImGui::PopStyleColor();
         } else {
-            ImGui::TextColored(ImVec4(1,0,0,1),"%s","Connection Error\n");
-            ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Connection Error\n");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
-        
+
         Plotter::plotTable(powerUsageValues, item_current);
 
         ImGui::End();
