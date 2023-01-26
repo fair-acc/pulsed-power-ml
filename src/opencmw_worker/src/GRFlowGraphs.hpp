@@ -216,15 +216,15 @@ public:
         auto  calc_mains_frequency                 = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
         auto  band_pass_filter_current0            = gr::filter::fft_filter_fff::make(
-                decimation_bpf,
-                gr::filter::firdes::band_pass(
-                        1,
-                        source_samp_rate,
-                        bpf_low_cut,
-                        bpf_high_cut,
-                        bpf_trans,
-                        gr::fft::window::win_type::WIN_HANN,
-                        6.76));
+                            decimation_bpf,
+                            gr::filter::firdes::band_pass(
+                                    1,
+                                    source_samp_rate,
+                                    bpf_low_cut,
+                                    bpf_high_cut,
+                                    bpf_trans,
+                                    gr::fft::window::win_type::WIN_HANN,
+                                    6.76));
         auto band_pass_filter_voltage0 = gr::filter::fft_filter_fff::make(
                 decimation_bpf,
                 gr::filter::firdes::band_pass(
@@ -245,14 +245,14 @@ public:
         auto blocks_multiply_phase0_3     = gr::blocks::multiply_ff::make(1);
 
         auto low_pass_filter_current0_0   = gr::filter::fft_filter_fff::make(
-                decimation_lpf,
-                gr::filter::firdes::low_pass(
-                        1,
-                        lpf_in_samp_rate,
-                        60,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
+                  decimation_lpf,
+                  gr::filter::firdes::low_pass(
+                          1,
+                          lpf_in_samp_rate,
+                          60,
+                          10,
+                          gr::fft::window::win_type::WIN_HAMMING,
+                          6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
                 decimation_lpf,
                 gr::filter::firdes::low_pass(
@@ -292,14 +292,14 @@ public:
         auto pulsed_power_power_calc_ff_0_0 = gr::pulsed_power::power_calc_ff::make(0.0001);
 
         auto out_decimation_current0        = gr::filter::fft_filter_fff::make(
-                decimation_out_raw,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
+                       decimation_out_raw,
+                       gr::filter::firdes::low_pass(
+                               1,
+                               source_samp_rate,
+                               400,
+                               10,
+                               gr::fft::window::win_type::WIN_HAMMING,
+                               6.76));
         auto out_decimation_voltage0 = gr::filter::fft_filter_fff::make(
                 decimation_out_raw,
                 gr::filter::firdes::low_pass(
@@ -359,9 +359,9 @@ public:
         auto statistics_phi_longterm                  = gr::pulsed_power::statistics::make(decimation_out_long_term);
 
         auto opencmw_time_sink_signals                = gr::pulsed_power::opencmw_time_sink::make(
-                { "U", "I", "U_bpf", "I_bpf" },
-                { "V", "A", "V", "A" },
-                out_samp_rate_ui);
+                               { "U", "I", "U_bpf", "I_bpf" },
+                               { "V", "A", "V", "A" },
+                               out_samp_rate_ui);
         opencmw_time_sink_signals->set_max_noutput_items(noutput_items);
 
         // Mains frequency sinks
