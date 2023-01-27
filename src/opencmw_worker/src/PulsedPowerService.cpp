@@ -96,7 +96,8 @@ int main() {
 
     // flowgraph setup
     // GRFlowGraph flowgraph(1024);
-    FlowgraphSimulated flowgraph(1024, true);
+    bool               use_picoscope = false;
+    FlowgraphSimulated flowgraph(1024, use_picoscope);
     flowgraph.start();
 
     // OpenCMW workers
