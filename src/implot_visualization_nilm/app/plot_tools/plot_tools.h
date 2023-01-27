@@ -204,19 +204,25 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
                 switch (m_d_w) {
                 case 0:
                     if (row < powerUsage.powerUsagesMonth.size()) {
-                        relative = powerUsage.powerUsagesMonth[row] / sum_of_usage;
+                        if (sum_of_usage > 0) {
+                            relative = powerUsage.powerUsagesMonth[row] / sum_of_usage;
+                        }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
                 case 1:
                     if (row < powerUsage.powerUsagesWeek.size()) {
-                        relative = powerUsage.powerUsagesWeek[row] / sum_of_usage;
+                        if (sum_of_usage > 0) {
+                            relative = powerUsage.powerUsagesWeek[row] / sum_of_usage;
+                        }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
                 case 2:
                     if (row < powerUsage.powerUsagesDay.size()) {
-                        relative = powerUsage.powerUsagesDay[row] / sum_of_usage;
+                        if (sum_of_usage > 0) {
+                            relative = powerUsage.powerUsagesDay[row] / sum_of_usage;
+                        }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
