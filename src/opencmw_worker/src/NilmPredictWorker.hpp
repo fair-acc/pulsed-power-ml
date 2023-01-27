@@ -15,6 +15,7 @@
 #include <cppflow/ops.h>
 #include <cppflow/tensor.h>
 
+#include "FrequencyDomainWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using opencmw::Annotated;
@@ -64,14 +65,48 @@ struct ModelData {
     std::vector<float> data_point; //(196612) = 4 + 2^16
 };
 
+template<typename Acq>
+class DataFetcher {
+private:
+    std::string     _endpoint;
+    std::string     _signalNames;
+    int64_t         _lastTimeStamp;
+    httplib::Client _http;
+
+public:
+    DataFetcher() = delete;
+    DataFetcher(const std::string &endPoint, const std::string &signalNames)
+        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", DEFAULT_REST_PORT) {
+        _http.set_keep_alive(true);
+    }
+    ~DataFetcher() {}
+    httplib::Result fetch(Acq &data) {
+        std::string getPath = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
+        // fmt::print("{}: path: {}\n", typeid(data).name(), getPath);
+        auto response = _http.Get(getPath.data());
+        if (response.error() == httplib::Error::Success && response->status == 200) {
+            opencmw::IoBuffer buffer;
+            buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
+            auto result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+        }
+
+        return response;
+    }
+
+    void updateTimeStamp(Acquisition &data) {
+        if (!data.channelTimeSinceRefTrigger.empty()) {
+            _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
+        }
+    }
+};
+
 using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker
     : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
 private:
-    // const std::string  MODEL_PATH = "src/model/model_example";
-    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v1-0";
+    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v2-0";
 
     std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
@@ -83,6 +118,9 @@ private:
 
     std::mutex                      nilmTimeSinksRegistryMutex;
     std::mutex                      nilmFrequencySinksRegistryMutex;
+
+    DataFetcher<Acquisition>        _dataFetcherAcq        = DataFetcher<Acquisition>("pulsed_power/Acquisition", "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz");
+    DataFetcher<AcquisitionSpectra> _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
 
 public:
     std::atomic<bool>     shutdownRequested;
@@ -103,20 +141,31 @@ public:
             while (!shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
-                // fetch data from PulsedPowerService endpoint
-                fmt::print("fetchThread: fetching data...\n");
-                httplib::Client fetchClient("localhost", DEFAULT_REST_PORT);
-                fetchClient.set_keep_alive(true);
-                const char *path     = "pulsed_power/Acquisition?channelNameFilter=P@1000Hz,Q@1000Hz,S@1000Hz,phi@1000Hz";
-
-                auto        response = fetchClient.Get(path);
+                // fetch P,Q,S,phi from PulsedPowerService
+                Acquisition acqPQSPhi;
+                auto        response = _dataFetcherAcq.fetch(acqPQSPhi);
+                _dataFetcherAcq.updateTimeStamp(acqPQSPhi);
                 if (response.error() == httplib::Error::Success && response->status == 200) {
-                    opencmw::IoBuffer buffer;
-                    buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
-                    Acquisition data;
-                    auto        result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
-                    fmt::print("deserialisation finished: {}\n", result);
-                    fmt::print("signal_names: {}\n", data.channelNames);
+                    if (!acqPQSPhi.channelNames.empty()) {
+                        uint32_t samplesNo         = acqPQSPhi.channelValues.n(1);
+
+                        _pqsphiDataSink->timestamp = acqPQSPhi.refTriggerStamp;
+                        _pqsphiDataSink->p         = acqPQSPhi.channelValues[{ 0U, samplesNo }];
+                        _pqsphiDataSink->q         = acqPQSPhi.channelValues[{ 1U, samplesNo }];
+                        _pqsphiDataSink->s         = acqPQSPhi.channelValues[{ 2U, samplesNo }];
+                        _pqsphiDataSink->phi       = acqPQSPhi.channelValues[{ 3U, samplesNo }];
+                    }
+                }
+
+                // fetch Apparent Power (S) from PulsedPowerService
+                AcquisitionSpectra acqSData;
+                response = _dataFetcherAcqSpectra.fetch(acqSData);
+                if (response.error() == httplib::Error::Success && response->status == 200) {
+                    // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitudeValues.size(), acqSData.channelName);
+                    if (!acqSData.channelMagnitudeValues.empty()) {
+                        _suiDataSink->timestamp = acqSData.refTriggerStamp;
+                        _suiDataSink->u         = std::move(acqSData.channelMagnitudeValues);
+                    }
                 }
 
                 fetchDuration     = std::chrono::system_clock::now() - time_start;
@@ -154,7 +203,7 @@ public:
                     int64_t         size = static_cast<int64_t>(data_point.size());
                     cppflow::tensor input(data_point, { size });
 
-                    fmt::print("input:  {}\n", input);
+                    // fmt::print("input:  {}\n", input);
 
                     auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
@@ -162,6 +211,7 @@ public:
 
                     // values print
                     fmt::print("output: {}\n", output[0]);
+                    fmt::print("output data: {}\n", values);
 
                     // fill data for REST
                     nilmData.values.clear();
@@ -190,36 +240,6 @@ public:
                 }
             }
         });
-
-        std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
-        fmt::print("GR: number of time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
-
-        // from sink take only P Q S Phi Signal
-        for (auto sink : gr::pulsed_power::globalTimeSinksRegistry) {
-            const auto signal_names = sink->get_signal_names();
-            const auto signal_units = sink->get_signal_units();
-            const auto sample_rate  = sink->get_sample_rate();
-
-            fmt::print("Name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
-
-            std::vector<std::string> pqsohi_str{ "P", "Q", "S", "Phi" };
-            if (signal_names == pqsohi_str) {
-                sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkTimeData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-            }
-        }
-
-        std::scoped_lock lock_freq(gr::pulsed_power::globalFrequencySinksRegistryMutex);
-        for (auto sink : gr::pulsed_power::globalFrequencySinksRegistry) {
-            const auto               signal_names = sink->get_signal_names();
-            const auto               signal_units = sink->get_signal_units();
-            const auto               sample_rate  = sink->get_sample_rate();
-
-            std::vector<std::string> sui_str{ "S", "U", "I" };
-            if (signal_names == sui_str) {
-                fmt::print("Name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
-                sink->set_callback(std::bind(&NilmPredictWorker::callbackCopySinkFrequencyData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-            }
-        }
 
         super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &,
                                      const Empty &, NilmContext &,
