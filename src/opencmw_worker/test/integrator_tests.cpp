@@ -203,6 +203,21 @@ TEST_CASE("integrator-save_read-data-7") {
     std::remove(values_file.c_str()); // clean for next test
 }
 
+// test with real data - copy real data to test/data/test_read_real/ directory
+/*
+TEST_CASE("integrator-read-real-8") {
+    std::string        datapath = "../../test/data/test_read_real/";
+    PowerIntegrator    powerIntegrator(12, datapath);
+
+    std::vector<float> usage_day   = powerIntegrator.get_power_usages_day();
+    std::vector<float> usage_week  = powerIntegrator.get_power_usages_week();
+    std::vector<float> usage_month = powerIntegrator.get_power_usages_month();
+
+    fmt::print("usage_day: {}\n", usage_day);
+    fmt::print("usage_week: {}\n", usage_week);
+    fmt::print("usage_month: {}\n", usage_month);
+}
+*/
 //  stress test
 /*
 TEST_CASE("update-values-n-times") {
