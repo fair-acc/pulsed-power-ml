@@ -35,8 +35,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
-    : url(_url), requestedSignals(_requestedSignals) {
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const float _updateFrequency)
+    : url(_url), requestedSignals(_requestedSignals), updateFrequency(_updateFrequency) {
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -44,7 +44,6 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
         this->url.pop_back();
     }
 
-    std::cout << "Fetch: " << _requestedSignals.size() << std::endl;
     T _acquisition(_requestedSignals);
     this->acquisition = _acquisition;
 
@@ -53,6 +52,10 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
     } else {
         this->extendedUrl = this->url;
     }
+
+    auto   clock        = std::chrono::system_clock::now();
+    double currentTime  = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->lastFetchTime = currentTime;
 }
 
 template<typename T>
@@ -62,20 +65,25 @@ void Subscription<T>::fetch() {
     strcpy(attr.requestMethod, "GET");
     // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
     // attr.requestHeaders = custom_headers;
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess  = onDownloadSucceeded<T>;
-    attr.onerror    = onDownloadFailed<T>;
-    attr.userData   = this;
+    attr.attributes    = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess     = onDownloadSucceeded<T>;
+    attr.onerror       = onDownloadFailed<T>;
+    attr.userData      = this;
 
-    if (this->fetchFinished) {
-        this->fetchFinished = false;
-        emscripten_fetch(&attr, this->extendedUrl.c_str());
-    }
-    if (fetchSuccessful) {
-        this->acquisition.deserialize();
-        updateUrl();
-        this->fetchSuccessful = false;
-        this->fetchFinished   = true;
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    if (currentTime - this->lastFetchTime >= 1.0f / this->updateFrequency) {
+        if (this->fetchFinished) {
+            this->fetchFinished = false;
+            emscripten_fetch(&attr, this->extendedUrl.c_str());
+        }
+        if (fetchSuccessful) {
+            this->acquisition.deserialize();
+            updateUrl();
+            this->fetchSuccessful = false;
+            this->fetchFinished   = true;
+            this->lastFetchTime   = currentTime;
+        }
     }
 }
 

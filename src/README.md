@@ -15,7 +15,7 @@
 
 In order to visualize data passed by OpenCMW, do the following:
 
-1. Build and run the OpenCMW worker
+1. Build and run the OpenCMW worker.
 2. Build and run the ImPlot Visualization.
 
 ### OpenCMW
@@ -43,9 +43,12 @@ NOTE: emcmake breaks `cmake --build` so we have to call make directly
 
 How to Run
 
-- run `cmake --build build --target serve`
+- Run `cmake --build build --target serve`
 - This will use Python3 to spawn a local webserver
-- Browse http://localhost:8000 to access your build.
+- Browse http://localhost:8000 to access your build. The default view is short-term (showing the last 5 minutes for power and mains frequency). You can change view options by passing query parameters by the url. Valid inputs are:
+  - http://localhost:8000/?interval=short
+  - http://localhost:8000/?interval=mid
+  - http://localhost:8000/?interval=long
 
 # Test Setup
 
