@@ -194,24 +194,26 @@ public:
         float samp_rate_delta_phi_calc = 1'000.0f;
         // parameters band pass filter
         int   decimation_bpf = static_cast<int>(source_samp_rate / samp_rate_delta_phi_calc);
-        float bpf_high_cut   = 80;
-        float bpf_low_cut    = 20;
-        float bpf_trans      = 10;
+        float bpf_high_cut   = 80.0f;
+        float bpf_low_cut    = 20.0f;
+        float bpf_trans      = 1000.0f;
         // parameters low pass filter
         int   decimation_lpf   = 1;
         float lpf_in_samp_rate = samp_rate_delta_phi_calc;
+        float lpf_trans        = 10.0f;
         // parameters decimation
         float out_samp_rate_ui                     = 1'000.0f;
         float out_samp_rate_power_shortterm        = 100.0f;
         float out_samp_rate_power_midterm          = 1.0f;
         float out_samp_rate_power_longterm         = 1.0f / 60.0f;
-        int   decimation_out_raw                   = 200;
-        int   decimation_out_mains_freq_short_term = 2'000;
-        int   decimation_out_mains_freq_mid_term   = 200'000;
-        int   decimation_out_mains_freq_long_term  = 12'000'000;
-        int   decimation_out_short_term            = 10;
-        int   decimation_out_mid_term              = 1'000;
-        int   decimation_out_long_term             = 60'000;
+        int   decimation_out_raw                   = static_cast<int>(source_samp_rate / out_samp_rate_ui);
+        int   decimation_out_bpf                   = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_ui);
+        int   decimation_out_mains_freq_short_term = static_cast<int>(source_samp_rate / out_samp_rate_power_shortterm);
+        int   decimation_out_mains_freq_mid_term   = static_cast<int>(source_samp_rate / out_samp_rate_power_midterm);
+        int   decimation_out_mains_freq_long_term  = static_cast<int>(source_samp_rate / out_samp_rate_power_longterm);
+        int   decimation_out_short_term            = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_shortterm);
+        int   decimation_out_mid_term              = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_midterm);
+        int   decimation_out_long_term             = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_longterm);
 
         auto  calc_mains_frequency                 = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
@@ -250,7 +252,7 @@ public:
                           1,
                           lpf_in_samp_rate,
                           60,
-                          10,
+                          lpf_trans,
                           gr::fft::window::win_type::WIN_HAMMING,
                           6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
@@ -259,7 +261,7 @@ public:
                         1,
                         lpf_in_samp_rate,
                         60,
-                        10,
+                        lpf_trans,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
         auto low_pass_filter_voltage0_0 = gr::filter::fft_filter_fff::make(
@@ -268,7 +270,7 @@ public:
                         1,
                         lpf_in_samp_rate,
                         60,
-                        10,
+                        lpf_trans,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
         auto low_pass_filter_voltage0_1 = gr::filter::fft_filter_fff::make(
@@ -277,56 +279,24 @@ public:
                         1,
                         lpf_in_samp_rate,
                         60,
-                        10,
+                        lpf_trans,
                         gr::fft::window::win_type::WIN_HAMMING,
                         6.76));
 
-        auto blocks_divide_phase0_0         = gr::blocks::divide_ff::make(1);
-        auto blocks_divide_phase0_1         = gr::blocks::divide_ff::make(1);
+        auto blocks_divide_phase0_0                   = gr::blocks::divide_ff::make(1);
+        auto blocks_divide_phase0_1                   = gr::blocks::divide_ff::make(1);
 
-        auto blocks_transcendental_phase0_0 = gr::blocks::transcendental::make("atan");
-        auto blocks_transcendental_phase0_1 = gr::blocks::transcendental::make("atan");
+        auto blocks_transcendental_phase0_0           = gr::blocks::transcendental::make("atan");
+        auto blocks_transcendental_phase0_1           = gr::blocks::transcendental::make("atan");
 
-        auto blocks_sub_phase0              = gr::blocks::sub_ff::make(1);
+        auto blocks_sub_phase0                        = gr::blocks::sub_ff::make(1);
 
-        auto pulsed_power_power_calc_ff_0_0 = gr::pulsed_power::power_calc_ff::make(0.0001);
+        auto pulsed_power_power_calc_ff_0_0           = gr::pulsed_power::power_calc_ff::make(0.0001);
 
-        auto out_decimation_current0        = gr::filter::fft_filter_fff::make(
-                       decimation_out_raw,
-                       gr::filter::firdes::low_pass(
-                               1,
-                               source_samp_rate,
-                               400,
-                               10,
-                               gr::fft::window::win_type::WIN_HAMMING,
-                               6.76));
-        auto out_decimation_voltage0 = gr::filter::fft_filter_fff::make(
-                decimation_out_raw,
-                gr::filter::firdes::low_pass(
-                        1,
-                        source_samp_rate,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_current_bpf = gr::filter::fft_filter_fff::make(
-                1,
-                gr::filter::firdes::low_pass(
-                        1,
-                        samp_rate_delta_phi_calc,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
-        auto out_decimation_voltage_bpf = gr::filter::fft_filter_fff::make(
-                1,
-                gr::filter::firdes::low_pass(
-                        1,
-                        samp_rate_delta_phi_calc,
-                        400,
-                        10,
-                        gr::fft::window::win_type::WIN_HAMMING,
-                        6.76));
+        auto out_decimation_current0                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
+        auto out_decimation_voltage0                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
+        auto out_decimation_current_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
+        auto out_decimation_voltage_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
 
         auto out_decimation_mains_frequency_shortterm = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_short_term);
         auto out_decimation_mains_frequency_midterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_mid_term);
