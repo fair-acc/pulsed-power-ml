@@ -111,6 +111,7 @@ public:
 
     ~GRFlowGraph() { top->stop(); }
 
+    // start gnuradio flowgraph
     void start() { top->start(); }
 };
 
@@ -121,11 +122,11 @@ private:
 public:
     FlowgraphSimulated(int noutput_items, bool use_picoscope = false)
         : top(gr::make_top_block("GNURadio")) {
-        const float source_samp_rate          = 200'000.0f;
-        auto        source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
-        auto        source_interface_current0 = gr::blocks::multiply_const_ff::make(1);
+        float source_samp_rate          = 200'000.0f;
+        auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
+        auto  source_interface_current0 = gr::blocks::multiply_const_ff::make(1);
         if (use_picoscope) {
-            //     source_samp_rate                                                  = 2'000'000.0f;
+            // source_samp_rate                                                  = 2'000'000.0f;
             const float                           current_correction_factor   = 2.5f;
             const float                           voltage_correction_factor   = 100.0f;
             gr::pulsed_power::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power::DOWNSAMPLING_MODE_NONE;

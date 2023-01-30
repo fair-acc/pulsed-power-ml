@@ -10,6 +10,7 @@
 #include <chrono>
 #include <unordered_map>
 
+#include "integrator/PowerIntegrator.hpp"
 #include <cppflow/cppflow.h>
 #include <cppflow/model.h>
 #include <cppflow/ops.h>
@@ -32,9 +33,9 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 // data for Dashboard
 struct NilmPredictData {
     int64_t                  timestamp;
-    std::vector<double>      values = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
-    std::vector<std::string> names  = { "device 1", "device 2", "device 3", "device 4", "device 5",
-         "device 6", "device 7", "device 8", "device 9", "device 10", "device 11", "others" };
+    std::vector<double>      values; // = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
+    std::vector<std::string> names = { "device 1", "device 2", "device 3", "device 4", "device 5",
+        "device 6", "device 7", "others" };
     std::vector<double>      day_usage;
     std::vector<double>      week_usage;
     std::vector<double>      month_usage;
@@ -106,21 +107,23 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker
     : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
 private:
-    const std::string               MODEL_PATH      = "src/model/TFGuptaModel_v2-0";
+    const std::string                MODEL_PATH      = "src/model/TFGuptaModel_v2-0";
 
-    std::shared_ptr<cppflow::model> _model          = std::make_shared<cppflow::model>(MODEL_PATH);
+    std::shared_ptr<cppflow::model>  _model          = std::make_shared<cppflow::model>(MODEL_PATH);
 
-    std::shared_ptr<PQSPhiDataSink> _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
-    std::shared_ptr<SUIDataSink>    _suiDataSink    = std::make_shared<SUIDataSink>();
+    std::shared_ptr<PQSPhiDataSink>  _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
+    std::shared_ptr<SUIDataSink>     _suiDataSink    = std::make_shared<SUIDataSink>();
 
-    bool                            init;
-    int64_t                         timestamp_frq;
+    bool                             init;
+    int64_t                          timestamp_frq;
 
-    std::mutex                      nilmTimeSinksRegistryMutex;
-    std::mutex                      nilmFrequencySinksRegistryMutex;
+    std::mutex                       nilmTimeSinksRegistryMutex;
+    std::mutex                       nilmFrequencySinksRegistryMutex;
 
-    DataFetcher<Acquisition>        _dataFetcherAcq        = DataFetcher<Acquisition>("pulsed_power/Acquisition", "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz");
-    DataFetcher<AcquisitionSpectra> _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
+    std::shared_ptr<PowerIntegrator> _powerIntegrator;
+
+    DataFetcher<Acquisition>         _dataFetcherAcq        = DataFetcher<Acquisition>("pulsed_power/Acquisition", "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz");
+    DataFetcher<AcquisitionSpectra>  _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
 
 public:
     std::atomic<bool>     shutdownRequested;
@@ -129,14 +132,18 @@ public:
     NilmPredictData       nilmData;
     std::time_t           timestamp_n;
 
-    static constexpr auto PROPERTY_NAME = std::string_view("NilmPredicData");
+    static constexpr auto PROPERTY_NAME = std::string_view("NilmPredictData");
 
     using super_t                       = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
 
     template<typename BrokerType>
-    explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
+    explicit NilmPredictWorker(const BrokerType &broker,
+            std::chrono::milliseconds            updateInterval)
         : super_t(broker, {}) {
-        fetchThread  = std::jthread([this] {
+        //_powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names);
+        _powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names.size(), "./src/data/", 1);
+
+        fetchThread      = std::jthread([this] {
             std::chrono::duration<double, std::milli> fetchDuration;
             while (!shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
@@ -175,7 +182,8 @@ public:
                 }
             }
         });
-        notifyThread = std::jthread([this, updateInterval] {
+
+        notifyThread     = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
@@ -195,28 +203,29 @@ public:
                         std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
                         std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
 
-                        data_point = mergeValues();
+                        data_point                       = mergeValues();
 
-                        fmt::print("Size of data point {}\n", data_point.size());
-                    }
+                        int64_t         time_from_pqsphi = (*_pqsphiDataSink).timestamp;
 
-                    int64_t         size = static_cast<int64_t>(data_point.size());
-                    cppflow::tensor input(data_point, { size });
+                        int64_t         size             = static_cast<int64_t>(data_point.size());
+                        cppflow::tensor input(data_point, { size });
 
-                    // fmt::print("input:  {}\n", input);
+                        // fmt::print("input:  {}\n", input);
 
-                    auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
+                        auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
-                    auto values = output[0].get_data<float>();
+                        auto values = output[0].get_data<float>();
 
-                    // values print
-                    fmt::print("output: {}\n", output[0]);
-                    fmt::print("output data: {}\n", values);
+                        // values print
+                        fmt::print("output: {}\n", output[0]);
+                        fmt::print("output data: {}\n", values);
 
-                    // fill data for REST
-                    nilmData.values.clear();
-                    for (auto v : values) {
-                        nilmData.values.push_back(static_cast<double>(v));
+                        // fill data for REST
+                        nilmData.values.clear();
+                        for (auto v : values) {
+                            nilmData.values.push_back(static_cast<double>(v));
+                        }
+                        _powerIntegrator->update(time_from_pqsphi, values);
                     }
 
                     fillDayUsage();
@@ -274,7 +283,8 @@ public:
             _pqsphiDataSink->s         = *(s + noutput_items - 1);
             _pqsphiDataSink->phi       = *(phi + noutput_items - 1);
 
-            fmt::print("PQSPHI {} {} {} {}\n", _pqsphiDataSink->p, _pqsphiDataSink->q, _pqsphiDataSink->s, _pqsphiDataSink->phi);
+            fmt::print("PQSPHI {} {} {} {}, timestamp {}\n", _pqsphiDataSink->p, _pqsphiDataSink->q, _pqsphiDataSink->s, _pqsphiDataSink->phi,
+                    _pqsphiDataSink->timestamp);
         }
     }
 
@@ -361,19 +371,31 @@ private:
     void fillDayUsage() {
         nilmData.day_usage.clear();
         // dummy data
-        nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        // nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        auto power_day = _powerIntegrator->get_power_usages_day();
+        for (auto v : power_day) {
+            nilmData.day_usage.push_back(v);
+        }
     }
 
     void fillWeekUsage() {
         nilmData.week_usage.clear();
         // dummy data
-        nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        // nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        auto power_week = _powerIntegrator->get_power_usages_week();
+        for (auto v : power_week) {
+            nilmData.week_usage.push_back(v);
+        }
     }
 
     void fillMonthUsage() {
         nilmData.month_usage.clear();
         // dummy data
-        nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        // nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        auto power_month = _powerIntegrator->get_power_usages_month();
+        for (auto v : power_month) {
+            nilmData.month_usage.push_back(v);
+        }
     }
 
     // Test - dummy vector
