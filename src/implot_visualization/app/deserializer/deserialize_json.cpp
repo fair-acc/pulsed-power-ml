@@ -104,10 +104,10 @@ void Acquisition::deserialize() {
                 return;
             }
             this->refTrigger_ns = element.value();
-            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested" << std::endl;
+                std::cout << "Received other signals than requested. Expected: " << this->signalNames[0] << std::endl;
                 return;
             }
             std::cout << "Receive expected signals" << std::endl;
@@ -144,7 +144,7 @@ void AcquisitionSpectra::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            if (this->receivedRequestedSignals(element.value())) {
+            if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested" << std::endl;
                 return;
             }
@@ -154,8 +154,9 @@ void AcquisitionSpectra::deserialize() {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-    lastTimeStamp        = lastRefTrigger;
+
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
 }
 
