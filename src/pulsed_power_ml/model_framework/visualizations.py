@@ -8,9 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-
-# plt.style.use("dark_background")
-
+from src.pulsed_power_ml.model_framework.data_io import read_training_files
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import gupta_offline_switch_detection
 
 def make_eval_plot(power_array: Union[np.array, List],
                    state_array: Union[np.array, List],
@@ -342,3 +341,90 @@ def add_prediction_plot(state_vector_array: np.array,
     ax.set_xlim(0, state_vector_array.shape[0])
 
     return ax
+
+def make_gupta_switch_detection_plot(path_to_data_folder: str,
+                                     window_size: int = 25,
+                                     threshold: float = 2000,
+                                     fft_size: int = 2**17) -> matplotlib.figure.Figure:
+    """
+    Returns a figure containing one plot showing the apparent power versus time and the detected
+    switching events.
+
+    Parameters
+    ----------
+    path_to_data_folder
+        Path to folder containing the raw data in binary format.
+    window_size
+        Number of frames for background and signal in switch detection algorithm
+    threshold
+        Switch detection threshold
+    fft_size
+        Full FFT size.
+
+    Returns
+    -------
+    fig
+        An instance of figure containing the respective plot.
+    """
+
+    # Load data
+    data_point_array = read_training_files(path_to_folder=path_to_data_folder,
+                                           fft_size=fft_size)
+
+    # Apply switch detection algorithm
+    switch_array = gupta_offline_switch_detection(
+        data_point_array=data_point_array,
+        window_size=window_size,
+        threshold=threshold
+    )
+
+    switch_positions = np.argwhere(switch_array==1).reshape((-1,))
+    dead_time_positions = np.argwhere(switch_array==-1).reshape((-1,))
+
+    # Create figure
+    fig = plt.figure(figsize=(16, 9), layout='tight')
+    ax = fig.add_subplot()
+    ax.grid(True)
+    ax.set_title("Switch Detection - Gupta Approach")
+    ax.set_xlabel("Time [au]")
+    ax.set_ylabel("S [VA]")
+
+    # Plot s
+    ax.plot(
+        data_point_array[:, -2],
+        label="Apparent Power"
+    )
+
+    y_max = max(data_point_array[:, -2])
+
+    # Plots detected switches
+    ax.vlines(
+        x=switch_positions,
+        ymin=0,
+        ymax=y_max,
+        linewidth=1,
+        color='C1',
+        alpha=0.5,
+        label='Detected Switch'
+    )
+
+    # Plot dead time
+    ax.vlines(
+        x=dead_time_positions,
+        ymin=0,
+        ymax=y_max,
+        linewidth=1,
+        color='C3',
+        alpha=0.5,
+        label='Dead time'
+    )
+
+    # Some cosmetics
+    ax.legend()
+
+    return fig
+
+
+
+
+

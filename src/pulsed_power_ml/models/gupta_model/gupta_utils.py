@@ -1,7 +1,7 @@
 """
 This module contains functions needed by the Gupta classification algorithm.
 """
-from typing import Tuple
+from typing import Tuple, Union
 import yaml
 from pathlib import Path
 import numpy as np
@@ -267,6 +267,70 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
 
     return feature_vector
 
+def gupta_offline_switch_detection(data_point_array: np.array,
+                                   window_size: int,
+                                   spectrum_type: int = 2,
+                                   fft_size: int = 2**17,
+                                   step_size: Union[int, None] = None,
+                                   threshold: float = 2000) -> np.array:
+    """
+    This function implements the switch detection algorithm according to Gupta.
+
+    Parameters
+    ----------
+    data_point_array
+        Array with respective data points
+    window_size
+        Number of spectra, that should be included in one window
+    fft_size
+        Full size of FFT.
+    step_size
+        Step size for the windows. Default = window_size
+
+    Returns
+    -------
+    switch_array
+        Array w/ the same length as data_point_array containing 1s
+    """
+    if step_size is None:
+        step_size = window_size
+
+    spectrum_type_offset = int(spectrum_type * fft_size / 2)
+
+    max_len = len(data_point_array)
+
+    switch_array = np.zeros(max_len)
+
+    dead_time_counter = 0
+
+    for i in range(int(max_len / step_size)):
+
+        if dead_time_counter != 0:
+            dead_time_counter -= 1
+            continue
+
+        j = i * step_size
+        k = i * step_size + window_size
+        l = i * step_size + 2 * window_size
+        m = i * step_size + 3 * window_size
+
+        background = data_point_array[j:k,
+                                      spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+
+        signal = data_point_array[k:l,
+                                  spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+
+        background_mean = background.mean(axis=0)
+        signal_mean = signal.mean(axis=0)
+
+        difference_spectrum = background_mean - signal_mean
+
+        if np.abs(difference_spectrum).max() > threshold:
+            switch_array[k:l] = 1 # somewhere in this window a switch has been detected
+            switch_array[l:m] = -1 # Dead time
+            dead_time_counter = 2 # number of windows that will be skipped
+
+    return switch_array
 
 def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """
