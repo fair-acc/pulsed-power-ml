@@ -160,7 +160,8 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
         _devices_values.at(i).push_back(values[i]);
     }
 
-    while (!check_same_day(_timestamps.front(), timestamp)) {
+    size_t timestamps_size = _timestamps.size();
+    while (timestamps_size > 0 && !check_same_day(_timestamps.front(), timestamp)) {
         auto headTimestamp = _timestamps.front();
         _timestamps.erase(_timestamps.begin());
         for (size_t i = 0; i < _amount_of_devices; i++) {
