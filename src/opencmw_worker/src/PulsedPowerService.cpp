@@ -80,9 +80,12 @@ public:
 
 int main() {
     Broker                                          broker("Pulsed-Power-Broker");
-    auto                                            fs = cmrc::assets::get_filesystem();
+    auto                                            fs          = cmrc::assets::get_filesystem();
+    const std::string_view                          REST_SCHEME = "https";
+    const auto                                      REST_PORT   = DEFAULT_REST_PORT; // 8080
+    opencmw::URI<>                                  restAddress = opencmw::URI<>::factory().scheme(REST_SCHEME).hostName("0.0.0.0").port(REST_PORT).build();
 
-    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./");
+    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./", restAddress);
 
     const auto                                      brokerRouterAddress = broker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
 
