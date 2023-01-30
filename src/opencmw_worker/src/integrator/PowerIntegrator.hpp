@@ -113,6 +113,20 @@ PowerIntegrator::PowerIntegrator(const size_t amount_of_devices, const std::stri
     }
 
     if (!_init_day) {
+        // add to time stamp to week and update value
+        if (_init_week) {
+            auto last_week_timestamp = _timestamps_week.back();
+            for (size_t i = 0; i < _amount_of_devices; i++) {
+                auto  last_week_value = _devices_values_last_week.at(i).back();
+
+                float value           = calculate_usage(last_week_timestamp, last_week_value,
+                                  last_week_timestamp + 100, 0.0f);
+                _devices_values_last_week.at(i).push_back(0.0f);
+                power_usages_week.at(i) += value;
+            }
+            _timestamps_week.push_back(last_week_timestamp + 100);
+        }
+
         _timestamps.push_back(start_timestamp);
         for (size_t i = 0; i < _amount_of_devices; i++) {
             _devices_values.at(i).push_back(0.0f);
