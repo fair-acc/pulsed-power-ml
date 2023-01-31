@@ -405,17 +405,31 @@ public:
         auto complex_to_mag_U   = gr::blocks::complex_to_mag_squared::make(vector_size);
 
         // I
-        auto stream_to_vector_I     = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_I                  = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_I       = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_I       = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
+        auto fft_I                    = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
+        auto complex_to_mag_I         = gr::blocks::complex_to_mag_squared::make(vector_size);
 
-        auto opencmw_freq_sink_nilm = gr::pulsed_power::opencmw_freq_sink::make(
-                { "S", "U", "I" },
-                { "VA", "V", "A" },
+        auto opencmw_freq_sink_nilm_U = gr::pulsed_power::opencmw_freq_sink::make(
+                { "U" },
+                { "V" },
                 source_samp_rate,
                 bandwidth,
                 vector_size);
-        opencmw_freq_sink_nilm->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_U->set_max_noutput_items(noutput_items);
+        auto opencmw_freq_sink_nilm_I = gr::pulsed_power::opencmw_freq_sink::make(
+                { "I" },
+                { "A" },
+                source_samp_rate,
+                bandwidth,
+                vector_size);
+        opencmw_freq_sink_nilm_I->set_max_noutput_items(noutput_items);
+        auto opencmw_freq_sink_nilm_S = gr::pulsed_power::opencmw_freq_sink::make(
+                { "S" },
+                { "VA" },
+                source_samp_rate,
+                bandwidth,
+                vector_size);
+        opencmw_freq_sink_nilm_S->set_max_noutput_items(noutput_items);
 
         // Connections:
         // signal
@@ -547,23 +561,23 @@ public:
         top->hier_block2::connect(statistics_phi_longterm, 2, opencmw_time_sink_power_stats_longterm, 11); // phi_max long-term
         top->hier_block2::connect(statistics_phi_longterm, 3, null_sink_stats, 11);                        // phi_std_dev long-term
         // Nilm connections
+        // U
+        top->hier_block2::connect(source_interface_voltage0, 0, stream_to_vector_U, 0); // picoscope voltage
+        top->hier_block2::connect(stream_to_vector_U, 0, fft_U, 0);
+        top->hier_block2::connect(fft_U, 0, complex_to_mag_U, 0);
+        top->hier_block2::connect(complex_to_mag_U, 0, opencmw_freq_sink_nilm_U, 0);
+        // I
+        top->hier_block2::connect(source_interface_current0, 0, stream_to_vector_I, 0); // picoscope current
+        top->hier_block2::connect(stream_to_vector_I, 0, fft_I, 0);
+        top->hier_block2::connect(fft_I, 0, complex_to_mag_I, 0);
+        top->hier_block2::connect(complex_to_mag_I, 0, opencmw_freq_sink_nilm_I, 0);
         // S
         top->hier_block2::connect(source_interface_voltage0, 0, multiply_voltage_current, 0); // picoscope voltage
         top->hier_block2::connect(source_interface_current0, 0, multiply_voltage_current, 1); // picoscope current
         top->hier_block2::connect(multiply_voltage_current, 0, stream_to_vector_S, 0);
         top->hier_block2::connect(stream_to_vector_S, 0, fft_S, 0);
         top->hier_block2::connect(fft_S, 0, complex_to_mag_S, 0);
-        top->hier_block2::connect(complex_to_mag_S, 0, opencmw_freq_sink_nilm, 0);
-        // U
-        top->hier_block2::connect(source_interface_voltage0, 0, stream_to_vector_U, 0); // picoscope voltage
-        top->hier_block2::connect(stream_to_vector_U, 0, fft_U, 0);
-        top->hier_block2::connect(fft_U, 0, complex_to_mag_U, 0);
-        top->hier_block2::connect(complex_to_mag_U, 0, opencmw_freq_sink_nilm, 1);
-        // I
-        top->hier_block2::connect(source_interface_current0, 0, stream_to_vector_I, 0); // picoscope current
-        top->hier_block2::connect(stream_to_vector_I, 0, fft_I, 0);
-        top->hier_block2::connect(fft_I, 0, complex_to_mag_I, 0);
-        top->hier_block2::connect(complex_to_mag_I, 0, opencmw_freq_sink_nilm, 2);
+        top->hier_block2::connect(complex_to_mag_S, 0, opencmw_freq_sink_nilm_S, 0);
     }
     ~FlowgraphSimulated() { top->stop(); }
     // start gnuradio flowgraph

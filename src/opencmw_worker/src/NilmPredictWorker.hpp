@@ -117,8 +117,8 @@ private:
     bool                             init;
     int64_t                          timestamp_frq;
 
-    std::mutex                       nilmTimeSinksRegistryMutex;
-    std::mutex                       nilmFrequencySinksRegistryMutex;
+    std::mutex                       _nilmTimeSinksRegistryMutex;
+    std::mutex                       _nilmFrequencySinksRegistryMutex;
 
     std::shared_ptr<PowerIntegrator> _powerIntegrator;
 
@@ -126,11 +126,11 @@ private:
     DataFetcher<AcquisitionSpectra>  _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
 
 public:
-    std::atomic<bool>     shutdownRequested;
-    std::jthread          notifyThread;
-    std::jthread          fetchThread;
-    NilmPredictData       nilmData;
-    std::time_t           timestamp_n;
+    std::atomic<bool>     _shutdownRequested;
+    std::jthread          _predictThread;
+    std::jthread          _fetchThread;
+    NilmPredictData       _nilmData;
+    std::time_t           _timestamp_n;
 
     static constexpr auto PROPERTY_NAME = std::string_view("NilmPredictData");
 
@@ -140,12 +140,11 @@ public:
     explicit NilmPredictWorker(const BrokerType &broker,
             std::chrono::milliseconds            updateInterval)
         : super_t(broker, {}) {
-        //_powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names);
-        _powerIntegrator = std::make_shared<PowerIntegrator>(nilmData.names.size(), "./src/data/", 1);
+        _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
-        fetchThread      = std::jthread([this] {
+        _fetchThread     = std::jthread([this] {
             std::chrono::duration<double, std::milli> fetchDuration;
-            while (!shutdownRequested) {
+            while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
                 // fetch P,Q,S,phi from PulsedPowerService
@@ -157,10 +156,10 @@ public:
                         uint32_t samplesNo         = acqPQSPhi.channelValues.n(1);
 
                         _pqsphiDataSink->timestamp = acqPQSPhi.refTriggerStamp;
-                        _pqsphiDataSink->p         = acqPQSPhi.channelValues[{ 0U, samplesNo }];
-                        _pqsphiDataSink->q         = acqPQSPhi.channelValues[{ 1U, samplesNo }];
-                        _pqsphiDataSink->s         = acqPQSPhi.channelValues[{ 2U, samplesNo }];
-                        _pqsphiDataSink->phi       = acqPQSPhi.channelValues[{ 3U, samplesNo }];
+                        _pqsphiDataSink->p         = acqPQSPhi.channelValues[{ 0U, samplesNo - 1 }];
+                        _pqsphiDataSink->q         = acqPQSPhi.channelValues[{ 1U, samplesNo - 1 }];
+                        _pqsphiDataSink->s         = acqPQSPhi.channelValues[{ 2U, samplesNo - 1 }];
+                        _pqsphiDataSink->phi       = acqPQSPhi.channelValues[{ 3U, samplesNo - 1 }];
                     }
                 }
 
@@ -171,37 +170,37 @@ public:
                     // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitudeValues.size(), acqSData.channelName);
                     if (!acqSData.channelMagnitudeValues.empty()) {
                         _suiDataSink->timestamp = acqSData.refTriggerStamp;
-                        _suiDataSink->u         = std::move(acqSData.channelMagnitudeValues);
+                        _suiDataSink->s         = std::move(acqSData.channelMagnitudeValues);
                     }
                 }
 
                 fetchDuration     = std::chrono::system_clock::now() - time_start;
-                auto willSleepFor = std::chrono::milliseconds(500) - fetchDuration;
+                auto willSleepFor = std::chrono::milliseconds(60) - fetchDuration;
                 if (willSleepFor > 0ms) {
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
         });
 
-        notifyThread     = std::jthread([this, updateInterval] {
-            std::chrono::duration<double, std::milli> pollingDuration;
-            while (!shutdownRequested) {
+        _predictThread   = std::jthread([this, updateInterval] {
+            std::chrono::duration<double, std::milli> predictDuration;
+            while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
-                timestamp_n                        = std::time(nullptr);
+                _timestamp_n                       = std::time(nullptr);
 
                 NilmContext        context;
                 std::vector<float> data_point;
 
                 try {
-                    nilmData.timestamp = timestamp_n;
-                    nilmData.day_usage.clear();
-                    nilmData.week_usage.clear();
-                    nilmData.month_usage.clear();
+                    _nilmData.timestamp = _timestamp_n;
+                    _nilmData.day_usage.clear();
+                    _nilmData.week_usage.clear();
+                    _nilmData.month_usage.clear();
 
                     {
-                        std::scoped_lock lock_time_nilm(nilmTimeSinksRegistryMutex);
-                        std::scoped_lock lock_freq_nilm(nilmFrequencySinksRegistryMutex);
+                        std::scoped_lock lock_time_nilm(_nilmTimeSinksRegistryMutex);
+                        std::scoped_lock lock_freq_nilm(_nilmFrequencySinksRegistryMutex);
 
                         data_point                       = mergeValues();
 
@@ -210,20 +209,19 @@ public:
                         int64_t         size             = static_cast<int64_t>(data_point.size());
                         cppflow::tensor input(data_point, { size });
 
-                        // fmt::print("input:  {}\n", input);
+                        auto            output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
-                        auto output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
-
-                        auto values = output[0].get_data<float>();
+                        auto            values = output[0].get_data<float>();
 
                         // values print
+                        fmt::print("input:  {}\n", input);
                         fmt::print("output: {}\n", output[0]);
                         fmt::print("output data: {}\n", values);
 
                         // fill data for REST
-                        nilmData.values.clear();
+                        _nilmData.values.clear();
                         for (auto v : values) {
-                            nilmData.values.push_back(static_cast<double>(v));
+                            _nilmData.values.push_back(static_cast<double>(v));
                         }
                         _powerIntegrator->update(time_from_pqsphi, values);
                     }
@@ -236,11 +234,11 @@ public:
                     fmt::print("caught exception '{}'\n", ex.what());
                 }
 
-                super_t::notify("/nilmPredictData", context, nilmData);
+                super_t::notify("/nilmPredictData", context, _nilmData);
 
-                pollingDuration   = std::chrono::system_clock::now() - time_start;
+                predictDuration   = std::chrono::system_clock::now() - time_start;
 
-                auto willSleepFor = updateInterval - pollingDuration;
+                auto willSleepFor = updateInterval - predictDuration;
 
                 if (willSleepFor > 0ms) {
                     std::this_thread::sleep_for(willSleepFor);
@@ -257,13 +255,13 @@ public:
             const auto topicPath = URI<RELAXED>(std::string(rawCtx.request.topic()))
                                            .path()
                                            .value_or("");
-            out = nilmData;
+            out = _nilmData;
         });
     }
 
     ~NilmPredictWorker() {
-        shutdownRequested = true;
-        notifyThread.join();
+        _shutdownRequested = true;
+        _predictThread.join();
     }
 
     // copy P Q S Phi data
@@ -369,32 +367,32 @@ private:
     }
 
     void fillDayUsage() {
-        nilmData.day_usage.clear();
+        _nilmData.day_usage.clear();
         // dummy data
-        // nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        // _nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
         auto power_day = _powerIntegrator->get_power_usages_day();
         for (auto v : power_day) {
-            nilmData.day_usage.push_back(v);
+            _nilmData.day_usage.push_back(v);
         }
     }
 
     void fillWeekUsage() {
-        nilmData.week_usage.clear();
+        _nilmData.week_usage.clear();
         // dummy data
-        // nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        // _nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
         auto power_week = _powerIntegrator->get_power_usages_week();
         for (auto v : power_week) {
-            nilmData.week_usage.push_back(v);
+            _nilmData.week_usage.push_back(v);
         }
     }
 
     void fillMonthUsage() {
-        nilmData.month_usage.clear();
+        _nilmData.month_usage.clear();
         // dummy data
-        // nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        // _nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
         auto power_month = _powerIntegrator->get_power_usages_month();
         for (auto v : power_month) {
-            nilmData.month_usage.push_back(v);
+            _nilmData.month_usage.push_back(v);
         }
     }
 
