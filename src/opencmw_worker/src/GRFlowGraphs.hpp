@@ -2,6 +2,7 @@
 #define GR_FLOWGRAPHS_HPP
 
 #include <gnuradio/analog/sig_source.h>
+#include <gnuradio/blocks/complex_to_mag.h>
 #include <gnuradio/blocks/complex_to_mag_squared.h>
 #include <gnuradio/blocks/divide.h>
 #include <gnuradio/blocks/file_sink.h>
@@ -387,31 +388,22 @@ public:
 
         auto null_sink_stats = gr::blocks::null_sink::make(sizeof(float));
 
-        auto multiply_voltaga_current = gr::blocks::multiply_ff::make(1);
+        auto multiply_voltaga_current = gr::blocks::multiply<float>::make(1);
+        auto frequency_spec_one_in_n  = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
         auto frequency_spec_low_pass  = gr::filter::fft_filter_fff::make(
-                 20,
+                 10,
                  gr::filter::firdes::low_pass(
                          1,
-                         source_samp_rate,
+                         500,
                          20,
                          100,
                          gr::fft::window::win_type::WIN_HAMMING,
                          6.76));
-        auto frequency_spec_stream_to_vec                  = gr::blocks::stream_to_vector::make(sizeof(float), 1024);
-        auto ffrequency_spec_kepp_one_in_n                 = gr::blocks::keep_one_in_n::make(sizeof(float) * 1024, 10);
-        auto frequency_spec_fft                            = gr::fft::fft_v<float, true>::make(1024, gr::fft::window::blackmanharris(1024), false, 1);
-        auto frequency_spec_complex_to_mag_squared         = gr::blocks::complex_to_mag_squared::make(1024);
-        auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, 1000, 1000, 1024);
-
-        // frequency-domain sinks
-        top->hier_block2::connect(throttle_block_raw_voltage0, 0, multiply_voltaga_current, 0);
-        top->hier_block2::connect(throttle_block_raw_current0, 0, multiply_voltaga_current, 1);
-        top->hier_block2::connect(multiply_voltaga_current, 0, frequency_spec_low_pass, 0);
-        top->hier_block2::connect(frequency_spec_low_pass, 0, frequency_spec_stream_to_vec, 0);
-        top->hier_block2::connect(frequency_spec_stream_to_vec, 0, ffrequency_spec_kepp_one_in_n, 0);
-        top->hier_block2::connect(ffrequency_spec_kepp_one_in_n, 0, frequency_spec_fft, 0);
-        top->hier_block2::connect(frequency_spec_fft, 0, frequency_spec_complex_to_mag_squared, 0);
-        top->hier_block2::connect(frequency_spec_complex_to_mag_squared, 0, frequency_spec_pulsed_power_opencmw_freq_sink, 0);
+        auto frequency_spec_stream_to_vec                  = gr::blocks::stream_to_vector::make(sizeof(float), 512);
+        auto frequency_spec_fft                            = gr::fft::fft_v<float, true>::make(512, gr::fft::window::rectangular(512), true, 1);
+        auto frequency_multiply_const                      = gr::blocks::multiply_const<gr_complex>::make(2.0 / (512.0), 512);
+        auto frequency_spec_complex_to_mag                 = gr::blocks::complex_to_mag::make(512);
+        auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "W" }, 50, 50, 512);
 
         // Connections:
         // signal
@@ -542,6 +534,16 @@ public:
         top->hier_block2::connect(statistics_phi_longterm, 1, opencmw_time_sink_power_stats_longterm, 10); // phi_min long-term
         top->hier_block2::connect(statistics_phi_longterm, 2, opencmw_time_sink_power_stats_longterm, 11); // phi_max long-term
         top->hier_block2::connect(statistics_phi_longterm, 3, null_sink_stats, 11);                        // phi_std_dev long-term
+        // Calculate frequency specturm
+        top->hier_block2::connect(throttle_block_raw_current0, 0, multiply_voltaga_current, 0);
+        top->hier_block2::connect(throttle_block_raw_voltage0, 0, multiply_voltaga_current, 1);
+        top->hier_block2::connect(multiply_voltaga_current, 0, frequency_spec_one_in_n, 0);
+        top->hier_block2::connect(frequency_spec_one_in_n, 0, frequency_spec_low_pass, 0);
+        top->hier_block2::connect(frequency_spec_low_pass, 0, frequency_spec_stream_to_vec, 0);
+        top->hier_block2::connect(frequency_spec_stream_to_vec, 0, frequency_spec_fft, 0);
+        top->hier_block2::connect(frequency_spec_fft, 0, frequency_multiply_const, 0);
+        top->hier_block2::connect(frequency_multiply_const, 0, frequency_spec_complex_to_mag, 0);
+        top->hier_block2::connect(frequency_spec_complex_to_mag, 0, frequency_spec_pulsed_power_opencmw_freq_sink, 0);
     }
     ~FlowgraphSimulated() { top->stop(); }
     // start gnuradio flowgraph

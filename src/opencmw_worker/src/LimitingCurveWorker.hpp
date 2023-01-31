@@ -6,7 +6,7 @@
 class LimitingCurve {
 public:
     std::string        refTriggerName         = { "NO_REF_TRIGGER" };
-    int64_t            refTriggerStamp        = 0;
+    int64_t            refTriggerStamp        = -1; // time not relevant
     std::string        channelName            = "limiting_curve";
     std::vector<float> channelMagnitudeValues = {};
     std::vector<float> channelFrequencyValues = {};
@@ -14,8 +14,8 @@ public:
 
     LimitingCurve() {
         channelMagnitudeValues = { 15, 15, 10, 10, 25, 25, 20, 20, 30, 30, 25, 15, 10, 10 };
-        // channelFrequencyValues = { 0, 0.05, 0.1, 0.3, 0.4, 0.8, 0.85, 2.6, 2.65, 4.4, 4.8, 5.2, 5.6, 6.8 };
-        channelFrequencyValues = { 0, 0.05 * 1000, 0.1 * 1000, 0.3 * 1000, 0.4 * 1000, 0.8 * 1000, 0.85 * 1000, 2.6 * 1000, 2.65 * 1000, 4.4 * 1000, 4.8 * 1000, 5.2 * 1000, 5.6 * 1000, 6.8 * 1000 };
+        channelFrequencyValues = { 0, 0.05, 0.1, 0.3, 0.4, 0.8, 0.85, 2.6, 2.65, 4.4, 4.8, 5.2, 5.6, 6.8 };
+        // channelFrequencyValues = { 0, 0.05 * 1000, 0.1 * 1000, 0.3 * 1000, 0.4 * 1000, 0.8 * 1000, 0.85 * 1000, 2.6 * 1000, 2.65 * 1000, 4.4 * 1000, 4.8 * 1000, 5.2 * 1000, 5.6 * 1000, 6.8 * 1000 };
     }
 };
 

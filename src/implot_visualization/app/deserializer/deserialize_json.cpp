@@ -61,11 +61,11 @@ template<typename T>
 bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = this->signalNames;
     if (receivedSignals.size() != expectedSignals.size()) {
-        std::cout << "received: " << receivedSignals.size() << ", expected: " << expectedSignals.size() << std::endl;
+        std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
-        if (strcmp(receivedSignals[i].c_str(), expectedSignals[i].c_str()) != 0) {
+        if (receivedSignals[i] != expectedSignals[i]) {
             std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
             return false;
         }
@@ -108,13 +108,12 @@ void Acquisition::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelNames") {
-            if (!this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested. Expected: " << this->signalNames[0] << std::endl;
+            std::vector<std::string> channelNames = std::vector<std::string>(element.value().get<std::vector<std::string>>());
+            if (!this->receivedRequestedSignals(channelNames)) {
+                std::cout << "Received other signals than requested (Acquisition)" << std::endl;
                 return;
             }
-            std::cout << "Receive expected signals" << std::endl;
-        } else if (element.key() == "channelTimeSinceRefTrigger") {
-            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
+            std::cout << "Received expected signal (Acquisition)" << std::endl;
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -148,15 +147,12 @@ void AcquisitionSpectra::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            if (!this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested" << std::endl;
+            std::vector<std::string> channelNames = {element.value().get<std::string>()};
+            if (!this->receivedRequestedSignals(channelNames)) {
+                std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
                 return;
             }
-            // if (this->receivedRequestedSignals(channelNames_2)) {
-            //     std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
-            //     return;
-            // }
-            std::cout << "Received expected signal" << std::endl;
+            std::cout << "Received expected signal (AcquisitionSpectra)" << std::endl;
         } else if (element.key() == "channelMagnitudeValues") {
             this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
