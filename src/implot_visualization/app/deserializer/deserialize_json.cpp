@@ -108,12 +108,13 @@ void Acquisition::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelNames") {
-            std::vector<std::string> channelNames = std::vector<std::string>(element.value().get<std::vector<std::string>>());
-            if (!this->receivedRequestedSignals(channelNames)) {
+            if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested (Acquisition)" << std::endl;
                 return;
             }
             std::cout << "Received expected signal (Acquisition)" << std::endl;
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -147,7 +148,7 @@ void AcquisitionSpectra::deserialize() {
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            std::vector<std::string> channelNames = {element.value().get<std::string>()};
+            std::vector<std::string> channelNames = { element.value().get<std::string>() };
             if (!this->receivedRequestedSignals(channelNames)) {
                 std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
                 return;
