@@ -184,23 +184,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1488, 1404.0]
-    rotation: 0
-    state: true
-- name: blocks_complex_to_mag_0
-  id: blocks_complex_to_mag
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: '512'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1488, 1404.0]
+    coordinate: [1832, 1868.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_0_0
@@ -545,7 +529,7 @@ blocks:
     coordinate: [704, 1736.0]
     rotation: 0
     state: true
-- name: blocks_keep_one_in_n_2
+- name: blocks_keep_one_in_n_3
   id: blocks_keep_one_in_n
   parameters:
     affinity: ''
@@ -560,7 +544,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [496, 1408.0]
+    coordinate: [880, 1872.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_0
@@ -569,7 +553,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: 2/512
+    const: 2.0/512.0
     maxoutbuf: '0'
     minoutbuf: '0'
     type: complex
@@ -578,7 +562,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1296, 1396.0]
+    coordinate: [1648, 1860.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0
@@ -596,61 +580,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [360, 1392.0]
-    rotation: 0
-    state: true
-- name: blocks_keep_one_in_n_2
-  id: blocks_keep_one_in_n
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    n: '400'
-    type: float
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [496, 1408.0]
-    rotation: 0
-    state: true
-- name: blocks_multiply_const_vxx_0
-  id: blocks_multiply_const_vxx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    const: 2/512
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    type: complex
-    vlen: '512'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1296, 1396.0]
-    rotation: 0
-    state: true
-- name: blocks_multiply_xx_0
-  id: blocks_multiply_xx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '2'
-    type: float
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [360, 1392.0]
+    coordinate: [752, 1856.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_0_0
@@ -784,32 +714,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_items: '4000'
+    num_items: '512'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [872, 1408.0]
-    rotation: 0
-    state: true
-- name: blocks_stream_to_vector_0
-  id: blocks_stream_to_vector
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: '4000'
-    type: float
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [872, 1408.0]
+    coordinate: [1232, 1872.0]
     rotation: 0
     state: true
 - name: blocks_sub_xx_0_0
@@ -1039,28 +951,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1064, 1372.0]
-    rotation: 0
-    state: true
-- name: fft_vxx_0
-  id: fft_vxx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    fft_size: '512'
-    forward: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    nthreads: '1'
-    shift: 'True'
-    type: float
-    window: window.rectangular(512)
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1064, 1372.0]
+    coordinate: [1408, 1836.0]
     rotation: 0
     state: true
 - name: in_samp_rate
@@ -1080,7 +971,7 @@ blocks:
     coordinate: [264, 12.0]
     rotation: 0
     state: true
-- name: low_pass_filter_0_0_0
+- name: low_pass_filter_0
   id: low_pass_filter
   parameters:
     affinity: ''
@@ -1101,55 +992,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [680, 4.0]
-    rotation: 0
-    state: true
-- name: low_pass_filter_0_0
-  id: low_pass_filter
-  parameters:
-    affinity: ''
-    alias: ''
-    beta: '6.76'
-    comment: ''
-    cutoff_freq: '400'
-    decim: '200'
-    gain: '1'
-    interp: '1'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samp_rate: in_samp_rate
-    type: fir_filter_fff
-    width: '10'
-    win: window.WIN_HAMMING
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [688, 1084.0]
-    rotation: 0
-    state: true
-- name: low_pass_filter_0_0_0
-  id: low_pass_filter
-  parameters:
-    affinity: ''
-    alias: ''
-    beta: '6.76'
-    comment: ''
-    cutoff_freq: '20'
-    decim: '10'
-    gain: '1'
-    interp: '1'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samp_rate: '500'
-    type: fir_filter_fff
-    width: '100'
-    win: window.WIN_HAMMING
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [672, 1356.0]
+    coordinate: [1032, 1820.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0_0
@@ -1324,29 +1167,13 @@ blocks:
     alias: ''
     bandwidth: '50'
     comment: ''
-    signal_name: signal_fft
+    signal_name: Frequency
     signal_unit: W
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1672, 1388.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_freq_sink_0
-  id: pulsed_power_opencmw_freq_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    bandwidth: '50'
-    comment: ''
-    signal_name: signal_fft
-    signal_unit: W
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1672, 1388.0]
+    coordinate: [2024, 1852.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0
@@ -1355,7 +1182,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '4'
     sample_rate: '100'
     signal_name: power
     signal_unit: ''
@@ -1372,7 +1198,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '4'
     sample_rate: '1'
     signal_name: power
     signal_unit: ''
@@ -1389,7 +1214,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '4'
     sample_rate: 1/60
     signal_name: power
     signal_unit: ''
@@ -1406,7 +1230,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '12'
     sample_rate: '100'
     signal_name: power_stats
     signal_unit: ''
@@ -1423,7 +1246,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '12'
     sample_rate: '1'
     signal_name: power_stats
     signal_unit: ''
@@ -1440,7 +1262,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '12'
     sample_rate: 1/60
     signal_name: power_stats
     signal_unit: ''
@@ -1457,7 +1278,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: '1000'
     signal_name: voltage
     signal_unit: Volt
@@ -1474,7 +1294,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: out_samp_rate_high
     signal_name: voltage
     signal_unit: Volt
@@ -1491,7 +1310,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: '100'
     signal_name: mains_freq
     signal_unit: Hz
@@ -1508,7 +1326,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: '1'
     signal_name: mains_freq
     signal_unit: Hz
@@ -1525,7 +1342,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: 1/60
     signal_name: mains_freq
     signal_unit: Hz
@@ -1542,7 +1358,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: '1000'
     signal_name: current
     signal_unit: Ampere
@@ -1559,7 +1374,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
     sample_rate: '1000'
     signal_name: current_bpf
     signal_unit: Ampere
@@ -1592,7 +1406,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_short_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1608,7 +1421,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_short_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1624,7 +1436,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_short_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1640,7 +1451,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_mid_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1656,7 +1466,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_long_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1672,7 +1481,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_short_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1688,7 +1496,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_mid_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1704,7 +1511,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_long_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1720,7 +1526,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_mid_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1736,7 +1541,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_long_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1752,7 +1556,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_mid_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1768,7 +1571,6 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    decimation: decimation_long_term
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1817,20 +1619,14 @@ connections:
 - [blocks_keep_one_in_n_0, '0', pulsed_power_opencmw_time_sink_5_0, '0']
 - [blocks_keep_one_in_n_0_0, '0', pulsed_power_opencmw_time_sink_5_0_0, '0']
 - [blocks_keep_one_in_n_0_0_0, '0', pulsed_power_opencmw_time_sink_5_0_1, '0']
-- [blocks_keep_one_in_n_1, '0', pulsed_power_opencmw_time_sink_0_0, '3']
-- [blocks_keep_one_in_n_1_0, '0', pulsed_power_opencmw_time_sink_0_0_0_0, '3']
-- [blocks_keep_one_in_n_1_1, '0', pulsed_power_opencmw_time_sink_0_0_0_0, '2']
-- [blocks_keep_one_in_n_1_1_0, '0', pulsed_power_opencmw_time_sink_0_0_0_0, '1']
 - [blocks_keep_one_in_n_1_2, '0', pulsed_power_opencmw_time_sink_0_0_0_0, '0']
 - [blocks_keep_one_in_n_1_2_0, '0', pulsed_power_opencmw_time_sink_0_0_1_0, '0']
-- [blocks_keep_one_in_n_1_2_0_0, '0', pulsed_power_opencmw_time_sink_0_0_1_0, '1']
-- [blocks_keep_one_in_n_1_2_0_1, '0', pulsed_power_opencmw_time_sink_0_0_1_0, '3']
-- [blocks_keep_one_in_n_1_2_0_2, '0', pulsed_power_opencmw_time_sink_0_0_1_0, '2']
-- [blocks_keep_one_in_n_1_3, '0', pulsed_power_opencmw_time_sink_0_0, '1']
-- [blocks_keep_one_in_n_1_3_0, '0', pulsed_power_opencmw_time_sink_0_0, '2']
 - [blocks_keep_one_in_n_1_3_1, '0', pulsed_power_opencmw_time_sink_0_0, '0']
 - [blocks_keep_one_in_n_2, '0', pulsed_power_opencmw_time_sink_4, '0']
 - [blocks_keep_one_in_n_2_0, '0', pulsed_power_opencmw_time_sink_6_0, '0']
+- [blocks_keep_one_in_n_3, '0', low_pass_filter_0, '0']
+- [blocks_multiply_const_vxx_0, '0', blocks_complex_to_mag_0, '0']
+- [blocks_multiply_xx_0, '0', blocks_keep_one_in_n_3, '0']
 - [blocks_multiply_xx_0_0_0, '0', low_pass_filter_0_1_0_0, '0']
 - [blocks_multiply_xx_0_1_0, '0', low_pass_filter_0_1_1_0, '0']
 - [blocks_multiply_xx_0_2_0, '0', low_pass_filter_0_1_2_0, '0']
@@ -1838,18 +1634,16 @@ connections:
 - [blocks_stream_to_vector_0, '0', fft_vxx_0, '0']
 - [blocks_sub_xx_0_0, '0', pulsed_power_power_calc_ff_0, '2']
 - [blocks_throttle_0, '0', band_pass_filter_0_1, '0']
+- [blocks_throttle_0, '0', blocks_keep_one_in_n_2_0, '0']
 - [blocks_throttle_0, '0', blocks_multiply_xx_0, '1']
-- [blocks_throttle_0, '0', low_pass_filter_0_0, '0']
 - [blocks_throttle_0_0, '0', band_pass_filter_0_0_0, '0']
+- [blocks_throttle_0_0, '0', blocks_keep_one_in_n_2, '0']
 - [blocks_throttle_0_0, '0', blocks_multiply_xx_0, '0']
-- [blocks_throttle_0_0, '0', low_pass_filter_0, '0']
 - [blocks_throttle_0_0, '0', pulsed_power_mains_frequency_calc_0, '0']
 - [blocks_transcendental_0_0_0, '0', blocks_sub_xx_0_0, '1']
 - [blocks_transcendental_0_1, '0', blocks_sub_xx_0_0, '0']
 - [fft_vxx_0, '0', blocks_multiply_const_vxx_0, '0']
-- [low_pass_filter_0, '0', pulsed_power_opencmw_time_sink_4, '0']
-- [low_pass_filter_0_0, '0', pulsed_power_opencmw_time_sink_6_0, '0']
-- [low_pass_filter_0_0_0, '0', blocks_stream_to_vector_0, '0']
+- [low_pass_filter_0, '0', blocks_stream_to_vector_0, '0']
 - [low_pass_filter_0_1_0_0, '0', blocks_divide_xx_0_0_0, '1']
 - [low_pass_filter_0_1_1_0, '0', blocks_divide_xx_0_1, '1']
 - [low_pass_filter_0_1_2_0, '0', blocks_divide_xx_0_0_0, '0']
@@ -1882,59 +1676,8 @@ connections:
 - [pulsed_power_power_calc_ff_0, '3', pulsed_power_statistics_0_0_1_0, '0']
 - [pulsed_power_power_calc_ff_0, '3', pulsed_power_statistics_0_0_1_0_0, '0']
 - [pulsed_power_statistics_0, '0', pulsed_power_opencmw_time_sink_0_0_2, '0']
-- [pulsed_power_statistics_0, '1', pulsed_power_opencmw_time_sink_0_0_2, '1']
-- [pulsed_power_statistics_0, '2', pulsed_power_opencmw_time_sink_0_0_2, '2']
-- [pulsed_power_statistics_0, '3', blocks_null_sink_0_0_1, '0']
-- [pulsed_power_statistics_0_0, '0', pulsed_power_opencmw_time_sink_0_0_2, '3']
-- [pulsed_power_statistics_0_0, '1', pulsed_power_opencmw_time_sink_0_0_2, '4']
-- [pulsed_power_statistics_0_0, '2', pulsed_power_opencmw_time_sink_0_0_2, '5']
-- [pulsed_power_statistics_0_0, '3', blocks_null_sink_0_0_1, '1']
-- [pulsed_power_statistics_0_0_0, '0', pulsed_power_opencmw_time_sink_0_0_2, '6']
-- [pulsed_power_statistics_0_0_0, '1', pulsed_power_opencmw_time_sink_0_0_2, '7']
-- [pulsed_power_statistics_0_0_0, '2', pulsed_power_opencmw_time_sink_0_0_2, '8']
-- [pulsed_power_statistics_0_0_0, '3', blocks_null_sink_0_0_1, '2']
-- [pulsed_power_statistics_0_0_0_0, '0', pulsed_power_opencmw_time_sink_0_0_2_0, '6']
-- [pulsed_power_statistics_0_0_0_0, '1', pulsed_power_opencmw_time_sink_0_0_2_0, '7']
-- [pulsed_power_statistics_0_0_0_0, '2', pulsed_power_opencmw_time_sink_0_0_2_0, '8']
-- [pulsed_power_statistics_0_0_0_0, '3', blocks_null_sink_0_0_1_0, '2']
-- [pulsed_power_statistics_0_0_0_0_0, '0', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '6']
-- [pulsed_power_statistics_0_0_0_0_0, '1', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '7']
-- [pulsed_power_statistics_0_0_0_0_0, '2', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '8']
-- [pulsed_power_statistics_0_0_0_0_0, '3', blocks_null_sink_0_0_1_1, '2']
-- [pulsed_power_statistics_0_0_1, '0', pulsed_power_opencmw_time_sink_0_0_2, '9']
-- [pulsed_power_statistics_0_0_1, '1', pulsed_power_opencmw_time_sink_0_0_2, '10']
-- [pulsed_power_statistics_0_0_1, '2', pulsed_power_opencmw_time_sink_0_0_2, '11']
-- [pulsed_power_statistics_0_0_1, '3', blocks_null_sink_0_0_1, '3']
-- [pulsed_power_statistics_0_0_1_0, '0', pulsed_power_opencmw_time_sink_0_0_2_0, '9']
-- [pulsed_power_statistics_0_0_1_0, '1', pulsed_power_opencmw_time_sink_0_0_2_0, '10']
-- [pulsed_power_statistics_0_0_1_0, '2', pulsed_power_opencmw_time_sink_0_0_2_0, '11']
-- [pulsed_power_statistics_0_0_1_0, '3', blocks_null_sink_0_0_1_0, '3']
-- [pulsed_power_statistics_0_0_1_0_0, '0', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '9']
-- [pulsed_power_statistics_0_0_1_0_0, '1', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '10']
-- [pulsed_power_statistics_0_0_1_0_0, '2', pulsed_power_opencmw_time_sink_0_0_2_1,
-  '11']
-- [pulsed_power_statistics_0_0_1_0_0, '3', blocks_null_sink_0_0_1_1, '3']
-- [pulsed_power_statistics_0_0_2, '0', pulsed_power_opencmw_time_sink_0_0_2_0, '3']
-- [pulsed_power_statistics_0_0_2, '1', pulsed_power_opencmw_time_sink_0_0_2_0, '4']
-- [pulsed_power_statistics_0_0_2, '2', pulsed_power_opencmw_time_sink_0_0_2_0, '5']
-- [pulsed_power_statistics_0_0_2, '3', blocks_null_sink_0_0_1_0, '1']
-- [pulsed_power_statistics_0_0_2_0, '0', pulsed_power_opencmw_time_sink_0_0_2_1, '3']
-- [pulsed_power_statistics_0_0_2_0, '1', pulsed_power_opencmw_time_sink_0_0_2_1, '4']
-- [pulsed_power_statistics_0_0_2_0, '2', pulsed_power_opencmw_time_sink_0_0_2_1, '5']
-- [pulsed_power_statistics_0_0_2_0, '3', blocks_null_sink_0_0_1_1, '1']
 - [pulsed_power_statistics_0_1, '0', pulsed_power_opencmw_time_sink_0_0_2_0, '0']
-- [pulsed_power_statistics_0_1, '1', pulsed_power_opencmw_time_sink_0_0_2_0, '1']
-- [pulsed_power_statistics_0_1, '2', pulsed_power_opencmw_time_sink_0_0_2_0, '2']
-- [pulsed_power_statistics_0_1, '3', blocks_null_sink_0_0_1_0, '0']
 - [pulsed_power_statistics_0_1_0, '0', pulsed_power_opencmw_time_sink_0_0_2_1, '0']
-- [pulsed_power_statistics_0_1_0, '1', pulsed_power_opencmw_time_sink_0_0_2_1, '1']
-- [pulsed_power_statistics_0_1_0, '2', pulsed_power_opencmw_time_sink_0_0_2_1, '2']
-- [pulsed_power_statistics_0_1_0, '3', blocks_null_sink_0_0_1_1, '0']
 
 metadata:
   file_format: 1
