@@ -405,6 +405,23 @@ public:
         auto frequency_spec_complex_to_mag                 = gr::blocks::complex_to_mag::make(512);
         auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "W" }, 50, 50, 512);
 
+        auto multiply_voltaga_current = gr::blocks::multiply<float>::make(1);
+        auto frequency_spec_one_in_n  = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
+        auto frequency_spec_low_pass  = gr::filter::fft_filter_fff::make(
+                 10,
+                 gr::filter::firdes::low_pass(
+                         1,
+                         500,
+                         20,
+                         100,
+                         gr::fft::window::win_type::WIN_HAMMING,
+                         6.76));
+        auto frequency_spec_stream_to_vec                  = gr::blocks::stream_to_vector::make(sizeof(float), 512);
+        auto frequency_spec_fft                            = gr::fft::fft_v<float, true>::make(512, gr::fft::window::rectangular(512), true, 1);
+        auto frequency_multiply_const                      = gr::blocks::multiply_const<gr_complex>::make(2.0 / (512.0), 512);
+        auto frequency_spec_complex_to_mag                 = gr::blocks::complex_to_mag::make(512);
+        auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "W" }, 50, 50, 512);
+
         // Connections:
         // signal
         top->hier_block2::connect(source_interface_voltage0, 0, out_decimation_voltage0, 0);
