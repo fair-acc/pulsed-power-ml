@@ -50,7 +50,7 @@ int         main(int, char **) {
     Subscription<Acquisition>                     bandpassSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_bpf@1000Hz", "I_bpf@1000Hz" });
     Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
     Subscription<Acquisition>                     mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@100Hz" });
-    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@1000Hz" });
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" });
     Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" });
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { rawSubscription, powerSubscription, bandpassSubscription, mainsFreqSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };

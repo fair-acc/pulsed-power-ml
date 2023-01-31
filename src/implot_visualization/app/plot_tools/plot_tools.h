@@ -170,7 +170,7 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals) {
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {
     static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
+    ImPlot::SetupAxes("Frequency (Hz)", "Power Density (W)", xflags, yflags);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     plotSignals(signals);
     plotSignals(limitingCurve);
