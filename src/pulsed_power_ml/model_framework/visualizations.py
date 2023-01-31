@@ -345,6 +345,7 @@ def add_prediction_plot(state_vector_array: np.array,
 def make_gupta_switch_detection_plot(path_to_data_folder: str,
                                      window_size: int = 25,
                                      threshold: float = 2000,
+                                     log_scale: bool = False,
                                      fft_size: int = 2**17) -> matplotlib.figure.Figure:
     """
     Returns a figure containing one plot showing the apparent power versus time and the detected
@@ -358,6 +359,8 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
         Number of frames for background and signal in switch detection algorithm
     threshold
         Switch detection threshold
+    log_scale
+        If True, convert difference spectrum to dBm scale before applying threshold.
     fft_size
         Full FFT size.
 
@@ -375,7 +378,8 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
     switch_array = gupta_offline_switch_detection(
         data_point_array=data_point_array,
         window_size=window_size,
-        threshold=threshold
+        threshold=threshold,
+        log_scale=log_scale
     )
 
     switch_positions = np.argwhere(switch_array==1).reshape((-1,))

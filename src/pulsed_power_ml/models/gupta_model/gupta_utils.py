@@ -272,7 +272,8 @@ def gupta_offline_switch_detection(data_point_array: np.array,
                                    spectrum_type: int = 2,
                                    fft_size: int = 2**17,
                                    step_size: Union[int, None] = None,
-                                   threshold: float = 2000) -> np.array:
+                                   threshold: float = 2000,
+                                   log_scale: bool = False) -> np.array:
     """
     This function implements the switch detection algorithm according to Gupta.
 
@@ -286,6 +287,8 @@ def gupta_offline_switch_detection(data_point_array: np.array,
         Full size of FFT.
     step_size
         Step size for the windows. Default = window_size
+    log_scale
+        If True, use logarithmic scale for data points.
 
     Returns
     -------
@@ -314,16 +317,20 @@ def gupta_offline_switch_detection(data_point_array: np.array,
         l = i * step_size + 2 * window_size
         m = i * step_size + 3 * window_size
 
-        background = data_point_array[j:k,
+        raw_background = data_point_array[j:k,
+                                          spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+
+        raw_signal = data_point_array[k:l,
                                       spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
 
-        signal = data_point_array[k:l,
-                                  spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
 
-        background_mean = background.mean(axis=0)
-        signal_mean = signal.mean(axis=0)
+        background_mean = raw_background.mean(axis=0)
+        signal_mean = raw_signal.mean(axis=0)
 
-        difference_spectrum = background_mean - signal_mean
+        if log_scale:
+            difference_spectrum = 10 * np.log10(np.max(np.abs(background_mean - signal_mean))) + 30     # Watt to dBm
+        else:
+            difference_spectrum = np.max(np.abs(background_mean - signal_mean))
 
         if np.abs(difference_spectrum).max() > threshold:
             switch_array[k:l] = 1 # somewhere in this window a switch has been detected
