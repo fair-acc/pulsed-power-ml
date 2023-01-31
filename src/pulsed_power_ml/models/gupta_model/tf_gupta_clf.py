@@ -16,6 +16,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feat
 
 # Define some constants
 N_PEAKS_MAX = 9
+DATA_POINT_SIZE = 3 * 2**16 + 4
 
 class TFGuptaClassifier(keras.Model):
 
@@ -64,6 +65,10 @@ class TFGuptaClassifier(keras.Model):
             How to weight the distance of al neighbors.
         distance_threshold
             If distance to the nearest neighbor is above this threshold, an event is classified as "other"
+        training_data_features
+            Unscaled (!) features of the training data
+        training_data_labels
+            Corresponding labels for the provided training data
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
 
@@ -132,8 +137,8 @@ class TFGuptaClassifier(keras.Model):
             )
         )
 
-        self.training_data_features_scaled = tf.math.divide(self.training_data_features_raw,
-                                                            self.scale_tensor[:,0])
+        self.training_data_features_scaled = tf.math.divide_no_nan(self.training_data_features_raw,
+                                                                   self.scale_tensor[:,0])
 
         self.feature_vector = tf.Variable(
             initial_value=tf.ones(shape=(3 * self.n_peaks_max, 1), dtype=tf.float32),
@@ -224,7 +229,7 @@ class TFGuptaClassifier(keras.Model):
     #     return
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=(3 * 2**16 + 4), dtype=tf.float32)]
+        input_signature=[tf.TensorSpec(shape=(DATA_POINT_SIZE), dtype=tf.float32)]
     )
     def call(self, X: tf.Tensor) -> tf.Tensor:
         """
@@ -240,6 +245,11 @@ class TFGuptaClassifier(keras.Model):
         y
             state_vector containing the current estimated power for each appliance.
         """
+        # If data point is all exactly -1, reset internal states
+        if tf.math.reduce_all(tf.math.equal(x=X, y=tf.math.multiply(-1.0, tf.ones_like(X, dtype=tf.float32)))):
+            self.reset_internal_states()
+            return self.current_state_vector
+
         # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
         # a classification
         # ToDo: Rework if-block
@@ -518,6 +528,12 @@ class TFGuptaClassifier(keras.Model):
         # 2. Classify event
         distances, event_class = self.call_knn(self.feature_vector)
 
+        # If any of the distances is nan, do not change the state vector. Just return the current
+        # state vector instead.
+        if tf.math.equal(tf.math.reduce_any(tf.math.is_nan(distances)),
+                         tf.constant(True)):
+            return self.current_state_vector
+
         # Check if known or unknown event via the smallest distance
         event_class = tf.cond(
             pred=tf.math.greater(tf.math.reduce_min(distances), self.distance_threshold),
@@ -576,6 +592,18 @@ class TFGuptaClassifier(keras.Model):
 
     def get_current_state_vector(self) -> tf.Tensor:
         return self.current_state_vector
+
+    def reset_internal_states(self) -> None:
+        """
+        Function to reset state vector, background and skipped frames variables.
+        """
+        self.clear_background_vector()
+        self.current_state_vector.assign(
+            tf.zeros(shape=(self.n_known_appliances + 1), dtype=tf.float32)
+        )
+        self.n_data_points_skipped.assign(0)
+        self.skip_data_point.assign(False)
+        return
 
 
 if __name__ == "__main__":

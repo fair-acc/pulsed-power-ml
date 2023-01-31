@@ -102,6 +102,7 @@ src/gr-pulsed_power/Testing/
 
 # Other
 *.patch
+*dummy_notebook.ipynb
 
 # jetbrains
 cmake-build*/

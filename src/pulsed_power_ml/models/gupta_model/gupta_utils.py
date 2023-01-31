@@ -1,7 +1,7 @@
 """
 This module contains functions needed by the Gupta classification algorithm.
 """
-from typing import Tuple
+from typing import Tuple, Union
 import yaml
 from pathlib import Path
 import numpy as np
@@ -226,13 +226,14 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
         Array of length 3 * n_peaks_max of the form: [a_0, mu_0, sigma_0, a_1, mu_1, sigma_1, ...]
     """
     # get peaks
-    min_peak_height = 4 * cleaned_spectrum.std()  # This could probably be optimized.
+    min_peak_height = 0 * cleaned_spectrum.std()  # This could probably be optimized.
     if abs(cleaned_spectrum.min()) > abs(cleaned_spectrum.max()):
         switch_off_factor = -1
     else:
         switch_off_factor = 1
     peak_indices, peak_properties = find_peaks(x=cleaned_spectrum * switch_off_factor,
                                                height=min_peak_height)
+
 
     # remove peaks in the first and last bin of the spectrum (cannot be used for gaussian fit)
     peak_height_list = [(peak_index, peak_height)
@@ -266,6 +267,77 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
 
     return feature_vector
 
+def gupta_offline_switch_detection(data_point_array: np.array,
+                                   window_size: int,
+                                   spectrum_type: int = 2,
+                                   fft_size: int = 2**17,
+                                   step_size: Union[int, None] = None,
+                                   threshold: float = 2000,
+                                   log_scale: bool = False) -> np.array:
+    """
+    This function implements the switch detection algorithm according to Gupta.
+
+    Parameters
+    ----------
+    data_point_array
+        Array with respective data points
+    window_size
+        Number of spectra, that should be included in one window
+    fft_size
+        Full size of FFT.
+    step_size
+        Step size for the windows. Default = window_size
+    log_scale
+        If True, use logarithmic scale for data points.
+
+    Returns
+    -------
+    switch_array
+        Array w/ the same length as data_point_array containing 1s
+    """
+    if step_size is None:
+        step_size = window_size
+
+    spectrum_type_offset = int(spectrum_type * fft_size / 2)
+
+    max_len = len(data_point_array)
+
+    switch_array = np.zeros(max_len)
+
+    dead_time_counter = 0
+
+    for i in range(int(max_len / step_size)):
+
+        if dead_time_counter != 0:
+            dead_time_counter -= 1
+            continue
+
+        j = i * step_size
+        k = i * step_size + window_size
+        l = i * step_size + 2 * window_size
+        m = i * step_size + 3 * window_size
+
+        raw_background = data_point_array[j:k,
+                                          spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+
+        raw_signal = data_point_array[k:l,
+                                      spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+
+
+        background_mean = raw_background.mean(axis=0)
+        signal_mean = raw_signal.mean(axis=0)
+
+        if log_scale:
+            difference_spectrum = 10 * np.log10(np.max(np.abs(background_mean - signal_mean))) + 30     # Watt to dBm
+        else:
+            difference_spectrum = np.max(np.abs(background_mean - signal_mean))
+
+        if np.abs(difference_spectrum).max() > threshold:
+            switch_array[k:l] = 1 # somewhere in this window a switch has been detected
+            switch_array[l:m] = -1 # Dead time
+            dead_time_counter = 2 # number of windows that will be skipped
+
+    return switch_array
 
 def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """
@@ -291,7 +363,13 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
     spectrum_sum = tf.math.reduce_sum(res_spectrum)
     sum_above_thr = tf.math.greater(spectrum_sum, threshold)
     sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
-
+    # # ToDo: Remove print
+    # tf.print("\n\n ###########")
+    # tf.print("In tf_switch_detected")
+    # tf.print("spectrum_sum = ", spectrum_sum)
+    # tf.print(f"Result = {sum_above_thr, sum_below_minus_thr}")
+    # tf.print("############\n\n")
+    # #
     return sum_below_minus_thr, sum_above_thr
 
 @tf.function
@@ -559,7 +637,6 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     feature_tensor = feature_vector.stack()
 
     feature_vector.close()
-    tf.print(feature_tensor)
     return feature_tensor
 
 

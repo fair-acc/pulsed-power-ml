@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     # load apparent power list
     apparent_power_data_base = ("/home/thomas/projects/nilm_at_fair/repository/src/pulsed_power_ml/models/gupta_model/"
-                                "apparent_power_data_base.yml")
+                                "apparent_power_data_base_individual_appliances.yml")
 
     with open(apparent_power_data_base) as yaml_file:
         apparent_power_dict = yaml.load(yaml_file, Loader=yaml.loader.SafeLoader)
