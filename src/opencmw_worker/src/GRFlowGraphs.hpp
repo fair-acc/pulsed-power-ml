@@ -386,7 +386,7 @@ public:
                 out_samp_rate_power_longterm);
         opencmw_time_sink_power_stats_longterm->set_max_noutput_items(noutput_items);
 
-        auto null_sink_stats = gr::blocks::null_sink::make(sizeof(float));
+        auto null_sink_stats          = gr::blocks::null_sink::make(sizeof(float));
 
         auto multiply_voltaga_current = gr::blocks::multiply<float>::make(1);
         auto frequency_spec_one_in_n  = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
