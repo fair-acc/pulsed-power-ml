@@ -242,7 +242,7 @@ float PowerIntegrator::calculate_usage(int64_t t_0, float last_value, int64_t t_
         float temp = last_value * delta_time * _unit_faktor;
         return temp + 0.5f * delta_values * delta_time * _unit_faktor;
     } else {
-        float temp = current_value * delta_time;
+        float temp = current_value * delta_time * _unit_faktor;
         return temp - 0.5f * delta_values * delta_time * _unit_faktor;
     }
 }
