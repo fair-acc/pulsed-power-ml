@@ -52,10 +52,30 @@ struct StrideArray {
     std::vector<double> values;
 };
 
-class Acquisition {
+template<typename T>
+class IAcquisition {
 public:
-    std::vector<std::string>     signalNames;
-    std::string                  jsonString     = "";
+    std::vector<std::string> signalNames;
+    std::string              jsonString    = "";
+    uint64_t                 lastTimeStamp = 0.0;
+    std::vector<T>           buffers;
+
+    IAcquisition();
+    IAcquisition(const std::vector<std::string> _signalNames);
+
+    virtual void deserialize() = 0;
+
+private:
+    virtual void addToBuffers() = 0;
+
+protected:
+    bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
+};
+
+class Acquisition : public IAcquisition<ScrollingBuffer> {
+public:
+    // std::vector<std::string>     signalNames;
+    // std::string                  jsonString     = "";
     uint64_t                     lastRefTrigger = 0;
     std::vector<ScrollingBuffer> buffers;
     bool                         success = false;
@@ -63,6 +83,7 @@ public:
 
     Acquisition();
     Acquisition(int numSignals);
+    Acquisition(const std::vector<std::string> &_signalNames);
 
     void                deserialize();
     void                fail() { this->success = false; };

@@ -58,11 +58,13 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
+    float updateFreq = 25.0f;
+
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
     Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
     // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz",
-                                                                                                                                                  "Phi@100Hz" });
+                                                                                                                                                  "phi@100Hz" });
 
     std::vector<Subscription<PowerUsage>>  subscritpionsPowerUsage = { nilmSubscription };
     std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription };
