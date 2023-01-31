@@ -20,7 +20,7 @@ void Subscription<T>::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
     this->fetchFinished = true;
-    this->acquisition.fail(); 
+    this->acquisition.fail();
 }
 
 template<typename T>
@@ -38,8 +38,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 template<typename T>
 Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
     : url(_url), requestedSignals(_requestedSignals) {
-   // this->url        = _url;
-   // requestedSignals = _requestedSignals;
+    // this->url        = _url;
+    // requestedSignals = _requestedSignals;
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -47,8 +47,10 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
         this->url.pop_back();
     }
 
-    int numSignals = _requestedSignals.size();
-    T   _acquisition(numSignals);
+    // int numSignals = _requestedSignals.size();
+    // T   _acquisition(numSignals);
+    T _acquisition(_requestedSignals);
+
     this->acquisition = _acquisition;
 
     if (url.find("channelNameFilter") != std::string::npos) {
@@ -89,10 +91,10 @@ void Subscription<T>::fetch() {
 
 template<typename T>
 void Subscription<T>::updateUrl() {
-    //this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
+    // this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
     this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(acquisition.lastTimeStamp);
 }
 
 template class Subscription<Acquisition>;
-template class Subscription<AcquisitionSpectra>;
-template class Subscription<PowerUsage>; 
+// template class Subscription<AcquisitionSpectra>;
+template class Subscription<PowerUsage>;

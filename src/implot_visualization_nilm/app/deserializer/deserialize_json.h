@@ -72,10 +72,10 @@ protected:
     bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
 };
 
-class Acquisition : public IAcquisition<ScrollingBuffer> {
+class Acquisition {
 public:
-    // std::vector<std::string>     signalNames;
-    // std::string                  jsonString     = "";
+    std::vector<std::string>     signalNames;
+    std::string                  jsonString     = "";
     uint64_t                     lastRefTrigger = 0;
     std::vector<ScrollingBuffer> buffers;
     bool                         success = false;
@@ -96,6 +96,7 @@ private:
     double      refTrigger_s  = 0.0;
 
     StrideArray strideArray;
+    bool        receivedRequestedSignals(std::vector<std::string> receivedSignals);
 
     void        addToBuffers();
 };
@@ -164,11 +165,13 @@ public:
     double costPerWeek = 0.0; //     = 1238.98;
 
     PowerUsage();
+    PowerUsage(const std::vector<std::string> &_signalNames);
     PowerUsage(int numSignals);
 
-    void   deserialize();
-    void   fail();
-    double sumOfUsage();
+    void                     deserialize();
+    void                     fail();
+    double                   sumOfUsage();
+    std::vector<std::string> signalNames;
 
 private:
     void setSumOfUsageDay();

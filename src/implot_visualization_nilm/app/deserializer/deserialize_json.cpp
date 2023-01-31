@@ -84,6 +84,27 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
             return false;
         }
     }
+
+    return true;
+}
+
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    int                          numSignals = _signalNames.size();
+    std::vector<ScrollingBuffer> _buffers(numSignals);
+    this->buffers = _buffers;
+}
+
+bool Acquisition::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = this->signalNames;
+    if (receivedSignals.size() != expectedSignals.size()) {
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -130,7 +151,11 @@ void Acquisition::deserialize() {
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            this->signalNames.assign(element.value().begin(), element.value().end());
+            if (!receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested. Expected: " << this->signalNames[0] << std::endl;
+                return;
+            }
+            // this->signalNames.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -187,11 +212,19 @@ void AcquisitionSpectra::deserialize() {
 PowerUsage::PowerUsage() {
     printf("PowerUsage created\n");
     printf("Devices: %s\n", devices[0].c_str());
-    // add values to controle
+    // add values to controle:
 }
 PowerUsage::PowerUsage(int _numSignals) {
     std::vector<Buffer> _buffers(_numSignals);
     this->buffers = _buffers;
+}
+
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    int numSignals = _signalNames.size();
+    //     std::vector<B> _buffers(numSignals);
+    //     this->buffers = _buffers;
+    //
 }
 
 void PowerUsage::deserialize() {
@@ -318,5 +351,5 @@ void PowerUsage::setSumOfUsageMonth() {
     }
 }
 
-template class IAcquisition<Buffer>;
-template class IAcquisition<ScrollingBuffer>;
+// template class IAcquisition<Buffer>;
+// template class IAcquisition<ScrollingBuffer>;
