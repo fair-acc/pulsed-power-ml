@@ -63,7 +63,7 @@ void integration_impl::add_new_steps(float* out,
     std::chrono::time_point<std::chrono::system_clock> now =
         std::chrono::system_clock::now();
     bool calculate_with_last_value = true;
-    bool rewrite_save_file;
+    bool rewrite_save_file = false;
     // new startup
     if (last_save.time_since_epoch() == std::chrono::seconds(0) ||
         last_reset.time_since_epoch() == std::chrono::seconds(0)) {
@@ -176,7 +176,7 @@ void integration_impl::integrate(float& out,
     for (int i = 1; i < n_samples; i++) {
         value += d_step_size * ((sample[i - 1] + sample[i]) / 2);
     }
-    out = value;
+    out = value / 3600.0;
 }
 
 } /* namespace pulsed_power */
