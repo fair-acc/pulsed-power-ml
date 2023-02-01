@@ -36,9 +36,10 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string _url, const std::vector<std::string> &_requestedSignals) {
-    this->url        = _url;
-    requestedSignals = _requestedSignals;
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
+    : url(_url), requestedSignals(_requestedSignals) {
+   // this->url        = _url;
+   // requestedSignals = _requestedSignals;
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -50,20 +51,19 @@ Subscription<T>::Subscription(const std::string _url, const std::vector<std::str
     T   _acquisition(numSignals);
     this->acquisition = _acquisition;
 
-    if(url.find("channelNameFilter") !=std::string::npos) { 
-        this->extendedUrl=this->url+"&lastRefTrigger=0";
-    } else{
-        this->extendedUrl=this->url;
+    if (url.find("channelNameFilter") != std::string::npos) {
+        this->extendedUrl = this->url + "&lastRefTrigger=0";
+    } else {
+        this->extendedUrl = this->url;
     }
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    lastFetchtime = currentTime;
+    // auto   clock       = std::chrono::system_clock::now();
+    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    // lastFetchtime = currentTime;
 }
 
 template<typename T>
 void Subscription<T>::fetch() {
     emscripten_fetch_attr_t attr;
-
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
@@ -78,12 +78,10 @@ void Subscription<T>::fetch() {
         this->fetchFinished = false;
     }
     if (fetchSuccessful) {
-      
         this->acquisition.deserialize();
-        if(url.find("channelNameFilter") !=std::string::npos) { 
+        if (url.find("channelNameFilter") != std::string::npos) {
             updateUrl();
         }
-    
         this->fetchSuccessful = false;
         this->fetchFinished   = true;
     }
@@ -91,7 +89,8 @@ void Subscription<T>::fetch() {
 
 template<typename T>
 void Subscription<T>::updateUrl() {
-    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
+    //this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(this->acquisition.lastRefTrigger);
+    this->extendedUrl = this->url + "&lastRefTrigger=" + std::to_string(acquisition.lastTimeStamp);
 }
 
 template class Subscription<Acquisition>;

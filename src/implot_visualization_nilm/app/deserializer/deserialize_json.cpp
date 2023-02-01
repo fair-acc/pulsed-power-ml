@@ -57,7 +57,8 @@ void ScrollingBuffer::erase() {
 void BufferPower::updateValues(const std::vector<double> &_values){
     this->values = _values;
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     this->timestamp = currentTime;
     init = true;
 }
@@ -99,6 +100,9 @@ void Acquisition::deserialize() {
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
@@ -112,6 +116,7 @@ void Acquisition::deserialize() {
     }
 
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
     this->init = true;
     this->success = true;
@@ -131,13 +136,13 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
-        return;
-    }
     std::string modifiedJsonString = this->jsonString;
+    
+    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
+        modifiedJsonString.erase(0, 21);  
 
-    modifiedJsonString.erase(0, 21);  
-
+    }
+      
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
@@ -151,13 +156,19 @@ void AcquisitionSpectra::deserialize() {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-
+     
+    //this->lastRefTrigger = this->refTrigger_ns;
+    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }
 
 // Power Usage class
-PowerUsage::PowerUsage(){}
+PowerUsage::PowerUsage(){
+    printf("PowerUsage created\n");
+    printf("Devices: %s\n", devices[0].c_str());
+    // add values to controle
+}
 PowerUsage::PowerUsage(int _numSignals){
     std::vector<Buffer> _buffers(_numSignals);
     this->buffers = _buffers;
@@ -171,6 +182,7 @@ void PowerUsage::deserialize(){
         return;
     } */
 
+    printf("Deserialize powerUsage\n");
     std::string modifiedJsonString = this->jsonString;
 
     if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":" ){
@@ -209,6 +221,7 @@ void PowerUsage::deserialize(){
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
 
+        printf("After deserialization %s\n", this->devices[0].c_str());
        // TODO - Buffer if needed
        // addToBuffers();
     }
@@ -227,7 +240,8 @@ void PowerUsage::deserialize(){
     this->success = true;
     this->init    = true;
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
     this->deliveryTime = currentTime;
 
 }

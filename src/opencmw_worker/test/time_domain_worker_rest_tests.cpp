@@ -310,9 +310,9 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
 
     std::string path = "test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger=0";
     // httplib::Headers headers({ { "X-OPENCMW-METHOD", "GET" } });
-    uint64_t previousRefTrigger       = 0;
-    uint64_t lastTimeStamp            = 0;
-    uint64_t firstTimeStampOfNewChunk = 0;
+    int64_t previousRefTrigger       = 0;
+    int64_t lastTimeStamp            = 0;
+    int64_t firstTimeStampOfNewChunk = 0;
     for (int iChunk = 0; iChunk < 100; iChunk++) {
         auto response = http.Get(path.c_str());
         for (size_t i = 0; i < 100; i++) {
@@ -358,13 +358,13 @@ TEST_CASE("request_multiple_chunks_from_time_domain_worker", "[daq_api][time-dom
         // Check time-continuity between chunks
         if (previousRefTrigger != 0) {
             Approx calculatedRefTriggerStamp = Approx(static_cast<double>(lastTimeStamp) / 1.0 + SAMPLING_RATE).epsilon(1e-10);
-            firstTimeStampOfNewChunk         = data.refTriggerStamp + data.channelTimeSinceRefTrigger[0] * 1e9;
+            firstTimeStampOfNewChunk         = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger[0] * 1e9f);
             REQUIRE(firstTimeStampOfNewChunk == calculatedRefTriggerStamp);
             REQUIRE(firstTimeStampOfNewChunk > lastTimeStamp);
         }
 
         previousRefTrigger = data.refTriggerStamp;
-        lastTimeStamp      = data.refTriggerStamp + data.channelTimeSinceRefTrigger.back() * 1e9;
+        lastTimeStamp      = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
         path               = fmt::format("test.service/Acquisition?channelNameFilter=saw@200000Hz&lastRefTrigger={}", lastTimeStamp);
     }
 
