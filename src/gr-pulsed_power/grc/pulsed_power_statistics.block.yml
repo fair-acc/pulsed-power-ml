@@ -13,13 +13,13 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-# - id: parametername_replace_me
-#   label: FIX ME:
-#   dtype: string
-#   default: You need to fill in your grc/pulsed_power_statistics.block.yaml
-#- id: ...
-#  label: ...
-#  dtype: ...
+  # - id: parametername_replace_me
+  #   label: FIX ME:
+  #   dtype: string
+  #   default: You need to fill in your grc/pulsed_power_statistics.block.yaml
+  - id: decimation
+    label: Decimation
+    dtype: float
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:
@@ -34,7 +34,16 @@ inputs:
     dtype: float
 
 outputs:
-  - label: out
+  - label: mean
+    domain: stream
+    dtype: float
+  - label: min
+    domain: stream
+    dtype: float
+  - label: max
+    domain: stream
+    dtype: float
+  - label: std_dev
     domain: stream
     dtype: float
 

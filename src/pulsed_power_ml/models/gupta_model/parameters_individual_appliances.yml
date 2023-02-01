@@ -1,12 +1,3 @@
-background_n: 10
-fft_size: 131072
-sample_rate: 2_000_000
-n_peaks: 10
-threshold: 30
-#appliances:
-#  - 1: tube
-#  - 2: halo
-#  - 3: led
 appliances:
   - 1: E1 # LED
   - 2: F1 # Foen
@@ -19,4 +10,14 @@ appliances:
   - 9: PS1 # Power supply
   - 10: R1 # Fluoreszenzroehren
   - 11: R2
+background_n: 10
+distance_threshold: 100
+fft_size: 131072
+fft_size_real: 65536
+n_known_appliances: 11
+n_neighbors: 3
+n_peaks: 9
+sample_rate: 2_000_000
+spectrum_type: 2
 switching_offset: 1
+threshold: 30

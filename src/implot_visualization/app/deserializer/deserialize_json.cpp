@@ -46,44 +46,75 @@ void ScrollingBuffer::erase() {
     }
 }
 
-Acquisition::Acquisition() {}
+template<typename T>
+IAcquisition<T>::IAcquisition() {}
 
-Acquisition::Acquisition(int _numSignals) {
-    std::vector<ScrollingBuffer> _buffers(_numSignals);
+template<typename T>
+IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
+    : signalNames(_signalNames) {
+    int            numSignals = _signalNames.size();
+    std::vector<T> _buffers(numSignals);
     this->buffers = _buffers;
 }
+
+template<typename T>
+bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = this->signalNames;
+    if (receivedSignals.size() != expectedSignals.size()) {
+        std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+Acquisition::Acquisition() {}
+
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {}
 
 void Acquisition::addToBuffers() {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
+    int    stride            = this->strideArray.dims[1];
 
     // Destride array
-    for (int i = 0; i < signalNames.size(); i++) {
+    for (int i = 0; i < strideArray.dims[0]; i++) {
         this->buffers[i].signalName = this->signalNames[i];
-        int stride                  = this->strideArray.dims[1];
-        int offset                  = i * stride;
+        int offset2                 = i * stride;
 
+        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+        }
         for (int j = 0; j < stride; j++) {
             absoluteTimestamp = this->refTrigger_s + this->relativeTimestamps[j];
-            value             = this->strideArray.values[offset + j];
+            value             = this->strideArray.values[offset2 + j];
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
 }
 
 void Acquisition::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
             this->refTrigger_ns = element.value();
-            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
+        } else if (element.key() == "channelNames") {
+            if (!this->receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested (Acquisition)" << std::endl;
+                return;
+            }
+            std::cout << "Received expected signal (Acquisition)" << std::endl;
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             this->relativeTimestamps.assign(element.value().begin(), element.value().end());
-        } else if (element.key() == "channelNames") {
-            this->signalNames.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -97,31 +128,42 @@ void Acquisition::deserialize() {
 
 AcquisitionSpectra::AcquisitionSpectra() {}
 
-AcquisitionSpectra::AcquisitionSpectra(int _numSignals) {
-    std::vector<Buffer> _buffers(_numSignals);
-    this->buffers = _buffers;
-}
+AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {}
 
 void AcquisitionSpectra::addToBuffers() {
-    this->buffers[0].signalName = this->signalName;
-    this->buffers[0].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+    for (int i = 0; i < signalNames.size(); i++) {
+        this->buffers[i].signalName = this->signalNames[i];
+        this->buffers[i].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+    }
 }
 
 void AcquisitionSpectra::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            this->signalName = element.value();
+            std::vector<std::string> channelNames = { element.value().get<std::string>() };
+            if (!this->receivedRequestedSignals(channelNames)) {
+                std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
+                return;
+            }
+            std::cout << "Received expected signal (AcquisitionSpectra)" << std::endl;
         } else if (element.key() == "channelMagnitudeValues") {
             this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
 }
+
+template class IAcquisition<Buffer>;
+template class IAcquisition<ScrollingBuffer>;

@@ -35,7 +35,8 @@ list(APPEND pulsed_power_python_files
     picoscope_4000a_source_python.cc
     power_calc_ff_python.cc
     mains_frequency_calc_python.cc
-    power_calc_cc_python.cc python_bindings.cc)
+    power_calc_cc_python.cc 
+    python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(pulsed_power
    ../../..

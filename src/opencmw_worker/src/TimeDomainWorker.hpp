@@ -37,6 +37,7 @@ struct Acquisition {
     std::vector<float>            channelRangeMin;
     std::vector<float>            channelRangeMax;
     std::vector<float>            temperature;
+    int64_t                       lastTimeStamp = 0;
 };
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)

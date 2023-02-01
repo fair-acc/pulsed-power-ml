@@ -72,6 +72,7 @@ public:
 
     float                                 calculate_usage(int64_t t_0, float last_value,
                                             int64_t t_1, float current_value);
+    static bool                           create_directory(std::string directory_path);
 
     PowerIntegrator(std::vector<std::string> &devices, const std::string data_path = "./", const int save_interval = 100);
     PowerIntegrator(const size_t amount_of_devices, const std::string data_path = "./", const int save_interval = 100);
@@ -86,6 +87,10 @@ PowerIntegrator::PowerIntegrator(const size_t amount_of_devices, const std::stri
     start_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
     fmt::print("\tcurrent path {0}\n", std::filesystem::current_path());
+
+    if (!create_directory(data_path)) {
+        fmt::print("Can not create or open {}\n", data_path);
+    }
 
     // init usage day, week, month
     for (size_t i = 0; i < _amount_of_devices; i++) {
@@ -144,6 +149,29 @@ PowerIntegrator::PowerIntegrator(const size_t amount_of_devices, const std::stri
 }
 
 PowerIntegrator::~PowerIntegrator() {
+}
+
+bool PowerIntegrator::create_directory(std::string directory_path) {
+    if (std::filesystem::exists(std::filesystem::status(directory_path.c_str()))) {
+        fmt::print("{} exists \n", directory_path.c_str());
+        if (std::filesystem::is_directory(std::filesystem::status(directory_path.c_str()))) {
+            return true;
+        } else {
+            fmt::print("{} is not directory\n", directory_path.c_str());
+            return false;
+        }
+    } else {
+        fmt::print("{} does not exists \n", directory_path.c_str());
+
+        bool result = std::filesystem::create_directories(directory_path.c_str());
+        if (result) {
+            fmt::print("{} directory was created\n", directory_path.c_str());
+            return true;
+        } else {
+            fmt::print("{} directory was not created\n", directory_path.c_str());
+            return false;
+        }
+    }
 }
 
 void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
@@ -253,8 +281,8 @@ bool PowerIntegrator::read_values_from_file() {
 
     std::ifstream      values_file(file_path.c_str(), std::ios_base::in);
 
-    std::vector<float> previous_values;
-    int64_t            previous_timestamp;
+    std::vector<float> previous_values    = {};
+    int64_t            previous_timestamp = 0;
 
     if (values_file.good()) {
         int64_t     time_saved;
@@ -274,7 +302,7 @@ bool PowerIntegrator::read_values_from_file() {
             return false;
         }
 
-        // the data are to old
+        // the data is too old
         if (!check_same_week(time_saved, start_timestamp)) {
             values_file.close();
             return false;

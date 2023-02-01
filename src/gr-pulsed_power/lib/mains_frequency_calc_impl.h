@@ -10,7 +10,8 @@ class mains_frequency_calc_impl : public mains_frequency_calc
 {
 private:
     float d_expected_sample_rate;
-    float d_lo, d_hi, current_half_frequency, average_frequency, d_alpha;
+    float d_lo, d_hi;
+    double current_half_frequency, average_frequency, d_alpha;
     int no_low, no_high;
     bool d_last_state;
 
