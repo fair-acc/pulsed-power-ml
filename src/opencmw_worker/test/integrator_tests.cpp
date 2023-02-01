@@ -26,6 +26,9 @@
 #include <fstream>
 #include <iostream>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 using opencmw::majordomo::Broker;
 using opencmw::majordomo::BrokerMessage;
 using opencmw::majordomo::Command;
@@ -38,8 +41,11 @@ using opencmw::majordomo::DEFAULT_REST_PORT;
 using opencmw::majordomo::PLAIN_HTTP;
 
 TEST_CASE("integrator-constructor-not-exists-1", "[constuctor][file does not exist]") {
-    size_t                          size = 7;
-    PowerIntegrator                 powerIntegrator(size, "../../test/data/test_no_init_file/");
+    size_t      size     = 7;
+    std::string datapath = "../../test/data/test_no_init_file/";
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
+    PowerIntegrator                 powerIntegrator(size, datapath.c_str());
 
     std::vector<float>              usage_day       = powerIntegrator.get_power_usages_day();
     std::vector<float>              usage_week      = powerIntegrator.get_power_usages_week();
@@ -67,8 +73,13 @@ TEST_CASE("integrator-constructor-not-exists-1", "[constuctor][file does not exi
 }
 
 TEST_CASE("integrator-calculate-same-value-2", "[calculate][same values") {
-    size_t          size = 7;
-    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    size_t size = 7;
+    // PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    std::string datapath = "../../test/data/test_no_init_file/";
+
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
+    PowerIntegrator powerIntegrator(size, datapath.c_str());
 
     double          power_usage = powerIntegrator.calculate_usage(1673858501452341457, 50, 1673858501460000000, 50);
     fmt::print("integrator-calculate-same-value power\n", power_usage);
@@ -76,8 +87,12 @@ TEST_CASE("integrator-calculate-same-value-2", "[calculate][same values") {
 }
 
 TEST_CASE("integrator-calculate-old-greater-value-3", "[calculate][old greater values") {
-    size_t          size = 7;
-    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    size_t      size     = 7;
+    std::string datapath = "../../test/data/test_no_init_file/";
+
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
+    PowerIntegrator powerIntegrator(size, datapath.c_str());
     double          power_usage = powerIntegrator.calculate_usage(1673858501452341457, 50,
                      1673858501460000000, 60);
     fmt::print("integrator-calculate-old-greater-value\n", power_usage);
@@ -85,8 +100,11 @@ TEST_CASE("integrator-calculate-old-greater-value-3", "[calculate][old greater v
 }
 
 TEST_CASE("integrator-calculate-old-less-value-4", "[calculate][less values") {
-    size_t          size = 7;
-    PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    size_t      size     = 7;
+    std::string datapath = "../../test/data/test_no_init_file/";
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
+    PowerIntegrator powerIntegrator(size, datapath.c_str());
     double          power_usage = powerIntegrator.calculate_usage(673858501452341457, 50,
                      1673858501460000000, 10);
     fmt::print("integrator-calculate-old-less-value\n", power_usage);
@@ -94,8 +112,12 @@ TEST_CASE("integrator-calculate-old-less-value-4", "[calculate][less values") {
 }
 
 TEST_CASE("integrator-update-test-add-values-5", "[update][inital values does not  exists]") {
-    size_t             size = 7;
-    PowerIntegrator    powerIntegrator(size, "../../test/data/test_update_values/");
+    size_t      size     = 7;
+    std::string datapath = "../../test/data/test_update_values/";
+
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
+    PowerIntegrator    powerIntegrator(size, datapath.c_str());
     std::vector<float> values      = { 1.2, 0.4, 8.3, 30.0, 1.2, 0.4, 27.0 };
     int64_t            nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     powerIntegrator.update(nanoseconds, values);
@@ -132,7 +154,10 @@ TEST_CASE("integrator-update-test-add-values-5", "[update][inital values does no
 }
 
 TEST_CASE("integrator-save-data-6") {
-    std::string        datapath = "../../test/data/test_save_data/";
+    std::string datapath = "../../test/data/test_save_data/";
+
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
+
     PowerIntegrator    powerIntegrator(11, datapath, 20);
 
     int64_t            time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -162,7 +187,8 @@ TEST_CASE("integrator-save-data-6") {
 //   std::this_thread::sleep_for(willSleepFor);
 
 TEST_CASE("integrator-save_read-data-7") {
-    std::string        datapath = "../../test/data/test_save_read_data/";
+    std::string datapath = "../../test/data/test_save_read_data/";
+    if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
     PowerIntegrator    powerIntegrator(11, datapath);
     int64_t            time_point = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
