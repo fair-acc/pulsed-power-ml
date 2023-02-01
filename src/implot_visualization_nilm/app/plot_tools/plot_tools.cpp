@@ -1,11 +1,10 @@
 
+#include <algorithm>
 #include <deserialize_json.h>
 #include <implot.h>
+#include <implot_internal.h>
 #include <plot_tools.h>
 #include <vector>
-#include <implot_internal.h>
-#include <algorithm>
-
 
 /* void Plotter::plotSignals(std::vector<ScrollingBuffer> &signals) {
     for (int i = 0; i < signals.size(); i++) {
@@ -100,7 +99,7 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 //         // Todo - dates
 //         //auto   clock       = std::chrono::system_clock::now();
 //         //double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-        
+
 //         static const char*  labels[]    = {"1","2","3","4","5","6","Today"};
 //         static double       kWh[7];
 //         static double       kWhToday[7] = {0.0, 0.0,0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back()};
@@ -113,7 +112,6 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 //         double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
 
 //         //ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
-
 
 //         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element+20, ImGuiCond_Always);
 //         ImPlot::SetupAxes("Day","kWh");
@@ -133,165 +131,149 @@ void Plotter::plotSignals(std::vector<Buffer> &signals) {
 //     }
 // }
 
-void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w){
-
+void DeviceTable::plotTable(PowerUsage &powerUsage, int m_d_w) {
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    
-    ImGuiContext& g = *GImGui;
-    const ImGuiStyle& style = g.Style;
+    ImGuiWindow           *window     = ImGui::GetCurrentWindow();
 
-    //  off 
-    const ImVec4& disable_col = style.Colors[ImGuiCol_TextDisabled];
+    ImGuiContext          &g          = *GImGui;
+    const ImGuiStyle      &style      = g.Style;
+
+    //  off
+    const ImVec4 &disable_col = style.Colors[ImGuiCol_TextDisabled];
 
     //  on
-    const ImVec4& able_col = style.Colors[ImGuiCol_PlotHistogram];
+    const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    
-    size_t rows = (int)powerUsage.devices.size();
+    size_t        rows     = (int) powerUsage.devices.size();
 
-    int rest = rows % 2;
-    int len  = rows / 2;
+    int           rest     = rows % 2;
+    int           len      = rows / 2;
 
-    if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |ImGuiTableFlags_NoBordersInBody)){
-   
+    if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody)) {
         ImGui::TableNextColumn();
 
         plotNestTable(powerUsage, 0, len + rest, m_d_w);
 
         ImGui::TableNextColumn();
 
-        plotNestTable(powerUsage, len+rest, len, m_d_w);
+        plotNestTable(powerUsage, len + rest, len, m_d_w);
 
         ImGui::EndTable();
     }
 
-    if (powerUsage.success == false){
-        ImGui::TextColored(ImVec4(1,0.5,0,1),"%s","Connection failed\n");
-        if(powerUsage.init == true){
-            
+    if (powerUsage.success == false) {
+        ImGui::TextColored(ImVec4(1, 0.5, 0, 1), "%s", "Connection failed\n");
+        if (powerUsage.init == true) {
             char buff[32];
             char buff_time[32];
-            
-            ImPlot::FormatDate(ImPlotTime::FromDouble(powerUsage.deliveryTime),buff,32,ImPlotDateFmt_DayMoYr,ImPlot::GetStyle().UseISO8601);
-            ImPlot::FormatTime(ImPlotTime::FromDouble(powerUsage.deliveryTime),buff_time,32,ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
-            ImGui::TextColored(ImVec4(1,0.5,0,1),"Last delivery time %s %s" , buff, buff_time);
+
+            ImPlot::FormatDate(ImPlotTime::FromDouble(powerUsage.deliveryTime), buff, 32, ImPlotDateFmt_DayMoYr, ImPlot::GetStyle().UseISO8601);
+            ImPlot::FormatTime(ImPlotTime::FromDouble(powerUsage.deliveryTime), buff_time, 32, ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
+            ImGui::TextColored(ImVec4(1, 0.5, 0, 1), "Last delivery time %s %s", buff, buff_time);
         } else {
-            ImGui::TextColored(ImVec4(1,0,0,1),"%s","Server not available");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
-    }else{             
-        ImGui::TextColored(able_col,"%s","Connected\n");
+    } else {
+        ImGui::TextColored(able_col, "%s", "Connected\n");
         ImGui::Text(" ");
     }
-
-
 }
 
-
-void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w){
-
+void DeviceTable::plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    ImDrawList            *draw_list  = ImGui::GetWindowDrawList();
+    ImGuiWindow           *window     = ImGui::GetCurrentWindow();
 
-    ImGuiContext& g = *GImGui;
-    const ImGuiStyle& style = g.Style;
+    ImGuiContext          &g          = *GImGui;
+    const ImGuiStyle      &style      = g.Style;
 
-    //  off 
-    const ImVec4& disable_col = style.Colors[ImGuiCol_TextDisabled];
+    //  off
+    const ImVec4 &disable_col = style.Colors[ImGuiCol_TextDisabled];
 
     //  on
-    const ImVec4& able_col = style.Colors[ImGuiCol_PlotHistogram];
+    const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    //const ImVec4& able_col = ImVec4(0.9, 0.7, 0, 1);
+    // const ImVec4& able_col = ImVec4(0.9, 0.7, 0, 1);
 
-    double sum_of_usage;
+    double      sum_of_usage;
 
     std::string timePeriod;
 
-    switch (m_d_w)
-    {
+    switch (m_d_w) {
     case 0:
-        sum_of_usage   = powerUsage.kWhUsedMonth;
-        timePeriod = "Relative Usage current month";
+        sum_of_usage = powerUsage.kWhUsedMonth;
+        timePeriod   = "Relative Usage current month";
         break;
     case 1:
-        sum_of_usage   = powerUsage.kWhUsedWeek;
-        timePeriod = "Relative Usage current week";
+        sum_of_usage = powerUsage.kWhUsedWeek;
+        timePeriod   = "Relative Usage current week";
         break;
     case 2:
-        sum_of_usage   = powerUsage.kWhUsedDay;
-        timePeriod = "Relative Usage current day";
+        sum_of_usage = powerUsage.kWhUsedDay;
+        timePeriod   = "Relative Usage current day";
         break;
     default:
         break;
     }
 
-    if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1,0))){
-            ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 200.0f);
-            ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-            ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-            ImGui::TableSetupColumn(timePeriod.c_str());
-            ImGui::TableHeadersRow();
-    
-            std::string               output_simbol ;  
-            for (int row = offset; row < offset+len; row++){
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("%s", powerUsage.devices[row].c_str());
+    if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1, 0))) {
+        ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+        ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+        ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+        ImGui::TableSetupColumn(timePeriod.c_str());
+        ImGui::TableHeadersRow();
 
-                if (powerUsage.init && row <powerUsage.devices.size()){
+        std::string output_simbol;
+        for (int row = offset; row < offset + len; row++) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", powerUsage.devices[row].c_str());
+
+            if (powerUsage.init && row < powerUsage.devices.size()) {
                 ImGui::TableSetColumnIndex(1);
                 ImVec2 pos = window->DC.CursorPos;
-                
-                    // columns only for initialized values
-                    if (powerUsage.powerUsages[row] == 0){
-                            
-                            draw_list->AddCircleFilled(pos+ ImVec2(style.FramePadding.x + draw_list->_Data->FontSize * 1.0f, 
-                                        style.FramePadding.y + draw_list->_Data->FontSize * 0.25f), 
-                                draw_list->_Data->FontSize * 0.50f, ImGui::GetColorU32(disable_col), 8);
-                            
-                    }else{ 
 
-                            draw_list->AddCircleFilled(pos+ ImVec2(style.FramePadding.x + draw_list->_Data->FontSize * 1.0f, 
-                                        style.FramePadding.y + draw_list->_Data->FontSize * 0.25f), 
-                                draw_list->_Data->FontSize * 0.50f, ImGui::GetColorU32(able_col), 8);             
+                // columns only for initialized values
+                if (powerUsage.powerUsages[row] == 0) {
+                    draw_list->AddCircleFilled(pos + ImVec2(style.FramePadding.x + draw_list->_Data->FontSize * 1.0f, style.FramePadding.y + draw_list->_Data->FontSize * 0.25f),
+                            draw_list->_Data->FontSize * 0.50f, ImGui::GetColorU32(disable_col), 8);
+
+                } else {
+                    draw_list->AddCircleFilled(pos + ImVec2(style.FramePadding.x + draw_list->_Data->FontSize * 1.0f, style.FramePadding.y + draw_list->_Data->FontSize * 0.25f),
+                            draw_list->_Data->FontSize * 0.50f, ImGui::GetColorU32(able_col), 8);
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%.2f", powerUsage.powerUsages[row]);
+                ImGui::TableSetColumnIndex(3);
+                double relative = 0;
+                switch (m_d_w) {
+                case 0:
+                    if (row < powerUsage.powerUsagesMonth.size()) {
+                        relative = powerUsage.powerUsagesMonth[row] / sum_of_usage;
+                        ImGui::Text("%3.2f %%", relative * 100);
                     }
-
-                    ImGui::TableSetColumnIndex(2);
-                    ImGui::Text("%.2f", powerUsage.powerUsages[row] );
-                    ImGui::TableSetColumnIndex(3);
-                    double relative = 0;
-                    switch (m_d_w)
-                    {
-                    case 0:
-                        if(row < powerUsage.powerUsagesMonth.size()){
-                            relative = powerUsage.powerUsagesMonth[row]/sum_of_usage;
-                            ImGui::Text("%3.2f %%", relative * 100);
-                        }
-                        break;
-                    case 1:
-                        if(row < powerUsage.powerUsagesWeek.size()){
-                            relative = powerUsage.powerUsagesWeek[row]/sum_of_usage;
-                            ImGui::Text("%3.2f %%", relative * 100);
-                        }
-                        break;
-                    case 2:
-                        if(row < powerUsage.powerUsagesDay.size()){
-                            relative = powerUsage.powerUsagesDay[row]/sum_of_usage;
-                            ImGui::Text("%3.2f %%", relative * 100);
-                        }
-                        break;
-                    default:
-                        break;
+                    break;
+                case 1:
+                    if (row < powerUsage.powerUsagesWeek.size()) {
+                        relative = powerUsage.powerUsagesWeek[row] / sum_of_usage;
+                        ImGui::Text("%3.2f %%", relative * 100);
                     }
-
+                    break;
+                case 2:
+                    if (row < powerUsage.powerUsagesDay.size()) {
+                        relative = powerUsage.powerUsagesDay[row] / sum_of_usage;
+                        ImGui::Text("%3.2f %%", relative * 100);
+                    }
+                    break;
+                default:
+                    break;
                 }
             }
+        }
 
         ImGui::EndTable();
     }
-
 }

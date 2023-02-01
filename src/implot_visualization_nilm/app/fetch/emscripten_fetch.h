@@ -14,7 +14,6 @@ public:
     bool           fetchSuccessful = false;
     // double         lastFetchtime = 0;
 
-
     Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals);
 
     void fetch();
