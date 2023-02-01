@@ -58,6 +58,8 @@ public:
 static void main_loop(void *);
 
 int         main(int, char **) {
+    float updateFreq = 25.0f;
+
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
     Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
     // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });

@@ -52,6 +52,26 @@ struct StrideArray {
     std::vector<double> values;
 };
 
+template<typename T>
+class IAcquisition {
+public:
+    std::vector<std::string> signalNames;
+    std::string              jsonString    = "";
+    uint64_t                 lastTimeStamp = 0.0;
+    std::vector<T>           buffers;
+
+    IAcquisition();
+    IAcquisition(const std::vector<std::string> _signalNames);
+
+    virtual void deserialize() = 0;
+
+private:
+    virtual void addToBuffers() = 0;
+
+protected:
+    bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
+};
+
 class Acquisition {
 public:
     std::vector<std::string>     signalNames;
@@ -63,6 +83,7 @@ public:
 
     Acquisition();
     Acquisition(int numSignals);
+    Acquisition(const std::vector<std::string> &_signalNames);
 
     void                deserialize();
     void                fail() { this->success = false; };
@@ -75,6 +96,7 @@ private:
     double      refTrigger_s  = 0.0;
 
     StrideArray strideArray;
+    bool        receivedRequestedSignals(std::vector<std::string> receivedSignals);
 
     void        addToBuffers();
 };
@@ -143,11 +165,13 @@ public:
     double costPerWeek = 0.0; //     = 1238.98;
 
     PowerUsage();
+    PowerUsage(const std::vector<std::string> &_signalNames);
     PowerUsage(int numSignals);
 
-    void   deserialize();
-    void   fail();
-    double sumOfUsage();
+    void                     deserialize();
+    void                     fail();
+    double                   sumOfUsage();
+    std::vector<std::string> signalNames;
 
 private:
     void setSumOfUsageDay();

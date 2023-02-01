@@ -73,8 +73,7 @@ TEST_CASE("integrator-constructor-not-exists-1", "[constuctor][file does not exi
 }
 
 TEST_CASE("integrator-calculate-same-value-2", "[calculate][same values") {
-    size_t size = 7;
-    // PowerIntegrator powerIntegrator(size, "../../test/data/test_no_init_file/");
+    size_t      size     = 7;
     std::string datapath = "../../test/data/test_no_init_file/";
 
     if (!PowerIntegrator::create_directory(datapath)) REQUIRE(false);
@@ -175,7 +174,6 @@ TEST_CASE("integrator-save-data-6") {
     }
 
     // check files existence
-
     std::string month_file  = datapath + "month_usage.txt";
     std::string values_file = datapath + "time_values.txt";
     REQUIRE(std::filesystem::exists(month_file));
@@ -183,8 +181,6 @@ TEST_CASE("integrator-save-data-6") {
     REQUIRE(std::filesystem::exists(values_file));
     std::remove(values_file.c_str()); // clean for next test
 }
-
-//   std::this_thread::sleep_for(willSleepFor);
 
 TEST_CASE("integrator-save_read-data-7") {
     std::string datapath = "../../test/data/test_save_read_data/";
