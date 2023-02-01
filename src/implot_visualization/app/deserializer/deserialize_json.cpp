@@ -61,10 +61,12 @@ template<typename T>
 bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = this->signalNames;
     if (receivedSignals.size() != expectedSignals.size()) {
+        std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
         if (receivedSignals[i] != expectedSignals[i]) {
+            std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
             return false;
         }
     }
@@ -97,7 +99,7 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -107,10 +109,10 @@ void Acquisition::deserialize() {
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested. Expected: " << this->signalNames[0] << std::endl;
+                std::cout << "Received other signals than requested (Acquisition)" << std::endl;
                 return;
             }
-            std::cout << "Receive expected signals" << std::endl;
+            std::cout << "Received expected signal (Acquisition)" << std::endl;
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
@@ -127,8 +129,7 @@ void Acquisition::deserialize() {
 AcquisitionSpectra::AcquisitionSpectra() {}
 
 AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-}
+    : IAcquisition(_signalNames) {}
 
 void AcquisitionSpectra::addToBuffers() {
     for (int i = 0; i < signalNames.size(); i++) {
@@ -138,23 +139,27 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelName") {
-            if (!this->receivedRequestedSignals(element.value())) {
-                std::cout << "Received other signals than requested" << std::endl;
+            std::vector<std::string> channelNames = { element.value().get<std::string>() };
+            if (!this->receivedRequestedSignals(channelNames)) {
+                std::cout << "Received other signals than requested (AcquisitionSpectra)" << std::endl;
                 return;
             }
+            std::cout << "Received expected signal (AcquisitionSpectra)" << std::endl;
         } else if (element.key() == "channelMagnitudeValues") {
             this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
             this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
