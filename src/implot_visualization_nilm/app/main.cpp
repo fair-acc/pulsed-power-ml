@@ -61,6 +61,7 @@ int         main(int, char **) {
     float updateFreq = 25.0f;
 
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
+    //Subscription<Acquisition>  intergratedValuse("urlr-integrator");
     Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
     // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
@@ -196,6 +197,16 @@ static void main_loop(void *arg) {
             // subTime.acquisition.lastFetchtime = currentTime;
         }
 
+        // fetch intergrated values
+        // dummy value  - reals comes from sink
+        double integratedValue = 4444444.444; 
+        double integratedValueDay = integratedValue;
+        double integratedValueWeek = integratedValueDay;
+        double integratedValueMonth = integratedValueDay;
+
+        std::vector<double> day_values =  {0,0,0,0,0,0,integratedValueDay};
+
+
         PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
@@ -235,7 +246,8 @@ static void main_loop(void *arg) {
                 ImPlot::EndPlot();
             }
 
-            Plotter::plotBarchart(powerUsageValues);
+            // Plotter::plotBarchart(powerUsageValues);
+            Plotter::plotBarchart(day_values);
 
             ImPlot::EndSubplots();
         }
@@ -252,18 +264,19 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
+        // change - values from new sink
         if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
             if (item_current == 0) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedMonth, powerUsageValues.kWhUsedMonth);
+                        ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
             } else if (item_current == 1) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedWeek, powerUsageValues.kWhUsedWeek);
+                        ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
             } else {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedDay, powerUsageValues.kWhUsedDay);
+                        ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
             }
 
             ImGui::Text(" ");
@@ -273,7 +286,7 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
 
-        Plotter::plotTable(powerUsageValues, item_current);
+        Plotter::plotTable(powerUsageValues, item_current,integratedValueMonth, integratedValueWeek, integratedValueDay );
 
         ImGui::End();
     }

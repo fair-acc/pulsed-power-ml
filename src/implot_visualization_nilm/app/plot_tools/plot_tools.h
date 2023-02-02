@@ -94,26 +94,34 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
     }
 }
 
-void plotBarchart(PowerUsage &powerUsage) {
+//void plotBarchart(PowerUsage &powerUsage) {
+    void plotBarchart(std::vector<double> &day_values) {
     if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
         // Todo - dates
         // auto   clock       = std::chrono::system_clock::now();
         // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
 
-        static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
-        static double       kWh[7];
-        static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back() };
+     //   static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
+        static const char  *labels[] = { "", "", "", "", "", "", "Today" };
+        static double       kWh[7] ={ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+       // static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back() };
+        static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, day_values[6] };
         static const double positions[] = { 0, 1, 2, 3, 4, 5, 6 };
         bool                clamp       = false;
 
-        std::copy(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end() - 1, kWh);
+        std::copy(day_values.begin(), day_values.end() - 1, kWh);
         kWh[6]             = 0;
 
-        double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
+        // double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
+        double max_element = *std::max_element(day_values.begin(), day_values.end());
+
+        double plot_buffer = max_element * 0.1 + 20;
+
 
         // ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
 
-        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + 20, ImGuiCond_Always);
+        //ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + 20, ImGuiCond_Always);
+        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
         ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
@@ -131,7 +139,7 @@ void plotBarchart(PowerUsage &powerUsage) {
     }
 }
 
-void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
+void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w, double month_value = 0, double week_value = 0 , double day_value =0) {
     printf("plot nested table\n");
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
@@ -155,15 +163,15 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
 
     switch (m_d_w) {
     case 0:
-        sum_of_usage = powerUsage.kWhUsedMonth;
+        sum_of_usage = month_value;
         timePeriod   = "Relative Usage current month";
         break;
     case 1:
-        sum_of_usage = powerUsage.kWhUsedWeek;
+        sum_of_usage = week_value;
         timePeriod   = "Relative Usage current week";
         break;
     case 2:
-        sum_of_usage = powerUsage.kWhUsedDay;
+        sum_of_usage = day_value;
         timePeriod   = "Relative Usage current day";
         break;
     default:
@@ -236,7 +244,7 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
     }
 }
 
-void plotTable(PowerUsage &powerUsage, int m_d_w) {
+void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value=0, double week_value=0, double day_value=0) {
     printf("Ploting Table, init %d\n", powerUsage.init);
 
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
@@ -265,11 +273,11 @@ void plotTable(PowerUsage &powerUsage, int m_d_w) {
     if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody)) {
         ImGui::TableNextColumn();
 
-        plotNestTable(powerUsage, 0, len + rest, m_d_w);
+        plotNestTable(powerUsage, 0, len + rest, m_d_w, month_value, week_value, day_value);
 
         ImGui::TableNextColumn();
 
-        plotNestTable(powerUsage, len + rest, len, m_d_w);
+        plotNestTable(powerUsage, len + rest, len, m_d_w, month_value, week_value, day_value);
 
         ImGui::EndTable();
     }
