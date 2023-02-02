@@ -223,6 +223,7 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w, doubl
                         }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
+                    printf("usage from predictor %f, usage from integrator %f, relative %f\n", powerUsage.powerUsagesMonth[row], sum_of_usage, relative);
                     break;
                 case 1:
                     if (row < powerUsage.powerUsagesWeek.size()) {

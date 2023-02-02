@@ -229,7 +229,11 @@ static void main_loop(void *arg) {
         RealPowerUsage realPowerUsage = subscriptionsRealPowerUsages[0].acquisition;
         // fetch intergrated values
         // dummy value  - reals comes from sink
-        double              integratedValue      = realPowerUsage.realPowerUsage;
+
+        // factor
+        double              factor               = 0.01 / 36.0;
+
+        double              integratedValue      = realPowerUsage.realPowerUsage * factor;
         double              integratedValueDay   = integratedValue;
         double              integratedValueWeek  = integratedValueDay;
         double              integratedValueMonth = integratedValueDay;
@@ -237,6 +241,8 @@ static void main_loop(void *arg) {
         std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
 
         PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
+
+        printf("Inregrator real %f,integrator predicted %f\n", realPowerUsage.realPowerUsageOrig, powerUsageValues.powerUsagesDay[7]);
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -296,15 +302,26 @@ static void main_loop(void *arg) {
         if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
+            // if (item_current == 0) {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
+            //             ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
+            // } else if (item_current == 1) {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
+            //             ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
+            // } else {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used today\n",
+            //             ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
+            // }
+
             if (item_current == 0) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-                        ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
+                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
             } else if (item_current == 1) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-                        ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
+                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
             } else {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-                        ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
+                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
             }
 
             ImGui::Text(" ");
