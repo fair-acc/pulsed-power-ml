@@ -61,13 +61,14 @@ int         main(int, char **) {
     float updateFreq = 25.0f;
 
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
-    //Subscription<Acquisition>  intergratedValuse("urlr-integrator");
-    Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
+    Subscription<Acquisition> intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "S_Int@100Hz" });
+
+    Subscription<PowerUsage>  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
     // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
     Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
 
     std::vector<Subscription<PowerUsage>>  subscritpionsPowerUsage = { nilmSubscription };
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription };
+    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription, intergratedValues };
     AppState                               appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
 
     // Setup SDL
@@ -199,15 +200,14 @@ static void main_loop(void *arg) {
 
         // fetch intergrated values
         // dummy value  - reals comes from sink
-        double integratedValue = 4444444.444; 
-        double integratedValueDay = integratedValue;
-        double integratedValueWeek = integratedValueDay;
-        double integratedValueMonth = integratedValueDay;
+        double              integratedValue      = 4444444.444;
+        double              integratedValueDay   = integratedValue;
+        double              integratedValueWeek  = integratedValueDay;
+        double              integratedValueMonth = integratedValueDay;
 
-        std::vector<double> day_values =  {0,0,0,0,0,0,integratedValueDay};
+        std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
 
-
-        PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
+        PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -286,7 +286,7 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
 
-        Plotter::plotTable(powerUsageValues, item_current,integratedValueMonth, integratedValueWeek, integratedValueDay );
+        Plotter::plotTable(powerUsageValues, item_current, integratedValueMonth, integratedValueWeek, integratedValueDay);
 
         ImGui::End();
     }
