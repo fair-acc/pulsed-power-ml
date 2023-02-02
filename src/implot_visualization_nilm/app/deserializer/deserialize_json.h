@@ -182,3 +182,31 @@ private:
     // private:
     //     void                addToBuffers();
 };
+
+class RealPowerUsage {
+public:
+    std::vector<std::string> signalNames;
+
+    uint64_t                 lastRefTrigger     = 0;
+    std::string              jsonString         = "";
+    uint64_t                 lastTimeStamp      = 0.0;
+
+    double                   realPowerUsageOrig = 0.0;
+    double                   realPowerUsage     = 0.0;
+
+    std::vector<Buffer>      buffers;
+    bool                     success = false;
+    bool                     init    = false;
+    double                   deliveryTime;
+
+    RealPowerUsage();
+    RealPowerUsage(const std::vector<std::string> &_signalNames);
+    RealPowerUsage(int numSignals);
+
+    void deserialize();
+    void fail();
+
+private:
+    uint64_t refTrigger_ns = 0;
+    double   refTrigger_s  = 0.0;
+};

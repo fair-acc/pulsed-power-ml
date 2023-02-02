@@ -94,33 +94,33 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
     }
 }
 
-//void plotBarchart(PowerUsage &powerUsage) {
-    void plotBarchart(std::vector<double> &day_values) {
+// void plotBarchart(PowerUsage &powerUsage) {
+void plotBarchart(std::vector<double> &day_values) {
     if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
         // Todo - dates
         // auto   clock       = std::chrono::system_clock::now();
         // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
 
-     //   static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
-        static const char  *labels[] = { "", "", "", "", "", "", "Today" };
-        static double       kWh[7] ={ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-       // static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back() };
-        static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, day_values[6] };
+        //   static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
+        static const char *labels[]     = { "", "", "", "", "", "", "Today" };
+        static double      kWh[7]       = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        double             kWhToday[7]  = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        kWhToday[6]                     = day_values.back();
+
         static const double positions[] = { 0, 1, 2, 3, 4, 5, 6 };
         bool                clamp       = false;
 
         std::copy(day_values.begin(), day_values.end() - 1, kWh);
-        kWh[6]             = 0;
+        kWh[6] = 0;
 
         // double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
         double max_element = *std::max_element(day_values.begin(), day_values.end());
 
         double plot_buffer = max_element * 0.1 + 20;
 
-
         // ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
 
-        //ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + 20, ImGuiCond_Always);
+        // ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + 20, ImGuiCond_Always);
         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
@@ -139,8 +139,8 @@ void plotPower(std::vector<ScrollingBuffer> &signals) {
     }
 }
 
-void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w, double month_value = 0, double week_value = 0 , double day_value =0) {
-    printf("plot nested table\n");
+void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
+    // printf("plot nested table\n");
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
     ImDrawList            *draw_list  = ImGui::GetWindowDrawList();
@@ -244,8 +244,8 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w, doubl
     }
 }
 
-void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value=0, double week_value=0, double day_value=0) {
-    printf("Ploting Table, init %d\n", powerUsage.init);
+void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
+    //  printf("Ploting Table, init %d\n", powerUsage.init);
 
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 

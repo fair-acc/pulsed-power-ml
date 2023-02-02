@@ -276,8 +276,8 @@ void PowerUsage::deserialize() {
             printf("Number of Values is not equel to number of devices\n");
         }
 
-        printf("After deserialization %s\n", this->devices[0].c_str());
-        printf("usages %d\n, devices %d\n", this->powerUsages.size(), this->devices.size());
+        // printf("After deserialization %s\n", this->devices[0].c_str());
+        // printf("usages %d\n, devices %d\n", this->powerUsages.size(), this->devices.size());
         // TODO - Buffer if needed
         // addToBuffers();
     }
@@ -349,6 +349,52 @@ void PowerUsage::setSumOfUsageMonth() {
         }
         this->kWhUsedMonth = sum_of_usage;
     }
+}
+
+RealPowerUsage::RealPowerUsage(){};
+
+RealPowerUsage::RealPowerUsage(int _numSignals) {
+    // std::vector<Buffer> _buffers(_numSignals);
+    // this->buffers = _buffers;
+}
+
+RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    // int numSignals = _signalNames.size();
+    //     std::vector<B> _buffers(numSignals);
+    //     this->buffers = _buffers;
+    //
+}
+
+void RealPowerUsage::deserialize() {
+    std::string modifiedJsonString = this->jsonString;
+
+    auto        json_obj           = json::parse(modifiedJsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "channelValues") {
+            auto values = std::vector<double>(element.value()["values"]);
+            if (!values.empty()) {
+                this->realPowerUsageOrig = values.back();
+
+                this->realPowerUsage     = this->realPowerUsageOrig / 1000.0;
+            }
+        } else if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
+            this->refTrigger_ns = element.value();
+            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+        }
+    }
+
+    lastTimeStamp        = lastRefTrigger;
+    this->lastRefTrigger = this->refTrigger_ns;
+
+    this->init           = true;
+    this->success        = true;
+}
+
+void RealPowerUsage::fail() {
 }
 
 // template class IAcquisition<Buffer>;

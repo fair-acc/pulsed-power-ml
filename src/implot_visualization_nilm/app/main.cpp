@@ -30,8 +30,9 @@ public:
     std::vector<Subscription<PowerUsage>> subscritpionsPowerUsage;
     // Plotter                                       plotter;
     // DeviceTable                                   deviceTable;
-    double                                 lastFrequencyFetchTime = 0.0;
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain;
+    double                                    lastFrequencyFetchTime = 0.0;
+    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain;
+    std::vector<Subscription<RealPowerUsage>> subscriptionsRealPowerUsage;
 
     struct AppFonts {
         ImFont *title;
@@ -40,13 +41,15 @@ public:
     };
     AppState::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain) {
-        this->subscritpionsPowerUsage = _powerUsages;
-        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
+    AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain,
+            std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage) {
+        this->subscritpionsPowerUsage     = _powerUsages;
+        this->subscriptionsTimeDomain     = _subscriptionsTimeDomain;
+        this->subscriptionsRealPowerUsage = _subscriptionRealPowerUsage;
 
-        auto   clock                  = std::chrono::system_clock::now();
-        double currentTime            = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-        this->lastFrequencyFetchTime  = currentTime;
+        auto   clock                      = std::chrono::system_clock::now();
+        double currentTime                = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+        this->lastFrequencyFetchTime      = currentTime;
     }
 };
 
@@ -61,15 +64,16 @@ int         main(int, char **) {
     float updateFreq = 25.0f;
 
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
-    Subscription<Acquisition> intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "S_Int@100Hz" });
+    Subscription<RealPowerUsage> intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "S_Int@100Hz" });
 
-    Subscription<PowerUsage>  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
+    Subscription<PowerUsage>     nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
     // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
+    Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" });
 
-    std::vector<Subscription<PowerUsage>>  subscritpionsPowerUsage = { nilmSubscription };
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription, intergratedValues };
-    AppState                               appState(subscritpionsPowerUsage, subscriptionsTimeDomain);
+    std::vector<Subscription<PowerUsage>>     subscritpionsPowerUsage    = { nilmSubscription };
+    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
+    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { intergratedValues };
+    AppState                                  appState(subscritpionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -153,10 +157,11 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    AppState                               *args                     = static_cast<AppState *>(arg);
-    std::vector<Subscription<PowerUsage>>  &subscriptionsPowerUsages = args->subscritpionsPowerUsage;
-    std::vector<Subscription<Acquisition>> &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
-    double                                 &lastFrequencyFetchTime   = args->lastFrequencyFetchTime;
+    AppState                                  *args                         = static_cast<AppState *>(arg);
+    std::vector<Subscription<PowerUsage>>     &subscriptionsPowerUsages     = args->subscritpionsPowerUsage;
+    std::vector<Subscription<Acquisition>>    &subscriptionsTimeDomain      = args->subscriptionsTimeDomain;
+    std::vector<Subscription<RealPowerUsage>> &subscriptionsRealPowerUsages = args->subscriptionsRealPowerUsage;
+    double                                    &lastFrequencyFetchTime       = args->lastFrequencyFetchTime;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool show_demo_window = false;
@@ -198,9 +203,14 @@ static void main_loop(void *arg) {
             // subTime.acquisition.lastFetchtime = currentTime;
         }
 
+        for (Subscription<RealPowerUsage> &realPower : subscriptionsRealPowerUsages) {
+            realPower.fetch();
+        }
+
+        RealPowerUsage realPowerUsage = subscriptionsRealPowerUsages[0].acquisition;
         // fetch intergrated values
         // dummy value  - reals comes from sink
-        double              integratedValue      = 4444444.444;
+        double              integratedValue      = realPowerUsage.realPowerUsage;
         double              integratedValueDay   = integratedValue;
         double              integratedValueWeek  = integratedValueDay;
         double              integratedValueMonth = integratedValueDay;
