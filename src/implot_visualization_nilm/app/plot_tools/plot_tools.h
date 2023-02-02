@@ -62,23 +62,25 @@ static void plotSignals(std::vector<T> &signals) {
 }
 
 void plotPower(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 120.0, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(deg)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // plotSignals(signals);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
             if constexpr (requires { signal.offset; }) {
                 offset = signal.offset;
             }
-            if (signal.signalName.find("Phi") != std::string::npos) {
+            if (signal.signalName.find("phi") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
             ImPlot::PlotLine((signal.signalName).c_str(),
@@ -100,6 +102,10 @@ void plotBarchart(std::vector<double> &day_values) {
         // Todo - dates
         // auto   clock       = std::chrono::system_clock::now();
         // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+
+        static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+        static ImPlotLegendFlags legendFlags = 0;
+        ImPlot::SetupLegend(legendLoc, legendFlags);
 
         //   static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
         static const char *labels[]     = { "", "", "", "", "", "", "Today" };

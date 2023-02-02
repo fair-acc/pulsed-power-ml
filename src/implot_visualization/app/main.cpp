@@ -36,6 +36,9 @@ public:
     }
 };
 
+enum ColorTheme { Light,
+    Dark };
+
 static void main_loop(void *);
 
 int         main(int argc, char **argv) {
@@ -43,6 +46,7 @@ int         main(int argc, char **argv) {
     Plotter::DataInterval Interval   = Plotter::Short;
     std::string           sampRate   = "100Hz";
     float                 updateFreq = 25.0f;
+    ColorTheme            ColorTheme = Light;
     for (int i = 0; i < argc; i++) {
         std::string arg = argv[i];
         if (arg.find("interval") != std::string::npos) {
@@ -58,6 +62,13 @@ int         main(int argc, char **argv) {
                 Interval   = Plotter::Long;
                 sampRate   = "0.016666668Hz";
                 updateFreq = 0.1f;
+            }
+        }
+        if (arg.find("color") != std::string::npos) {
+            if (arg.find("light") != std::string::npos) {
+                ColorTheme = Light;
+            } else if (arg.find("dark") != std::string::npos) {
+                ColorTheme = Dark;
             }
         }
     }
@@ -111,6 +122,12 @@ int         main(int argc, char **argv) {
     ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
 
+    // Setup Colors
+    ImGui::StyleColorsLight();
+    if (ColorTheme == Dark) {
+        ImGui::StyleColorsDark();
+    }
+
     // For an Emscripten build we are disabling file-system access, so let's not
     // attempt to do a fopen() of the imgui.ini file. You may manually call
     // LoadIniSettingsFromMemory() to load settings from your own storage.
@@ -119,8 +136,6 @@ int         main(int argc, char **argv) {
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
-    ImGui::StyleColorsLight();
 
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
     // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
@@ -189,8 +204,6 @@ static void main_loop(void *arg) {
         ImGui::Begin("Pulsed Power Monitoring", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
-        ImGui::ShowStyleSelector("Colors##Selector");
-
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
         static int                rows      = 2;
         static int                cols      = 2;
@@ -199,13 +212,15 @@ static void main_loop(void *arg) {
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // Raw Signals Plot
             if (ImPlot::BeginPlot("")) {
-                Plotter::plotGrSignals(subscriptionsTimeDomain[0].acquisition.buffers);
+                if (subscriptionsTimeDomain.size() > 3) {
+                    Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
+                }
                 ImPlot::EndPlot();
             }
 
             // Mains Frequency Plot
-            if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() >= 3) {
+            if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
+                if (subscriptionsTimeDomain.size() > 3) {
                     Plotter::plotMainsFrequency(subscriptionsTimeDomain[3].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();
@@ -213,7 +228,7 @@ static void main_loop(void *arg) {
 
             // Power Plot
             if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() >= 2) {
+                if (subscriptionsTimeDomain.size() > 2) {
                     Plotter::plotPower(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();
@@ -221,7 +236,7 @@ static void main_loop(void *arg) {
 
             // Power Statistics
             if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() >= 1) {
+                if (subscriptionsTimeDomain.size() > 1) {
                     Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();

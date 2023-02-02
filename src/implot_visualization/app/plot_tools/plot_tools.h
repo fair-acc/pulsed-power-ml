@@ -82,16 +82,20 @@ static void plotSignals(std::vector<T> &signals) {
     }
 }
 
-void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "U(V)", xflags, yflags);
+void plotSignals(std::vector<ScrollingBuffer> &signals) {
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "U(V)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -101,11 +105,16 @@ void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
             if (signal.signalName.find("I") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
+            // if (signal.signalName.find("bpf") != std::string::npos) {
+            //     lineFlag = ImPlotLineFlags_Segments;
+            // } else {
+            //     lineFlag = ImPlotLineFlags_None;
+            // }
             ImPlot::PlotLine((signal.signalName).c_str(),
                     &signal.data[0].x,
                     &signal.data[0].y,
                     signal.data.size(),
-                    0,
+                    lineFlag,
                     offset,
                     2 * sizeof(double));
 
@@ -115,15 +124,19 @@ void plotGrSignals(std::vector<ScrollingBuffer> &signals) {
 }
 
 void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "U(V)", xflags, yflags);
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_Segments;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "U(V)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -137,7 +150,7 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
                     &signal.data[0].x,
                     &signal.data[0].y,
                     signal.data.size(),
-                    0,
+                    lineFlag,
                     offset,
                     2 * sizeof(double));
         }
@@ -145,9 +158,11 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
 }
 
 void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     double dt          = setTimeInterval(Interval);
@@ -155,6 +170,7 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -181,9 +197,11 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
 }
 
 void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "P(W), Q(Var), S(VA)", xflags, yflags);
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     double dt          = setTimeInterval(Interval);
@@ -191,6 +209,7 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
     ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
 
     for (auto signal : signals) {
         if (signal.data.empty()) {
@@ -248,15 +267,18 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
 }
 
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Interval) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    ImPlot::SetupAxes("UTC Time", "Frequency (Hz)", xflags, yflags);
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "mains frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     double dt          = setTimeInterval(Interval);
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -280,10 +302,13 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
 }
 
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {
-    static ImPlotAxisFlags xflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    static ImPlotAxisFlags yflags = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
     ImPlot::SetupAxes("Frequency (Hz)", "Power Density (W)", xflags, yflags);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
     plotSignals(signals);
     plotSignals(limitingCurve);
     if (violation) {
