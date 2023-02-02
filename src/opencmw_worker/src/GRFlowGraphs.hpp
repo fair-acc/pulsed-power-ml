@@ -22,6 +22,7 @@
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/top_block.h>
 
+#include <gnuradio/pulsed_power/integration.h>
 #include <gnuradio/pulsed_power/mains_frequency_calc.h>
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
@@ -29,7 +30,6 @@
 #include <gnuradio/pulsed_power/power_calc_ff.h>
 #include <gnuradio/pulsed_power/power_calc_mul_ph_ff.h>
 #include <gnuradio/pulsed_power/statistics.h>
-#include <gnuradio/pulsed_power/integration.h>
 
 const float PI = 3.141592653589793238463f;
 
@@ -254,7 +254,7 @@ public:
 
         auto calc_mains_frequency          = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
-        auto integrate = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate                     = gr::pulsed_power::integration::make(10, 1000);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
@@ -526,7 +526,7 @@ public:
         top->hier_block2::connect(out_decimation_q_longterm, 0, opencmw_time_sink_power_longterm, 1);   // Q long-term
         top->hier_block2::connect(out_decimation_s_longterm, 0, opencmw_time_sink_power_longterm, 2);   // S long-term
         top->hier_block2::connect(out_decimation_phi_longterm, 0, opencmw_time_sink_power_longterm, 3); // phi long-term
-         // integral S
+                                                                                                        // integral S
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate, 0);
         top->hier_block2::connect(integrate, 0, opencmw_time_sink_int_shortterm, 0); // int S short-term
         // Statistics
