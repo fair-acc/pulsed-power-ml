@@ -204,8 +204,6 @@ static void main_loop(void *arg) {
         ImGui::Begin("Pulsed Power Monitoring", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
-        ImGui::ShowStyleSelector("Colors##Selector");
-
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
         static int                rows      = 2;
         static int                cols      = 2;
