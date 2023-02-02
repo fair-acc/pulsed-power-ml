@@ -18,7 +18,7 @@ using namespace std::chrono;
 class integration_impl : public integration
 {
 private:
-    float d_step_size;
+    double d_step_size;
     int d_decimation;
     float last_value;
     time_point<system_clock> last_save;
