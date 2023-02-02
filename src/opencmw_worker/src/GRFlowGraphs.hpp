@@ -127,7 +127,7 @@ public:
         auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_current0 = gr::blocks::multiply_const_ff::make(1);
         if (use_picoscope) {
-            // source_samp_rate                                                  = 2'000'000.0f;
+            source_samp_rate                                                  = 2'000'000.0f;
             const float                           current_correction_factor   = 2.5f;
             const float                           voltage_correction_factor   = 100.0f;
             gr::pulsed_power::downsampling_mode_t picoscope_downsampling_mode = gr::pulsed_power::DOWNSAMPLING_MODE_NONE;
@@ -446,21 +446,21 @@ public:
                 source_samp_rate,
                 bandwidth,
                 vector_size);
-        opencmw_freq_sink_nilm_U->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_U->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_I = gr::pulsed_power::opencmw_freq_sink::make(
                 { "I" },
                 { "A" },
                 source_samp_rate,
                 bandwidth,
                 vector_size);
-        opencmw_freq_sink_nilm_I->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_I->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_S = gr::pulsed_power::opencmw_freq_sink::make(
-                { "S" },
+                { "ApparentPowerSpectrum" },
                 { "VA" },
                 source_samp_rate,
                 bandwidth,
                 vector_size);
-        opencmw_freq_sink_nilm_S->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_S->set_max_noutput_items(1);
 
         // Connections:
         // signal

@@ -10,7 +10,7 @@
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
 #include "LimitingCurveWorker.hpp"
-#include "NilmPredictWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -102,12 +102,14 @@ int main() {
     // OpenCMW workers
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
+    NilmDataWorker<"pulsed_power_nilm", description<"Nilm Data Worker">>                                  nilmDataWorker(broker);
 
     // run workers in separate threads
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
 
     brokerThread.join();
 
@@ -115,4 +117,5 @@ int main() {
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     limitingCurveWorkerThread.join();
+    nilmDataWorkerThread.join();
 }

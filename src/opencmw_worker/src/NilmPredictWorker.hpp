@@ -17,6 +17,7 @@
 #include <cppflow/tensor.h>
 
 #include "FrequencyDomainWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using opencmw::Annotated;
@@ -122,8 +123,7 @@ private:
 
     std::shared_ptr<PowerIntegrator> _powerIntegrator;
 
-    DataFetcher<Acquisition>         _dataFetcherAcq        = DataFetcher<Acquisition>("pulsed_power/Acquisition", "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz");
-    DataFetcher<AcquisitionSpectra>  _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
+    DataFetcher<AcquisitionNilm>     _dataFetcherNilmSpectra = DataFetcher<AcquisitionNilm>("pulsed_power_nilm", "S@200000Hz");
 
 public:
     std::atomic<bool>     _shutdownRequested;
@@ -198,15 +198,19 @@ public:
                     _nilmData.week_usage.clear();
                     _nilmData.month_usage.clear();
 
-                    {
-                        std::scoped_lock lock_time_nilm(_nilmTimeSinksRegistryMutex);
-                        std::scoped_lock lock_freq_nilm(_nilmFrequencySinksRegistryMutex);
+                    // fetch Apparent Power (S) from PulsedPowerService
+                    AcquisitionNilm acqNilm;
+                    auto            response = _dataFetcherNilmSpectra.fetch(acqNilm);
+                    if (response.error() == httplib::Error::Success && response->status == 200) {
+                        // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitudeValues.size(), acqSData.channelName);
+                        if (!acqNilm.apparentPowerSpectrumStridedValues.empty()) {
+                            fmt::print("acqNilm received, fftsize: {}, size of data: {}\n", acqNilm.apparentPowerSpectrumStridedValues.size(), response->body.size());
+                        }
+                        mergeValues(acqNilm, data_point);
 
-                        data_point                       = mergeValues();
+                        int64_t         timestampFromResponse = acqNilm.refTriggerStamp;
 
-                        int64_t         time_from_pqsphi = (*_pqsphiDataSink).timestamp;
-
-                        int64_t         size             = static_cast<int64_t>(data_point.size());
+                        int64_t         size                  = static_cast<int64_t>(data_point.size());
                         cppflow::tensor input(data_point, { size });
 
                         auto            output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
@@ -223,7 +227,7 @@ public:
                         for (auto v : values) {
                             _nilmData.values.push_back(static_cast<double>(v));
                         }
-                        _powerIntegrator->update(time_from_pqsphi, values);
+                        _powerIntegrator->update(timestampFromResponse, values);
                     }
 
                     fillDayUsage();
@@ -246,7 +250,7 @@ public:
                     fmt::print("Data prediction too slow\n");
                 }
             }
-          });
+        });
 
         super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &,
                                      const Empty &, NilmContext &,
@@ -264,106 +268,38 @@ public:
         _predictThread.join();
     }
 
-    // copy P Q S Phi data
-    void callbackCopySinkTimeData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) {
-        const float             *p   = static_cast<const float *>(input_items[0]);
-        const float             *q   = static_cast<const float *>(input_items[1]);
-        const float             *s   = static_cast<const float *>(input_items[2]);
-        const float             *phi = static_cast<const float *>(input_items[3]);
-
-        std::vector<std::string> pqsphi_str{ "P", "Q", "S", "Phi" };
-        if (signal_names == pqsphi_str) {
-            fmt::print("Sink {}\n", pqsphi_str);
-
-            _pqsphiDataSink->timestamp = timestamp_ns;
-            _pqsphiDataSink->p         = *(p + noutput_items - 1);
-            _pqsphiDataSink->q         = *(q + noutput_items - 1);
-            _pqsphiDataSink->s         = *(s + noutput_items - 1);
-            _pqsphiDataSink->phi       = *(phi + noutput_items - 1);
-
-            fmt::print("PQSPHI {} {} {} {}, timestamp {}\n", _pqsphiDataSink->p, _pqsphiDataSink->q, _pqsphiDataSink->s, _pqsphiDataSink->phi,
-                    _pqsphiDataSink->timestamp);
-        }
-    }
-
-    // copy S U I data
-    void callbackCopySinkFrequencyData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float /*sample_rate*/, int64_t timestamp) {
-        const float             *s = static_cast<const float *>(input_items[0]);
-        const float             *u = static_cast<const float *>(input_items[1]);
-        const float             *i = static_cast<const float *>(input_items[2]);
-
-        std::vector<std::string> sui_str{ "S", "U", "I" };
-        if (signal_name == sui_str) {
-            fmt::print("Sink {}\n", sui_str);
-
-            _suiDataSink->timestamp = timestamp;
-
-            for (int64_t k = 0; k < nitems; k++) {
-                auto offset = k * static_cast<int64_t>(vector_size);
-
-                _suiDataSink->s.assign(s + offset, s + offset + vector_size);
-                _suiDataSink->u.assign(u + offset, u + offset + vector_size);
-                _suiDataSink->i.assign(i + offset, i + offset + vector_size);
-            }
-        }
-    }
-
 private:
-    const size_t       fftSize = 65536;
+    const size_t fftSize = 65536;
 
-    std::vector<float> mergeValues() {
-        PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
-        SUIDataSink       &suiData    = *_suiDataSink;
-
-        std::vector<float> output;
-
-        if (suiData.u.size() == fftSize) {
-            output.insert(output.end(), suiData.u.begin(), suiData.u.end());
-        } else {
-            fmt::print("Warning: incorrect u size {}\n", suiData.u.size());
-            output.insert(output.end(), suiData.u.begin(), suiData.u.end());
-            if (suiData.u.size() < fftSize) {
-                auto               size = fftSize - suiData.u.size();
-                std::vector<float> suffix(size);
-                std::fill(suffix.begin(), suffix.end(), 0);
-                output.insert(output.end(), suffix.begin(), suffix.end());
+    void         mergeValues(const AcquisitionNilm &nilmData, std::vector<float> &output) {
+        if (nilmData.realPower.size() == 1) {
+            // voltage spectrum
+            if (nilmData.voltageSpectrumStridedValues.empty()) {
+                output.insert(output.end(), fftSize, 0.0f);
+            } else {
+                output.insert(output.end(), nilmData.voltageSpectrumStridedValues.begin(), nilmData.voltageSpectrumStridedValues.begin() + fftSize);
             }
-        }
 
-        if (suiData.i.size() == fftSize) {
-            output.insert(output.end(), suiData.i.begin(), suiData.i.end());
-        } else {
-            fmt::print("Warning: incorrect i size {}\n", suiData.i.size());
-
-            output.insert(output.end(), suiData.i.begin(), suiData.i.end());
-            if (suiData.i.size() < fftSize) {
-                auto               size = fftSize - suiData.i.size();
-                std::vector<float> suffix(size);
-                std::fill(suffix.begin(), suffix.end(), 0);
-                output.insert(output.end(), suffix.begin(), suffix.end());
+            // current spectrum
+            if (nilmData.currentSpectrumStridedValues.empty()) {
+                output.insert(output.end(), fftSize, 0.0f);
+            } else {
+                output.insert(output.end(), nilmData.currentSpectrumStridedValues.begin(), nilmData.currentSpectrumStridedValues.begin() + fftSize);
             }
-        }
-        if (suiData.s.size() == fftSize) {
-            output.insert(output.end(), suiData.s.begin(), suiData.s.end());
-        } else {
-            fmt::print("Warning: incorrect s size {}\n", suiData.s.size());
-            output.insert(output.end(), suiData.s.begin(), suiData.s.end());
 
-            // add 0 at the end
-            if (suiData.s.size() < fftSize) {
-                auto               size = fftSize - suiData.s.size();
-                std::vector<float> suffix(size);
-                std::fill(suffix.begin(), suffix.end(), 0);
-                output.insert(output.end(), suffix.begin(), suffix.end());
+            // apparent power spectrum
+            if (nilmData.apparentPowerSpectrumStridedValues.empty()) {
+                output.insert(output.end(), fftSize, 0.0f);
+            } else {
+                output.insert(output.end(), nilmData.apparentPowerSpectrumStridedValues.begin(), nilmData.apparentPowerSpectrumStridedValues.begin() + fftSize);
             }
+
+            // P Q S phi
+            output.push_back(nilmData.realPower[0]);
+            output.push_back(nilmData.reactivePower[0]);
+            output.push_back(nilmData.apparentPower[0]);
+            output.push_back(nilmData.phi[0]);
         }
-
-        output.push_back(pqsphiData.p);
-        output.push_back(pqsphiData.q);
-        output.push_back(pqsphiData.s);
-        output.push_back(pqsphiData.phi);
-
-        return output;
     }
 
     void fillDayUsage() {

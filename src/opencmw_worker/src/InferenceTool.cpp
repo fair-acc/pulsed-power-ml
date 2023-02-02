@@ -92,7 +92,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // OpenCMW workers
-    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(1000));
+    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(60));
 
     // run workers in separate threads
     std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });
