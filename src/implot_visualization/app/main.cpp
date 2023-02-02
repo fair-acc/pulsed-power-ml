@@ -74,16 +74,16 @@ int         main(int argc, char **argv) {
     }
 
     // Setup subscriptions
-    Subscription<Acquisition>              signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
-    Subscription<Acquisition>              powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
-    Subscription<Acquisition>              mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
-    Subscription<AcquisitionSpectra>       frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@32000Hz" }, 1.0f);
-    Subscription<AcquisitionSpectra>       limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
-    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
-    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency, Interval);
+    Subscription<Acquisition>                     signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
+    Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
+    Subscription<Acquisition>                     powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
+    Subscription<Acquisition>                     mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
+    Subscription<AcquisitionSpectra>              frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
+    Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
+    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
+    AppState appState(subscriptionsTimeDomain, subscriptionsFrequency, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -248,7 +248,9 @@ static void main_loop(void *arg) {
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
-            // Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers);
+            if (subscriptionsFrequency.size() >= 2) {
+                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, true, args->fonts.fontawesome);
+            }
             ImPlot::EndPlot();
         }
 

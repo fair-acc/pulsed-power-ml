@@ -181,7 +181,7 @@ def evaluate_knn_classifier(parameter_file: str,
 
 
 if __name__ == "__main__":
-    power_db_file = "src/pulsed_power_ml/models/gupta_model/apparent_power_data_base.yml"
+    power_db_file = "src/pulsed_power_ml/models/gupta_model/apparent_power_data_base_individual_appliances.yml"
     parameter_file = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
     training_data_folder = "../training_data/labels_20221202_9peaks/"
     validation_data_folder = '../training_data/labels_20221202_9peaks_validation/'

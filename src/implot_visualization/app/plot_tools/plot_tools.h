@@ -95,7 +95,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    // ImPlot::PushColormap(ImPlotColormap_Deep);
     ImPlot::SetupLegend(legendLoc, legendFlags);
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
@@ -105,14 +104,12 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             }
             if (signal.signalName.find("I") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
-                // ImPlot::NextColormapColor();
-                // ImPlot::NextColormapColor();
             }
-            if (signal.signalName.find("bpf") != std::string::npos) {
-                lineFlag = ImPlotLineFlags_Segments;
-            } else {
-                lineFlag = ImPlotLineFlags_None;
-            }
+            // if (signal.signalName.find("bpf") != std::string::npos) {
+            //     lineFlag = ImPlotLineFlags_Segments;
+            // } else {
+            //     lineFlag = ImPlotLineFlags_None;
+            // }
             ImPlot::PlotLine((signal.signalName).c_str(),
                     &signal.data[0].x,
                     &signal.data[0].y,
@@ -124,7 +121,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
-    // ImPlot::PopColormap();
 }
 
 void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
@@ -310,7 +306,7 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
-    ImPlot::SetupAxes("Frequency (Hz)", "Power Density (dB)", xflags, yflags);
+    ImPlot::SetupAxes("Frequency (Hz)", "Power Density (W)", xflags, yflags);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
     plotSignals(signals);

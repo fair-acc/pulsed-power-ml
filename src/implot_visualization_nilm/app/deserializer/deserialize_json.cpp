@@ -53,15 +53,60 @@ void ScrollingBuffer::erase() {
 //     void addValues(vector<double> values);
 // }
 
-
-void BufferPower::updateValues(const std::vector<double> &_values){
+void BufferPower::updateValues(const std::vector<double> &_values) {
     this->values = _values;
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-    this->timestamp = currentTime;
-    init = true;
+    auto clock   = std::chrono::system_clock::now();
+    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->timestamp    = currentTime;
+    init               = true;
 }
 
+template<typename T>
+IAcquisition<T>::IAcquisition() {}
+
+template<typename T>
+IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
+    : signalNames(_signalNames) {
+    int            numSignals = _signalNames.size();
+    std::vector<T> _buffers(numSignals);
+    this->buffers = _buffers;
+}
+
+template<typename T>
+bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = this->signalNames;
+    if (receivedSignals.size() != expectedSignals.size()) {
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    int                          numSignals = _signalNames.size();
+    std::vector<ScrollingBuffer> _buffers(numSignals);
+    this->buffers = _buffers;
+}
+
+bool Acquisition::receivedRequestedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = this->signalNames;
+    if (receivedSignals.size() != expectedSignals.size()) {
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 Acquisition::Acquisition() {}
 
@@ -89,9 +134,8 @@ void Acquisition::addToBuffers() {
 }
 
 void Acquisition::deserialize() {
-
     std::string modifiedJsonString = this->jsonString;
-    
+
     if (this->jsonString.substr(0, 14) == "\"Acquisition\":") {
         modifiedJsonString.erase(0, 14);
     }
@@ -99,12 +143,19 @@ void Acquisition::deserialize() {
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
             this->refTrigger_ns = element.value();
             this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             this->relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelNames") {
-            this->signalNames.assign(element.value().begin(), element.value().end());
+            if (!receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested. Expected: " << this->signalNames[0] << std::endl;
+                return;
+            }
+            // this->signalNames.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
             this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
             this->strideArray.values = std::vector<double>(element.value()["values"]);
@@ -112,10 +163,10 @@ void Acquisition::deserialize() {
     }
 
     this->lastRefTrigger = this->refTrigger_ns;
+    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
-    this->init = true;
+    this->init    = true;
     this->success = true;
-
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
@@ -131,12 +182,11 @@ void AcquisitionSpectra::addToBuffers() {
 }
 
 void AcquisitionSpectra::deserialize() {
-    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
-        return;
-    }
     std::string modifiedJsonString = this->jsonString;
 
-    modifiedJsonString.erase(0, 21);  
+    if (this->jsonString.substr(0, 21) != "\"AcquisitionSpectra\":") {
+        modifiedJsonString.erase(0, 21);
+    }
 
     auto json_obj = json::parse(modifiedJsonString);
     for (auto &element : json_obj.items()) {
@@ -152,65 +202,84 @@ void AcquisitionSpectra::deserialize() {
         }
     }
 
+    // this->lastRefTrigger = this->refTrigger_ns;
+    lastTimeStamp        = lastRefTrigger;
     this->lastRefTrigger = this->refTrigger_ns;
     addToBuffers();
 }
 
 // Power Usage class
-PowerUsage::PowerUsage(){}
-PowerUsage::PowerUsage(int _numSignals){
+PowerUsage::PowerUsage() {
+    printf("PowerUsage created\n");
+    printf("Devices: %s\n", devices[0].c_str());
+    // add values to controle:
+}
+PowerUsage::PowerUsage(int _numSignals) {
     std::vector<Buffer> _buffers(_numSignals);
     this->buffers = _buffers;
 }
 
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    int numSignals = _signalNames.size();
+    //     std::vector<B> _buffers(numSignals);
+    //     this->buffers = _buffers;
+    //
+}
 
-void PowerUsage::deserialize(){
+void PowerUsage::deserialize() {
+    /*  if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") {
+         // TODO thorw Exception
+         return;
+     } */
 
-   /*  if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") { 
-        // TODO thorw Exception
-        return;
-    } */
-
+    printf("Deserialize powerUsage\n");
     std::string modifiedJsonString = this->jsonString;
 
-    if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":" ){
-        modifiedJsonString.erase(0, 16); 
-    } else if (this->jsonString.substr(0,18) == "\"NilmPredictData\":"){
-        modifiedJsonString.erase(0, 18); 
+    if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":") {
+        modifiedJsonString.erase(0, 16);
+    } else if (this->jsonString.substr(0, 18) == "\"NilmPredictData\":") {
+        modifiedJsonString.erase(0, 18);
     }
 
     auto json_obj = json::parse(modifiedJsonString);
-    for( auto &element : json_obj.items()){
-        if (element.key() == "values"){        
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "values") {
+            this->powerUsages.clear();
             this->powerUsages.assign(element.value().begin(), element.value().end());
         }
-        if (element.key() == "names"){
+        if (element.key() == "names") {
             this->devices.clear();
             this->devices.assign(element.value().begin(), element.value().end());
         }
 
-        if (element.key() == "timestamp")
-        {
+        if (element.key() == "timestamp") {
             timestamp = element.value();
         }
 
-        if (element.key() == "day_usage"){
+        if (element.key() == "day_usage") {
             this->powerUsagesDay.clear();
             this->powerUsagesDay.assign(element.value().begin(), element.value().end());
         }
 
-        if (element.key() == "week_usage"){
+        if (element.key() == "week_usage") {
             this->powerUsagesWeek.clear();
             this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
         }
 
-        if (element.key() == "month_usage"){
+        if (element.key() == "month_usage") {
             this->powerUsagesMonth.clear();
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
 
-       // TODO - Buffer if needed
-       // addToBuffers();
+        if (this->powerUsages.size() != this->devices.size()) {
+            printf("Number of Values is not equel to number of devices\n");
+        }
+
+        printf("After deserialization %s\n", this->devices[0].c_str());
+        printf("usages %d\n, devices %d\n", this->powerUsages.size(), this->devices.size());
+        // TODO - Buffer if needed
+        // addToBuffers();
     }
 
     // check values
@@ -224,62 +293,63 @@ void PowerUsage::deserialize(){
     this->setSumOfUsageWeek();
     this->setSumOfUsageMonth();
 
-    this->success = true;
-    this->init    = true;
+    this->success      = true;
+    this->init         = true;
     auto   clock       = std::chrono::system_clock::now();
-    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
     this->deliveryTime = currentTime;
-
 }
 
-void PowerUsage::fail(){
+void PowerUsage::fail() {
     this->success = false;
 }
 
-double PowerUsage::sumOfUsage(){
-
-    if (this->init){
+double PowerUsage::sumOfUsage() {
+    if (this->init) {
         double sum_of_usage = 0.0;
-        for( std::vector<double>::iterator it =this->powerUsages.begin();it!=this->powerUsages.end();++it){
-                    sum_of_usage += *it;
+        for (std::vector<double>::iterator it = this->powerUsages.begin(); it != this->powerUsages.end(); ++it) {
+            sum_of_usage += *it;
         }
         return sum_of_usage;
 
-    }else{
+    } else {
         return 0.0;
     }
 }
 
-void PowerUsage::setSumOfUsageDay(){
-    if (this->init){
+void PowerUsage::setSumOfUsageDay() {
+    if (this->init) {
         double sum_of_usage = 0.0;
 
-        for( std::vector<double>::iterator it =this->powerUsagesDay.begin();it!=this->powerUsagesDay.end();++it){
+        for (std::vector<double>::iterator it = this->powerUsagesDay.begin(); it != this->powerUsagesDay.end(); ++it) {
             sum_of_usage += *it;
         }
-        this->kWhUsedDay =  sum_of_usage;
+        this->kWhUsedDay = sum_of_usage;
     }
 }
 
-void PowerUsage::setSumOfUsageWeek(){
+void PowerUsage::setSumOfUsageWeek() {
     double sum_of_usage = 0.0;
 
-    if (this->init){
-         for( std::vector<double>::iterator it =this->powerUsagesWeek.begin();it!=this->powerUsagesWeek.end();++it){
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesWeek.begin(); it != this->powerUsagesWeek.end(); ++it) {
             sum_of_usage += *it;
         }
-        this->kWhUsedWeek =  sum_of_usage;
+        this->kWhUsedWeek = sum_of_usage;
     }
 }
 
-void PowerUsage::setSumOfUsageMonth(){
+void PowerUsage::setSumOfUsageMonth() {
     double sum_of_usage = 0.0;
 
-    if (this->init){
-        for( std::vector<double>::iterator it =this->powerUsagesMonth.begin();it!=this->powerUsagesMonth.end();++it){
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesMonth.begin(); it != this->powerUsagesMonth.end(); ++it) {
             sum_of_usage += *it;
         }
-        this->kWhUsedMonth =  sum_of_usage;
+        this->kWhUsedMonth = sum_of_usage;
     }
 }
 
+// template class IAcquisition<Buffer>;
+// template class IAcquisition<ScrollingBuffer>;
