@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-    <title>Dear ImGui Emscripten example</title>
+    <title>Nilm Power Monitoring</title>
     <style>
         body { margin: 0; background-color: black }
         .emscripten {
@@ -58,6 +58,18 @@
       window.onerror = function() {
         console.log("onerror: " + event);
       };
+
+      // Pass query parameters to main
+      if (typeof window == 'object') {
+        Module['arguments'] = window.location.search.substr(1).trim().split('&');
+        for (let i = 0; i < Module['arguments'].length; ++i) {
+          Module['arguments'][i] = decodeURI(Module['arguments'][i]);
+        }
+        // If no args were passed arguments = [''], in which case kill the single empty string.
+        if (!Module['arguments'][0]) {
+          Module['arguments'] = [];
+        }
+      }
     </script>
     {{{ SCRIPT }}}
   </body>

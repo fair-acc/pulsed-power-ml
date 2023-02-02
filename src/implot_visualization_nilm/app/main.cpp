@@ -50,6 +50,9 @@ public:
     }
 };
 
+enum ColorTheme { Light,
+    Dark };
+
 // Emscripten requires to have full control over the main loop. We're going to
 // store our SDL book-keeping variables globally. Having a single function that
 // acts as a loop prevents us to store state in the stack of said function. So
@@ -57,8 +60,21 @@ public:
 
 static void main_loop(void *);
 
-int         main(int, char **) {
+int         main(int argc, char **argv) {
     float updateFreq = 25.0f;
+
+    // Set color theme via query parameters of url
+    ColorTheme ColorTheme = Light;
+    for (int i = 0; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg.find("color") != std::string::npos) {
+            if (arg.find("light") != std::string::npos) {
+                ColorTheme = Light;
+            } else if (arg.find("dark") != std::string::npos) {
+                ColorTheme = Dark;
+            }
+        }
+    }
 
     // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
     Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" });
@@ -116,8 +132,11 @@ int         main(int, char **) {
     ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Setup Dear ImGui style
+    // Setup Colors
     ImGui::StyleColorsLight();
+    if (ColorTheme == Dark) {
+        ImGui::StyleColorsDark();
+    }
 
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
     // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
@@ -221,7 +240,6 @@ static void main_loop(void *arg) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::AlignTextToFramePadding();
-            ImGui::ShowStyleSelector("Colors##Selector");
             ImGui::EndTable();
         }
 
