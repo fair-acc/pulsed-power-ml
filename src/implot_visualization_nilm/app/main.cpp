@@ -231,16 +231,22 @@ static void main_loop(void *arg) {
         // dummy value  - reals comes from sink
 
         // factor
-        double              factor               = 0.01 / 36.0;
+        double factor               = 0.01 / 36.0;
 
-        double              integratedValue      = realPowerUsage.realPowerUsage * factor;
-        double              integratedValueDay   = integratedValue;
-        double              integratedValueWeek  = integratedValueDay;
-        double              integratedValueMonth = integratedValueDay;
+        double integratedValue      = realPowerUsage.realPowerUsage * factor;
+        double integratedValueDay   = integratedValue;
+        double integratedValueWeek  = integratedValueDay;
+        double integratedValueMonth = integratedValueDay;
 
-        std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
+        // BEGIN - Integrated values without factor
+        std::vector<double> day_values = { 0, 0, 0, 0, 0, 0, integratedValueDay };
+        // END - Integrated values without factor
 
-        PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
+        // BEGIN - Integrated values without factor
+        // std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, realPowerUsage.realPowerUsage };
+        // END - Integrated values without factor
+
+        PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
         printf("Inregrator real %f,integrator predicted %f\n", realPowerUsage.realPowerUsageOrig, powerUsageValues.powerUsagesDay[7]);
 
@@ -302,27 +308,31 @@ static void main_loop(void *arg) {
         if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
-            // if (item_current == 0) {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-            //             ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
-            // } else if (item_current == 1) {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-            //             ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
-            // } else {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-            //             ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
-            // }
-
+            // Integrated values with factor
             if (item_current == 0) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+                        ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
             } else if (item_current == 1) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+                        ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
             } else {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-                        ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+                        ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
             }
+            //
+
+            // BEGIN - Integrated values without factor
+            // if (item_current == 0) {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
+            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+            // } else if (item_current == 1) {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
+            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+            // } else {
+            //     ImGui::Text("EURO %.2f / %.2f kWh used today\n",
+            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
+            // }
+            // END -  Integrated values without factor
 
             ImGui::Text(" ");
             ImGui::PopStyleColor();
