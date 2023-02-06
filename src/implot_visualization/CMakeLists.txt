@@ -49,10 +49,18 @@ add_executable(${outputFileName})
 # dependencies
 add_subdirectory(external)
 add_subdirectory(app)
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v2.13.9 # latest: v2.13.9 or v3.1.0 
+)
+FetchContent_MakeAvailable(catch2)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+include(CTest)
+add_subdirectory(test)
 
 add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
         COMMENT start a python server serving the webassembly app
         DEPENDS ${outputFileName}
 )
-

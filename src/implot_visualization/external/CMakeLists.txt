@@ -43,6 +43,7 @@ FetchContent_Declare( # needed to load images in ImGui
         GIT_TAG 685673dea6fb4012bd2104bf9b8d8da802eade50 # master from Sep 2022
 )
 
+
 FetchContent_MakeAvailable(fmt nlohmann_json imgui implot stb iconfont)
 
 # imgui and implot are not CMake Projects, so we have to define their targets manually here
