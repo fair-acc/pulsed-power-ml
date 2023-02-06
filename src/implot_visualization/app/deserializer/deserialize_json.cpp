@@ -52,9 +52,16 @@ IAcquisition<T>::IAcquisition() {}
 template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
-    int            numSignals = _signalNames.size();
-    std::vector<T> _buffers(numSignals);
-    this->buffers = _buffers;
+    int numSignals = _signalNames.size();
+    for (auto name : _signalNames) {
+        if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
+            this->buffers.emplace(this->buffers.end(), 60);
+        } else {
+            this->buffers.emplace(this->buffers.end());
+        }
+    }
+    // std::vector<T> _buffers(numSignals);
+    // this->buffers = _buffers;
 }
 
 template<typename T>

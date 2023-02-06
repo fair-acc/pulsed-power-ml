@@ -83,7 +83,8 @@ static void plotSignals(std::vector<T> &signals) {
 }
 
 void plotSignals(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    // static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
@@ -91,7 +92,7 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
+    // ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
