@@ -46,6 +46,15 @@ void ScrollingBuffer::erase() {
     }
 }
 
+void BufferPower::updateValues(const std::vector<double> &_values) {
+    this->values = _values;
+    auto clock   = std::chrono::system_clock::now();
+    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->timestamp    = currentTime;
+    init               = true;
+}
+
 template<typename T>
 IAcquisition<T>::IAcquisition() {}
 
@@ -170,6 +179,138 @@ void AcquisitionSpectra::deserialize() {
     this->lastRefTrigger = this->refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers();
+}
+
+PowerUsage::PowerUsage() {
+    printf("PowerUsage created\n");
+    printf("Devices: %s\n", devices[0].c_str());
+    // add values to controle:
+}
+PowerUsage::PowerUsage(int _numSignals) {
+    std::vector<Buffer> _buffers(_numSignals);
+    this->buffers = _buffers;
+}
+
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
+    : signalNames(_signalNames) {
+    int numSignals = _signalNames.size();
+    //     std::vector<B> _buffers(numSignals);
+    //     this->buffers = _buffers;
+    //
+}
+
+void PowerUsage::deserialize() {
+    /*  if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") {
+         // TODO throw Exception
+         return;
+     } */
+
+    printf("Deserialize powerUsage\n");
+    // std::string modifiedJsonString = this->jsonString;
+
+    // if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":") {
+    //     modifiedJsonString.erase(0, 16);
+    // } else if (this->jsonString.substr(0, 18) == "\"NilmPredictData\":") {
+    //     modifiedJsonString.erase(0, 18);
+    // }
+
+    auto json_obj = json::parse(this->jsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "values") {
+            this->powerUsages.clear();
+            this->powerUsages.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "names") {
+            this->devices.clear();
+            this->devices.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "timestamp") {
+            timestamp = element.value();
+        }
+        if (element.key() == "day_usage") {
+            this->powerUsagesDay.clear();
+            this->powerUsagesDay.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "week_usage") {
+            this->powerUsagesWeek.clear();
+            this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "month_usage") {
+            this->powerUsagesMonth.clear();
+            this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
+        }
+        if (this->powerUsages.size() != this->devices.size()) {
+            printf("Number of Values is not equal to number of devices\n");
+        }
+        printf("After deserialization %s\n", this->devices[0].c_str());
+        printf("usages %d\n, devices %d\n", this->powerUsages.size(), this->devices.size());
+        // TODO - Buffer if needed
+        // addToBuffers();
+    }
+
+    // check values
+
+    // dummy data TODO - deserialize in for , when structure is known
+    // this->powerUsagesDay = {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33 ,234};
+    // this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33,938};
+    // this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 ,1893};
+
+    this->setSumOfUsageDay();
+    this->setSumOfUsageWeek();
+    this->setSumOfUsageMonth();
+
+    this->success      = true;
+    this->init         = true;
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    this->deliveryTime = currentTime;
+}
+
+void PowerUsage::fail() {
+    this->success = false;
+}
+
+double PowerUsage::sumOfUsage() {
+    if (this->init) {
+        double sum_of_usage = 0.0;
+        for (std::vector<double>::iterator it = this->powerUsages.begin(); it != this->powerUsages.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        return sum_of_usage;
+    } else {
+        return 0.0;
+    }
+}
+
+void PowerUsage::setSumOfUsageDay() {
+    if (this->init) {
+        double sum_of_usage = 0.0;
+        for (std::vector<double>::iterator it = this->powerUsagesDay.begin(); it != this->powerUsagesDay.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedDay = sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageWeek() {
+    double sum_of_usage = 0.0;
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesWeek.begin(); it != this->powerUsagesWeek.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedWeek = sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageMonth() {
+    double sum_of_usage = 0.0;
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesMonth.begin(); it != this->powerUsagesMonth.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedMonth = sum_of_usage;
+    }
 }
 
 template class IAcquisition<Buffer>;
