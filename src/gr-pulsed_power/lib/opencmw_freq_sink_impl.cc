@@ -38,7 +38,8 @@ opencmw_freq_sink_impl::opencmw_freq_sink_impl(
       _signal_units(signal_units),
       _sample_rate(sample_rate),
       _bandwidth(bandwidth),
-      _vector_size(vector_size)
+      _vector_size(vector_size),
+      _timestamp(0)
 {
     std::scoped_lock lock(globalFrequencySinksRegistryMutex);
     register_sink();

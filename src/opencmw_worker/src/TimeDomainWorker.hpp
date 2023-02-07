@@ -197,7 +197,7 @@ public:
                 pollingDuration   = std::chrono::system_clock::now() - time_start;
 
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
-                if (willSleepFor > 0ms) {
+                if (willSleepFor > std::chrono::milliseconds(0)) {
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
