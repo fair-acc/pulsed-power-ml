@@ -1,8 +1,83 @@
-import numpy as np
+"""
+This module contains functions to produce training data.
+"""
+from collections import deque
 from glob import glob
-from src.pulsed_power_ml.model_framework.data_io import load_fft_file
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background, read_parameters, subtract_background, switch_detected, update_background_vector, calculate_feature_vector
 
+from tqdm import tqdm
+import numpy as np
+import tensorflow as tf
+
+from src.pulsed_power_ml.model_framework.data_io import load_fft_file
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import switch_detected
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import update_background_vector
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature_vector
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
+
+
+def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict) -> np.array:
+    """
+    This function applies the Gupta approach to the input data and returns a list of features for all detected
+    switching events.
+
+    Parameters
+    ----------
+    data_point_array
+        Array of data points (fft_u, fft_i, fft_s, p, q, s, phi)
+    parameters
+        Parameter dictionary
+
+    Returns
+    -------
+    feature_array
+    """
+    feature_list = list()
+    fft_size_real = int(parameter_dict['fft_size_real'])
+    sample_rate = int(parameter_dict['sample_rate'])
+    spectrum_type = int(parameter_dict['spectrum_type'])
+    window_size = int(parameter_dict['window_size'])
+    step_size = int(parameter_dict['step_size'])
+    window = deque(maxlen=window_size * 3)
+    switch_threshold = float(parameter_dict['switch_threshold'])
+    n_peaks = int(parameter_dict['n_peaks'])
+
+    for i, raw_spectrum in tqdm(
+            enumerate(data_point_array[:, spectrum_type * fft_size_real:(spectrum_type + 1) * fft_size_real])
+    ):
+        spectrum = 10 * np.log10(raw_spectrum) + 30
+        window.append(spectrum)
+
+        # window full?
+        if len(window) < 3 * window_size:
+            continue
+
+        window_array = np.array(window)
+
+        mean_background = np.mean(window_array[:window_size])
+        mean_signal = np.mean(window_array[window_size:2*window_size])
+        diff_spectrum = mean_signal - mean_background
+
+        # switch detected
+        print(f'max peak =  {np.max(np.abs(diff_spectrum))}')
+        if np.max(np.abs(diff_spectrum)) >= switch_threshold:
+            mean_clf = np.mean(window_array[2*window_size:])
+            feature_vector = tf_calculate_feature_vector(cleaned_spectrum=tf.constant(mean_clf, dtype=tf.float32),
+                                                         n_peaks_max=tf.constant(n_peaks, dtype=tf.int32),
+                                                         fft_size_real=tf.constant(fft_size_real, dtype=tf.int32),
+                                                         sample_rate=tf.constant(sample_rate, dtype=tf.int32)).to_numpy()
+            feature_list.append(feature_vector)
+            window.clear()
+            continue
+
+        else:
+            # No switch detected, remove <step_size> oldest frames and replace with new ones.
+            for j in range(step_size):
+                _ = window.popleft()
+
+    return np.array(feature_list)
 
 def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.ndarray:
     """

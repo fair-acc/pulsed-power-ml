@@ -255,7 +255,7 @@ class TFGuptaClassifier(keras.Model):
 
         # calculate mean "signal"
         current_signal = tf.math.reduce_mean(
-            input_tensor=self.window[self.window_size:],
+            input_tensor=self.window[self.window_size:2 * self.window_size],
             axis=0,
             name='calculate_mean_signal'
         )
@@ -287,9 +287,15 @@ class TFGuptaClassifier(keras.Model):
         # #++++++++++++++++++++++# #
         # #+++ Classification +++# #
         # #++++++++++++++++++++++# #
+        clf_spectrum = tf.math.reduce_mean(
+            input_tensor=self.window[2 * self.window_size:],
+            axis=0,
+            name='calculate_mean_clf_spectrum'
+        )
+
         self.current_state_vector.assign(
             self.classify_switching_event(
-                cleaned_spectrum=difference_spectrum,
+                cleaned_spectrum=clf_spectrum,
                 current_apparent_power=apparent_power
             )
         )
