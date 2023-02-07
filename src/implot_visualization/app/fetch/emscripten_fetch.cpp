@@ -94,3 +94,4 @@ void Subscription<T>::updateUrl() {
 
 template class Subscription<Acquisition>;
 template class Subscription<AcquisitionSpectra>;
+template class Subscription<PowerUsage>;

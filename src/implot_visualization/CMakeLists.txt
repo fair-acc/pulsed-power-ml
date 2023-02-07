@@ -49,7 +49,7 @@ add_executable(${ppmOutputFileName})
 set(nilmOutputFileName "dashboard_nilm")
 add_executable(${nilmOutputFileName})
 
-add_custom_target(
+add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
         COMMENT start a python server serving the PPM app
         DEPENDS ${ppmOutputFileName} ${nilmOutputFileName}

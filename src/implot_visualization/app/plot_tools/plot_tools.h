@@ -5,6 +5,8 @@
 #include <implot.h>
 #include <vector>
 
+#include "implot_internal.h"
+
 namespace Plotter {
 
 enum DataInterval { Short,
