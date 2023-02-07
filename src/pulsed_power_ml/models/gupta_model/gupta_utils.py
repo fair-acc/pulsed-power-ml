@@ -339,11 +339,9 @@ def gupta_offline_switch_detection(data_point_array: np.array,
 
     return switch_array
 
-def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> tf.Tensor:
     """
-    Scans background subtracted spectrum for switch event
-    (signal larger than input parameter threshold value)
-    to avoid dead time because of background re-calculation.
+    Determines if min / max peak in res_spectrum is below / above threshold.
 
     Parameters
     ----------
@@ -354,23 +352,15 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
 
     Returns
     -------
-    flag_tuple
-        Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
-        a "switch off" event ist detected.
+    switch_flag
+        True, if switch has been detected.
     """
+    if tf.greater_equal(tf.reduce_max(res_spectrum), threshold) or \
+        tf.less_equal(tf.reduce_min(res_spectrum), threshold):
+            return tf.constant(True, dtype=tf.bool)
+    else:
+        return tf.constant(False, dtype=tf.bool)
 
-    # sum above threshold?
-    spectrum_sum = tf.math.reduce_sum(res_spectrum)
-    sum_above_thr = tf.math.greater(spectrum_sum, threshold)
-    sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
-    # # ToDo: Remove print
-    # tf.print("\n\n ###########")
-    # tf.print("In tf_switch_detected")
-    # tf.print("spectrum_sum = ", spectrum_sum)
-    # tf.print(f"Result = {sum_above_thr, sum_below_minus_thr}")
-    # tf.print("############\n\n")
-    # #
-    return sum_below_minus_thr, sum_above_thr
 
 @tf.function
 def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:

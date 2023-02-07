@@ -7,10 +7,7 @@ from typing import Tuple
 import tensorflow as tf
 from tensorflow import keras
 
-from src.pulsed_power_ml.models.gupta_model.tf_knn import TFKNeighborsClassifier
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_switch_detected
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_background
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
 
 
@@ -21,12 +18,13 @@ DATA_POINT_SIZE = 3 * 2**16 + 4
 class TFGuptaClassifier(keras.Model):
 
     def __init__(self,
-                 background_n: tf.Tensor = tf.constant(2, dtype=tf.int32),
+                 window_size: tf.Tensor = tf.constant(10, dtype=tf.int32),
+                 step_size: tf.Tensor = tf.constant(1, dtype=tf.int32),
+                 switch_threshold: tf.Tensor = tf.constant(55, dtype=tf.float32),
                  fft_size_real: tf.Tensor = tf.constant(2**16, dtype=tf.int32),
                  sample_rate: tf.Tensor = tf.constant(2_000_000, dtype=tf.int32),
                  n_known_appliances: tf.Tensor = tf.constant(10, dtype=tf.int32),
                  spectrum_type: tf.Tensor = tf.constant(2, dtype=tf.int32),
-                 switching_offset: tf.Tensor = tf.constant(1, dtype=tf.int32),
                  # n_peaks_max: tf.Tensor = tf.constant(10, dtype=tf.int32),
                  apparent_power_list: tf.Tensor = tf.constant(value=tf.zeros([10]),
                                                               dtype=tf.float32),
@@ -42,8 +40,13 @@ class TFGuptaClassifier(keras.Model):
 
         Parameters
         ----------
-        background_n
-            Number of data points used for the background estimation.
+        window_size
+            Number of spectra for background_window, switching_window and classification_window.
+            Default = 10.
+        step_size
+            Step size for rolling window approach. Default = 1.
+        switch_threshold
+            Threshold for the switch detection algorithm (in dBm).
         fft_size_real
             Number of points in the spectrum (original FFT size / 2).
         sample_rate
@@ -79,46 +82,36 @@ class TFGuptaClassifier(keras.Model):
         self.spectrum_type = spectrum_type
         self.n_peaks_max = tf.constant(N_PEAKS_MAX,
                                        dtype=tf.int32)
+        self.switch_threshold = switch_threshold
 
         # kNN-Classifier
         self.n_neighbors = n_neighbors
         self.distance_threshold = distance_threshold
-        # self.clf = TFKNeighborsClassifier(n_neighbors=n_neighbors)
 
         # Containers
         self.current_state_vector = tf.Variable(tf.zeros(shape=(n_known_appliances + 1),
                                                          dtype=tf.float32),
                                                 dtype=tf.float32,
                                                 trainable=False,
-                                                name="current_state_vector")
+                                                name='current_state_vector')
 
-        # Background attributes
-        self.background_n = background_n
-        self.background_vector = tf.Variable(
-            initial_value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
+        # Container for rolling window
+        self.window_size = window_size
+        self.step_size = step_size
+        self.window = tf.Variable(
+            initial_value=tf.zeros(shape=(3 * self.window_size, self.fft_size_real),
+                                   dtype=tf.float32),
             dtype=tf.float32,
             trainable=False,
-            name="background_vector"
+            name='window'
         )
-        self.current_background_size = tf.Variable(initial_value=0,
-                                                   dtype=tf.int32,
-                                                   trainable=False,
-                                                   name="current_background_size")
+        self.n_frames_in_window = tf.Variable(initial_value=0,
+                                              dtype=tf.int32,
+                                              trainable=False,
+                                              name='n_frames_in_window')
 
         # Apparent Power data base
         self.apparent_power_list = apparent_power_list
-
-        # Class attributes to accommodate for disturbances due to mechanical switches
-        self.switching_offset = switching_offset
-        self.n_data_points_skipped = tf.Variable(initial_value=0,
-                                                 dtype=tf.int32,
-                                                 trainable=False)
-        # self.skip_data_point = tf.Variable(initial_value=False,
-        #                                    dtype=tf.bool)
-
-        self.skip_data_point = tf.Variable(initial_value=False,
-                                           dtype=tf.bool,
-                                           trainable=False)
 
         # Training data for KNN
         self.training_data_features_raw = training_data_features
@@ -211,23 +204,6 @@ class TFGuptaClassifier(keras.Model):
 
         return k_smallest_distances, result_tensor
 
-    # @tf.function
-    # def fit_knn(self, X: tf.Tensor, y: tf.Tensor) -> None:
-    #     """
-    #     Method to fit the internal kNN-Classifier to the provided data.
-    #
-    #     Parameters
-    #     ----------
-    #     X
-    #         Training data (feature arrays for switching events).
-    #     y
-    #         Labels of the switching events (one-hot-encoded).
-    #     """
-    #
-    #     self.training_data_features = X
-    #     self.training_data_labels = y
-    #     return
-
     @tf.function(
         input_signature=[tf.TensorSpec(shape=(DATA_POINT_SIZE), dtype=tf.float32)]
     )
@@ -250,132 +226,81 @@ class TFGuptaClassifier(keras.Model):
             self.reset_internal_states()
             return self.current_state_vector
 
-        # If a switching event has been detected and self.switching_offset is not 0, skip frames before attempting
-        # a classification
-        # ToDo: Rework if-block
-        if tf.math.equal(self.skip_data_point, tf.constant(True, dtype=tf.bool)):
-        # if tf.math.greater(self.skip_data_point, tf.constant(0, dtype=tf.int32)):
-            # Not enough data points have been skipped yet
-            if tf.math.less(self.n_data_points_skipped, self.switching_offset):
-                self.n_data_points_skipped.assign(tf.math.add(self.n_data_points_skipped, 1))
-                # return self.current_state_vector
-                return self.get_current_state_vector()
+        # #+++++++++++++++++++++++# #
+        # #+++ Crop data point +++# #
+        # #+++++++++++++++++++++++# #
+        raw_spectrum, apparent_power = self.crop_data_point(X)
+        spectrum = 10.0 * tf.math.log(raw_spectrum) / tf.math.log(10.0) + 30.0
 
-            # Enough data points have been skipped, do the classification now
-            else:
-                spectrum, apparent_power = self.crop_data_point(X)
-
-                # calculate mean background
-                current_background = tf_calculate_background(self.background_vector)
-
-                # Get cleaned spectrum
-                cleaned_spectrum = tf_subtract_background(raw_spectrum=spectrum,
-                                                          background=current_background)
-
-                # Classify
-                # self.current_state_vector = self.classify_switching_event(
-                #     cleaned_spectrum=cleaned_spectrum,
-                #     current_apparent_power=apparent_power
-                # )
-
-                # Classify
-                self.current_state_vector.assign(
-                    self.classify_switching_event(
-                        cleaned_spectrum=cleaned_spectrum,
-                        current_apparent_power=apparent_power
-                    )
-                )
-
-                # clear background vector
-                self.clear_background_vector()
-
-                # reset skip flag
-                self.skip_data_point.assign(False)
-                # self.skip_data_point.assign(0)
-
-                # return new state vector
-                return self.current_state_vector
-
-        # 0. Step: Remove unused information in data point
-        spectrum, apparent_power = self.crop_data_point(X)
-
-        # 1. Step: Check if background vector is full
-        # ToDo: Rework this if-block
-        if tf.math.greater(self.background_n, self.current_background_size):
-            # Add current data point to background vector and return last state vector
-            # self.background_vector.append(spectrum)
-            tf.cond(
-                pred=tf.math.less(self.current_background_size, self.background_n),
-                true_fn=lambda: self.add_input_to_bk(spectrum),
-                false_fn=lambda: self.replace_input_in_bk(spectrum),
-            )
-
-            # self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+        # #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++# #
+        # #+++ Check if there are enough frames in the current window +++# #
+        # #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++# #
+        self.update_window(spectrum)
+        if tf.math.less(self.n_frames_in_window, self.window_size * 3):
             self.current_state_vector.assign(
                 self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             )
             return self.current_state_vector
 
-        # 2. Calculate background
-        current_background = tf_calculate_background(self.background_vector)
+        # ++++++++++++++++++++++++++++++++++# #
+        # #+++ Switching Event Detection +++# #
+        # #+++++++++++++++++++++++++++++++++# #
 
-        # 3. Subtract current background from current spectrum
-        cleaned_spectrum = tf_subtract_background(raw_spectrum=spectrum,
-                                                  background=current_background)
-
-        # 4. Check if a switching event happened
-        current_background_normed = tf.math.divide_no_nan(current_background,
-                                                          tf.math.reduce_max(current_background))
-
-        spectrum_normed = tf.math.divide(spectrum,
-                                         tf.math.reduce_max(spectrum))
-
-        cleaned_spectrum_normed = tf_subtract_background(
-            raw_spectrum=spectrum_normed,
-            background=current_background_normed
+        # calculate mean background
+        current_background = tf.math.reduce_mean(
+            input_tensor=self.window[:self.window_size],
+            axis=0,
+            name='calculate_mean_background'
         )
 
-        event_detected_flag = tf_switch_detected(res_spectrum=cleaned_spectrum_normed,
-                                                 threshold=tf.constant(30, dtype=tf.float32))
+        # calculate mean "signal"
+        current_signal = tf.math.reduce_mean(
+            input_tensor=self.window[self.window_size:],
+            axis=0,
+            name='calculate_mean_signal'
+        )
 
-        # ToDo: Rework if-block
-        # No switch detected (True NOT in event_detected_flag):
-        if tf.math.logical_and(tf.math.equal(tf.constant(value=False, dtype=tf.bool), event_detected_flag[0]),
-                               tf.math.equal(tf.constant(value=False, dtype=tf.bool), event_detected_flag[1])):
-            # add spectrum to background vector and return last state vector
-            tf.cond(
-                pred=tf.math.less(self.current_background_size, self.background_n),
-                true_fn=lambda: self.add_input_to_bk(spectrum),
-                false_fn=lambda: self.replace_input_in_bk(spectrum),
+        # Calculate difference spectrum
+        difference_spectrum = tf.math.subtract(
+            x=current_signal,
+            y=current_background,
+            name='calculate_difference_spectrum'
+        )
+
+        # Switching Event Detected?
+        switch_flag = tf_switch_detected(difference_spectrum, self.switch_threshold)
+
+        if not switch_flag:
+            # include step size
+            self.n_frames_in_window.assign(
+                tf.math.subtract(
+                    x=self.n_frames_in_window,
+                    y=self.step_size
+                )
             )
-
-            # self.current_state_vector = self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             self.current_state_vector.assign(
                 self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             )
+
             return self.current_state_vector
 
-        # 5. If self.switching_offset is 0, then use the current data point to classify the event
-        if self.switching_offset == 0:
-            # self.current_state_vector = self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
-            #                                                           current_apparent_power=apparent_power)
-            self.current_state_vector.assign(
-                self.classify_switching_event(cleaned_spectrum=cleaned_spectrum,
-                                              current_apparent_power=apparent_power)
+        # #++++++++++++++++++++++# #
+        # #+++ Classification +++# #
+        # #++++++++++++++++++++++# #
+        self.current_state_vector.assign(
+            self.classify_switching_event(
+                cleaned_spectrum=difference_spectrum,
+                current_apparent_power=apparent_power
             )
-            # clear background vector
-            self.clear_background_vector()
+        )
 
-            # return new state vector
-            return self.current_state_vector
+        # Clear window to take account of the new baseline
+        self.clear_window()
 
-        # If self.switching_offset is not 0, a number of data points needs to be skipped before a classification
-        else:
-            self.skip_data_point.assign(True)
-            # self.skip_data_point.assign(0)
-            self.n_data_points_skipped.assign_add(tf.constant(value=1, dtype=tf.int32))
-            # return the current state vector until the classification is done
-            return self.current_state_vector
+        self.current_state_vector.assign(
+            self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
+        )
+        return self.current_state_vector
 
     def predict(self, X: tf.Tensor) -> tf.Tensor:
         """
@@ -411,27 +336,6 @@ class TFGuptaClassifier(keras.Model):
         spectrum = X[i:j]
         apparent_power = X[-2]
         return spectrum, apparent_power
-
-    def clear_background_vector(self) -> None:
-        """
-        Clear background vector and reset current background size
-        """
-        self.background_vector.assign(tf.zeros(shape=(self.background_n, self.fft_size_real)))
-
-        # self.background_vector.assign(
-        #     tf.constant(
-        #         value=tf.zeros(shape=(self.background_n, self.fft_size_real), dtype=tf.float32),
-        #         dtype=tf.float32,
-        #         name="background_vector"
-        #     )
-        # )
-
-        self.current_background_size.assign(
-            tf.constant(value=0,
-                        dtype=tf.int32,
-                        name="current_background_size")
-        )
-        return None
 
     def calculate_state_vector(self,
                                event_class: tf.Tensor) -> tf.Tensor:
@@ -514,11 +418,6 @@ class TFGuptaClassifier(keras.Model):
         -------
         updated_state_vector
         """
-        # 1. Calculate feature vector
-        # feature_vector = tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
-        #                                              n_peaks_max=self.n_peaks_max,
-        #                                              fft_size_real=self.fft_size_real,
-        #                                              sample_rate=self.sample_rate)
         self.feature_vector.assign(tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
                                                                n_peaks_max=self.n_peaks_max,
                                                                fft_size_real=self.fft_size_real,
@@ -552,144 +451,66 @@ class TFGuptaClassifier(keras.Model):
 
         return self.current_state_vector
 
-    def add_input_to_bk(self, input: tf.Tensor) -> None:
+    def update_window(self, input: tf.Tensor) -> None:
         """
-        Function to add spectrum to background collection if background collection is not complete, yet.
+        Function to add spectrum to window and, if necessary, increase frames counter.
 
         Parameters
         ----------
         input
             Spectrum
         """
-        self.replace_input_in_bk(input)
+        self.window_eviction(input)
 
-        self.current_background_size.assign(
-            tf.add(
-                self.current_background_size,
-                tf.constant(1, dtype=tf.int32)
+        if tf.math.less(self.n_frames_in_window, self.window_size * 3):
+
+            self.n_frames_in_window.assign(
+                tf.add(
+                    self.n_frames_in_window,
+                    tf.constant(1, dtype=tf.int32)
+                )
             )
-        )
 
         return None
 
-    def replace_input_in_bk(self, input: tf.Tensor) -> None:
+    def window_eviction(self, input: tf.Tensor) -> None:
         """
-        Function to replace oldest spectrum in background collection with **input**.
+        Function to replace the oldest spectrum in window with **input**.
 
         Parameters
         ----------
         input
-            Spectrum to be added to background collection.
+            Spectrum to be added to the current window.
         """
-        self.background_vector.assign(
+        self.window.assign(
             tf.tensor_scatter_nd_update(
-                tensor=tf.roll(input=self.background_vector, shift=1, axis=0),
+                tensor=tf.roll(input=self.window, shift=1, axis=0),
                 indices=tf.constant([[0]], dtype=tf.int32),
                 updates=tf.reshape(input, shape=(1, -1))
             )
         )
         return None
 
-    def get_current_state_vector(self) -> tf.Tensor:
-        return self.current_state_vector
+    def clear_window(self) -> None:
+        """
+        Clear window and reset current number of frames in window.
+        """
+        self.window.assign(
+            tf.zeros(shape=(self.window_size * 3, self.fft_size_real))
+        )
+
+        self.n_frames_in_window.assign(
+            tf.constant(value=0,
+                        dtype=tf.int32)
+        )
+        return None
 
     def reset_internal_states(self) -> None:
         """
-        Function to reset state vector, background and skipped frames variables.
+        Function to reset state vector, window and skipped frames variables.
         """
-        self.clear_background_vector()
+        self.clear_window()
         self.current_state_vector.assign(
             tf.zeros(shape=(self.n_known_appliances + 1), dtype=tf.float32)
         )
-        self.n_data_points_skipped.assign(0)
-        self.skip_data_point.assign(False)
         return
-
-
-if __name__ == "__main__":
-
-    # Model test
-    import sys
-    from typing import Tuple
-
-    sys.path.append("/home/thomas/projects/nilm_at_fair/repository")
-    import numpy as np
-    import tensorflow as tf
-    import matplotlib.pyplot as plt
-    from scipy.signal import find_peaks
-    import pandas as pd
-
-    # from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
-    from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
-    from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
-    from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_gaussian_params_for_peak, gaussian, \
-        tf_find_peaks
-
-    from src.pulsed_power_ml.model_framework.data_io import read_training_files
-
-    from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
-
-    # load training data
-    training_data_folder = ("/home/thomas/projects/nilm_at_fair/training_data/training_data_maria/fair/"
-                            "labels_20221202_9peaks")
-    features_file = f"{training_data_folder}/Features_ApparentPower_0.7_p.csv"
-    labels_file = f"{training_data_folder}/Labels_ApparentPower_0.7_p.csv"
-
-    features = tf.constant(value=pd.read_csv(features_file).values, dtype=tf.float32)
-    labels = tf.constant(value=pd.read_csv(labels_file).values, dtype=tf.float32)
-
-    # load apparent power list
-    apparent_power_list = tf.constant(
-        value=[4.8, 480, 490, 24, 42, 42, 27, 33, 50, 50, 50],
-        dtype=tf.float32
-    )
-
-    # Instantiate model
-    # model = TFGuptaClassifier(
-    #     background_n=tf.constant(10, dtype=tf.int32),
-    #     # n_peaks_max=tf.constant(10, dtype=tf.int32),  # Training data has 10 peaks...
-    #     apparent_power_list=apparent_power_list,
-    #     n_neighbors=tf.constant(3, dtype=tf.int32),
-    #     training_data_features=features,
-    #     training_data_labels=labels,
-    #     n_known_appliances=tf.constant(11, dtype=tf.int32),
-    # )
-
-    tf_model = TFGuptaClassifier(
-        background_n=tf.constant(10, dtype=tf.int32),
-        n_known_appliances=tf.constant(11, dtype=tf.int32),
-        apparent_power_list=apparent_power_list,
-        n_neighbors=tf.constant(3, dtype=tf.int32),
-        training_data_features=tf.constant(features, dtype=tf.float32),
-        training_data_labels=tf.constant(labels, dtype=tf.float32),
-        switching_offset=tf.constant(1, dtype=tf.int32),
-        distance_threshold=tf.constant(100, dtype=tf.float32)
-    )
-
-    # Load GR data
-    gr_data_folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-11-16_training_data/r1"
-    data_point_array = read_training_files(path_to_folder=gr_data_folder,
-                                           fft_size=2**17)
-
-    # Apply model to data
-    state_vector_list = list()
-    for data_point in data_point_array:
-        state_vector = tf_model(tf.constant(data_point, dtype=tf.float32))
-        state_vector_list.append(state_vector)
-        print(state_vector)
-
-    # print(state_vector_list)
-
-    # Save model
-    tf.saved_model.save(tf_model, "TFGuptaModel_v1-0")
-    # model.save("TFGuptaSaveTest")
-
-    loaded_model = tf.saved_model.load("TFGuptaModel_v1-0")
-
-    new_state_vector_list = list()
-
-    for data_point in data_point_array:
-        state_vector = loaded_model(tf.constant(data_point, dtype=tf.float32))
-        new_state_vector_list.append(state_vector)
-
-    print(loaded_model)
