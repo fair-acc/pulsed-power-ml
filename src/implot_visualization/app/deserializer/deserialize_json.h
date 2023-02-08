@@ -110,8 +110,7 @@ private:
 
 class PowerUsage {
 public:
-    // dummy devices
-    std::vector<std::string> devices; // = {"Device 1", "Device 2", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio",  "Others"};
+    std::vector<std::string> devices;
     std::vector<double>      powerUsages;
     std::vector<double>      powerUsagesDay;
     std::vector<double>      powerUsagesWeek;
@@ -126,25 +125,19 @@ public:
     uint64_t                 lastTimeStamp = 0.0;
 
     // dummy values
-    std::vector<double> lastWeekUsage = { 85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0 }; // other service
+    std::vector<double> lastWeekUsage   = { 85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0 }; // other service
 
-    // dummy value
-    double powerUsageToday = 0.0; //= 45.9;
+    double              powerUsageToday = 0.0;
 
-    // dummy value
-    double kWhUsedDay = 0.0; //   = 1098.99;
+    double              kWhUsedDay      = 0.0;
 
-    // dummy value
-    double kWhUsedMonth = 0.0; // = 1098.99;
+    double              kWhUsedMonth    = 0.0;
 
-    // dummy value
-    double costPerMonth = 0.0; //  = 3919.45;
+    double              costPerMonth    = 0.0;
 
-    // dummy value
-    double kWhUsedWeek = 0.0; //    = 398.99;
+    double              kWhUsedWeek     = 0.0;
 
-    // dummy value
-    double costPerWeek = 0.0; //     = 1238.98;
+    double              costPerWeek     = 0.0;
 
     PowerUsage();
     PowerUsage(const std::vector<std::string> &_signalNames);
@@ -159,8 +152,32 @@ private:
     void setSumOfUsageDay();
     void setSumOfUsageWeek();
     void setSumOfUsageMonth();
+};
 
-    // // TODO - define Buffer if needed
-    // private:
-    //     void                addToBuffers();
+class RealPowerUsage {
+public:
+    std::vector<std::string> signalNames;
+
+    uint64_t                 lastRefTrigger     = 0;
+    std::string              jsonString         = "";
+    uint64_t                 lastTimeStamp      = 0.0;
+
+    double                   realPowerUsageOrig = 0.0;
+    double                   realPowerUsage     = 0.0;
+
+    std::vector<Buffer>      buffers;
+    bool                     success = false;
+    bool                     init    = false;
+    double                   deliveryTime;
+
+    RealPowerUsage();
+    RealPowerUsage(const std::vector<std::string> &_signalNames);
+    RealPowerUsage(int numSignals);
+
+    void deserialize();
+    void fail();
+
+private:
+    uint64_t refTrigger_ns = 0;
+    double   refTrigger_s  = 0.0;
 };

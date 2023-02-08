@@ -25,10 +25,11 @@
 
 class AppState {
 public:
-    SDL_Window                            *window    = nullptr;
-    SDL_GLContext                          GLContext = nullptr;
-    std::vector<Subscription<PowerUsage>>  subscriptionsPowerUsage;
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain;
+    SDL_Window                               *window    = nullptr;
+    SDL_GLContext                             GLContext = nullptr;
+    std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage;
+    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain;
+    std::vector<Subscription<RealPowerUsage>> subscriptionsRealPowerUsage;
     // Plotter                                       plotter;
     // DeviceTable                                   deviceTable;
     // double                                 lastFrequencyFetchTime = 0.0;
@@ -40,9 +41,11 @@ public:
     };
     AppState::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain) {
-        this->subscriptionsPowerUsage = _powerUsages;
-        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
+    AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain,
+            std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage) {
+        this->subscriptionsPowerUsage     = _powerUsages;
+        this->subscriptionsTimeDomain     = _subscriptionsTimeDomain;
+        this->subscriptionsRealPowerUsage = _subscriptionRealPowerUsage;
     }
 };
 
@@ -70,15 +73,16 @@ int         main(int argc, char **argv) {
         }
     }
 
-    float updateFreq = 25.0f;
-    // Subscription<PowerUsage>                    nilmSubscription("http://localhost:8080/", {"nilm_values"});
-    Subscription<PowerUsage> nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
-    // Subscription<Acquisition>                     powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "saw@4000Hz" });
-    Subscription<Acquisition>              powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
+    float                                     updateFreq = 25.0f;
+    Subscription<PowerUsage>                  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
+    Subscription<RealPowerUsage>              intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "S_Int@100Hz" }, updateFreq);
+    Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=",
+                                    { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
 
-    std::vector<Subscription<PowerUsage>>  subscriptionsPowerUsage = { nilmSubscription };
-    std::vector<Subscription<Acquisition>> subscriptionsTimeDomain = { powerSubscription };
-    AppState                               appState(subscriptionsPowerUsage, subscriptionsTimeDomain);
+    std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
+    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
+    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { intergratedValues };
+    AppState                                  appState(subscriptionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -165,9 +169,10 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    AppState                               *args                     = static_cast<AppState *>(arg);
-    std::vector<Subscription<PowerUsage>>  &subscriptionsPowerUsages = args->subscriptionsPowerUsage;
-    std::vector<Subscription<Acquisition>> &subscriptionsTimeDomain  = args->subscriptionsTimeDomain;
+    AppState                                  *args                         = static_cast<AppState *>(arg);
+    std::vector<Subscription<PowerUsage>>     &subscriptionsPowerUsages     = args->subscriptionsPowerUsage;
+    std::vector<Subscription<Acquisition>>    &subscriptionsTimeDomain      = args->subscriptionsTimeDomain;
+    std::vector<Subscription<RealPowerUsage>> &subscriptionsRealPowerUsages = args->subscriptionsRealPowerUsage;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool show_demo_window = false;
@@ -201,7 +206,20 @@ static void main_loop(void *arg) {
             subTime.fetch();
         }
 
-        PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
+        for (Subscription<RealPowerUsage> &realPower : subscriptionsRealPowerUsages) {
+            realPower.fetch();
+        }
+
+        RealPowerUsage realPowerUsage     = subscriptionsRealPowerUsages[0].acquisition;
+
+        double         integratedValueDay = realPowerUsage.realPowerUsage;
+        // in Progress - Week and Month values
+        double              integratedValueWeek  = integratedValueDay;
+        double              integratedValueMonth = integratedValueDay;
+
+        std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
+
+        PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -256,6 +274,7 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
+        // TODO - realPowerUsage.init
         if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
