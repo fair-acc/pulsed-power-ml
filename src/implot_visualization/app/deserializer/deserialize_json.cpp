@@ -325,6 +325,7 @@ void RealPowerUsage::deserialize() {
 }
 
 void RealPowerUsage::fail() {
+    this->success = false;
 }
 
 template class IAcquisition<Buffer>;

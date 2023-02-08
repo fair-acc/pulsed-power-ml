@@ -199,7 +199,8 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
     }
 }
 
-void plotBarchart(PowerUsage &powerUsage) {
+// void plotBarchart(PowerUsage &powerUsage) {
+void plotBarchart(std::vector<double> &day_values) {
     if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
         // Todo - dates
         // auto   clock       = std::chrono::system_clock::now();
@@ -209,20 +210,24 @@ void plotBarchart(PowerUsage &powerUsage) {
         static ImPlotLegendFlags legendFlags = 0;
         ImPlot::SetupLegend(legendLoc, legendFlags);
 
-        static const char  *labels[] = { "1", "2", "3", "4", "5", "6", "Today" };
-        static double       kWh[7];
-        static double       kWhToday[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, powerUsage.lastWeekUsage.back() };
+        static const char *labels[]     = { "", "", "", "", "", "", "Today" };
+        static double      kWh[7]       = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        double             kWhToday[7]  = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        kWhToday[6]                     = day_values.back();
+
         static const double positions[] = { 0, 1, 2, 3, 4, 5, 6 };
         bool                clamp       = false;
 
-        std::copy(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end() - 1, kWh);
+        std::copy(day_values.begin(), day_values.end() - 1, kWh);
         kWh[6]             = 0;
 
-        double max_element = *std::max_element(powerUsage.lastWeekUsage.begin(), powerUsage.lastWeekUsage.end());
+        double max_element = *std::max_element(day_values.begin(), day_values.end());
+
+        double plot_buffer = max_element * 0.1 + 5;
 
         // ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
 
-        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + 20, ImGuiCond_Always);
+        ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
         ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);

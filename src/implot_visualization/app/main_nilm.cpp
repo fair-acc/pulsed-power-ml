@@ -257,7 +257,7 @@ static void main_loop(void *arg) {
                 ImPlot::EndPlot();
             }
 
-            Plotter::plotBarchart(powerUsageValues);
+            Plotter::plotBarchart(day_values);
 
             ImPlot::EndSubplots();
         }
@@ -275,18 +275,18 @@ static void main_loop(void *arg) {
         ImGui::Spacing();
 
         // TODO - realPowerUsage.init
-        if (powerUsageValues.init) {
+        if (realPowerUsage.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
             if (item_current == 0) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedMonth, powerUsageValues.kWhUsedMonth);
+                        ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
             } else if (item_current == 1) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedWeek, powerUsageValues.kWhUsedWeek);
+                        ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
             } else {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-                        ELECTRICY_PRICE * powerUsageValues.kWhUsedDay, powerUsageValues.kWhUsedDay);
+                        ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
             }
 
             ImGui::Text(" ");
