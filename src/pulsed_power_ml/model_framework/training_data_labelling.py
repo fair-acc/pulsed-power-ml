@@ -3,6 +3,7 @@ This module contains functions to produce training data.
 """
 from collections import deque
 from glob import glob
+from typing import Tuple
 
 from tqdm import tqdm
 import numpy as np
@@ -18,7 +19,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
 
 
-def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict) -> np.array:
+def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict) -> Tuple[np.array, np.array]:
     """
     This function applies the Gupta approach to the input data and returns a list of features for all detected
     switching events.
@@ -33,6 +34,9 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
     Returns
     -------
     feature_array
+        2D array containig the feature vector per detected switch
+    switch_position
+        1D array with the same length as data_point_array containing 1s at each switch position, otherwise 0s.
     """
     feature_list = list()
     fft_size_real = int(parameter_dict['fft_size_real'])
@@ -43,6 +47,7 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
     window = deque(maxlen=window_size * 3)
     switch_threshold = float(parameter_dict['switch_threshold'])
     n_peaks = int(parameter_dict['n_peaks'])
+    switch_positions = np.zeros(shape=(len(data_point_array)))
 
     for i, raw_spectrum in tqdm(
             enumerate(data_point_array[:, spectrum_type * fft_size_real:(spectrum_type + 1) * fft_size_real])
@@ -56,28 +61,67 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
 
         window_array = np.array(window)
 
-        mean_background = np.mean(window_array[:window_size])
-        mean_signal = np.mean(window_array[window_size:2*window_size])
+        mean_background = np.mean(window_array[:window_size], axis=0)
+        mean_signal = np.mean(window_array[window_size:2*window_size], axis=0)
         diff_spectrum = mean_signal - mean_background
 
         # switch detected
-        print(f'max peak =  {np.max(np.abs(diff_spectrum))}')
         if np.max(np.abs(diff_spectrum)) >= switch_threshold:
-            mean_clf = np.mean(window_array[2*window_size:])
+            switch_positions[i] = 1
+            mean_clf = np.mean(window_array[2*window_size:], axis=0)
             feature_vector = tf_calculate_feature_vector(cleaned_spectrum=tf.constant(mean_clf, dtype=tf.float32),
                                                          n_peaks_max=tf.constant(n_peaks, dtype=tf.int32),
                                                          fft_size_real=tf.constant(fft_size_real, dtype=tf.int32),
-                                                         sample_rate=tf.constant(sample_rate, dtype=tf.int32)).to_numpy()
+                                                         sample_rate=tf.constant(sample_rate, dtype=tf.int32))\
+                                                         .numpy()\
+                                                         .reshape((-1))
             feature_list.append(feature_vector)
             window.clear()
             continue
 
+        # No switch detected
         else:
             # No switch detected, remove <step_size> oldest frames and replace with new ones.
             for j in range(step_size):
                 _ = window.popleft()
 
-    return np.array(feature_list)
+    return np.array(feature_list), switch_positions
+
+def remove_false_positive_switching_events(feature_vector_array: np.array,
+                                           switch_positions: np.array,
+                                           switching_events_to_remove: np.array) -> Tuple[np.array, np.array]:
+    """
+    Remove false-positive switching events from a feature_vector_array and the corresponding switch_positions array.
+
+    Parameters
+    ----------
+    feature_vector_array
+        2D array containing one feature vector for each switching event.
+    switch_positions
+        Array with the same length as the original data point array containing 1s for each detected switch otherwise 0s.
+    switching_events_to_remove
+        Array of indices corresponding to the feature_vector_array of false-positive switching events. These switching
+        events will be removed.
+
+    Returns
+    -------
+    corrected_feature_vector_array
+        features_vector_array w/o the features of false-positive switching events.
+    corrected_switch_positions
+        Array w/ the same length as switch_positions, but w/o the false positive switching events (the respective 1s
+        will be 0s)
+    """
+    corrected_feature_vector_array = np.delete(feature_vector_array, switching_events_to_remove, axis=0)
+
+    original_switch_indices = np.nonzero(switch_positions)[0]
+
+    switch_flags_to_change = original_switch_indices[switching_events_to_remove]
+
+    corrected_switch_positions = np.copy(switch_positions)
+
+    corrected_switch_positions[switch_flags_to_change] = 0
+
+    return corrected_feature_vector_array, corrected_switch_positions
 
 def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.ndarray:
     """
