@@ -264,15 +264,9 @@ float PowerIntegrator::calculate_usage(int64_t t_0, float last_value, int64_t t_
     float   delta_time     = static_cast<float>(delta_time_int);
     float   delta_values   = current_value - last_value;
 
-    if (last_value == current_value) {
-        return current_value * delta_time * _unit_faktor;
-    } else if (last_value < current_value) {
-        float temp = last_value * delta_time * _unit_faktor;
-        return temp + 0.5f * delta_values * delta_time * _unit_faktor;
-    } else {
-        float temp = current_value * delta_time * _unit_faktor;
-        return temp - 0.5f * delta_values * delta_time * _unit_faktor;
-    }
+    float   value          = 0.0;
+    value                  = _unit_faktor * delta_time * (last_value + current_value) / 2;
+    return value;
 }
 
 bool PowerIntegrator::read_values_from_file() {
