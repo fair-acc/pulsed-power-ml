@@ -226,27 +226,16 @@ static void main_loop(void *arg) {
             realPower.fetch();
         }
 
-        RealPowerUsage realPowerUsage = subscriptionsRealPowerUsages[0].acquisition;
-        // fetch intergrated values
-        // dummy value  - reals comes from sink
+        RealPowerUsage      realPowerUsage       = subscriptionsRealPowerUsages[0].acquisition;
 
-        // factor
-        double factor               = 0.01 / 36.0;
+        double              integratedValue      = realPowerUsage.realPowerUsage;
+        double              integratedValueDay   = integratedValue;
+        double              integratedValueWeek  = integratedValueDay;
+        double              integratedValueMonth = integratedValueDay;
 
-        double integratedValue      = realPowerUsage.realPowerUsage * factor;
-        double integratedValueDay   = integratedValue;
-        double integratedValueWeek  = integratedValueDay;
-        double integratedValueMonth = integratedValueDay;
+        std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
 
-        // BEGIN - Integrated values without factor
-        std::vector<double> day_values = { 0, 0, 0, 0, 0, 0, integratedValueDay };
-        // END - Integrated values without factor
-
-        // BEGIN - Integrated values without factor
-        // std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, realPowerUsage.realPowerUsage };
-        // END - Integrated values without factor
-
-        PowerUsage powerUsageValues = subscriptionsPowerUsages[0].acquisition;
+        PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
 
         printf("Inregrator real %f,integrator predicted %f\n", realPowerUsage.realPowerUsageOrig, powerUsageValues.powerUsagesDay[7]);
 
@@ -268,7 +257,7 @@ static void main_loop(void *arg) {
         static ImGuiTableFlags    tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody;
 
         if (ImGui::BeginTable("ComboStyle", 2, tableFlags, ImVec2(-1, 0))) {
-            ImGui::TableSetupColumn("style", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
+            ImGui::TableSetupColumn("style", ImGuiTableColumnFlags_WidthFixed, 400.0f);
             ImGui::TableSetupColumn("empty");
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -282,7 +271,7 @@ static void main_loop(void *arg) {
         // subplots
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, 400), flags)) {
             if (ImPlot::BeginPlot("Power")) {
-                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers); // subscriptionsTimeDomain[0].acquisition.success);
+                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
@@ -293,7 +282,7 @@ static void main_loop(void *arg) {
         }
 
         if (ImGui::BeginTable("ComboTime", 2, tableFlags, ImVec2(-1, 0))) {
-            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
+            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f);
             ImGui::TableSetupColumn("empty");
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -304,11 +293,9 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
-        // change - values from new sink
         if (powerUsageValues.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
-            // Integrated values with factor
             if (item_current == 0) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
                         ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
@@ -319,20 +306,6 @@ static void main_loop(void *arg) {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
                         ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
             }
-            //
-
-            // BEGIN - Integrated values without factor
-            // if (item_current == 0) {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
-            // } else if (item_current == 1) {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
-            // } else {
-            //     ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-            //             ELECTRICY_PRICE * realPowerUsage.realPowerUsage, realPowerUsage.realPowerUsage);
-            // }
-            // END -  Integrated values without factor
 
             ImGui::Text(" ");
             ImGui::PopStyleColor();
