@@ -7,6 +7,7 @@ function(add_test_app name sources)
     set (test_SRCS ${sources})
     message("Test sources: ${test_SRCS}")
     add_executable(${name} ${test_SRCS})
+    add_test(NAME test COMMAND ${name})
 
     target_link_libraries(${name}
         PUBLIC
