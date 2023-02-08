@@ -23,27 +23,24 @@ using opencmw::Annotated;
 using opencmw::NoUnit;
 
 // context for InferenceTool
-struct NilmDataContext {
+struct NilmAcquisitionContext {
     int64_t                 lastRefTrigger = 0;
     opencmw::MIME::MimeType contentType    = opencmw::MIME::JSON;
 };
 
-ENABLE_REFLECTION_FOR(NilmDataContext, lastRefTrigger, contentType)
+ENABLE_REFLECTION_FOR(NilmAcquisitionContext, lastRefTrigger, contentType)
 
 // data for InferenceTool
 struct AcquisitionNilm {
-    int64_t            refTriggerStamp = 0;
-    size_t             fftSize         = 0;
-    std::vector<float> voltageSpectrumStridedValues;       // fft(U)
-    std::vector<float> currentSpectrumStridedValues;       // fft(I)
-    std::vector<float> apparentPowerSpectrumStridedValues; // fft(S)
-    std::vector<float> realPower;                          // P
-    std::vector<float> reactivePower;                      // Q
-    std::vector<float> apparentPower;                      // S
-    std::vector<float> phi;
+    std::vector<int64_t> refTriggerStamp;
+    std::vector<float>   apparentPowerSpectrumStridedValues; // fft(S)
+    std::vector<float>   realPower;                          // P
+    std::vector<float>   reactivePower;                      // Q
+    std::vector<float>   apparentPower;                      // S
+    std::vector<float>   phi;
 };
 
-ENABLE_REFLECTION_FOR(AcquisitionNilm, refTriggerStamp, voltageSpectrumStridedValues, currentSpectrumStridedValues, apparentPowerSpectrumStridedValues, realPower, reactivePower, apparentPower, phi)
+ENABLE_REFLECTION_FOR(AcquisitionNilm, refTriggerStamp, apparentPowerSpectrumStridedValues, realPower, reactivePower, apparentPower, phi)
 
 struct PQSPhiData {
     int64_t timestamp     = 0;
@@ -64,7 +61,7 @@ using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmDataWorker
-    : public Worker<serviceName, NilmDataContext, Empty, AcquisitionNilm, Meta...> {
+    : public Worker<serviceName, NilmAcquisitionContext, Empty, AcquisitionNilm, Meta...> {
 private:
     PQSPhiData          _timeData;
     std::mutex          _timeDataMutex;
@@ -75,15 +72,12 @@ private:
         PQSPhiData timeData;
     };
     using ringbuffer_t = std::shared_ptr<RingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
-    // using eventpoller_t = std::shared_ptr<EventPoller<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
-    using sequence_t = std::shared_ptr<Sequence>;
+    using sequence_t   = std::shared_ptr<Sequence>;
     ringbuffer_t _nilmDataBuffer;
     sequence_t   _nilmDataBufferTail;
-    // eventpoller_t _nilmDataPoller;
 
 public:
-    using super_t = Worker<serviceName, NilmDataContext, Empty, AcquisitionNilm, Meta...>;
-    std::atomic<bool> _shutdownRequested;
+    using super_t = Worker<serviceName, NilmAcquisitionContext, Empty, AcquisitionNilm, Meta...>;
 
     template<typename BrokerType>
     explicit NilmDataWorker(const BrokerType &broker)
@@ -118,8 +112,8 @@ public:
             }
         }
 
-        super_t::setCallback([this](RequestContext &rawCtx, const NilmDataContext &requestContext,
-                                     const Empty &, NilmDataContext &,
+        super_t::setCallback([this](RequestContext &rawCtx, const NilmAcquisitionContext &requestContext,
+                                     const Empty &, NilmAcquisitionContext &,
                                      AcquisitionNilm &out) {
             if (rawCtx.request.command() == Command::Get) {
                 handleGetRequest(requestContext, out);
@@ -128,7 +122,6 @@ public:
     }
 
     ~NilmDataWorker() {
-        _shutdownRequested = true;
     }
 
     // copy P Q S Phi data
@@ -168,7 +161,6 @@ public:
                 auto offset = k * static_cast<int64_t>(vector_size);
 
                 bool result = _nilmDataBuffer->tryPublishEvent([&s, vector_size, offset, nitems, timestamp, this](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
-                    bufferData.fftSize = vector_size;
                     // bufferData.freqData.realPowerMagnitudeValues.assign(p + offset, s + offset + vector_size);
                     // bufferData.freqData.reactivePowerMagnitudeValues.assign(q + offset, s + offset + vector_size);
                     bufferData.freqData.apparentPowerSpectrum.assign(s + offset, s + offset + vector_size);
@@ -196,34 +188,23 @@ public:
         }
     }
 
-    bool handleGetRequest(const NilmDataContext &requestContext, AcquisitionNilm &out) {
-        // if (_sinksMap.contains(requestContext.channelNameFilter)) {
-        //     auto &sink = _sinksMap.at(requestContext.channelNameFilter);
-        //     sink.fetchData(requestContext.lastRefTrigger, out);
-        // } else {
-        //     throw std::invalid_argument(fmt::format("Requested subscription for '{}' not found", requestContext.channelNameFilter));
-        // }
-        fetchNilmData(out);
-
-        return true;
+    void handleGetRequest(const NilmAcquisitionContext & /* requestContext */, AcquisitionNilm &out) {
+        getAcquisitionNilm(out);
     }
 
-    void fetchNilmData(AcquisitionNilm &out) {
-        int64_t tail       = _nilmDataBufferTail->value();
-        int64_t head       = _nilmDataBuffer->cursor();
+    void getAcquisitionNilm(AcquisitionNilm &out) {
+        int64_t tail     = _nilmDataBufferTail->value();
+        int64_t head     = _nilmDataBuffer->cursor();
 
-        bool    firstChunk = true;
-        int64_t sequence   = 0;
+        int64_t sequence = 0;
         for (sequence = tail; sequence <= head; sequence++) {
-            const RingBufferData &bufData = (*_nilmDataBuffer)[sequence];
-
-            if (firstChunk) {
-                out.fftSize = bufData.fftSize;
-                firstChunk  = false;
+            RingBufferData &bufData = (*_nilmDataBuffer)[sequence];
+            if (sequence == -1) {
+                // ignore first entry in RingBuffer, contains no data
+                continue;
             }
 
-            out.voltageSpectrumStridedValues.insert(out.voltageSpectrumStridedValues.end(), bufData.freqData.voltageSpectrum.begin(), bufData.freqData.voltageSpectrum.end());
-            out.currentSpectrumStridedValues.insert(out.currentSpectrumStridedValues.end(), bufData.freqData.currentSpectrum.begin(), bufData.freqData.currentSpectrum.end());
+            out.refTriggerStamp.push_back(bufData.freqData.timestamp);
             out.apparentPowerSpectrumStridedValues.insert(out.apparentPowerSpectrumStridedValues.end(), bufData.freqData.apparentPowerSpectrum.begin(), bufData.freqData.apparentPowerSpectrum.end());
             out.realPower.push_back(bufData.timeData.realPower);
             out.reactivePower.push_back(bufData.timeData.reactivePower);
@@ -231,82 +212,12 @@ public:
             out.phi.push_back(bufData.timeData.phi);
         }
 
-        if (!out.apparentPowerSpectrumStridedValues.empty()) {
+        if (out.apparentPowerSpectrumStridedValues.empty()) {
+            throw std::invalid_argument(fmt::format("No new data"));
+        } else {
             _nilmDataBufferTail->setValue(sequence);
         }
-
-        // if (!stridedValues.empty()) {
-        //     //  generate multiarray values from strided array
-        //     size_t channelValuesSize = stridedValues.size() / _channelNames.size();
-        //     out.channelValues        = opencmw::MultiArray<float, 2>(std::move(stridedValues), { static_cast<uint32_t>(_channelNames.size()), static_cast<uint32_t>(channelValuesSize) });
-        //     //  generate relative timestamps
-        //     out.channelTimeSinceRefTrigger.reserve(channelValuesSize);
-        //     for (size_t i = 0; i < channelValuesSize; ++i) {
-        //         float relativeTimestamp = static_cast<float>(i) / _sampleRate;
-        //         out.channelTimeSinceRefTrigger.push_back(relativeTimestamp);
-        //     }
-        // } else {
-        //     // throw std::invalid_argument(fmt::format("No new data available for signals: '{}'", _channelNames));
-        // }
     };
-
-private:
-    const size_t fftSize = 65536;
-
-    // std::vector<float> mergeValues() {
-    //     PQSPhiDataSink    &pqsphiData = *_pqsphiDataSink;
-    //     SUIDataSink       &suiData    = *_suiDataSink;
-
-    //     std::vector<float> output;
-
-    //     if (suiData.u.size() == fftSize) {
-    //         output.insert(output.end(), suiData.u.begin(), suiData.u.end());
-    //     } else {
-    //         fmt::print("Warning: incorrect u size {}\n", suiData.u.size());
-    //         output.insert(output.end(), suiData.u.begin(), suiData.u.end());
-    //         if (suiData.u.size() < fftSize) {
-    //             auto               size = fftSize - suiData.u.size();
-    //             std::vector<float> suffix(size);
-    //             std::fill(suffix.begin(), suffix.end(), 0);
-    //             output.insert(output.end(), suffix.begin(), suffix.end());
-    //         }
-    //     }
-
-    //     if (suiData.i.size() == fftSize) {
-    //         output.insert(output.end(), suiData.i.begin(), suiData.i.end());
-    //     } else {
-    //         fmt::print("Warning: incorrect i size {}\n", suiData.i.size());
-
-    //         output.insert(output.end(), suiData.i.begin(), suiData.i.end());
-    //         if (suiData.i.size() < fftSize) {
-    //             auto               size = fftSize - suiData.i.size();
-    //             std::vector<float> suffix(size);
-    //             std::fill(suffix.begin(), suffix.end(), 0);
-    //             output.insert(output.end(), suffix.begin(), suffix.end());
-    //         }
-    //     }
-    //     if (suiData.s.size() == fftSize) {
-    //         output.insert(output.end(), suiData.s.begin(), suiData.s.end());
-    //     } else {
-    //         fmt::print("Warning: incorrect s size {}\n", suiData.s.size());
-    //         output.insert(output.end(), suiData.s.begin(), suiData.s.end());
-
-    //         // add 0 at the end
-    //         if (suiData.s.size() < fftSize) {
-    //             auto               size = fftSize - suiData.s.size();
-    //             std::vector<float> suffix(size);
-    //             std::fill(suffix.begin(), suffix.end(), 0);
-    //             output.insert(output.end(), suffix.begin(), suffix.end());
-    //         }
-    //     }
-
-    //     output.push_back(pqsphiData.p);
-    //     output.push_back(pqsphiData.q);
-    //     output.push_back(pqsphiData.s);
-    //     output.push_back(pqsphiData.phi);
-
-    //     return output;
-    // }
 };
 
 #endif /* NILM_DATA_WORKER_H */
