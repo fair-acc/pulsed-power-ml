@@ -136,8 +136,10 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
 
-    // Check result
     BOOST_TEST(out[0] == (0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
+
+    // Alt + pfeiltaste zeile verschieben
+    // Check result
 }
 
 // BOOST_AUTO_TEST_SUITE_END();
