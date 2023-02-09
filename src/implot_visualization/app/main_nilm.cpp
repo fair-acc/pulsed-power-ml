@@ -296,7 +296,7 @@ static void main_loop(void *arg) {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
 
-        Plotter::plotTable(powerUsageValues, item_current);
+        Plotter::plotTable(powerUsageValues, item_current, integratedValueMonth, integratedValueWeek, integratedValueDay);
 
         ImGui::End();
     }

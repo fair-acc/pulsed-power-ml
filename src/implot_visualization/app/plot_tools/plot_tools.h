@@ -245,7 +245,8 @@ void plotBarchart(std::vector<double> &day_values) {
     }
 }
 
-void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
+void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w,
+        double month_value = 0, double week_value = 0, double day_value = 0) {
     printf("plot nested table\n");
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
@@ -269,15 +270,15 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
 
     switch (m_d_w) {
     case 0:
-        sum_of_usage = powerUsage.kWhUsedMonth;
+        sum_of_usage = month_value;
         timePeriod   = "Relative Usage current month";
         break;
     case 1:
-        sum_of_usage = powerUsage.kWhUsedWeek;
+        sum_of_usage = week_value;
         timePeriod   = "Relative Usage current week";
         break;
     case 2:
-        sum_of_usage = powerUsage.kWhUsedDay;
+        sum_of_usage = day_value;
         timePeriod   = "Relative Usage current day";
         break;
     default:
@@ -349,7 +350,7 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w) {
     }
 }
 
-void plotTable(PowerUsage &powerUsage, int m_d_w) {
+void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
     printf("Ploting Table, init %d\n", powerUsage.init);
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
     ImGuiWindow           *window     = ImGui::GetCurrentWindow();
@@ -372,9 +373,9 @@ void plotTable(PowerUsage &powerUsage, int m_d_w) {
 
     if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody)) {
         ImGui::TableNextColumn();
-        plotNestTable(powerUsage, 0, len + rest, m_d_w);
+        plotNestTable(powerUsage, 0, len + rest, m_d_w, month_value, week_value, day_value);
         ImGui::TableNextColumn();
-        plotNestTable(powerUsage, len + rest, len, m_d_w);
+        plotNestTable(powerUsage, len + rest, len, m_d_w, month_value, week_value, day_value);
         ImGui::EndTable();
     }
 
