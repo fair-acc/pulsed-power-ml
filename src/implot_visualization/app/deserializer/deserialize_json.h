@@ -64,6 +64,8 @@ public:
 
     virtual void deserialize() = 0;
 
+    void         fail();
+
 private:
     virtual void addToBuffers() = 0;
 
@@ -122,22 +124,19 @@ public:
     bool                     init    = false;
     double                   deliveryTime;
     int64_t                  timestamp;
-    uint64_t                 lastTimeStamp = 0.0;
+    uint64_t                 lastTimeStamp   = 0.0;
 
-    // dummy values
-    std::vector<double> lastWeekUsage   = { 85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0 }; // other service
+    double                   powerUsageToday = 0.0;
 
-    double              powerUsageToday = 0.0;
+    double                   kWhUsedDay      = 0.0;
 
-    double              kWhUsedDay      = 0.0;
+    double                   kWhUsedMonth    = 0.0;
 
-    double              kWhUsedMonth    = 0.0;
+    double                   costPerMonth    = 0.0;
 
-    double              costPerMonth    = 0.0;
+    double                   kWhUsedWeek     = 0.0;
 
-    double              kWhUsedWeek     = 0.0;
-
-    double              costPerWeek     = 0.0;
+    double                   costPerWeek     = 0.0;
 
     PowerUsage();
     PowerUsage(const std::vector<std::string> &_signalNames);
@@ -158,17 +157,19 @@ class RealPowerUsage {
 public:
     std::vector<std::string> signalNames;
 
-    uint64_t                 lastRefTrigger     = 0;
-    std::string              jsonString         = "";
-    uint64_t                 lastTimeStamp      = 0.0;
+    uint64_t                 lastRefTrigger = 0;
+    std::string              jsonString     = "";
+    uint64_t                 lastTimeStamp  = 0.0;
+
+    double                   deliveryTime;
+
+    bool                     success            = false;
+    bool                     init               = false;
 
     double                   realPowerUsageOrig = 0.0;
     double                   realPowerUsage     = 0.0;
 
     std::vector<Buffer>      buffers;
-    bool                     success = false;
-    bool                     init    = false;
-    double                   deliveryTime;
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);

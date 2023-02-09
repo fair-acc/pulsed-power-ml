@@ -89,6 +89,9 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
     return true;
 }
 
+template<typename T>
+void IAcquisition<T>::fail() {}
+
 Acquisition::Acquisition() {}
 
 Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
@@ -322,6 +325,10 @@ void RealPowerUsage::deserialize() {
 
     this->init           = true;
     this->success        = true;
+
+    auto   clock         = std::chrono::system_clock::now();
+    double currentTime   = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->deliveryTime   = currentTime;
 }
 
 void RealPowerUsage::fail() {

@@ -289,8 +289,19 @@ static void main_loop(void *arg) {
                         ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
             }
 
-            ImGui::Text(" ");
             ImGui::PopStyleColor();
+
+            if (realPowerUsage.success) {
+                ImGui::Text(" ");
+            } else {
+                char buff[32];
+                char buff_time[32];
+
+                ImPlot::FormatDate(ImPlotTime::FromDouble(realPowerUsage.deliveryTime), buff, 32, ImPlotDateFmt_DayMoYr, ImPlot::GetStyle().UseISO8601);
+                ImPlot::FormatTime(ImPlotTime::FromDouble(realPowerUsage.deliveryTime), buff_time, 32, ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
+                ImGui::TextColored(ImVec4(1, 0.5, 0, 1), "Server not available - Last delivery time %s %s", buff, buff_time);
+                // ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available"); // delivry time?
+            }
         } else {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Connection Error\n");
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
