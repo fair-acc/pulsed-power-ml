@@ -153,7 +153,7 @@ private:
 
                 } else {
                     // error writing into RingBuffer
-                    noutput_items = 0;
+                    fmt::print("timeDomainWorker: writing into RingBuffer failed, signal_name: {}\n", signal_names[0]);
                 }
             }
         }

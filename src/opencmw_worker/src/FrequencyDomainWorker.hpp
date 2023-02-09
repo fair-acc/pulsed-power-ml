@@ -39,7 +39,7 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class FrequencyDomainWorker
     : public Worker<serviceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    static const size_t RING_BUFFER_SIZE = 4096;
+    static const size_t RING_BUFFER_SIZE = 128;
     const std::string   _deviceName;
     std::atomic<bool>   _shutdownRequested;
     std::jthread        _pollingThread;
@@ -147,12 +147,12 @@ public:
                 bool result = signalData.ringBuffer->tryPublishEvent([i, in, vector_size, timestamp](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                     bufferData.timestamp = timestamp;
                     size_t offset        = static_cast<size_t>(i) * vector_size;
-                    bufferData.chunk.assign(in + offset + vector_size / 2, in + offset + vector_size);
+                    bufferData.chunk.assign(in + offset + (vector_size / 2), in + offset + vector_size);
                 });
 
                 if (!result) {
-                    // fmt::print("freqDomainWorker: error writing into RingBuffer, signal_name: {}\n", signal_name[0]);
-                    nitems = 0;
+                    fmt::print("freqDomainWorker: writing into RingBuffer failed, signal_name: {}\n", signal_name[0]);
+                    break;
                 }
             }
         }
