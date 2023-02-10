@@ -7,18 +7,6 @@
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
-#include <chrono>
-#include <unordered_map>
-
-#include "integrator/PowerIntegrator.hpp"
-#include <cppflow/cppflow.h>
-#include <cppflow/model.h>
-#include <cppflow/ops.h>
-#include <cppflow/tensor.h>
-
-#include "FrequencyDomainWorker.hpp"
-#include "TimeDomainWorker.hpp"
-
 using opencmw::Annotated;
 using opencmw::NoUnit;
 
@@ -60,14 +48,11 @@ struct UISData {
 using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
-class NilmDataWorker
-    : public Worker<serviceName, NilmAcquisitionContext, Empty, AcquisitionNilm, Meta...> {
-private:
+class NilmDataWorker : public Worker<serviceName, NilmAcquisitionContext, Empty, AcquisitionNilm, Meta...> {
     PQSPhiData          _timeData;
     std::mutex          _timeDataMutex;
     static const size_t RING_BUFFER_SIZE = 256;
     struct RingBufferData {
-        size_t     fftSize = 0;
         UISData    freqData;
         PQSPhiData timeData;
     };
@@ -84,7 +69,7 @@ public:
         : super_t(broker, {}), _nilmDataBuffer(newRingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, ProducerType::Single>()), _nilmDataBufferTail(std::make_shared<Sequence>()) {
         _nilmDataBuffer->addGatingSequences({ _nilmDataBufferTail });
 
-        // register callback only for "P Q S phi"
+        // register callback only for "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz"
         std::scoped_lock lock_time(gr::pulsed_power::globalTimeSinksRegistryMutex);
         for (auto sink : gr::pulsed_power::globalTimeSinksRegistry) {
             const auto               signal_names = sink->get_signal_names();
@@ -121,8 +106,39 @@ public:
         });
     }
 
-    ~NilmDataWorker() {
+    ~NilmDataWorker() {}
+
+private:
+    void handleGetRequest(const NilmAcquisitionContext & /* requestContext */, AcquisitionNilm &out) {
+        getAcquisitionNilm(out);
     }
+
+    void getAcquisitionNilm(AcquisitionNilm &out) {
+        int64_t tail     = _nilmDataBufferTail->value();
+        int64_t head     = _nilmDataBuffer->cursor();
+
+        int64_t sequence = 0;
+        for (sequence = tail; sequence <= head; sequence++) {
+            RingBufferData &bufData = (*_nilmDataBuffer)[sequence];
+            if (sequence == -1) {
+                // ignore first entry in RingBuffer, contains no data
+                continue;
+            }
+
+            out.refTriggerStamp.push_back(bufData.freqData.timestamp);
+            out.apparentPowerSpectrumStridedValues.insert(out.apparentPowerSpectrumStridedValues.end(), bufData.freqData.apparentPowerSpectrum.begin(), bufData.freqData.apparentPowerSpectrum.end());
+            out.realPower.push_back(bufData.timeData.realPower);
+            out.reactivePower.push_back(bufData.timeData.reactivePower);
+            out.apparentPower.push_back(bufData.timeData.apparentPower);
+            out.phi.push_back(bufData.timeData.phi);
+        }
+
+        if (out.apparentPowerSpectrumStridedValues.empty()) {
+            throw std::invalid_argument(fmt::format("No new data"));
+        } else {
+            _nilmDataBufferTail->setValue(sequence);
+        }
+    };
 
     // copy P Q S Phi data
     void handleReceivedTimeDataCb(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) {
@@ -134,7 +150,7 @@ public:
         std::vector<std::string> pqsphi_str{ "P", "Q", "S", "phi" };
         if (signal_names == pqsphi_str) {
             int64_t timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            fmt::print("Sink {}, {}ms\n", pqsphi_str, timestamp_ms);
+            fmt::print("NilmDataWorker: Sink {}, {}ms\n", pqsphi_str, timestamp_ms);
 
             std::scoped_lock lock(_timeDataMutex);
             // get last sample for each signal
@@ -155,7 +171,7 @@ public:
         if (signal_names == sui_str) {
             using namespace std::chrono;
             int64_t timestamp_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-            fmt::print("Sink {}, {}ms, vector_size: {}\n", sui_str, timestamp_ms, vector_size);
+            fmt::print("NilmDataWorker: Sink {}, {}ms, vector_size: {}\n", sui_str, timestamp_ms, vector_size);
 
             for (int64_t k = 0; k < nitems; k++) {
                 auto offset = k * static_cast<int64_t>(vector_size);
@@ -187,37 +203,6 @@ public:
             }
         }
     }
-
-    void handleGetRequest(const NilmAcquisitionContext & /* requestContext */, AcquisitionNilm &out) {
-        getAcquisitionNilm(out);
-    }
-
-    void getAcquisitionNilm(AcquisitionNilm &out) {
-        int64_t tail     = _nilmDataBufferTail->value();
-        int64_t head     = _nilmDataBuffer->cursor();
-
-        int64_t sequence = 0;
-        for (sequence = tail; sequence <= head; sequence++) {
-            RingBufferData &bufData = (*_nilmDataBuffer)[sequence];
-            if (sequence == -1) {
-                // ignore first entry in RingBuffer, contains no data
-                continue;
-            }
-
-            out.refTriggerStamp.push_back(bufData.freqData.timestamp);
-            out.apparentPowerSpectrumStridedValues.insert(out.apparentPowerSpectrumStridedValues.end(), bufData.freqData.apparentPowerSpectrum.begin(), bufData.freqData.apparentPowerSpectrum.end());
-            out.realPower.push_back(bufData.timeData.realPower);
-            out.reactivePower.push_back(bufData.timeData.reactivePower);
-            out.apparentPower.push_back(bufData.timeData.apparentPower);
-            out.phi.push_back(bufData.timeData.phi);
-        }
-
-        if (out.apparentPowerSpectrumStridedValues.empty()) {
-            throw std::invalid_argument(fmt::format("No new data"));
-        } else {
-            _nilmDataBufferTail->setValue(sequence);
-        }
-    };
 };
 
 #endif /* NILM_DATA_WORKER_H */

@@ -1,14 +1,7 @@
 #ifndef NILM_PREDICT_WORKER_H
 #define NILM_PREDICT_WORKER_H
 
-#include <disruptor/RingBuffer.hpp>
 #include <majordomo/Worker.hpp>
-
-#include <gnuradio/pulsed_power/opencmw_freq_sink.h>
-#include <gnuradio/pulsed_power/opencmw_time_sink.h>
-
-#include <chrono>
-#include <unordered_map>
 
 #include "integrator/PowerIntegrator.hpp"
 #include <cppflow/cppflow.h>
@@ -16,9 +9,8 @@
 #include <cppflow/ops.h>
 #include <cppflow/tensor.h>
 
-#include "FrequencyDomainWorker.hpp"
 #include "NilmDataWorker.hpp"
-#include "TimeDomainWorker.hpp"
+// #include "TimeDomainWorker.hpp"
 
 using opencmw::Annotated;
 using opencmw::NoUnit;
@@ -35,20 +27,16 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 struct NilmPredictData {
     int64_t                  timestamp;
     std::vector<double>      values; // = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
-    std::vector<std::string> names = { "device 1", "device 2", "device 3", "device 4", "device 5",
-        "device 6", "device 7", "others" };
-    std::vector<double>      day_usage;
-    std::vector<double>      week_usage;
-    std::vector<double>      month_usage;
-    std::string              error;
-    int64_t                  error_code;
+    std::vector<std::string> names = { "device 1", "device 2", "device 3", "device 4", "device 5", "device 6", "device 7", "others" };
+    std::vector<double>      dayUsage;
+    std::vector<double>      weekUsage;
+    std::vector<double>      monthUsage;
 };
 
-ENABLE_REFLECTION_FOR(NilmPredictData, values, names, timestamp, day_usage, week_usage, month_usage)
+ENABLE_REFLECTION_FOR(NilmPredictData, timestamp, values, names, dayUsage, weekUsage, monthUsage)
 
 template<typename Acq>
 class DataFetcher {
-private:
     std::string     _endpoint;
     std::string     _signalNames;
     int64_t         _lastTimeStamp;
@@ -61,7 +49,7 @@ public:
         _http.set_keep_alive(true);
     }
     ~DataFetcher() {}
-    httplib::Result fetch(Acq &data) {
+    httplib::Result get(Acq &data) {
         std::string getPath = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
         // fmt::print("{}: path: {}\n", typeid(data).name(), getPath);
         auto response = _http.Get(getPath.data());
@@ -74,45 +62,32 @@ public:
         return response;
     }
 
-    void updateTimeStamp(Acquisition &data) {
-        if (!data.channelTimeSinceRefTrigger.empty()) {
-            _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
-        }
-    }
+    // void updateTimeStamp(Acquisition &data) {
+    //     if (!data.channelTimeSinceRefTrigger.empty()) {
+    //         _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
+    //     }
+    // }
 };
 
 using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
-class NilmPredictWorker
-    : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
-private:
-    const std::string               MODEL_PATH = "src/model/TFGuptaModel_v2-0";
-    std::shared_ptr<cppflow::model> _model     = std::make_shared<cppflow::model>(MODEL_PATH);
-    // model requires only first half of the spectrum (2^16)
-    const size_t                     _fftNilmSize = 65536;
+class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
+    const std::string                MODEL_PATH{ "src/model/TFGuptaModel_v2-0" };
+    cppflow::model                   _model{ MODEL_PATH };
 
-    std::mutex                       _nilmTimeSinksRegistryMutex;
-    std::mutex                       _nilmFrequencySinksRegistryMutex;
+    DataFetcher<AcquisitionNilm>     _acquisitionNilmFetcher{ "pulsed_power_nilm" };
 
-    std::shared_ptr<PowerIntegrator> _powerIntegrator;
-
-    DataFetcher<AcquisitionNilm>     _dataFetcherNilmSpectra = DataFetcher<AcquisitionNilm>("pulsed_power_nilm");
+    std::atomic<bool>                _shutdownRequested;
+    std::jthread                     _predictThread;
+    NilmPredictData                  _nilmData;
+    std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
 public:
-    std::atomic<bool>     _shutdownRequested;
-    std::jthread          _predictThread;
-    std::jthread          _fetchThread;
-    NilmPredictData       _nilmData;
-    std::time_t           _timestamp_n;
-
-    static constexpr auto PROPERTY_NAME = std::string_view("NilmPredictData");
-
-    using super_t                       = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
+    using super_t = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
 
     template<typename BrokerType>
-    explicit NilmPredictWorker(const BrokerType &broker,
-            std::chrono::milliseconds            updateInterval)
+    explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
         : super_t(broker, {}) {
         _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
@@ -159,34 +134,32 @@ public:
         _predictThread   = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> predictDuration;
             while (!_shutdownRequested) {
-                std::chrono::time_point time_start = std::chrono::system_clock::now();
+                std::chrono::time_point timeStart = std::chrono::system_clock::now();
 
-                _timestamp_n                       = std::time(nullptr);
-
-                NilmContext        context;
-                std::vector<float> data_point;
+                NilmContext             context;
+                std::vector<float>      dataPoint;
+                AcquisitionNilm         acquisitionNilm;
 
                 try {
-                    _nilmData.timestamp = _timestamp_n;
-                    _nilmData.day_usage.clear();
-                    _nilmData.week_usage.clear();
-                    _nilmData.month_usage.clear();
+                    _nilmData.timestamp = std::time(nullptr);
+                    _nilmData.dayUsage.clear();
+                    _nilmData.weekUsage.clear();
+                    _nilmData.monthUsage.clear();
 
-                    // fetch Apparent Power (S) from PulsedPowerService
-                    AcquisitionNilm acqNilm;
-                    auto            response = _dataFetcherNilmSpectra.fetch(acqNilm);
+                    // fetch AcquisitionNilm from PulsedPowerService
+                    auto response = _acquisitionNilmFetcher.get(acquisitionNilm);
+
                     if (response.error() == httplib::Error::Success && response->status == 200) {
-                        assert(!acqNilm.apparentPowerSpectrumStridedValues.empty());
-                        size_t fftSize = acqNilm.apparentPowerSpectrumStridedValues.size() / acqNilm.apparentPower.size();
-                        fmt::print("acqNilm received, chunks no: {},  fftsize: {}, size of data: {}\n", acqNilm.apparentPower.size(), fftSize, response->body.size());
-                        for (size_t i = 0; i < acqNilm.realPower.size(); i++) {
-                            mergeValues(acqNilm, i, fftSize, data_point);
-                            int64_t         timestampFromResponse = acqNilm.refTriggerStamp[i];
+                        assert(!acquisitionNilm.apparentPowerSpectrumStridedValues.empty());
+                        size_t fftSize = acquisitionNilm.apparentPowerSpectrumStridedValues.size() / acquisitionNilm.apparentPower.size();
+                        fmt::print("acquisitionNilm received, chunks no: {},  fftsize: {}, size of data: {}\n", acquisitionNilm.apparentPower.size(), fftSize, response->body.size());
+                        for (size_t i = 0; i < acquisitionNilm.realPower.size(); i++) {
+                            mergeValues(acquisitionNilm, i, fftSize, dataPoint);
 
-                            int64_t         size                  = static_cast<int64_t>(data_point.size());
-                            cppflow::tensor input(data_point, { size });
+                            int64_t         size = static_cast<int64_t>(dataPoint.size());
+                            cppflow::tensor input(dataPoint, { size });
 
-                            auto            output = (*_model)({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
+                            auto            output = _model({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
                             auto            values = output[0].get_data<float>();
 
@@ -200,7 +173,7 @@ public:
                             for (auto v : values) {
                                 _nilmData.values.push_back(static_cast<double>(v));
                             }
-                            _powerIntegrator->update(timestampFromResponse, values);
+                            _powerIntegrator->update(acquisitionNilm.refTriggerStamp[i], values);
 
                             super_t::notify("/nilmPredictData", context, _nilmData);
                         }
@@ -214,7 +187,7 @@ public:
                     fmt::print("caught exception '{}'\n", ex.what());
                 }
 
-                predictDuration   = std::chrono::system_clock::now() - time_start;
+                predictDuration   = std::chrono::system_clock::now() - timeStart;
 
                 auto willSleepFor = updateInterval - predictDuration;
 
@@ -226,14 +199,10 @@ public:
             }
         });
 
-        super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &,
-                                     const Empty &, NilmContext &,
-                                     NilmPredictData &out) {
-            using namespace opencmw;
-            const auto topicPath = URI<RELAXED>(std::string(rawCtx.request.topic()))
-                                           .path()
-                                           .value_or("");
-            out = _nilmData;
+        super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &, const Empty &, NilmContext &, NilmPredictData &out) {
+            if (rawCtx.request.command() == Command::Get) {
+                out = _nilmData;
+            }
         });
     }
 
@@ -243,57 +212,59 @@ public:
     }
 
 private:
-    void mergeValues(const AcquisitionNilm &nilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
+    void mergeValues(const AcquisitionNilm &acqNilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
+        // model requires only first half of the spectrum (2^16)
+        size_t fftNilmSize = vectorSize / 2;
         output.clear();
-        output.reserve(3 * _fftNilmSize + 4);
+        output.reserve(3 * fftNilmSize + 4);
         // voltage spectrum
-        output.insert(output.end(), _fftNilmSize, 0.0f);
+        output.insert(output.end(), fftNilmSize, 0.0f);
 
         // current spectrum
-        output.insert(output.end(), _fftNilmSize, 0.0f);
+        output.insert(output.end(), fftNilmSize, 0.0f);
 
         // apparent power spectrum
-        if (nilmData.apparentPowerSpectrumStridedValues.empty()) {
-            output.insert(output.end(), _fftNilmSize, 0.0f);
+        if (acqNilmData.apparentPowerSpectrumStridedValues.empty()) {
+            output.insert(output.end(), fftNilmSize, 0.0f);
         } else {
             int64_t offset = static_cast<int64_t>(i * vectorSize);
-            output.insert(output.end(), nilmData.apparentPowerSpectrumStridedValues.begin() + offset, nilmData.apparentPowerSpectrumStridedValues.begin() + offset + static_cast<int64_t>(_fftNilmSize));
+            output.insert(output.end(), acqNilmData.apparentPowerSpectrumStridedValues.begin() + offset, acqNilmData.apparentPowerSpectrumStridedValues.begin() + offset + static_cast<int64_t>(fftNilmSize));
         }
 
         // P Q S phi
-        output.push_back(nilmData.realPower[i]);
-        output.push_back(nilmData.reactivePower[i]);
-        output.push_back(nilmData.apparentPower[i]);
-        output.push_back(nilmData.phi[i]);
+        output.push_back(acqNilmData.realPower[i]);
+        output.push_back(acqNilmData.reactivePower[i]);
+        output.push_back(acqNilmData.apparentPower[i]);
+        output.push_back(acqNilmData.phi[i]);
     }
 
     void fillDayUsage() {
-        _nilmData.day_usage.clear();
+        _nilmData.dayUsage.clear();
         // dummy data
-        // _nilmData.day_usage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
-        auto power_day = _powerIntegrator->get_power_usages_day();
-        for (auto v : power_day) {
-            _nilmData.day_usage.push_back(v);
+        // _nilmData.dayUsage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
+        auto powerDay = _powerIntegrator->get_power_usages_day();
+        for (auto v : powerDay) {
+            _nilmData.dayUsage.push_back(v);
         }
     }
 
     void fillWeekUsage() {
-        _nilmData.week_usage.clear();
+        _nilmData.weekUsage.clear();
         // dummy data
-        // _nilmData.week_usage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
-        auto power_week = _powerIntegrator->get_power_usages_week();
-        for (auto v : power_week) {
-            _nilmData.week_usage.push_back(v);
+        // _nilmData.weekUsage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
+        auto powerWeek = _powerIntegrator->get_power_usages_week();
+        for (auto v : powerWeek) {
+            _nilmData.weekUsage.push_back(v);
         }
     }
 
     void fillMonthUsage() {
-        _nilmData.month_usage.clear();
+        _nilmData.monthUsage.clear();
         // dummy data
-        // _nilmData.month_usage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
-        auto power_month = _powerIntegrator->get_power_usages_month();
-        for (auto v : power_month) {
-            _nilmData.month_usage.push_back(v);
+        // _nilmData.monthUsage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
+        auto powerMonth = _powerIntegrator->get_power_usages_month();
+        for (auto v : powerMonth) {
+            _nilmData.monthUsage.push_back(v);
         }
     }
 };
