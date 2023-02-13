@@ -73,7 +73,7 @@ using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
 class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...> {
-    const std::string                MODEL_PATH{ "src/model/TFGuptaModel_v2-0" };
+    const std::string                MODEL_PATH{ "src/model/nilm_model" };
     cppflow::model                   _model{ MODEL_PATH };
 
     DataFetcher<AcquisitionNilm>     _acquisitionNilmFetcher{ "pulsed_power_nilm" };

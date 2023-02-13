@@ -123,7 +123,7 @@ private:
 public:
     PulsedPowerFlowgraph(int noutput_items, bool use_picoscope = false)
         : top(gr::make_top_block("GNURadio")) {
-        float source_samp_rate          = 200'000.0f;
+        float source_samp_rate          = 2'000'000.0f;
         auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_current0 = gr::blocks::multiply_const_ff::make(1);
         if (use_picoscope) {
@@ -217,36 +217,36 @@ public:
         int         decimation_out_mid_term              = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_midterm);
         int         decimation_out_long_term             = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_longterm);
         // parameters nilm
-        const int fft_size    = 131072;
-        size_t    vector_size = static_cast<size_t>(fft_size);
-        float     bandwidth   = source_samp_rate;
+        const int fft_size_nilm    = 131072;
+        size_t    vector_size_nilm = static_cast<size_t>(fft_size_nilm);
+        float     bandwidth_nilm   = source_samp_rate;
 
         // blocks
         auto multiply_voltage_current_nilm = gr::blocks::multiply_ff::make(1);
 
-        auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
+        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
-        auto stream_to_vector_I            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_I              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_I            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
+        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_I              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
-        auto stream_to_vector_S            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_S            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
+        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
         auto multiply_voltage_current      = gr::blocks::multiply_ff::make(1);
         auto frequency_spec_one_in_n       = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
         auto frequency_spec_low_pass       = gr::filter::fft_filter_fff::make(
-                      10,
-                      gr::filter::firdes::low_pass(
-                              1,
-                              500,
-                              20,
-                              100,
-                              gr::fft::window::win_type::WIN_HAMMING,
-                              6.76));
+                10,
+                gr::filter::firdes::low_pass(
+                        1,
+                        500,
+                        20,
+                        100,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto frequency_spec_stream_to_vec  = gr::blocks::stream_to_vector::make(sizeof(float), 512);
         auto frequency_spec_fft            = gr::fft::fft_v<float, true>::make(512, gr::fft::window::rectangular(512), true, 1);
         auto frequency_multiply_const      = gr::blocks::multiply_const<gr_complex>::make(2.0 / (512.0), 512);
@@ -257,15 +257,15 @@ public:
         auto integrate                     = gr::pulsed_power::integration::make(10, 1000);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
-                    decimation_bpf,
-                    gr::filter::firdes::band_pass(
-                            1,
-                            source_samp_rate,
-                            bpf_low_cut,
-                            bpf_high_cut,
-                            bpf_trans,
-                            gr::fft::window::win_type::WIN_HANN,
-                            6.76));
+                decimation_bpf,
+                gr::filter::firdes::band_pass(
+                        1,
+                        source_samp_rate,
+                        bpf_low_cut,
+                        bpf_high_cut,
+                        bpf_trans,
+                        gr::fft::window::win_type::WIN_HANN,
+                        6.76));
         auto band_pass_filter_voltage0 = gr::filter::fft_filter_fff::make(
                 decimation_bpf,
                 gr::filter::firdes::band_pass(
@@ -286,14 +286,14 @@ public:
         auto blocks_multiply_phase0_3     = gr::blocks::multiply_ff::make(1);
 
         auto low_pass_filter_current0_0   = gr::filter::fft_filter_fff::make(
-                  decimation_lpf,
-                  gr::filter::firdes::low_pass(
-                          1,
-                          lpf_in_samp_rate,
-                          60,
-                          lpf_trans,
-                          gr::fft::window::win_type::WIN_HAMMING,
-                          6.76));
+                decimation_lpf,
+                gr::filter::firdes::low_pass(
+                        1,
+                        lpf_in_samp_rate,
+                        60,
+                        lpf_trans,
+                        gr::fft::window::win_type::WIN_HAMMING,
+                        6.76));
         auto low_pass_filter_current0_1 = gr::filter::fft_filter_fff::make(
                 decimation_lpf,
                 gr::filter::firdes::low_pass(
@@ -368,9 +368,9 @@ public:
         auto statistics_phi_longterm                  = gr::pulsed_power::statistics::make(decimation_out_long_term);
 
         auto opencmw_time_sink_signals                = gr::pulsed_power::opencmw_time_sink::make(
-                               { "U", "I", "U_bpf", "I_bpf" },
-                               { "V", "A", "V", "A" },
-                               out_samp_rate_ui);
+                { "U", "I", "U_bpf", "I_bpf" },
+                { "V", "A", "V", "A" },
+                out_samp_rate_ui);
         opencmw_time_sink_signals->set_max_noutput_items(noutput_items);
 
         // Mains frequency sinks
@@ -441,25 +441,25 @@ public:
                 { "W" }, 50, 50, 512);
         frequency_spec_pulsed_power_opencmw_freq_sink->set_max_noutput_items(noutput_items);
         auto opencmw_freq_sink_nilm_U = gr::pulsed_power::opencmw_freq_sink::make(
-                { "U" },
+                { "VoltageSpectrumNilm" },
                 { "V" },
                 source_samp_rate,
-                bandwidth,
-                vector_size);
+                bandwidth_nilm,
+                vector_size_nilm);
         opencmw_freq_sink_nilm_U->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_I = gr::pulsed_power::opencmw_freq_sink::make(
-                { "I" },
+                { "CurrentSpectrumNilm" },
                 { "A" },
                 source_samp_rate,
-                bandwidth,
-                vector_size);
+                bandwidth_nilm,
+                vector_size_nilm);
         opencmw_freq_sink_nilm_I->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_S = gr::pulsed_power::opencmw_freq_sink::make(
-                { "ApparentPowerSpectrum" },
+                { "ApparentPowerSpectrumNilm" },
                 { "VA" },
                 source_samp_rate,
-                bandwidth,
-                vector_size);
+                bandwidth_nilm,
+                vector_size_nilm);
         opencmw_freq_sink_nilm_S->set_max_noutput_items(1);
 
         // Connections:

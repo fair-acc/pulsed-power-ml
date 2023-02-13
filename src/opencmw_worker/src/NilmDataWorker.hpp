@@ -90,7 +90,7 @@ public:
             const auto               signal_units = sink->get_signal_units();
             const auto               sample_rate  = sink->get_sample_rate();
 
-            std::vector<std::string> uis_str{ "ApparentPowerSpectrum" };
+            std::vector<std::string> uis_str{ "ApparentPowerSpectrumNilm" };
             if (signal_names == uis_str) {
                 fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
                 sink->set_callback(std::bind(&NilmDataWorker::handleReceivedFreqDataCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
@@ -167,7 +167,7 @@ private:
         const float *s = static_cast<const float *>(input_items[0]);
         // const float             *u = static_cast<const float *>(input_items[1]);
         // const float             *i = static_cast<const float *>(input_items[2]);
-        std::vector<std::string> sui_str{ "ApparentPowerSpectrum" };
+        std::vector<std::string> sui_str{ "ApparentPowerSpectrumNilm" };
         if (signal_names == sui_str) {
             using namespace std::chrono;
             int64_t timestamp_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
