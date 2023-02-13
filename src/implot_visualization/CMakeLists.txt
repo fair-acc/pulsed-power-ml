@@ -43,16 +43,16 @@ add_link_options(
         -sFETCH
 )
 
-set(ppmOutputFileName "dashboard_ppm")
-add_executable(${ppmOutputFileName})
+set(ppemOutputFileName "dashboard_ppem")
+add_executable(${ppemOutputFileName})
 
 set(nilmOutputFileName "dashboard_nilm")
 add_executable(${nilmOutputFileName})
 
 add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
-        COMMENT start a python server serving the PPM app
-        DEPENDS ${ppmOutputFileName} ${nilmOutputFileName}
+        COMMENT start a python server serving the wasm app
+        DEPENDS ${ppemOutputFileName} ${nilmOutputFileName}
 )
 
 add_subdirectory(external)

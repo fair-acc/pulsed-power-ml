@@ -108,7 +108,7 @@ int         main(int argc, char **argv) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     auto window_flags  = (SDL_WindowFlags) (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    appState.window    = SDL_CreateWindow("Nilm Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    appState.window    = SDL_CreateWindow("Non-Intrusive Load Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
         fprintf(stderr, "Failed to initialize WebGL context!\n");
@@ -226,7 +226,7 @@ static void main_loop(void *arg) {
         // ImGui::Begin("Eletricity");
         ImGui::Begin("Eletricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 
-        app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
+        app_header::draw_header_bar("Non-Intrusive Load Monitoring", args->fonts.title);
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
         static int                rows      = 1;

@@ -1,6 +1,6 @@
-target_sources(${ppmOutputFileName} PRIVATE main_ppm.cpp)
+target_sources(${ppemOutputFileName} PRIVATE main_ppem.cpp)
 target_link_libraries(
-    ${ppmOutputFileName}
+    ${ppemOutputFileName}
     PRIVATE
         implot
         deserializer
