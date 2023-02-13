@@ -79,7 +79,9 @@ void Subscription<T>::fetch() {
         }
         if (fetchSuccessful) {
             this->acquisition.deserialize();
-            updateUrl();
+            if (url.find("channelNameFilter") != std::string::npos) {
+                updateUrl();
+            }
             this->fetchSuccessful = false;
             this->fetchFinished   = true;
             this->lastFetchTime   = currentTime;

@@ -70,39 +70,28 @@ protected:
 
 class Acquisition : public IAcquisition<ScrollingBuffer> {
 public:
-    uint64_t            lastRefTrigger = 0;
-    std::vector<double> relativeTimestamps;
-
     Acquisition();
     Acquisition(const std::vector<std::string> &_signalNames);
 
     void deserialize();
 
 private:
-    uint64_t    refTrigger_ns = 0;
-    double      refTrigger_s  = 0.0;
-    StrideArray strideArray;
+    uint64_t lastRefTrigger = 0;
 
-    void        addToBuffers();
+    void     addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamp, double refTrigger_ns);
 };
 
 class AcquisitionSpectra : public IAcquisition<Buffer> {
 public:
-    uint64_t            lastRefTrigger     = 0;
-    std::vector<double> relativeTimestamps = { 0 };
-
     AcquisitionSpectra();
     AcquisitionSpectra(const std::vector<std::string> &_signalNames);
 
     void deserialize();
 
 private:
-    uint64_t            refTrigger_ns = 0;
-    double              refTrigger_s  = 0.0;
-    std::vector<double> channelMagnitudeValues;
-    std::vector<double> channelFrequencyValues;
+    uint64_t lastRefTrigger = 0;
 
-    void                addToBuffers();
+    void     addToBuffers(const std::vector<double> &channelMagnitudeValues, const std::vector<double> &channelFrequencyValues);
 };
 
 class PowerUsage : public IAcquisition<Buffer> {
