@@ -25,7 +25,6 @@ private:
     std::string              extendedUrl;
     float                    updateFrequency;
     double                   lastFetchTime;
-    ;
 
-    void updateUrl();
+    void                     updateUrl();
 };

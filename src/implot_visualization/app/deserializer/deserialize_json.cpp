@@ -46,10 +46,10 @@ void ScrollingBuffer::erase() {
     }
 }
 
-void BufferPower::updateValues(const std::vector<double> &_values) {
-    this->values = _values;
-    auto clock   = std::chrono::system_clock::now();
-    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+void PowerBuffer::updateValues(const std::vector<double> &_values) {
+    this->values       = _values;
+    auto   clock       = std::chrono::system_clock::now();
+
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     this->timestamp    = currentTime;
     init               = true;
@@ -61,7 +61,6 @@ IAcquisition<T>::IAcquisition() {}
 template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
-    int numSignals = _signalNames.size();
     for (auto name : _signalNames) {
         if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
             this->buffers.emplace(this->buffers.end(), 60);
@@ -69,8 +68,6 @@ IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
             this->buffers.emplace(this->buffers.end());
         }
     }
-    // std::vector<T> _buffers(numSignals);
-    // this->buffers = _buffers;
 }
 
 template<typename T>
@@ -188,40 +185,18 @@ void AcquisitionSpectra::deserialize() {
 }
 
 PowerUsage::PowerUsage() {
-    printf("PowerUsage created\n");
-    if (!devices.empty()) {
-        printf("Devices: %s\n", devices[0].c_str());
-    }
-    // add values to controle:
 }
+
 PowerUsage::PowerUsage(int _numSignals) {
     std::vector<Buffer> _buffers(_numSignals);
     this->buffers = _buffers;
 }
 
 PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
-    : signalNames(_signalNames) {
-    int numSignals = _signalNames.size();
-    //     std::vector<B> _buffers(numSignals);
-    //     this->buffers = _buffers;
-    //
+    : IAcquisition(_signalNames) {
 }
 
 void PowerUsage::deserialize() {
-    /*  if (this->jsonString.substr(0, 16) != "\"NilmPowerData\":" && this->jsonString.substr(0,18) != "\"NilmPredictData\":") {
-         // TODO throw Exception
-         return;
-     } */
-
-    printf("Deserialize powerUsage\n");
-    // std::string modifiedJsonString = this->jsonString;
-
-    // if (this->jsonString.substr(0, 16) == "\"NilmPowerData\":") {
-    //     modifiedJsonString.erase(0, 16);
-    // } else if (this->jsonString.substr(0, 18) == "\"NilmPredictData\":") {
-    //     modifiedJsonString.erase(0, 18);
-    // }
-
     auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "values") {
@@ -247,19 +222,7 @@ void PowerUsage::deserialize() {
             this->powerUsagesMonth.clear();
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
-        if (this->powerUsages.size() != this->devices.size()) {
-            printf("Number of Values is not equal to number of devices\n");
-        }
-        printf("After deserialization %s\n", this->devices[0].c_str());
-        printf("usages %d\n, devices %d\n", this->powerUsages.size(), this->devices.size());
     }
-
-    // check values
-
-    // dummy data TODO - deserialize in for , when structure is known
-    // this->powerUsagesDay = {100.0,323.34,234.33, 500.55, 100.0,323.34,234.33, 500.55, 100.0,323.34,234.33 ,234};
-    // this->powerUsagesWeek = {700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33, 3500.55,700.0,2123.34,1434.33,938};
-    // this->powerUsagesMonth = {1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89,1500.232, 3000.99, 2599.34 ,1893};
 
     this->setSumOfUsageDay();
     this->setSumOfUsageWeek();
@@ -269,7 +232,6 @@ void PowerUsage::deserialize() {
     this->init         = true;
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
     this->deliveryTime = currentTime;
 }
 
@@ -319,5 +281,51 @@ void PowerUsage::setSumOfUsageMonth() {
     }
 }
 
+RealPowerUsage::RealPowerUsage() {}
+
+RealPowerUsage::RealPowerUsage(int _numSignals) {
+}
+
+RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {
+}
+
+void RealPowerUsage::deserialize() {
+    std::string modifiedJsonString = this->jsonString;
+
+    auto        json_obj           = json::parse(modifiedJsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "channelValues") {
+            auto values = std::vector<double>(element.value()["values"]);
+            if (!values.empty()) {
+                this->realPowerUsageOrig = values.back();
+
+                this->realPowerUsage     = this->realPowerUsageOrig / 1000.0;
+            }
+        } else if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
+            this->refTrigger_ns = element.value();
+            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+        }
+    }
+
+    lastTimeStamp        = lastRefTrigger;
+    this->lastRefTrigger = this->refTrigger_ns;
+
+    this->init           = true;
+    this->success        = true;
+
+    auto   clock         = std::chrono::system_clock::now();
+    double currentTime   = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->deliveryTime   = currentTime;
+}
+
+void RealPowerUsage::fail() {
+    this->success = false;
+}
+
 template class IAcquisition<Buffer>;
 template class IAcquisition<ScrollingBuffer>;
+template class IAcquisition<PowerBuffer>;
