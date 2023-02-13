@@ -183,7 +183,9 @@ void AcquisitionSpectra::deserialize() {
 
 PowerUsage::PowerUsage() {
     printf("PowerUsage created\n");
-    printf("Devices: %s\n", devices[0].c_str());
+    if (!devices.empty()) {
+        printf("Devices: %s\n", devices[0].c_str());
+    }
     // add values to controle:
 }
 PowerUsage::PowerUsage(int _numSignals) {

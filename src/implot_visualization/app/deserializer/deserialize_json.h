@@ -64,9 +64,6 @@ public:
 
     virtual void deserialize() = 0;
 
-private:
-    virtual void addToBuffers() = 0;
-
 protected:
     bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
 };
@@ -108,7 +105,7 @@ private:
     void                addToBuffers();
 };
 
-class PowerUsage {
+class PowerUsage : public IAcquisition<Buffer> {
 public:
     // dummy devices
     std::vector<std::string> devices; // = {"Device 1", "Device 2", "Sys Laptop", "Lamp", "Light", "Fridge","Fan","TV","PC","Radio",  "Others"};
@@ -124,6 +121,7 @@ public:
     double                   deliveryTime;
     int64_t                  timestamp;
     uint64_t                 lastTimeStamp = 0.0;
+    std::vector<std::string> signalNames;
 
     // dummy values
     std::vector<double> lastWeekUsage = { 85.0, 64.0, 56.0, 97.0, 79.0, 71.0, 20.0 }; // other service
@@ -150,10 +148,9 @@ public:
     PowerUsage(const std::vector<std::string> &_signalNames);
     PowerUsage(int numSignals);
 
-    void                     deserialize();
-    void                     fail();
-    double                   sumOfUsage();
-    std::vector<std::string> signalNames;
+    void   deserialize();
+    void   fail();
+    double sumOfUsage();
 
 private:
     void setSumOfUsageDay();
