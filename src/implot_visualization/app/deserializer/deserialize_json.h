@@ -37,7 +37,7 @@ public:
     void erase();
 };
 
-class BufferPower {
+class PowerBuffer {
 public:
     bool                init = false;
     std::vector<double> values;
@@ -58,13 +58,12 @@ public:
     std::string              jsonString    = "";
     uint64_t                 lastTimeStamp = 0.0;
     std::vector<T>           buffers;
+    bool                     success = false;
 
     IAcquisition();
     IAcquisition(const std::vector<std::string> _signalNames);
 
     virtual void deserialize() = 0;
-
-    void         fail();
 
 private:
     virtual void addToBuffers() = 0;
@@ -169,7 +168,7 @@ public:
     double                   realPowerUsageOrig = 0.0;
     double                   realPowerUsage     = 0.0;
 
-    std::vector<Buffer>      buffers;
+    std::vector<PowerBuffer> buffers;
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);
@@ -182,3 +181,6 @@ private:
     uint64_t refTrigger_ns = 0;
     double   refTrigger_s  = 0.0;
 };
+
+// class PowerAcquisition : IAcquisition<PowerBuffer> {
+// };

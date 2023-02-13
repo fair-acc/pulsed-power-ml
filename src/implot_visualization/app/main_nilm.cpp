@@ -253,7 +253,7 @@ static void main_loop(void *arg) {
         // subplots
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, 400), flags)) {
             if (ImPlot::BeginPlot("Power")) {
-                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers); // subscriptionsTimeDomain[0].acquisition.success);
+                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);
                 ImPlot::EndPlot();
             }
 
@@ -263,7 +263,7 @@ static void main_loop(void *arg) {
         }
 
         if (ImGui::BeginTable("ComboTime", 2, tableFlags, ImVec2(-1, 0))) {
-            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f); // Default to 100.0f
+            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f);
             ImGui::TableSetupColumn("empty");
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -274,7 +274,6 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
-        // TODO - realPowerUsage.init
         if (realPowerUsage.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 

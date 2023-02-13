@@ -12,15 +12,16 @@ void Subscription<T>::downloadSucceeded(emscripten_fetch_t *fetch) {
     this->acquisition.jsonString.assign(fetch->data, fetch->numBytes);
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
-    this->fetchSuccessful = true;
+    this->fetchSuccessful     = true;
+    this->acquisition.success = true;
 }
 
 template<typename T>
 void Subscription<T>::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    this->fetchFinished = true;
-    this->acquisition.fail();
+    this->fetchFinished       = true;
+    this->acquisition.success = false;
 }
 
 template<typename T>
