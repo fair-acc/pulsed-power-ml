@@ -1,7 +1,8 @@
 #ifndef FREQUENCY_DOMAIN_WORKER_H
 #define FREQUENCY_DOMAIN_WORKER_H
 
-#include <disruptor/RingBuffer.hpp>
+#include "Ringbuffer.hpp"
+//#include <disruptor/RingBuffer.hpp>
 #include <majordomo/Worker.hpp>
 
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
@@ -33,7 +34,6 @@ struct AcquisitionSpectra {
 
 ENABLE_REFLECTION_FOR(AcquisitionSpectra, refTriggerName, refTriggerStamp, channelName, channelMagnitudeValues, channelFrequencyValues, channelUnit)
 
-using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
 class FrequencyDomainWorker
@@ -49,12 +49,10 @@ private:
         std::vector<float> chunk;
         int64_t            timestamp = 0;
     };
-    using ringbuffer_t  = std::shared_ptr<RingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
-    using eventpoller_t = std::shared_ptr<EventPoller<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
+    using ringbuffer_t = std::shared_ptr<Ringbuffer<RingBufferData>>;
     struct SignalData {
         gr::pulsed_power::opencmw_freq_sink *sink = nullptr;
         ringbuffer_t                         ringBuffer;
-        eventpoller_t                        eventPoller;
     };
 
     std::unordered_map<std::string, SignalData> _signalsMap; // <completeSignalName, signalData>
@@ -82,13 +80,7 @@ public:
                         break;
                     }
 
-                    int64_t maxChunksToPoll = chunksToPoll(requestedSignals);
-
-                    if (maxChunksToPoll == 0) {
-                        break;
-                    }
-
-                    pollMultipleSignals(*(requestedSignals.begin()), maxChunksToPoll, _reply);
+                    pollSignal(*(requestedSignals.begin()), _reply);
                     FreqDomainContext filterOut = filterIn;
                     filterOut.contentType       = opencmw::MIME::JSON;
                     super_t::notify("/AcquisitionSpectra", filterOut, _reply);
@@ -110,12 +102,9 @@ public:
 
             for (size_t i = 0; i < signal_names.size(); i++) {
                 // init RingBuffer, register poller and poller sequence
-                auto ringbuffer = newRingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, ProducerType::Single>();
-                auto poller     = ringbuffer->newPoller();
-                ringbuffer->addGatingSequences({ poller->sequence() });
-
+                auto       ringbuffer         = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
                 const auto completeSignalName = fmt::format("{}@{}Hz", signal_names[i], sample_rate);
-                _signalsMap.insert({ completeSignalName, SignalData(sink, ringbuffer, poller) });
+                _signalsMap.insert({ completeSignalName, SignalData(sink, ringbuffer) });
                 fmt::print("GR: OpenCMW Frequency Sink '{}' added\n", completeSignalName);
             }
 
@@ -144,16 +133,11 @@ public:
 
             for (int i = 0; i < nitems; i++) {
                 // publish data
-                bool result = signalData.ringBuffer->tryPublishEvent([i, in, vector_size, timestamp](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
-                    bufferData.timestamp = timestamp;
-                    size_t offset        = static_cast<size_t>(i) * vector_size;
-                    bufferData.chunk.assign(in + offset + (vector_size / 2), in + offset + vector_size);
-                });
-
-                if (!result) {
-                    fmt::print("freqDomainWorker: writing into RingBuffer failed, signal_name: {}\n", signal_name[0]);
-                    break;
-                }
+                RingBufferData bufferData;
+                bufferData.timestamp = timestamp;
+                size_t offset        = static_cast<size_t>(i) * vector_size;
+                bufferData.chunk.assign(in + offset + (vector_size / 2), in + offset + vector_size);
+                signalData.ringBuffer->push(bufferData);
             }
         }
     }
@@ -165,60 +149,36 @@ private:
             return false;
         }
 
-        int64_t maxChunksToPoll = chunksToPoll(requestedSignals);
-
-        if (maxChunksToPoll == 0) {
-            return false;
-        }
-
-        pollMultipleSignals(*(requestedSignals.begin()), maxChunksToPoll, out);
-        return true;
+        bool result = pollSignal(*(requestedSignals.begin()), out);
+        return result;
     }
 
-    // find how many chunks should be parallely polled
-    int64_t chunksToPoll(std::set<std::string, std::less<>> &requestedSignals) {
-        std::vector<int64_t> chunksAvailable;
-        for (const auto &requestedSignal : requestedSignals) {
-            auto    signalData = _signalsMap.at(requestedSignal);
-            int64_t diff       = signalData.ringBuffer->cursor() - signalData.eventPoller->sequence()->value();
-            chunksAvailable.push_back(diff);
-        }
-        assert(!chunksAvailable.empty());
-        auto maxChunksToPollIterator = std::min_element(chunksAvailable.begin(), chunksAvailable.end());
-        if (maxChunksToPollIterator == chunksAvailable.end()) {
-            return 0;
-        }
-
-        return *maxChunksToPollIterator;
-    }
-
-    void pollMultipleSignals(const std::string &requestedSignal, int64_t chunksToPoll, AcquisitionSpectra &out) {
-        assert(chunksToPoll > 0);
+    bool pollSignal(const std::string &requestedSignal, AcquisitionSpectra &out) {
         auto signalData     = _signalsMap.at(requestedSignal);
 
         out.refTriggerStamp = 0;
         out.channelName     = requestedSignal;
 
-        PollState result    = PollState::Idle;
-        for (int64_t i = 0; i < chunksToPoll; i++) {
-            result = signalData.eventPoller->poll([&out](RingBufferData &event, std::int64_t /*sequence*/, bool /*nomoreEvts*/) noexcept {
-                out.refTriggerStamp = event.timestamp;
-                out.channelMagnitudeValues.assign(event.chunk.begin(), event.chunk.end());
-                return false;
-            });
-        }
-        assert(result == PollState::Processing);
+        std::vector<RingBufferData> new_values;
+        signalData.ringBuffer->get_all(new_values);
+        if (!new_values.empty()) {
+            RingBufferData last_val = new_values.back();
+            out.refTriggerStamp = last_val.timestamp;
+            out.channelMagnitudeValues.assign(last_val.chunk.begin(), last_val.chunk.end());
 
-        //  generate frequency values
-        size_t vectorSize = out.channelMagnitudeValues.size();
-        float  bandwidth  = signalData.sink->get_bandwidth();
-        out.channelFrequencyValues.clear();
-        out.channelFrequencyValues.reserve(vectorSize);
-        float freqStartValue = 0; //-(bandwidth / 2);
-        float freqStepValue  = 0.5f * bandwidth / static_cast<float>(vectorSize);
-        for (size_t i = 0; i < vectorSize; i++) {
-            out.channelFrequencyValues.push_back(freqStartValue + static_cast<float>(i) * freqStepValue);
+            //  generate frequency values
+            size_t vectorSize = out.channelMagnitudeValues.size();
+            float  bandwidth  = signalData.sink->get_bandwidth();
+            out.channelFrequencyValues.clear();
+            out.channelFrequencyValues.reserve(vectorSize);
+            float freqStartValue = 0; //-(bandwidth / 2);
+            float freqStepValue  = 0.5f * bandwidth / static_cast<float>(vectorSize);
+            for (size_t i = 0; i < vectorSize; i++) {
+                out.channelFrequencyValues.push_back(freqStartValue + static_cast<float>(i) * freqStepValue);
+            }
+            return true;
         }
+        return false;
     }
 
     bool checkRequestedSignals(const FreqDomainContext &filterIn, std::set<std::string, std::less<>> &requestedSignals) {
