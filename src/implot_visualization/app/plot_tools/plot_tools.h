@@ -106,11 +106,11 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             if (signal.signalName.find("I") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
-            // if (signal.signalName.find("bpf") != std::string::npos) {
-            //     lineFlag = ImPlotLineFlags_Segments;
-            // } else {
-            //     lineFlag = ImPlotLineFlags_None;
-            // }
+            if (signal.signalName.find("bpf") != std::string::npos) {
+                lineFlag = ImPlotLineFlags_Segments;
+            } else {
+                lineFlag = ImPlotLineFlags_None;
+            }
             ImPlot::PlotLine((signal.signalName).c_str(),
                     &signal.data[0].x,
                     &signal.data[0].y,
@@ -118,7 +118,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
                     lineFlag,
                     offset,
                     2 * sizeof(double));
-
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }

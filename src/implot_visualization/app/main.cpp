@@ -176,7 +176,7 @@ static void main_loop(void *arg) {
     Plotter::DataInterval                         &Interval                = args->Interval;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
-    static bool   show_demo_window = false;
+    static bool   show_demo_window = true;
     static ImVec4 clear_color      = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Layout options
@@ -219,11 +219,20 @@ static void main_loop(void *arg) {
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
             // Raw Signals Plot
+            static ImPlotColormap Test = -1;
+            if (Test == -1) {
+                static const ImVec4 blue         = ImVec4(0.298, 0.447, 0.690, 1);
+                static const ImVec4 red          = ImVec4(0.769, 0.306, 0.322, 1);
+                static const ImVec4 Test_Data[4] = { blue, red, blue, red };
+                Test                             = ImPlot::AddColormap("Test", Test_Data, 4);
+            }
+            ImPlot::PushColormap(Test);
             if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() > 3) {
                     Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 }
                 ImPlot::EndPlot();
+                ImPlot::PopColormap();
             }
 
             // Mains Frequency Plot
