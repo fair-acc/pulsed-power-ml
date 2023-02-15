@@ -46,13 +46,21 @@ void ScrollingBuffer::erase() {
     }
 }
 
+void PowerBuffer::updateValues(const std::vector<double> &_values) {
+    this->values       = _values;
+    auto   clock       = std::chrono::system_clock::now();
+
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->timestamp    = currentTime;
+    init               = true;
+}
+
 template<typename T>
 IAcquisition<T>::IAcquisition() {}
 
 template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
-    int numSignals = _signalNames.size();
     for (auto name : _signalNames) {
         if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
             this->buffers.emplace(this->buffers.end(), 60);
@@ -60,8 +68,6 @@ IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
             this->buffers.emplace(this->buffers.end());
         }
     }
-    // std::vector<T> _buffers(numSignals);
-    // this->buffers = _buffers;
 }
 
 template<typename T>
@@ -85,10 +91,11 @@ Acquisition::Acquisition() {}
 Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {}
 
-void Acquisition::addToBuffers() {
+void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps, double refTrigger_ns) {
     double absoluteTimestamp = 0.0;
     double value             = 0.0;
-    int    stride            = this->strideArray.dims[1];
+    int    stride            = strideArray.dims[1];
+    double refTrigger_s      = refTrigger_ns / std::pow(10, 9);
 
     // Destride array
     for (int i = 0; i < strideArray.dims[0]; i++) {
@@ -98,22 +105,24 @@ void Acquisition::addToBuffers() {
         if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
         }
         for (int j = 0; j < stride; j++) {
-            absoluteTimestamp = this->refTrigger_s + this->relativeTimestamps[j];
-            value             = this->strideArray.values[offset2 + j];
+            absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
+            value             = strideArray.values[offset2 + j];
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
 }
 
 void Acquisition::deserialize() {
-    auto json_obj = json::parse(this->jsonString);
+    std::vector<double> relativeTimestamps = {};
+    uint64_t            refTrigger_ns      = 0;
+    StrideArray         strideArray;
+    auto                json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
-            this->refTrigger_ns = element.value();
-            this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
+            refTrigger_ns = element.value();
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested (Acquisition)" << std::endl;
@@ -121,16 +130,16 @@ void Acquisition::deserialize() {
             }
             std::cout << "Received expected signal (Acquisition)" << std::endl;
         } else if (element.key() == "channelTimeSinceRefTrigger") {
-            this->relativeTimestamps.assign(element.value().begin(), element.value().end());
+            relativeTimestamps.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelValues") {
-            this->strideArray.dims   = std::vector<int>(element.value()["dims"]);
-            this->strideArray.values = std::vector<double>(element.value()["values"]);
+            strideArray.dims   = std::vector<int>(element.value()["dims"]);
+            strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
 
-    this->lastRefTrigger = this->refTrigger_ns;
+    this->lastRefTrigger = refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    addToBuffers();
+    addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
@@ -138,22 +147,23 @@ AcquisitionSpectra::AcquisitionSpectra() {}
 AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {}
 
-void AcquisitionSpectra::addToBuffers() {
+void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequencyValues, const std::vector<double> &channelMagnitudeValues) {
     for (int i = 0; i < signalNames.size(); i++) {
         this->buffers[i].signalName = this->signalNames[i];
-        this->buffers[i].assign(this->channelFrequencyValues, this->channelMagnitudeValues);
+        this->buffers[i].assign(channelFrequencyValues, channelMagnitudeValues);
     }
 }
 
 void AcquisitionSpectra::deserialize() {
-    auto json_obj = json::parse(this->jsonString);
+    std::vector<double> channelMagnitudeValues;
+    std::vector<double> channelFrequencyValues;
+    auto                json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
-            this->refTrigger_ns = element.value();
-            this->refTrigger_s  = this->refTrigger_ns / std::pow(10, 9);
+            this->lastTimeStamp = element.value();
         } else if (element.key() == "channelName") {
             std::vector<std::string> channelNames = { element.value().get<std::string>() };
             if (!this->receivedRequestedSignals(channelNames)) {
@@ -162,15 +172,141 @@ void AcquisitionSpectra::deserialize() {
             }
             std::cout << "Received expected signal (AcquisitionSpectra)" << std::endl;
         } else if (element.key() == "channelMagnitudeValues") {
-            this->channelMagnitudeValues.assign(element.value().begin(), element.value().end());
+            channelMagnitudeValues.assign(element.value().begin(), element.value().end());
         } else if (element.key() == "channelFrequencyValues") {
-            this->channelFrequencyValues.assign(element.value().begin(), element.value().end());
+            channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
-    this->lastRefTrigger = this->refTrigger_ns;
-    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    addToBuffers();
+
+    addToBuffers(channelFrequencyValues, channelMagnitudeValues);
+}
+
+PowerUsage::PowerUsage() {}
+
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {
+}
+
+void PowerUsage::deserialize() {
+    auto json_obj = json::parse(this->jsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "values") {
+            this->powerUsages.clear();
+            this->powerUsages.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "names") {
+            this->devices.clear();
+            this->devices.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "timestamp") {
+            timestamp = element.value();
+        }
+        if (element.key() == "day_usage") {
+            this->powerUsagesDay.clear();
+            this->powerUsagesDay.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "week_usage") {
+            this->powerUsagesWeek.clear();
+            this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "month_usage") {
+            this->powerUsagesMonth.clear();
+            this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
+        }
+    }
+
+    this->setSumOfUsageDay();
+    this->setSumOfUsageWeek();
+    this->setSumOfUsageMonth();
+
+    this->success      = true;
+    this->init         = true;
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->deliveryTime = currentTime;
+}
+
+void PowerUsage::fail() {
+    this->success = false;
+}
+
+double PowerUsage::sumOfUsage() {
+    if (this->init) {
+        double sum_of_usage = 0.0;
+        for (std::vector<double>::iterator it = this->powerUsages.begin(); it != this->powerUsages.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        return sum_of_usage;
+    } else {
+        return 0.0;
+    }
+}
+
+void PowerUsage::setSumOfUsageDay() {
+    if (this->init) {
+        double sum_of_usage = 0.0;
+        for (std::vector<double>::iterator it = this->powerUsagesDay.begin(); it != this->powerUsagesDay.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedDay = sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageWeek() {
+    double sum_of_usage = 0.0;
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesWeek.begin(); it != this->powerUsagesWeek.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedWeek = sum_of_usage;
+    }
+}
+
+void PowerUsage::setSumOfUsageMonth() {
+    double sum_of_usage = 0.0;
+    if (this->init) {
+        for (std::vector<double>::iterator it = this->powerUsagesMonth.begin(); it != this->powerUsagesMonth.end(); ++it) {
+            sum_of_usage += *it;
+        }
+        this->kWhUsedMonth = sum_of_usage;
+    }
+}
+
+RealPowerUsage::RealPowerUsage() {}
+
+RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
+    : IAcquisition(_signalNames) {
+}
+
+void RealPowerUsage::deserialize() {
+    auto json_obj = json::parse(jsonString);
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "channelValues") {
+            auto values = std::vector<double>(element.value()["values"]);
+            if (!values.empty()) {
+                this->realPowerUsageOrig = values.back();
+                this->realPowerUsage     = this->realPowerUsageOrig / 1000.0;
+            }
+        } else if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
+            this->lastTimeStamp = element.value();
+        }
+    }
+
+    this->init         = true;
+    this->success      = true;
+
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->deliveryTime = currentTime;
+}
+
+void RealPowerUsage::fail() {
+    this->success = false;
 }
 
 template class IAcquisition<Buffer>;
 template class IAcquisition<ScrollingBuffer>;
+template class IAcquisition<PowerBuffer>;
