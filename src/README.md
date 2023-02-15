@@ -19,7 +19,7 @@ In order to visualize data passed by OpenCMW, do the following:
 1. Build and run the OpenCMW worker.
 2. Build and run the ImPlot Visualization.
 
-### OpenCMW
+### Pulsed Power Service & Inference Tool
 
 How to Build
 
@@ -31,6 +31,7 @@ cmake --build build
 How to Run
 
 - Run `./opencmw_worker/build/src/PulsedPowerService`
+- Run `./opencmw_worker/build/src/InferenceTool`
 
 ### ImPlot Visualization
 
