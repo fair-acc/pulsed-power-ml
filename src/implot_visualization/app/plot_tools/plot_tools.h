@@ -245,9 +245,14 @@ void plotBarchart(std::vector<double> &day_values) {
     }
 }
 
-void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w,
-        double month_value = 0, double week_value = 0, double day_value = 0) {
-    printf("plot nested table\n");
+void plotNestTable(
+        PowerUsage &powerUsage,
+        int         offset,
+        int         len,
+        int         m_d_w,
+        double      month_value = 0,
+        double      week_value  = 0,
+        double      day_value   = 0) {
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
     ImDrawList            *draw_list  = ImGui::GetWindowDrawList();
@@ -296,9 +301,9 @@ void plotNestTable(PowerUsage &powerUsage, int offset, int len, int m_d_w,
         for (int row = offset; row < offset + len; row++) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGui::Text("%s", powerUsage.devices[row].c_str());
 
             if (powerUsage.init && row < powerUsage.devices.size()) {
+                ImGui::Text("%s", powerUsage.devices[row].c_str());
                 ImGui::TableSetColumnIndex(1);
                 ImVec2 pos = window->DC.CursorPos;
 

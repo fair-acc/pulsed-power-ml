@@ -91,9 +91,7 @@ public:
     void deserialize();
 
 private:
-    uint64_t lastRefTrigger = 0;
-
-    void     addToBuffers(const std::vector<double> &channelMagnitudeValues, const std::vector<double> &channelFrequencyValues);
+    void addToBuffers(const std::vector<double> &channelMagnitudeValues, const std::vector<double> &channelFrequencyValues);
 };
 
 class PowerUsage : public IAcquisition<Buffer> {
@@ -103,30 +101,16 @@ public:
     std::vector<double>      powerUsagesDay;
     std::vector<double>      powerUsagesWeek;
     std::vector<double>      powerUsagesMonth;
-    uint64_t                 lastRefTrigger = 0;
-    std::string              jsonString     = "";
-    std::vector<Buffer>      buffers;
-    bool                     success = false;
-    bool                     init    = false;
+    bool                     init = false;
     double                   deliveryTime;
     int64_t                  timestamp;
-    uint64_t                 lastTimeStamp   = 0.0;
 
-    double                   powerUsageToday = 0.0;
-
-    double                   kWhUsedDay      = 0.0;
-
-    double                   kWhUsedMonth    = 0.0;
-
-    double                   costPerMonth    = 0.0;
-
-    double                   kWhUsedWeek     = 0.0;
-
-    double                   costPerWeek     = 0.0;
+    double                   kWhUsedDay   = 0.0;
+    double                   kWhUsedMonth = 0.0;
+    double                   kWhUsedWeek  = 0.0;
 
     PowerUsage();
     PowerUsage(const std::vector<std::string> &_signalNames);
-    PowerUsage(int numSignals);
 
     void   deserialize();
     void   fail();
@@ -138,32 +122,17 @@ private:
     void setSumOfUsageMonth();
 };
 
-class RealPowerUsage : IAcquisition<PowerBuffer> {
+class RealPowerUsage : public IAcquisition<PowerBuffer> {
 public:
-    // std::vector<std::string> signalNames;
+    double deliveryTime;
+    bool   init               = false;
 
-    uint64_t                 lastRefTrigger = 0;
-    std::string              jsonString     = "";
-    uint64_t                 lastTimeStamp  = 0.0;
-
-    double                   deliveryTime;
-
-    bool                     success            = false;
-    bool                     init               = false;
-
-    double                   realPowerUsageOrig = 0.0;
-    double                   realPowerUsage     = 0.0;
-
-    std::vector<PowerBuffer> buffers;
+    double realPowerUsageOrig = 0.0;
+    double realPowerUsage     = 0.0;
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);
-    RealPowerUsage(int numSignals);
 
     void deserialize();
     void fail();
-
-private:
-    uint64_t refTrigger_ns = 0;
-    double   refTrigger_s  = 0.0;
 };

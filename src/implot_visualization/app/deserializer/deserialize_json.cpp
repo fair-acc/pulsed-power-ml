@@ -155,17 +155,15 @@ void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequenc
 }
 
 void AcquisitionSpectra::deserialize() {
-    uint64_t            refTrigger_ns = 0;
     std::vector<double> channelMagnitudeValues;
     std::vector<double> channelFrequencyValues;
-    std::vector<double> relativeTimestamps = { 0 };
-    auto                json_obj           = json::parse(this->jsonString);
+    auto                json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
-            refTrigger_ns = element.value();
+            this->lastTimeStamp = element.value();
         } else if (element.key() == "channelName") {
             std::vector<std::string> channelNames = { element.value().get<std::string>() };
             if (!this->receivedRequestedSignals(channelNames)) {
@@ -180,17 +178,10 @@ void AcquisitionSpectra::deserialize() {
         }
     }
 
-    this->lastRefTrigger = refTrigger_ns;
     addToBuffers(channelFrequencyValues, channelMagnitudeValues);
 }
 
-PowerUsage::PowerUsage() {
-}
-
-PowerUsage::PowerUsage(int _numSignals) {
-    std::vector<Buffer> _buffers(_numSignals);
-    this->buffers = _buffers;
-}
+PowerUsage::PowerUsage() {}
 
 PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {
@@ -283,43 +274,33 @@ void PowerUsage::setSumOfUsageMonth() {
 
 RealPowerUsage::RealPowerUsage() {}
 
-RealPowerUsage::RealPowerUsage(int _numSignals) {
-}
-
 RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {
 }
 
 void RealPowerUsage::deserialize() {
-    std::string modifiedJsonString = this->jsonString;
-
-    auto        json_obj           = json::parse(modifiedJsonString);
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "channelValues") {
             auto values = std::vector<double>(element.value()["values"]);
             if (!values.empty()) {
                 this->realPowerUsageOrig = values.back();
-
                 this->realPowerUsage     = this->realPowerUsageOrig / 1000.0;
             }
         } else if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
-            this->refTrigger_ns = element.value();
-            this->refTrigger_s  = refTrigger_ns / std::pow(10, 9);
+            this->lastTimeStamp = element.value();
         }
     }
 
-    lastTimeStamp        = lastRefTrigger;
-    this->lastRefTrigger = this->refTrigger_ns;
+    this->init         = true;
+    this->success      = true;
 
-    this->init           = true;
-    this->success        = true;
-
-    auto   clock         = std::chrono::system_clock::now();
-    double currentTime   = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    this->deliveryTime   = currentTime;
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->deliveryTime = currentTime;
 }
 
 void RealPowerUsage::fail() {
