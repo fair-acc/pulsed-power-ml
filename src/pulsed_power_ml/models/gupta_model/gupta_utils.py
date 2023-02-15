@@ -363,13 +363,7 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
     spectrum_sum = tf.math.reduce_sum(res_spectrum)
     sum_above_thr = tf.math.greater(spectrum_sum, threshold)
     sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
-    # # ToDo: Remove print
-    # tf.print("\n\n ###########")
-    # tf.print("In tf_switch_detected")
-    # tf.print("spectrum_sum = ", spectrum_sum)
-    # tf.print(f"Result = {sum_above_thr, sum_below_minus_thr}")
-    # tf.print("############\n\n")
-    # #
+
     return sum_below_minus_thr, sum_above_thr
 
 @tf.function
@@ -464,32 +458,6 @@ def tf_find_peaks(data: tf.Tensor,
 
     # get the peak heights
     peak_heights = tf.gather_nd(params=data, indices=peak_indices)
-
-    # # Pad peaks to ensure data independent output shape
-    # zero_tensor = tf.zeros(min_output_length,
-    #                        dtype=tf.int32)
-    #
-    # # ToDo: fix output shape here...
-    #
-    # tf.print("################### TEST ################")
-    # tf.print(tf.reshape(zero_tensor, shape=(-1, 1)).shape)
-    # tf.print(tf.size(peak_indices))
-    # tf.print(tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)))
-    # tf.print(peak_indices.shape)
-    #
-    # peak_indices_padded = tf.tensor_scatter_nd_update(
-    #     tensor=tf.reshape(zero_tensor, shape=(-1, 1)),
-    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
-    #     updates=peak_indices
-    # )
-    #
-    # peak_heights_padded = tf.tensor_scatter_nd_update(
-    #     tensor=tf.reshape(tf.cast(zero_tensor, dtype=tf.float32), shape=(-1, 1)),
-    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
-    #     updates=tf.reshape(peak_heights, shape=(-1, 1))
-    # )
-    #
-    # return peak_indices_padded, peak_heights_padded
 
     return peak_indices, peak_heights
 
@@ -639,36 +607,48 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     feature_vector.close()
     return feature_tensor
 
+@tf.function(
+    input_signature=[
+        tf.TensorSpec(shape=(2**16), dtype=tf.float32)])
+def tf_transform_spectrum(new_spectrum: tf.Tensor) -> tf.Tensor:
+    """
+    Function to transform apparent power spectra from the new and probably correct flowgraph to be more like the
+    training data, which have been produced w/ an old and incorrect version of the flowgraph.
+    As soon as trainind data and inference is done w/ the exact same flowgraph, this function can be removed.
 
-if __name__ == "__main__":
+    Parameters
+    ----------
+    new_spectrum
+        Apparent power spectrum
 
-    from src.pulsed_power_ml.model_framework.data_io import read_training_files, load_pqsphi_file, load_fft_file, \
-        reshape_one_dim_array
-    from src.pulsed_power_ml.model_framework.visualizations import add_contour_plot, plot_data_point_array, \
-        get_frequencies_from_spectrum
+    Returns
+    -------
+    transformed_apparent_power_spectrum
+    """
 
-    folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/tube/"
-    p_file = "S_LEDOnOff_FFTSize131072"
-    fft_file = "FFTCurrent_LEDOnOff_FFTSize131072"
-    fft_size = 2 ** 17
+    factor = tf.constant(0.5002719012720522, dtype=tf.float32)
 
-    data_point_array = read_training_files(folder, fft_size)
+    offset = tf.constant(-8.881469725920565, dtype=tf.float32)
 
-    background_vector = data_point_array[50:75, int(2 * fft_size / 2):int(3 * fft_size / 2)]
-    for i in range(background_vector.shape[0]):
-        background_vector[i] = 10 ** background_vector[i]
+    new_spectrum_dbm = 10 * tf.math.log(new_spectrum) / tf.math.log(tf.constant(10, dtype=tf.float32)) + 30
 
-    background = calculate_background(background_vector)
-    signal = data_point_array[200, int(2 * fft_size / 2):int(3 * fft_size / 2)]
-    signal = 10 ** signal
-
-    cleaned_spectrum = signal - background
-
-    feature_vector = tf_calculate_feature_vector(
-        tf.constant(cleaned_spectrum, dtype=tf.float32),
-        tf.constant(10, dtype=tf.int32),
-        tf.constant(2 ** 16, dtype=tf.int32),
-        tf.constant(2_000_000, dtype=tf.int32)
+    transformed_spectrum_dbm = tf.math.add(
+        tf.math.multiply(new_spectrum_dbm, factor),
+        offset
     )
 
-    print(feature_vector)
+    transformed_apparent_power_spectrum = tf.math.pow(
+        tf.constant(10, dtype=tf.float32),
+        tf.math.multiply(
+            tf.math.subtract(
+                transformed_spectrum_dbm,
+                tf.constant(30, dtype=tf.float32)
+            ),
+            tf.constant(0.1, dtype=tf.float32)
+        )
+    )
+
+    reversed_transformed_apparent_power_spectrum = tf.reverse(transformed_apparent_power_spectrum,
+                                                              axis=tf.constant([0]))
+
+    return reversed_transformed_apparent_power_spectrum

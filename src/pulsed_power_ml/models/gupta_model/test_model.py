@@ -4,6 +4,7 @@ This module implements an easy method to test the performance of a Gupta model.
 
 import argparse
 import sys
+import os
 
 import tensorflow as tf
 import numpy as np
@@ -46,9 +47,16 @@ def main():
                         required=True)
     parser.add_argument('-v',
                         '--vertical-line',
-                        help='Pass this flag to include a vertical line into prediction plot at 70% of time.',
+                        help='Pass this flag to include a vertical line into prediction plot at 70%% of time.',
                         action='store_true',
                         default=False)
+    parser.add_argument('--new-flowgraph',
+                        help='Use alternative method to read raw files from disk.',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--input-filename',
+                        help='Name of the input file (no path). Required if "--new-flowgraph" option is used.',
+                        type=str)
     args = parser.parse_args()
 
     # Load parameters
@@ -65,8 +73,18 @@ def main():
 
     # Load data
     print(f'\nLoad data in {args.input_folder}')
-    data_point_array = read_training_files(path_to_folder=args.input_folder,
-                                           fft_size=parameter_dict["fft_size"])
+    if args.new_flowgraph:
+        if args.input_filename is None:
+            print(f'ERROR: "input-filename" must be provided if "--new-flowgraph" flag is set!')
+            exit(-1)
+        data_point_array = np.fromfile(
+            file=f'{args.input_folder}/{args.input_filename}',
+            dtype=np.float32)\
+            .reshape((-1, 3 * int(parameter_dict['fft_size_real']) + 4))
+
+    else:
+        data_point_array = read_training_files(path_to_folder=args.input_folder,
+                                               fft_size=parameter_dict["fft_size"])
 
     # Apply model
     state_vector_list = list()
