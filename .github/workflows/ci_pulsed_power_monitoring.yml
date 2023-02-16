@@ -69,25 +69,7 @@ jobs:
           python3 -m pip install gcovr --user --no-warn-script-location
           gcovr --version
 
-      # GNU RADIO
-      - name: Install GNU Radio
-        shell: bash
-        run: |
-          sudo add-apt-repository ppa:gnuradio/gnuradio-releases
-          sudo apt-get update
-
-      - name: Install GNU Radio dependencies
-        shell: bash
-        run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
-
-      - name: Install Picoscope dependencies
-        shell: bash
-        run: |
-          wget -qO- https://labs.picotech.com/debian/dists/picoscope/Release.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/picoscope.gpg
-          sudo bash -c 'echo "deb [signed-by=/etc/apt/trusted.gpg.d/picoscope.gpg] https://labs.picotech.com/debian/ picoscope main" >/etc/apt/sources.list.d/picoscope.list'
-          sudo apt update
-          sudo apt install picoscope
-
+      # TENSORFLOW
       - name: Install TensorFlow for C
         shell: bash
         run: |
@@ -104,6 +86,26 @@ jobs:
           cd build
           make
           sudo make install
+
+      # PICOSCOPE
+      - name: Install Picoscope dependencies
+        shell: bash
+        run: |
+          wget -qO- https://labs.picotech.com/debian/dists/picoscope/Release.gpg.key | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/picoscope.gpg
+          sudo bash -c 'echo "deb [signed-by=/etc/apt/trusted.gpg.d/picoscope.gpg] https://labs.picotech.com/debian/ picoscope main" >/etc/apt/sources.list.d/picoscope.list'
+          sudo apt update
+          sudo apt install picoscope
+
+      # GNU RADIO
+      - name: Install GNU Radio
+        shell: bash
+        run: |
+          sudo add-apt-repository ppa:gnuradio/gnuradio-releases
+          sudo apt-get update
+
+      - name: Install GNU Radio dependencies
+        shell: bash
+        run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
 
       - name: Configure GNU Radio pulsed-power out of tree modules
         shell: bash
@@ -163,7 +165,7 @@ jobs:
       - name: Install emscripten
         uses: mymindstorm/setup-emsdk@v11
         with:
-          version: 3.1.24
+          version: 3.1.31
           # actions-cache-folder: "emsdk-cache"
 
       - name: Verify emscripten
@@ -174,4 +176,3 @@ jobs:
 
       - name: Build visualization
         run: cd ${{env.SRC_DIR_VIS}}/build && emmake make
-

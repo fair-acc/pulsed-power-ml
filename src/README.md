@@ -1,6 +1,7 @@
 # Pulsed Power Monitoring
 
-![image](assets/dashboard_screenshot.png)
+![image](assets/dashboard_ppem.png)
+![image](assets/dashboard_nilm.png)
 
 ## Getting Started
 
@@ -15,10 +16,10 @@
 
 In order to visualize data passed by OpenCMW, do the following:
 
-1. Build and run the OpenCMW worker
+1. Build and run the OpenCMW worker.
 2. Build and run the ImPlot Visualization.
 
-### OpenCMW
+### Pulsed Power Service & Inference Tool
 
 How to Build
 
@@ -30,6 +31,7 @@ cmake --build build
 How to Run
 
 - Run `./opencmw_worker/build/src/PulsedPowerService`
+- Run `./opencmw_worker/build/src/InferenceTool`
 
 ### ImPlot Visualization
 
@@ -43,9 +45,15 @@ NOTE: emcmake breaks `cmake --build` so we have to call make directly
 
 How to Run
 
-- run `cmake --build build --target serve`
+- Run `cmake --build build --target serve`
 - This will use Python3 to spawn a local webserver
 - Browse http://localhost:8000 to access your build.
+  - The PPEM dashboard is available at http://localhost:8000/dashboard_ppem.html.
+  - The NILM dashboard is available at http://localhost:8000/dashboard_nilm.html.
+- The default view is short-term (showing the last 5 minutes for power and mains frequency). You can change view options by passing query parameters by the url. Just add one of the following to the url to access different views:
+  - ?interval=short
+  - ?interval=mid
+  - ?interval=long
 
 # Test Setup
 

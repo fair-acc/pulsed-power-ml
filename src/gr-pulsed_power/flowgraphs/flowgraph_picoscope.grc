@@ -1,0 +1,877 @@
+options:
+  parameters:
+    author: johanna
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: one_phase_picoscope
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Not titled yet
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 116.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate_0
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [120, 116.0]
+    rotation: 0
+    state: enabled
+- name: analog_sig_source_x_0_0_0_0
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: ''
+    freq: '55'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: out_samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1016, 580.0]
+    rotation: 0
+    state: true
+- name: analog_sig_source_x_0_1_0
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: ''
+    freq: '55'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: out_samp_rate
+    type: float
+    waveform: analog.GR_SIN_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1016, 372.0]
+    rotation: 0
+    state: true
+- name: band_pass_filter_0_0_0
+  id: band_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    decim: bp_decimantion
+    gain: '1'
+    high_cutoff_freq: bp_high_cut
+    interp: '1'
+    low_cutoff_freq: bp_low_cut
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: in_samp_rate
+    type: fir_filter_fff
+    width: bp_trans
+    win: window.WIN_HANN
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 260.0]
+    rotation: 0
+    state: true
+- name: band_pass_filter_0_1
+  id: band_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    decim: bp_decimantion
+    gain: '1'
+    high_cutoff_freq: bp_high_cut
+    interp: '1'
+    low_cutoff_freq: bp_low_cut
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: in_samp_rate
+    type: fir_filter_fff
+    width: bp_trans
+    win: window.WIN_HANN
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 468.0]
+    rotation: 0
+    state: true
+- name: blocks_divide_xx_0_0_0
+  id: blocks_divide_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1776, 600.0]
+    rotation: 0
+    state: true
+- name: blocks_divide_xx_0_1
+  id: blocks_divide_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1768, 288.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '100'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [688, 316.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_const_vxx_0_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '2.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [688, 524.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_xx_0_0_0
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1392, 560.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_xx_0_1_0
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1392, 392.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_xx_0_2_0
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1392, 496.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_xx_0_3
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1392, 328.0]
+    rotation: 0
+    state: true
+- name: blocks_null_sink_0
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '14'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216.0, 992]
+    rotation: 270
+    state: true
+- name: blocks_sub_xx_0_0
+  id: blocks_sub_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2040, 448.0]
+    rotation: 0
+    state: enabled
+- name: blocks_transcendental_0_0_0
+  id: blocks_transcendental
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: atan
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1900.0, 552]
+    rotation: 90
+    state: true
+- name: blocks_transcendental_0_1
+  id: blocks_transcendental
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: atan
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1900.0, 280]
+    rotation: 270
+    state: true
+- name: bp_decimantion
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: band pass decimantion
+    short_id: ''
+    type: intx
+    value: '20'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 204.0]
+    rotation: 0
+    state: true
+- name: bp_high_cut
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: band pass high cutoff frequency
+    short_id: ''
+    type: eng_float
+    value: '80'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 396.0]
+    rotation: 0
+    state: true
+- name: bp_low_cut
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: band pass low cutoff frequency
+    short_id: ''
+    type: eng_float
+    value: '20'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 300.0]
+    rotation: 0
+    state: true
+- name: bp_trans
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: band pass transition width
+    short_id: ''
+    type: eng_float
+    value: '10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 492.0]
+    rotation: 0
+    state: true
+- name: current_correction_factor
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Current Correction Factor
+    short_id: ''
+    type: eng_float
+    value: '2.5'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 12.0]
+    rotation: 0
+    state: true
+- name: in_samp_rate
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: in-coming samp rate
+    short_id: ''
+    type: eng_float
+    value: '200000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_0_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '60'
+    decim: lp_decimantion
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: out_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1552, 652.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_1_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '60'
+    decim: lp_decimantion
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: out_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1552, 348.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_2_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '60'
+    decim: lp_decimantion
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: out_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1552, 492.0]
+    rotation: 0
+    state: true
+- name: low_pass_filter_0_1_3
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '60'
+    decim: lp_decimantion
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: out_samp_rate
+    type: fir_filter_fff
+    width: '10'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1552, 188.0]
+    rotation: 0
+    state: true
+- name: lp_decimantion
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: low pass decimantion
+    short_id: ''
+    type: intx
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 588.0]
+    rotation: 0
+    state: true
+- name: out_samp_rate
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: out-going samp rate
+    short_id: ''
+    type: eng_float
+    value: '10000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 684.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_0
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: active_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2464, 332.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_1
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: reactive_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2464, 412.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_2
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: apparent_power
+    signal_unit: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2464, 492.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_3
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: phi
+    signal_unit: rad
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2464, 572.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_4
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: voltage
+    signal_unit: Volt
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [656, 132.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_5
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: voltage_bpf
+    signal_unit: Volt
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1088, 100.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_6
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: current
+    signal_unit: Ampere
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [656, 588.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_opencmw_time_sink_7
+  id: pulsed_power_opencmw_time_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    sample_rate: samp_rate
+    signal_name: current_bpf
+    signal_unit: Ampere
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1104, 852.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_picoscope_4000a_source_0
+  id: pulsed_power_picoscope_4000a_source
+  parameters:
+    acquisition_mode: Streaming
+    affinity: ''
+    alias: ''
+    buff_size: '204800'
+    comment: ''
+    coupling_ai_a: '1'
+    coupling_ai_b: '1'
+    coupling_ai_c: '0'
+    coupling_ai_d: '0'
+    coupling_ai_e: '0'
+    coupling_ai_f: '0'
+    coupling_ai_g: '0'
+    coupling_ai_h: '0'
+    downsampling_factor: '1'
+    downsampling_mode: '0'
+    driver_buff_size: '102400'
+    enable_ai_a: 'True'
+    enable_ai_b: 'True'
+    enable_ai_c: 'False'
+    enable_ai_d: 'False'
+    enable_ai_e: 'False'
+    enable_ai_f: 'False'
+    enable_ai_g: 'False'
+    enable_ai_h: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nr_buffers: '64'
+    nr_waveforms: '5'
+    offset_ai_a: '0.0'
+    offset_ai_b: '0.0'
+    offset_ai_c: '5.0'
+    offset_ai_d: '0.0'
+    offset_ai_e: '0.0'
+    offset_ai_f: '0.0'
+    offset_ai_g: '5.0'
+    offset_ai_h: '0.0'
+    poll_rate: '0.0005'
+    post_samples: '10000'
+    pre_samples: '500000'
+    range_ai_a: '5'
+    range_ai_b: '1'
+    range_ai_c: '5.0'
+    range_ai_d: '5.0'
+    range_ai_e: '5'
+    range_ai_f: '5'
+    range_ai_g: '5.0'
+    range_ai_h: '5.0'
+    samp_rate: samp_rate
+    serial_number: EW413/152
+    trigger_direction: '0'
+    trigger_once: 'False'
+    trigger_source: None
+    trigger_threshold: '2.5'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216, 352.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_power_calc_ff_0
+  id: pulsed_power_power_calc_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: '0.0001'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2248, 416.0]
+    rotation: 0
+    state: true
+- name: voltage_correction_factor
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Voltage Correction Factor
+    short_id: ''
+    type: eng_float
+    value: '100'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [352, 12.0]
+    rotation: 0
+    state: true
+
+connections:
+- [analog_sig_source_x_0_0_0_0, '0', blocks_multiply_xx_0_0_0, '1']
+- [analog_sig_source_x_0_0_0_0, '0', blocks_multiply_xx_0_1_0, '1']
+- [analog_sig_source_x_0_1_0, '0', blocks_multiply_xx_0_2_0, '1']
+- [analog_sig_source_x_0_1_0, '0', blocks_multiply_xx_0_3, '1']
+- [band_pass_filter_0_0_0, '0', blocks_multiply_xx_0_1_0, '0']
+- [band_pass_filter_0_0_0, '0', blocks_multiply_xx_0_3, '0']
+- [band_pass_filter_0_0_0, '0', pulsed_power_opencmw_time_sink_5, '0']
+- [band_pass_filter_0_0_0, '0', pulsed_power_power_calc_ff_0, '0']
+- [band_pass_filter_0_1, '0', blocks_multiply_xx_0_0_0, '0']
+- [band_pass_filter_0_1, '0', blocks_multiply_xx_0_2_0, '0']
+- [band_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_7, '0']
+- [band_pass_filter_0_1, '0', pulsed_power_power_calc_ff_0, '1']
+- [blocks_divide_xx_0_0_0, '0', blocks_transcendental_0_0_0, '0']
+- [blocks_divide_xx_0_1, '0', blocks_transcendental_0_1, '0']
+- [blocks_multiply_const_vxx_0, '0', band_pass_filter_0_0_0, '0']
+- [blocks_multiply_const_vxx_0_0, '0', band_pass_filter_0_1, '0']
+- [blocks_multiply_xx_0_0_0, '0', low_pass_filter_0_1_0_0, '0']
+- [blocks_multiply_xx_0_1_0, '0', low_pass_filter_0_1_1_0, '0']
+- [blocks_multiply_xx_0_2_0, '0', low_pass_filter_0_1_2_0, '0']
+- [blocks_multiply_xx_0_3, '0', low_pass_filter_0_1_3, '0']
+- [blocks_sub_xx_0_0, '0', pulsed_power_power_calc_ff_0, '2']
+- [blocks_transcendental_0_0_0, '0', blocks_sub_xx_0_0, '1']
+- [blocks_transcendental_0_1, '0', blocks_sub_xx_0_0, '0']
+- [low_pass_filter_0_1_0_0, '0', blocks_divide_xx_0_0_0, '1']
+- [low_pass_filter_0_1_1_0, '0', blocks_divide_xx_0_1, '1']
+- [low_pass_filter_0_1_2_0, '0', blocks_divide_xx_0_0_0, '0']
+- [low_pass_filter_0_1_3, '0', blocks_divide_xx_0_1, '0']
+- [pulsed_power_picoscope_4000a_source_0, '0', blocks_multiply_const_vxx_0, '0']
+- [pulsed_power_picoscope_4000a_source_0, '0', pulsed_power_opencmw_time_sink_4, '0']
+- [pulsed_power_picoscope_4000a_source_0, '1', blocks_null_sink_0, '13']
+- [pulsed_power_picoscope_4000a_source_0, '10', blocks_null_sink_0, '5']
+- [pulsed_power_picoscope_4000a_source_0, '11', blocks_null_sink_0, '4']
+- [pulsed_power_picoscope_4000a_source_0, '12', blocks_null_sink_0, '3']
+- [pulsed_power_picoscope_4000a_source_0, '13', blocks_null_sink_0, '2']
+- [pulsed_power_picoscope_4000a_source_0, '14', blocks_null_sink_0, '1']
+- [pulsed_power_picoscope_4000a_source_0, '15', blocks_null_sink_0, '0']
+- [pulsed_power_picoscope_4000a_source_0, '2', blocks_multiply_const_vxx_0_0, '0']
+- [pulsed_power_picoscope_4000a_source_0, '2', pulsed_power_opencmw_time_sink_6, '0']
+- [pulsed_power_picoscope_4000a_source_0, '3', blocks_null_sink_0, '12']
+- [pulsed_power_picoscope_4000a_source_0, '4', blocks_null_sink_0, '11']
+- [pulsed_power_picoscope_4000a_source_0, '5', blocks_null_sink_0, '10']
+- [pulsed_power_picoscope_4000a_source_0, '6', blocks_null_sink_0, '9']
+- [pulsed_power_picoscope_4000a_source_0, '7', blocks_null_sink_0, '8']
+- [pulsed_power_picoscope_4000a_source_0, '8', blocks_null_sink_0, '7']
+- [pulsed_power_picoscope_4000a_source_0, '9', blocks_null_sink_0, '6']
+- [pulsed_power_power_calc_ff_0, '0', pulsed_power_opencmw_time_sink_0, '0']
+- [pulsed_power_power_calc_ff_0, '1', pulsed_power_opencmw_time_sink_1, '0']
+- [pulsed_power_power_calc_ff_0, '2', pulsed_power_opencmw_time_sink_2, '0']
+- [pulsed_power_power_calc_ff_0, '3', pulsed_power_opencmw_time_sink_3, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.5.0

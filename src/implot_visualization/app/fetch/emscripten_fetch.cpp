@@ -10,16 +10,18 @@ template<typename T>
 void Subscription<T>::downloadSucceeded(emscripten_fetch_t *fetch) {
     // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
     this->acquisition.jsonString.assign(fetch->data, fetch->numBytes);
-    this->fetchSuccessful = true;
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
+    this->fetchSuccessful     = true;
+    this->acquisition.success = true;
 }
 
 template<typename T>
 void Subscription<T>::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    this->fetchFinished = true;
+    this->fetchFinished       = true;
+    this->acquisition.success = false;
 }
 
 template<typename T>
@@ -35,8 +37,8 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals)
-    : url(_url), requestedSignals(_requestedSignals) {
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const float _updateFrequency)
+    : url(_url), requestedSignals(_requestedSignals), updateFrequency(_updateFrequency) {
     for (std::string str : _requestedSignals) {
         this->url = this->url + str + ",";
     }
@@ -44,8 +46,7 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
         this->url.pop_back();
     }
 
-    int numSignals = _requestedSignals.size();
-    T   _acquisition(numSignals);
+    T _acquisition(_requestedSignals);
     this->acquisition = _acquisition;
 
     if (url.find("channelNameFilter") != std::string::npos) {
@@ -53,6 +54,10 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
     } else {
         this->extendedUrl = this->url;
     }
+
+    auto   clock        = std::chrono::system_clock::now();
+    double currentTime  = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    this->lastFetchTime = currentTime;
 }
 
 template<typename T>
@@ -62,22 +67,27 @@ void Subscription<T>::fetch() {
     strcpy(attr.requestMethod, "GET");
     // static const char *custom_headers[3] = { "X-OPENCMW-METHOD", "POLL", nullptr };
     // attr.requestHeaders = custom_headers;
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess  = onDownloadSucceeded<T>;
-    attr.onerror    = onDownloadFailed<T>;
-    attr.userData   = this;
+    attr.attributes    = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess     = onDownloadSucceeded<T>;
+    attr.onerror       = onDownloadFailed<T>;
+    attr.userData      = this;
 
-    if (this->fetchFinished) {
-        emscripten_fetch(&attr, this->extendedUrl.c_str());
-        this->fetchFinished = false;
-    }
-    if (fetchSuccessful) {
-        this->acquisition.deserialize();
-        if (url.find("channelNameFilter") != std::string::npos) {
-            updateUrl();
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
+    if (currentTime - this->lastFetchTime >= 1.0f / this->updateFrequency) {
+        if (this->fetchFinished) {
+            this->fetchFinished = false;
+            emscripten_fetch(&attr, this->extendedUrl.c_str());
         }
-        this->fetchSuccessful = false;
-        this->fetchFinished   = true;
+        if (fetchSuccessful) {
+            this->acquisition.deserialize();
+            if (url.find("channelNameFilter") != std::string::npos) {
+                updateUrl();
+            }
+            this->fetchSuccessful = false;
+            this->fetchFinished   = true;
+            this->lastFetchTime   = currentTime;
+        }
     }
 }
 
@@ -88,3 +98,5 @@ void Subscription<T>::updateUrl() {
 
 template class Subscription<Acquisition>;
 template class Subscription<AcquisitionSpectra>;
+template class Subscription<PowerUsage>;
+template class Subscription<RealPowerUsage>;

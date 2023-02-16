@@ -37,6 +37,7 @@ struct Acquisition {
     std::vector<float>            channelRangeMin;
     std::vector<float>            channelRangeMax;
     std::vector<float>            temperature;
+    int64_t                       lastTimeStamp = 0;
 };
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)
@@ -196,7 +197,7 @@ public:
                 pollingDuration   = std::chrono::system_clock::now() - time_start;
 
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
-                if (willSleepFor > 0ms) {
+                if (willSleepFor > std::chrono::milliseconds(0)) {
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }

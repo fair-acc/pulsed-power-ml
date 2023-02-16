@@ -43,16 +43,17 @@ add_link_options(
         -sFETCH
 )
 
-set(outputFileName "index")
-add_executable(${outputFileName})
+set(ppemOutputFileName "dashboard_ppem")
+add_executable(${ppemOutputFileName})
 
-# dependencies
-add_subdirectory(external)
-add_subdirectory(app)
+set(nilmOutputFileName "dashboard_nilm")
+add_executable(${nilmOutputFileName})
 
 add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
-        COMMENT start a python server serving the webassembly app
-        DEPENDS ${outputFileName}
+        COMMENT start a python server serving the wasm app
+        DEPENDS ${ppemOutputFileName} ${nilmOutputFileName}
 )
 
+add_subdirectory(external)
+add_subdirectory(app)

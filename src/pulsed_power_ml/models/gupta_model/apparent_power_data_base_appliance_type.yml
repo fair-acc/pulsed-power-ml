@@ -1,0 +1,10 @@
+#fluorescent_0: 50.0
+#halogen_0: 45.9
+#led_0: 5.8
+E1: 4.8 # LED
+F1: 490 # Foen
+FP1: 24 # Festplatte
+H1: 42 # Halogen
+L1: 27 # Laptop
+PS1: 50 # Power supply
+R1: 50 # Fluoreszenzroehren

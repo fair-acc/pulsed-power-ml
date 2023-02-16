@@ -59,11 +59,5 @@ PYBIND11_MODULE(pulsed_power_python, m)
     // BINDING_FUNCTION_CALLS(
     bind_opencmw_time_sink(m);
     bind_opencmw_freq_sink(m);
-    bind_integration(m);
-    bind_statistics(m);
-    bind_picoscope_4000a_source(m);
-    bind_power_calc_ff(m);
-    bind_mains_frequency_calc(m);
-    bind_power_calc_cc(m);
     // ) END BINDING_FUNCTION_CALLS
 }
