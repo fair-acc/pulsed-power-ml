@@ -83,15 +83,12 @@ class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPre
     NilmPredictData                  _nilmData;
     std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
-    std::ofstream                    _dataPointFile;
-
 public:
     using super_t = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
 
     template<typename BrokerType>
     explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
         : super_t(broker, {}) {
-        _dataPointFile.open("./capturedDataPoint.bin", std::ios::binary);
         _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
         _fetchThread     = std::jthread([this] {
@@ -141,7 +138,6 @@ public:
 
                 NilmContext             context;
                 std::vector<float>      dataPoint;
-
                 AcquisitionNilm         acquisitionNilm;
 
                 try {
@@ -159,9 +155,6 @@ public:
                         fmt::print("acquisitionNilm received, chunks no: {},  fftsize: {}, size of data: {}\n", acquisitionNilm.apparentPower.size(), fftSize, response->body.size());
                         for (size_t i = 0; i < acquisitionNilm.realPower.size(); i++) {
                             mergeValues(acquisitionNilm, i, fftSize, dataPoint);
-
-                            // write to a file
-                            _dataPointFile.write(reinterpret_cast<char *>(dataPoint.data()), dataPoint.size() * sizeof(float));
 
                             int64_t         size = static_cast<int64_t>(dataPoint.size());
                             cppflow::tensor input(dataPoint, { size });
@@ -214,7 +207,6 @@ public:
     }
 
     ~NilmPredictWorker() {
-        _dataPointFile.close();
         _shutdownRequested = true;
         _predictThread.join();
     }
