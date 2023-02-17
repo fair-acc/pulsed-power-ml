@@ -16,13 +16,13 @@ FetchContent_Declare(
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY  https://github.com/ocornut/imgui.git
-    GIT_TAG         v1.88
+    GIT_TAG         v1.89.2
 )
 
 FetchContent_Declare(
     implot
     GIT_REPOSITORY  https://github.com/epezent/implot.git
-    GIT_TAG         master #v0.13
+    GIT_TAG         v0.14
 )
 
 FetchContent_Declare(
