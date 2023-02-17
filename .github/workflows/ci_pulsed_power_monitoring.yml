@@ -118,6 +118,7 @@ jobs:
           sudo ldconfig
 
       - name: Test GNU Radio pulsed-power out of tree modules
+        if: matrix.cmake-build-type == 'Debug'
         shell: bash
         run: ctest --test-dir ${{env.SRC_DIR_GR}}/build
 
