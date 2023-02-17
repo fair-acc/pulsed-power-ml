@@ -1,4 +1,3 @@
-#include "power_calc_cc_impl.h"
 #include <gnuradio/attributes.h>
 #include <gnuradio/pulsed_power/power_calc_cc.h>
 #include <boost/test/unit_test.hpp>
@@ -9,7 +8,8 @@ namespace pulsed_power {
 BOOST_AUTO_TEST_SUITE(power_calc_cc_testing);
 BOOST_AUTO_TEST_CASE(test_power_calc_cc_Calc_active_power_Basic_input)
 {
-    power_calc_cc_impl* calc_block = new power_calc_cc_impl(0.0001);
+    auto calc_block = gr::pulsed_power::power_calc_cc::make(0.0001);
+    // power_calc_cc_impl* calc_block = new power_calc_cc_impl(0.0001);
     float out_float[1] = { 0 };
     float* out = out_float;
     float float_voltage[1] = { 1 };
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(test_power_calc_cc_Calc_active_power_Basic_input)
 }
 BOOST_AUTO_TEST_CASE(test_power_calc_cc_Calc_active_power_NAN_input)
 {
-    power_calc_cc_impl* calc_block = new power_calc_cc_impl(0.0001);
+    auto calc_block = gr::pulsed_power::power_calc_cc::make(0.0001);
     float out_float[1] = { 0 };
     float* out = out_float;
     float float_voltage[1] = { nanf("") };

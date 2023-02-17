@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Free Software Foundation, Inc.
+ * Copyright 2023 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(power_calc_ff.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(75301535e8391dadd0295af7540d28ab)                     */
+/* BINDTOOL_HEADER_FILE_HASH(75c397a19e603712af87f33704fc695d)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -48,6 +48,65 @@ void bind_power_calc_ff(py::module& m)
              &power_calc_ff::set_alpha,
              py::arg("alpha"),
              D(power_calc_ff, set_alpha))
+
+
+        .def("calc_active_power",
+             &power_calc_ff::calc_active_power,
+             py::arg("out"),
+             py::arg("voltage"),
+             py::arg("current"),
+             py::arg("phi_out"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_active_power))
+
+
+        .def("calc_reactive_power",
+             &power_calc_ff::calc_reactive_power,
+             py::arg("out"),
+             py::arg("voltage"),
+             py::arg("current"),
+             py::arg("phi_out"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_reactive_power))
+
+
+        .def("calc_apparent_power",
+             &power_calc_ff::calc_apparent_power,
+             py::arg("out"),
+             py::arg("voltage"),
+             py::arg("current"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_apparent_power))
+
+
+        .def("calc_phi_phase_correction",
+             &power_calc_ff::calc_phi_phase_correction,
+             py::arg("phi_out"),
+             py::arg("dalta_phi"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_phi_phase_correction))
+
+
+        .def("calc_rms_u",
+             &power_calc_ff::calc_rms_u,
+             py::arg("output"),
+             py::arg("input"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_rms_u))
+
+
+        .def("calc_rms_i",
+             &power_calc_ff::calc_rms_i,
+             py::arg("output"),
+             py::arg("input"),
+             py::arg("noutput_items"),
+             D(power_calc_ff, calc_rms_i))
+
+
+        .def("get_timestamp_ms",
+             &power_calc_ff::get_timestamp_ms,
+             py::arg("out"),
+             D(power_calc_ff, get_timestamp_ms))
 
         ;
 }

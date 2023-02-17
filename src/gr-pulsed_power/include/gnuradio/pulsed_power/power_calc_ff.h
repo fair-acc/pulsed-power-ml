@@ -27,6 +27,27 @@ public:
      */
     static sptr make(double alpha = 0.0000001);
     virtual void set_alpha(double alpha) = 0;
+
+    virtual void calc_active_power(float* out,
+                                   float* voltage,
+                                   float* current,
+                                   float* phi_out,
+                                   int noutput_items) = 0;
+    virtual void calc_reactive_power(float* out,
+                                     float* voltage,
+                                     float* current,
+                                     float* phi_out,
+                                     int noutput_items) = 0;
+    virtual void calc_apparent_power(float* out,
+                                     float* voltage,
+                                     float* current,
+                                     int noutput_items) = 0;
+    virtual void calc_phi_phase_correction(float* phi_out,
+                                           const float* dalta_phi,
+                                           int noutput_items) = 0;
+    virtual void calc_rms_u(float* output, const float* input, int noutput_items) = 0;
+    virtual void calc_rms_i(float* output, const float* input, int noutput_items) = 0;
+    virtual void get_timestamp_ms(float* out) = 0;
 };
 
 } // namespace pulsed_power
