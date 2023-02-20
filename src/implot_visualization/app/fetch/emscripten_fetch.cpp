@@ -12,14 +12,16 @@ void Subscription<T>::downloadSucceeded(emscripten_fetch_t *fetch) {
     this->acquisition.jsonString.assign(fetch->data, fetch->numBytes);
 
     emscripten_fetch_close(fetch); // Free data associated with the fetch.
-    this->fetchSuccessful = true;
+    this->fetchSuccessful     = true;
+    this->acquisition.success = true;
 }
 
 template<typename T>
 void Subscription<T>::downloadFailed(emscripten_fetch_t *fetch) {
     printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
     emscripten_fetch_close(fetch); // Also free data on failure.
-    this->fetchFinished = true;
+    this->fetchFinished       = true;
+    this->acquisition.success = false;
 }
 
 template<typename T>
@@ -79,7 +81,9 @@ void Subscription<T>::fetch() {
         }
         if (fetchSuccessful) {
             this->acquisition.deserialize();
-            updateUrl();
+            if (url.find("channelNameFilter") != std::string::npos) {
+                updateUrl();
+            }
             this->fetchSuccessful = false;
             this->fetchFinished   = true;
             this->lastFetchTime   = currentTime;
@@ -94,3 +98,5 @@ void Subscription<T>::updateUrl() {
 
 template class Subscription<Acquisition>;
 template class Subscription<AcquisitionSpectra>;
+template class Subscription<PowerUsage>;
+template class Subscription<RealPowerUsage>;
