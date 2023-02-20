@@ -34,6 +34,7 @@ class TFGuptaClassifier(keras.Model):
                  distance_threshold: tf.Tensor = tf.constant(10, dtype=tf.float32),
                  training_data_features: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
+                 verbose: tf.Tensor = tf.constant(False, dtype=tf.bool),
                  name="TFGuptaClassifier",
                  **kwargs
                  ) -> None:
@@ -69,8 +70,13 @@ class TFGuptaClassifier(keras.Model):
             Unscaled (!) features of the training data
         training_data_labels
             Corresponding labels for the provided training data
+        verbose
+            If True, increase verbosity.
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
+
+        # verbose flag
+        self.verbose = verbose
 
         # Parameters
         self.fft_size_real = fft_size_real
@@ -208,6 +214,14 @@ class TFGuptaClassifier(keras.Model):
             # Create result tensor (one-hot encoded w/ length=N+1)
             result_tensor = tf.one_hot(indices=result_index,
                                        depth=self.training_data_labels.shape[1])
+
+        if self.verbose:
+            tf.print('\n')
+            tf.print('# +++ In "call_knn()" +++ #')
+            tf.print('Feature vector "input" = ', input, summarize=-1)
+            tf.print('distances = ', distances, summarize=-1)
+            tf.print('k_smallest_distances = ', k_smallest_distances, summarize=-1)
+            tf.print('result_tensor = ', result_tensor, summarize=-1)
 
         return k_smallest_distances, result_tensor
 
