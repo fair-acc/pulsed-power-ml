@@ -109,7 +109,7 @@ jobs:
 
       - name: Configure GNU Radio pulsed-power out of tree modules
         shell: bash
-        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
+        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build -DCMAKE_BUILD_TYPE=matrix.cmake-build-type
 
       - name: Build GNU Radio pulsed-power out of tree modules
         shell: bash
