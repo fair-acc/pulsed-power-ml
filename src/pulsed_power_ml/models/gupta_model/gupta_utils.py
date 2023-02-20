@@ -648,7 +648,7 @@ def tf_transform_spectrum(new_spectrum: tf.Tensor) -> tf.Tensor:
         )
     )
 
-    reversed_transformed_apparent_power_spectrum = tf.reverse(transformed_apparent_power_spectrum,
-                                                              axis=tf.constant([0]))
+    # reversed_transformed_apparent_power_spectrum = tf.reverse(transformed_apparent_power_spectrum,
+    #                                                           axis=tf.constant([0]))
 
-    return reversed_transformed_apparent_power_spectrum
+    return transformed_apparent_power_spectrum
