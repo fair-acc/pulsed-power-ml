@@ -109,7 +109,7 @@ jobs:
 
       - name: Configure GNU Radio pulsed-power out of tree modules
         shell: bash
-        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build -DCMAKE_BUILD_TYPE=matrix.cmake-build-type
+        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build -DCMAKE_BUILD_TYPE=${{matrix.cmake-build-type}}
 
       - name: Build GNU Radio pulsed-power out of tree modules
         shell: bash
@@ -134,7 +134,7 @@ jobs:
         run: cmake --build ${{env.SRC_DIR_WORKER}}/build
 
       - name: Run tests
-        if: matrix.configurations.name != env.REFERENCE_CONFIG || matrix.cmake-build-type != 'Debug'
+        if: matrix.configurations.name != env.REFERENCE_CONFIG || matrix.cmake-build-type == 'Debug'
         working-directory: ${{env.SRC_DIR_WORKER}}/build
         shell: bash
         # Execute tests defined by the CMake configuration. The coverage target runs the autodiscovered catch2 tests using
