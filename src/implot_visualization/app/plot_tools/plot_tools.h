@@ -108,6 +108,7 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             }
             if (signal.signalName.find("bpf") != std::string::npos) {
                 lineFlag = ImPlotLineFlags_Segments;
+                // legendFlags = ImPlotLegendFlags_None;
             } else {
                 lineFlag = ImPlotLineFlags_None;
             }
