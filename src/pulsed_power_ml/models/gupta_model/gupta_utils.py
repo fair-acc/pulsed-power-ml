@@ -339,7 +339,9 @@ def gupta_offline_switch_detection(data_point_array: np.array,
 
     return switch_array
 
-def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+def tf_switch_detected(res_spectrum: tf.Tensor,
+                       threshold: tf.Tensor,
+                       verbose: tf.Tensor = tf.constant(False, dtype=tf.bool)) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Scans background subtracted spectrum for switch event
     (signal larger than input parameter threshold value)
@@ -351,6 +353,8 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
         Background subtracted spectrum.
     threshold
         Threshold value
+    verbose
+        Increase verbosity is set to True. Default False.
 
     Returns
     -------
@@ -363,6 +367,14 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
     spectrum_sum = tf.math.reduce_sum(res_spectrum)
     sum_above_thr = tf.math.greater(spectrum_sum, threshold)
     sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
+
+    if verbose:
+        tf.print('\n')
+        tf.print('# ++++++++++++++++++++++++++++++++++ In "tf_switch_detected" ++++++++++++++++++++++++++++++++++ #')
+        tf.print('Threshold = ', threshold)
+        tf.print('spectrum_sum = ', spectrum_sum)
+        tf.print('sum_above_thr = ', sum_above_thr)
+        tf.print('sum_below_minus_thr = ', sum_below_minus_thr)
 
     return sum_below_minus_thr, sum_above_thr
 
@@ -609,8 +621,10 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
 @tf.function(
     input_signature=[
-        tf.TensorSpec(shape=(2**16), dtype=tf.float32)])
-def tf_transform_spectrum(new_spectrum: tf.Tensor) -> tf.Tensor:
+        tf.TensorSpec(shape=(2**16), dtype=tf.float32),
+        tf.TensorSpec(shape=(), dtype=tf.bool)
+    ])
+def tf_transform_spectrum(new_spectrum: tf.Tensor, reverse: tf.Tensor) -> tf.Tensor:
     """
     Function to transform apparent power spectra from the new and probably correct flowgraph to be more like the
     training data, which have been produced w/ an old and incorrect version of the flowgraph.
@@ -620,6 +634,8 @@ def tf_transform_spectrum(new_spectrum: tf.Tensor) -> tf.Tensor:
     ----------
     new_spectrum
         Apparent power spectrum
+    reverse
+        If True, output will be additionally reversed.
 
     Returns
     -------
@@ -648,7 +664,7 @@ def tf_transform_spectrum(new_spectrum: tf.Tensor) -> tf.Tensor:
         )
     )
 
-    # reversed_transformed_apparent_power_spectrum = tf.reverse(transformed_apparent_power_spectrum,
-    #                                                           axis=tf.constant([0]))
-
-    return transformed_apparent_power_spectrum
+    if reverse:
+        return tf.reverse(transformed_apparent_power_spectrum, axis=tf.constant([0]))
+    else:
+        return transformed_apparent_power_spectrum

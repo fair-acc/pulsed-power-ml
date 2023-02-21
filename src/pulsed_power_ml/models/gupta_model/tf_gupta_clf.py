@@ -35,6 +35,7 @@ class TFGuptaClassifier(keras.Model):
                  training_data_features: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  verbose: tf.Tensor = tf.constant(False, dtype=tf.bool),
+                 reverse_input: tf.Tensor = tf.constant(False, dtype=tf.bool),
                  name="TFGuptaClassifier",
                  **kwargs
                  ) -> None:
@@ -72,11 +73,16 @@ class TFGuptaClassifier(keras.Model):
             Corresponding labels for the provided training data
         verbose
             If True, increase verbosity.
+        reverse_input
+            If True, reverse input tensors
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
 
         # verbose flag
         self.verbose = verbose
+
+        # reverse flag
+        self.reverse_input = reverse_input
 
         # Parameters
         self.fft_size_real = fft_size_real
@@ -203,7 +209,6 @@ class TFGuptaClassifier(keras.Model):
 
         else:
             # weight classes with distances (similar to scikit learns weights="distance" weighting)
-
             weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
                                                                   axis=-1)
 
@@ -217,7 +222,7 @@ class TFGuptaClassifier(keras.Model):
 
         if self.verbose:
             tf.print('\n')
-            tf.print('# +++ In "call_knn()" +++ #')
+            tf.print('# +++++++++++++++++++++++++++++++++++++ In "call_knn()" +++++++++++++++++++++++++++++++++++++ #')
             tf.print('Feature vector "input" = ', input, summarize=-1)
             tf.print('distances = ', distances, summarize=-1)
             tf.print('k_smallest_distances = ', k_smallest_distances, summarize=-1)
@@ -245,7 +250,21 @@ class TFGuptaClassifier(keras.Model):
         orig_spectrum, apparent_power = self.crop_data_point(X)
 
         # Transform spectrum
-        spectrum = tf_transform_spectrum(orig_spectrum)
+        spectrum = tf_transform_spectrum(orig_spectrum, self.reverse_input)
+
+        # Verbosity
+        if self.verbose:
+            tf.print('\n')
+            tf.print('# +++++++++++++++++++++++++++++++++++++ In "call()" +++++++++++++++++++++++++++++++++++++ #')
+            top_k_values, top_k_indices = tf.math.top_k(input=spectrum, k=5)
+            tf.print('Indices of top 5 entries in input (transformed) = ', top_k_indices, summarize=-1)
+            tf.print('Values of top 5 entries in input (transformed) = ', top_k_values, summarize=-1)
+            tf.print('Min entry in input = ', tf.math.reduce_min(spectrum))
+            tf.print('Mean value of input = ', tf.math.reduce_mean(spectrum))
+            tf.print('Number of entries in background = ', self.current_background_size)
+            tf.print('Switching offset = ', self.switching_offset)
+            tf.print('Skip frame = ', self.skip_data_point)
+            tf.print('Number of frames skipped = ', self.n_data_points_skipped)
 
         # If data point is all exactly -1, reset internal states
         if tf.math.reduce_all(tf.math.equal(x=X, y=tf.math.multiply(-1.0, tf.ones_like(X, dtype=tf.float32)))):
@@ -287,10 +306,13 @@ class TFGuptaClassifier(keras.Model):
                 # reset skip flag
                 self.skip_data_point.assign(False)
 
+                # reset skipped frames counter
+                self.n_data_points_skipped.assign(
+                    tf.constant(0, dtype=tf.int32)
+                )
+
                 # return new state vector
                 return self.current_state_vector
-
-        # 0. Step: Remove unused information in data point
 
         # 1. Step: Check if background vector is full
         # ToDo: Rework this if-block
@@ -327,7 +349,12 @@ class TFGuptaClassifier(keras.Model):
         )
 
         event_detected_flag = tf_switch_detected(res_spectrum=cleaned_spectrum_normed,
-                                                 threshold=tf.constant(30, dtype=tf.float32))
+                                                 threshold=tf.constant(30, dtype=tf.float32),
+                                                 verbose=self.verbose)
+
+
+        if self.verbose:
+            tf.print('Event detected flag = ', event_detected_flag)
 
         # ToDo: Rework if-block
         # No switch detected (True NOT in event_detected_flag):

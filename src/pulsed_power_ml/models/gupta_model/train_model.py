@@ -42,6 +42,16 @@ def main():
                         '--power-data-base',
                         help='Path to data base containing apparent power for each known appliance.',
                         required=True)
+    parser.add_argument('-v',
+                        '--verbose',
+                        help='Increase the verbosity of the model',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('-r',
+                        '--reverse-input',
+                        help='If True, reverse input tensor in model call',
+                        action='store_true',
+                        default=False)
     args = parser.parse_args()
 
     # Load parameters
@@ -70,7 +80,9 @@ def main():
         n_neighbors=parameter_dict["n_neighbors"],
         distance_threshold=parameter_dict["distance_threshold"],
         training_data_features=tf.constant(features, dtype=np.float32),
-        training_data_labels=tf.constant(labels, dtype=np.float32)
+        training_data_labels=tf.constant(labels, dtype=np.float32),
+        verbose=tf.constant(args.verbose, dtype=tf.bool),
+        reverse_input=tf.constant(args.reverse_input, dtype=tf.bool)
     )
 
     # Reset model
