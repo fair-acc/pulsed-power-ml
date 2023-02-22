@@ -47,7 +47,7 @@ template<units::basic_fixed_string ServiceName, typename... Meta>
 class FrequencyDomainWorker
     : public Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    //static const size_t RING_BUFFER_SIZE = 128;
+    const size_t RING_BUFFER_SIZE = 128;
     const std::string  _deviceName;
     std::atomic<bool>  _shutdownRequested;
     std::jthread       _pollingThread;
@@ -110,7 +110,7 @@ public:
             const auto sampleRate  = sink->get_sample_rate();
 
             // init RingBuffer and name for siganl (only one signal possible per freq_sink)
-            auto       ringbuffer         = std::make_shared<Ringbuffer<RingBufferData>>(128);
+            auto       ringbuffer         = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
             const auto completeSignalName = fmt::format("{}@{}Hz", signalNames[0], sampleRate);
             _signalsMap.insert({ completeSignalName, SignalData(sink, ringbuffer) });
             fmt::print("GR: OpenCMW Frequency Sink '{}' added\n", completeSignalName);

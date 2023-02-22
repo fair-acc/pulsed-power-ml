@@ -49,7 +49,6 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class TimeDomainWorker
     : public Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...> {
 private:
-    // static const size_t RING_BUFFER_SIZE = 128;
     std::atomic<bool> _shutdownRequested;
     std::jthread      _pollingThread;
 
@@ -65,11 +64,13 @@ private:
         std::string              _channelNameFilter; // signalName1@sampleRate,signalName2@sampleRate...
         float                    _sampleRate = 0;
         ringbuffer_t             _ringBuffer;
+        const size_t RING_BUFFER_SIZE = 128;
 
     public:
         GRSink() = delete;
         GRSink(gr::pulsed_power::opencmw_time_sink *sink)
-            : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()), _ringBuffer(std::make_shared<Ringbuffer<RingBufferData>>(128)) {
+            : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()) {
+            _ringBuffer = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
             for (size_t i = 0; i < _channelNames.size(); i++) {
                 _channelNameFilter.append(fmt::format("{}@{}Hz", _channelNames[i], _sampleRate));
                 _channelUnits = sink->get_signal_units();
