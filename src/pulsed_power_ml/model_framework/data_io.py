@@ -17,6 +17,29 @@ REACTIVE_POWER_FIX = "Q_"
 PHASE_DIFFERENCE_FIX = "Phi_"
 
 
+def load_binary_data_array(path_to_file: str,
+                           fft_size_data_point: int = 2**16) -> np.array:
+    """
+    Load and transform the data point array from a binary. Output will have shape (n, 3*fft_size_data_point + 4)
+    where n is the number of data points in the file.
+
+    One data point consists of (Spectrum_U, Spectrum_I, Spectrum_S, P, Q, S, Phi)
+
+    Parameters
+    ----------
+    path_to_file
+        Path to the binary
+    fft_size_data_point
+        Size of the spectra in the binary (usually half of what has been used for the calculation of the FFT)
+
+    Returns
+    -------
+    data_point_array
+        Array of data points.
+    """
+    data_point_len = 3 * fft_size_data_point + 4
+    return np.fromfile(path_to_file, dtype=np.float32).reshape((-1, data_point_len))
+
 def load_fft_file(path_to_file: str,
                   fft_size: int) -> np.array:
     """

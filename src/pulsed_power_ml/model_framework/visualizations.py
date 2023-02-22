@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
+import sys
+sys.path.append("../../../")
+
 from src.pulsed_power_ml.model_framework.data_io import read_training_files
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import gupta_offline_switch_detection
 
