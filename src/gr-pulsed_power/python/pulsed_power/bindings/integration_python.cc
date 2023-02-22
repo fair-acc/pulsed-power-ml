@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Free Software Foundation, Inc.
+ * Copyright 2023 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(integration.h)                                             */
-/* BINDTOOL_HEADER_FILE_HASH(a6602ba60159bd8b7e5186f1ff0b4acf)                     */
+/* BINDTOOL_HEADER_FILE(integration.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(6c60e3a357e58ebee9b47e649a5cdfcf)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -33,7 +33,7 @@ void bind_integration(py::module& m)
     using integration = ::gr::pulsed_power::integration;
 
 
-    py::class_<integration, gr::block, gr::basic_block, std::shared_ptr<integration>>(
+    py::class_<integration, gr::sync_decimator, std::shared_ptr<integration>>(
         m, "integration", D(integration))
 
         .def(py::init(&integration::make),
@@ -49,6 +49,7 @@ void bind_integration(py::module& m)
              py::arg("n_samples"),
              py::arg("calculate_with_last_value"),
              D(integration, integrate))
+
 
         .def("add_new_steps",
              &integration::add_new_steps,
