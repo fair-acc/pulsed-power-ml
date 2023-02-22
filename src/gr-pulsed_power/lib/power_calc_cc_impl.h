@@ -14,23 +14,36 @@ class power_calc_cc_impl : public power_calc_cc
 private:
     double d_alpha, d_beta, d_avg_u, d_avg_i, d_avg_phi;
 
+    void get_timestamp_ms(float* out);
+
 public:
     power_calc_cc_impl(double alpha); // 100n
     ~power_calc_cc_impl();
 
-    void calc_active_power(
-        float* out, float* voltage, float* current, float* phi_out, int noutput_items);
-    void calc_reactive_power(
-        float* out, float* voltage, float* current, float* phi_out, int noutput_items);
-    void
-    calc_apparent_power(float* out, float* voltage, float* current, int noutput_items);
+    void calc_active_power(float* out,
+                           float* voltage,
+                           float* current,
+                           float* phi_out,
+                           int noutput_items) override;
+
+    void calc_reactive_power(float* out,
+                             float* voltage,
+                             float* current,
+                             float* phi_out,
+                             int noutput_items) override;
+
+    void calc_apparent_power(float* out,
+                             float* voltage,
+                             float* current,
+                             int noutput_items) override;
+
     void calc_phi(float* phi_out,
                   const gr_complex* u_in,
                   const gr_complex* i_in,
-                  int noutput_items);
-    void calc_rms_u(float* output, const gr_complex* input, int noutput_items);
-    void calc_rms_i(float* output, const gr_complex* input, int noutput_items);
-    void get_timestamp_ms(float* out);
+                  int noutput_items) override;
+
+    void calc_rms_u(float* output, const gr_complex* input, int noutput_items) override;
+    void calc_rms_i(float* output, const gr_complex* input, int noutput_items) override;
     // void calc_signed_rms_phase(float* output, float * input, int noutput_items);
     // void calc_phase_correction(float* output, float * input, int noutput_items);
 

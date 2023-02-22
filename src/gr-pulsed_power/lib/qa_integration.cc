@@ -32,7 +32,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (1.0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (1.0 * 1.0 / sample_rate / 3600.0),
+               boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
@@ -53,7 +54,8 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (-1.0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (-1.0 * 1.0 / sample_rate / 3600.0),
+               boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
@@ -95,7 +97,8 @@ BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) // What happens if there is no sample?
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate / 3600.0),
+               boost::test_tools::tolerance(0.001));
 }
 
 BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
@@ -137,7 +140,8 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     integration_block->integrate(out[0], sample, num_samples, false);
 
     // Check result
-    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate), boost::test_tools::tolerance(0.001));
+    BOOST_TEST(out[0] == (0 * 1.0 / sample_rate / 3600.0),
+               boost::test_tools::tolerance(0.001));
 }
 
 // BOOST_AUTO_TEST_SUITE_END();

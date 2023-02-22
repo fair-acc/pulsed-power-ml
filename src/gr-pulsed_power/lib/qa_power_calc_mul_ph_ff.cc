@@ -1,6 +1,5 @@
-#include "power_calc_mul_ph_ff_impl.h"
 #include <gnuradio/attributes.h>
-#include <gnuradio/pulsed_power/power_calc_ff.h>
+#include <gnuradio/pulsed_power/power_calc_mul_ph_ff.h>
 #include <boost/test/unit_test.hpp>
 
 namespace gr {
@@ -17,7 +16,8 @@ bool isSimilar(float first, float second, float decimals)
 
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_active_and_reactive_power_isnan)
 {
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(0.0001);
+    float alpha = 0.0001;
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float out_active_float[1] = { 0 };
     float* out_active = out_active_float;
     float out_reactive_float[1] = { 0 };
@@ -48,8 +48,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_active_and_reactive_power_is
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     voltage[0] = 1;
     current[0] = nanf("");
@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_active_and_reactive_power_is
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     voltage[0] = 1;
     current[0] = 1;
@@ -66,8 +66,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_active_and_reactive_power_is
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     /**
      * checking for all inputs being NaN
@@ -78,13 +78,13 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_active_and_reactive_power_is
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 }
 BOOST_AUTO_TEST_CASE(
     test_power_calc_mul_ph_ff_Calc_active_reactive_and_apparent_power_basic_values)
 {
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(0.0001);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(0.0001);
     float out_float[1] = { 0 };
     float* out = out_float;
     float float_voltage[1] = { 1 };
@@ -104,7 +104,8 @@ BOOST_AUTO_TEST_CASE(
 
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_apparent_power)
 {
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(0.0001);
+    float alpha = 0.0001;
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float out_float[1] = { 0 };
     float* out_apparent = out_float;
     float float_voltage[1] = { 2 };
@@ -118,23 +119,23 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_apparent_power)
     voltage[0] = nanf("");
     current[0] = 2;
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 
     voltage[0] = 2;
     current[0] = nanf("");
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 
     voltage[0] = nanf("");
     current[0] = nanf("");
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 }
 
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_rms)
 {
     float alpha = 0.0001;
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float out_u_float[1] = { 0 };
     float* out_rms_u = out_u_float;
     float out_i_float[1] = { 0 };
@@ -197,7 +198,7 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_rms)
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_)
 {
     float alpha = 0.0001;
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float out_phi_float[1] = { 0 };
     float* out_phi = out_phi_float;
     float delta_phi_float[1] = { 0 };
@@ -233,7 +234,7 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_)
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_acc_val_active_power)
 {
     float alpha = 0.0001;
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float p_out_1_f[1] = { 3 };
     float* p_out_1 = p_out_1_f;
     float p_out_2_f[1] = { 3 };
@@ -248,7 +249,7 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_acc_val_active_power)
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_acc_val_reactive_power)
 {
     float alpha = 0.0001;
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float p_out_1_f[1] = { 3 };
     float* p_out_1 = p_out_1_f;
     float p_out_2_f[1] = { 3 };
@@ -263,7 +264,7 @@ BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_acc_val_reactive_power)
 BOOST_AUTO_TEST_CASE(test_power_calc_mul_ph_ff_Calc_acc_val_apparent_power)
 {
     float alpha = 0.0001;
-    power_calc_mul_ph_ff_impl* calc_block = new power_calc_mul_ph_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_mul_ph_ff::make(alpha);
     float p_acc_f[1] = { 1 };
     float* p_acc = p_acc_f;
     float q_acc_f[1] = { 1 };

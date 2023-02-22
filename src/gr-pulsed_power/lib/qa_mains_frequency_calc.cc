@@ -1,4 +1,3 @@
-#include "mains_frequency_calc_impl.h"
 #include <gnuradio/analog/noise_source.h>
 #include <gnuradio/analog/sig_source.h>
 #include <gnuradio/attributes.h>
