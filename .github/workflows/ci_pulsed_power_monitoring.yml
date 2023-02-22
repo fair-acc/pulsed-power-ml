@@ -175,5 +175,5 @@ jobs:
       - name: Dashboards - Configure CMake
         run: emcmake cmake -S ${{env.SRC_DIR_VIS}} -B ${{env.SRC_DIR_VIS}}/build
 
-      - name: Dashbaords - Build
+      - name: Dashboards - Build
         run: cd ${{env.SRC_DIR_VIS}}/build && emmake make
