@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip>
 #include <thread>
 
@@ -73,7 +74,51 @@ public:
     }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+    int                  opt;
+    std::string          captureFilename;
+    Mode                 mode          = Mode::Normal;
+    const char          *shortOptions  = "r:w:h";
+    static struct option longOptions[] = {
+        { "read-from-file", required_argument, 0, 'r' },
+        { "write-to-file", required_argument, 0, 'w' },
+        { "help", no_argument, 0, 'h' },
+        { 0, 0, 0, 0 }
+    };
+
+    int optionIndex = 0;
+
+    while ((opt = getopt_long(argc, argv, shortOptions, longOptions, &optionIndex)) != -1) {
+        switch (opt) {
+        case 'r':
+            mode            = Mode::Read;
+            captureFilename = optarg;
+            if (access(captureFilename.c_str(), F_OK) == -1) {
+                fmt::print(std::cerr, "File {} does not exist\n", captureFilename);
+                return 1;
+            }
+            fmt::print("Warning: Read mode is not currently supported, defaults to normal mode\n");
+            break;
+        case 'w':
+            mode            = Mode::Write;
+            captureFilename = optarg;
+            break;
+
+        case 'h':
+            fmt::print("Usage: {} [-r /path/to/file] [-w /path/to/file] [-h]\n", argv[0]);
+            fmt::print("Options:\n");
+            fmt::print("  -r, --read-from-file    Read from file\n");
+            fmt::print("  -w, --write-to-file     Write to file\n");
+            fmt::print("  -h, --help              Display this help message\n");
+            return 1;
+            break;
+        default:
+            fmt::print(std::cerr, "Invalid command line option\n");
+            return 1;
+            break;
+        }
+    }
+
     Broker                                          broker("Inference-Tool");
     auto                                            fs          = cmrc::assets::get_filesystem();
     const std::string_view                          REST_SCHEME = "https";
@@ -92,7 +137,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // OpenCMW workers
-    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(60));
+    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(60), mode, captureFilename);
 
     // run workers in separate threads
     std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });

@@ -225,15 +225,15 @@ public:
         auto multiply_voltage_current_nilm = gr::blocks::multiply_ff::make(1);
 
         auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
-        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), false, 1);
         auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
         auto stream_to_vector_I            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
-        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), false, 1);
         auto complex_to_mag_I              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
         auto stream_to_vector_S            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
-        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), false, 1);
         auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
         auto multiply_voltage_current      = gr::blocks::multiply_ff::make(1);

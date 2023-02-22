@@ -21,6 +21,12 @@ struct NilmContext {
     opencmw::MIME::MimeType contentType = opencmw::MIME::JSON;
 };
 
+enum class Mode {
+    Normal,
+    Write,
+    Read
+};
+
 ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 
 // data for Dashboard
@@ -41,11 +47,12 @@ class DataFetcher {
     std::string     _signalNames;
     int64_t         _lastTimeStamp;
     httplib::Client _http;
+    bool            _responseOk;
 
 public:
     DataFetcher() = delete;
     DataFetcher(const std::string &endPoint, const std::string &signalNames = "")
-        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", DEFAULT_REST_PORT) {
+        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", DEFAULT_REST_PORT), _responseOk(false) {
         _http.set_keep_alive(true);
     }
     ~DataFetcher() {}
@@ -54,12 +61,19 @@ public:
         // fmt::print("{}: path: {}\n", typeid(data).name(), getPath);
         auto response = _http.Get(getPath.data());
         if (response.error() == httplib::Error::Success && response->status == 200) {
+            _responseOk = true;
             opencmw::IoBuffer buffer;
             buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
             auto result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
+        } else {
+            _responseOk = false;
         }
 
         return response;
+    }
+
+    bool responseOk() {
+        return _responseOk;
     }
 
     // void updateTimeStamp(Acquisition &data) {
@@ -83,13 +97,19 @@ class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPre
     NilmPredictData                  _nilmData;
     std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
+    Mode                             _mode            = Mode::Normal;
+    std::ofstream                    _dataPointFile;
+    std::string                      _dataPointCapturePath{ "./capturedDataPoint.bin" }; // default file name
+
 public:
     using super_t = Worker<serviceName, NilmContext, Empty, NilmPredictData, Meta...>;
 
     template<typename BrokerType>
-    explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval)
-        : super_t(broker, {}) {
-        _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
+    explicit NilmPredictWorker(const BrokerType &broker, std::chrono::milliseconds updateInterval, Mode mode, std::string fileName)
+        : super_t(broker, {}), _mode(mode), _dataPointCapturePath(fileName) {
+        if (_mode == Mode::Write) {
+            _dataPointFile.open(_dataPointCapturePath.c_str(), std::ios::binary);
+        }
 
         _fetchThread     = std::jthread([this] {
             std::chrono::duration<double, std::milli> fetchDuration;
@@ -131,13 +151,14 @@ public:
             }
             });
 
-        _predictThread   = std::jthread([this, updateInterval] {
+        _predictThread = std::jthread([this, updateInterval, mode] {
             std::chrono::duration<double, std::milli> predictDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point timeStart = std::chrono::system_clock::now();
 
                 NilmContext             context;
                 std::vector<float>      dataPoint;
+
                 AcquisitionNilm         acquisitionNilm;
 
                 try {
@@ -149,12 +170,17 @@ public:
                     // fetch AcquisitionNilm from PulsedPowerService
                     auto response = _acquisitionNilmFetcher.get(acquisitionNilm);
 
-                    if (response.error() == httplib::Error::Success && response->status == 200) {
+                    if (_acquisitionNilmFetcher.responseOk()) {
                         assert(!acquisitionNilm.apparentPowerSpectrumStridedValues.empty());
                         size_t fftSize = acquisitionNilm.apparentPowerSpectrumStridedValues.size() / acquisitionNilm.apparentPower.size();
                         fmt::print("acquisitionNilm received, chunks no: {},  fftsize: {}, size of data: {}\n", acquisitionNilm.apparentPower.size(), fftSize, response->body.size());
                         for (size_t i = 0; i < acquisitionNilm.realPower.size(); i++) {
                             mergeValues(acquisitionNilm, i, fftSize, dataPoint);
+
+                            // write to a file
+                            if (_mode == Mode::Write) {
+                                _dataPointFile.write(reinterpret_cast<char *>(dataPoint.data()), dataPoint.size() * sizeof(float));
+                            }
 
                             int64_t         size = static_cast<int64_t>(dataPoint.size());
                             cppflow::tensor input(dataPoint, { size });
@@ -207,12 +233,15 @@ public:
     }
 
     ~NilmPredictWorker() {
+        if (_mode == Mode::Write) {
+            _dataPointFile.close();
+        }
         _shutdownRequested = true;
         _predictThread.join();
     }
 
 private:
-    void mergeValues(const AcquisitionNilm &acqNilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
+        void mergeValues(const AcquisitionNilm &acqNilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
         // model requires only first half of the spectrum (2^16)
         size_t fftNilmSize = vectorSize / 2;
         output.clear();
