@@ -33,7 +33,7 @@ ENABLE_REFLECTION_FOR(NilmContext, ctx, contentType)
 struct NilmPredictData {
     int64_t                  timestamp;
     std::vector<double>      values; // = { 0.0, 25.7, 55.5, 74.1, 89.4, 34.5, 23.4, 1.0, 45.4, 56.5, 76.4, 23.8 };
-    std::vector<std::string> names = { "device 1", "device 2", "device 3", "device 4", "device 5", "device 6", "device 7", "others" };
+    std::vector<std::string> names = { "LED", "Hair Dryer", "HDD", "Halogen", "PSU Notebook", "Power Supply", "Flourescence", "others" };
     std::vector<double>      dayUsage;
     std::vector<double>      weekUsage;
     std::vector<double>      monthUsage;

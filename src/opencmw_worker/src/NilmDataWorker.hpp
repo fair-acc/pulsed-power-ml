@@ -76,8 +76,8 @@ public:
             const auto               signal_units = sink->get_signal_units();
             const auto               sample_rate  = sink->get_sample_rate();
 
-            std::vector<std::string> pqsohi_str{ "P", "Q", "S", "phi" };
-            if (signal_names == pqsohi_str && sample_rate == 100.0f) {
+            std::vector<std::string> pqsphi_str{ "P", "Q", "S", "phi" };
+            if (signal_names == pqsphi_str && sample_rate == 100.0f) {
                 fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
                 sink->set_callback(std::bind(&NilmDataWorker::handleReceivedTimeDataCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
             }
