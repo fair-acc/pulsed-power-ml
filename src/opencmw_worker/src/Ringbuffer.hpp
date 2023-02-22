@@ -26,7 +26,7 @@ public:
         }
     }
 
-    bool get(T &item) {
+    bool get_and_remove(T &item) {
         boost::interprocess::scoped_lock<boost::mutex> lock(_mutex);
         if (!_buffer.empty()) {
             return false;
@@ -35,9 +35,9 @@ public:
         item = item_copy;
         _buffer.pop_front();
         return true;
-    }
+    };
 
-    void get_all(std::vector<T> &result) {
+    void get_and_remove_all(std::vector<T> &result) {
         boost::interprocess::scoped_lock<boost::mutex> lock(_mutex);
         while (!_buffer.empty()) {
             T item_copy(_buffer.front());
@@ -46,10 +46,27 @@ public:
         }
     }
 
-    size_t size() {
-        size_t                                         size;
+    bool get(T &item) {
         boost::interprocess::scoped_lock<boost::mutex> lock(_mutex);
-        size = _buffer.size();
+        if (!_buffer.empty()) {
+            return false;
+        }
+        T item_copy(_buffer.front());
+        item = item_copy;
+        return true;
+    }
+
+    void get_all(std::vector<T> &result) {
+        boost::interprocess::scoped_lock<boost::mutex> lock(_mutex);
+        for (T item : _buffer) {
+            T item_copy(item);
+            result.push_back(item_copy);
+        }
+    }
+
+    size_t size() {
+        boost::interprocess::scoped_lock<boost::mutex> lock(_mutex);
+        size_t                                         size = _buffer.size();
         return size;
     }
 

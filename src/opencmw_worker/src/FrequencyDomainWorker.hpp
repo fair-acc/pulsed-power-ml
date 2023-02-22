@@ -1,8 +1,9 @@
 #ifndef FREQUENCY_DOMAIN_WORKER_H
 #define FREQUENCY_DOMAIN_WORKER_H
 
+#define BOOST_BIND_NO_PLACEHOLDERS
+
 #include "Ringbuffer.hpp"
-//#include <disruptor/RingBuffer.hpp>
 #include <majordomo/Worker.hpp>
 
 #include <gnuradio/pulsed_power/opencmw_freq_sink.h>
@@ -18,33 +19,39 @@ struct FreqDomainContext {
     int32_t                 acquisitionModeFilter = 0; // STREAMING
     std::string             triggerNameFilter;
     int32_t                 maxClientUpdateFrequencyFilter = 25;
+    int64_t                 lastRefTrigger                 = 0;
     opencmw::MIME::MimeType contentType                    = opencmw::MIME::JSON;
 };
 
-ENABLE_REFLECTION_FOR(FreqDomainContext, channelNameFilter, acquisitionModeFilter, triggerNameFilter, maxClientUpdateFrequencyFilter, contentType)
+ENABLE_REFLECTION_FOR(FreqDomainContext, channelNameFilter, acquisitionModeFilter, triggerNameFilter, maxClientUpdateFrequencyFilter, lastRefTrigger, contentType)
 
 struct AcquisitionSpectra {
-    std::string        refTriggerName  = { "NO_REF_TRIGGER" };
-    int64_t            refTriggerStamp = 0;
-    std::string        channelName;
-    std::vector<float> channelMagnitudeValues;
-    std::vector<float> channelFrequencyValues;
-    std::string        channelUnit;
+    std::string                   refTriggerName  = { "NO_REF_TRIGGER" };
+    int64_t                       refTriggerStamp = 0;
+    std::vector<float>            channelTimeSinceRefTrigger;
+    std::string                   channelName;
+    opencmw::MultiArray<float, 2> channelMagnitude_values;
+    std::string                   channelMagnitude_unit;
+    std::vector<long>             channelMagnitude_dim1_discrete_time_values;
+    std::vector<float>            channelMagnitude_dim2_discrete_freq_values;
+    opencmw::MultiArray<float, 2> channelPhase_values;
+    std::string                   channelPhase_unit;
+    std::vector<long>             channelPhase_dim1_discrete_time_values;
+    std::vector<float>            channelPhase_dim2_discrete_freq_values;
 };
 
-ENABLE_REFLECTION_FOR(AcquisitionSpectra, refTriggerName, refTriggerStamp, channelName, channelMagnitudeValues, channelFrequencyValues, channelUnit)
+ENABLE_REFLECTION_FOR(AcquisitionSpectra, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelName, channelMagnitude_values, channelMagnitude_unit, channelMagnitude_dim1_discrete_time_values, channelMagnitude_dim2_discrete_freq_values, channelPhase_values, channelPhase_unit, channelPhase_dim1_discrete_time_values, channelPhase_dim2_discrete_freq_values)
 
 using namespace opencmw::majordomo;
-template<units::basic_fixed_string serviceName, typename... Meta>
+template<units::basic_fixed_string ServiceName, typename... Meta>
 class FrequencyDomainWorker
-    : public Worker<serviceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
+    : public Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    static const size_t RING_BUFFER_SIZE = 128;
-    const std::string   _deviceName;
-    std::atomic<bool>   _shutdownRequested;
-    std::jthread        _pollingThread;
-    AcquisitionSpectra  _reply;
-
+    //static const size_t RING_BUFFER_SIZE = 128;
+    const std::string  _deviceName;
+    std::atomic<bool>  _shutdownRequested;
+    std::jthread       _pollingThread;
+    AcquisitionSpectra _reply;
     struct RingBufferData {
         std::vector<float> chunk;
         int64_t            timestamp = 0;
@@ -58,55 +65,55 @@ private:
     std::unordered_map<std::string, SignalData> _signalsMap; // <completeSignalName, signalData>
 
 public:
-    using super_t = Worker<serviceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...>;
+    using super_t = Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...>;
 
     template<typename BrokerType>
     explicit FrequencyDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
         _pollingThread = std::jthread([this] {
-            std::chrono::duration<double, std::milli> pollingDuration;
+            auto pollingDuration = std::chrono::duration<double, std::milli>();
             while (!_shutdownRequested) {
-                std::chrono::time_point time_start = std::chrono::system_clock::now();
+                std::chrono::time_point timeStart = std::chrono::system_clock::now();
 
                 for (auto subTopic : super_t::activeSubscriptions()) { // loop over active subscriptions
                     if (subTopic.path() != "/AcquisitionSpectra") {
                         break;
                     }
-                    const auto                         queryMap = subTopic.queryParamMap();
-                    const FreqDomainContext            filterIn = opencmw::query::deserialise<FreqDomainContext>(queryMap);
-                    std::set<std::string, std::less<>> requestedSignals;
-                    if (!checkRequestedSignals(filterIn, requestedSignals)) {
-                        break;
+                    const auto              queryMap        = subTopic.queryParamMap();
+                    const FreqDomainContext filterIn        = opencmw::query::deserialise<FreqDomainContext>(queryMap);
+                    std::string             requestedSignal = filterIn.channelNameFilter;
+                    if (_signalsMap.contains(requestedSignal)) {
+                        bool result = pollSignal(requestedSignal, filterIn.lastRefTrigger, _reply);
+                        if (!result) {
+                            _reply = AcquisitionSpectra();
+                        }
+                    } else {
+                        _reply = AcquisitionSpectra();
                     }
 
-                    pollSignal(*(requestedSignals.begin()), _reply);
                     FreqDomainContext filterOut = filterIn;
                     filterOut.contentType       = opencmw::MIME::JSON;
                     super_t::notify("/AcquisitionSpectra", filterOut, _reply);
                 }
-                pollingDuration   = std::chrono::system_clock::now() - time_start;
+                pollingDuration   = std::chrono::system_clock::now() - timeStart;
 
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
                 std::this_thread::sleep_for(willSleepFor);
             }
         });
-
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalFrequencySinksRegistryMutex);
         fmt::print("GR: number of frequency-domain sinks found: {}\n", gr::pulsed_power::globalFrequencySinksRegistry.size());
-        for (auto sink : gr::pulsed_power::globalFrequencySinksRegistry) {
-            const auto signal_names = sink->get_signal_names();
-            const auto signal_units = sink->get_signal_units();
-            const auto sample_rate  = sink->get_sample_rate();
+        for (gr::pulsed_power::opencmw_freq_sink *sink : gr::pulsed_power::globalFrequencySinksRegistry) {
+            const auto signalNames = sink->get_signal_names();
+            const auto sampleRate  = sink->get_sample_rate();
 
-            for (size_t i = 0; i < signal_names.size(); i++) {
-                // init RingBuffer, register poller and poller sequence
-                auto       ringbuffer         = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
-                const auto completeSignalName = fmt::format("{}@{}Hz", signal_names[i], sample_rate);
-                _signalsMap.insert({ completeSignalName, SignalData(sink, ringbuffer) });
-                fmt::print("GR: OpenCMW Frequency Sink '{}' added\n", completeSignalName);
-            }
+            // init RingBuffer and name for siganl (only one signal possible per freq_sink)
+            auto       ringbuffer         = std::make_shared<Ringbuffer<RingBufferData>>(128);
+            const auto completeSignalName = fmt::format("{}@{}Hz", signalNames[0], sampleRate);
+            _signalsMap.insert({ completeSignalName, SignalData(sink, ringbuffer) });
+            fmt::print("GR: OpenCMW Frequency Sink '{}' added\n", completeSignalName);
 
             // register callback
             sink->set_callback(std::bind(&FrequencyDomainWorker::callbackCopySinkData, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
@@ -134,7 +141,7 @@ public:
             for (int i = 0; i < nitems; i++) {
                 // publish data
                 RingBufferData bufferData;
-                bufferData.timestamp = timestamp;
+                bufferData.timestamp = timestamp + (static_cast<int64_t>((static_cast<float>(i) * 1e9f) / sample_rate));
                 size_t offset        = static_cast<size_t>(i) * vector_size;
                 bufferData.chunk.assign(in + offset + (vector_size / 2), in + offset + vector_size);
                 signalData.ringBuffer->push(bufferData);
@@ -144,71 +151,58 @@ public:
 
 private:
     bool handleGetRequest(const FreqDomainContext &requestContext, AcquisitionSpectra &out) {
-        std::set<std::string, std::less<>> requestedSignals;
-        if (!checkRequestedSignals(requestContext, requestedSignals)) {
+        std::string requestedSignal = requestContext.channelNameFilter;
+        if (!_signalsMap.contains(requestedSignal)) {
             return false;
         }
 
-        bool result = pollSignal(*(requestedSignals.begin()), out);
+        bool result = pollSignal(requestedSignal, requestContext.lastRefTrigger, out);
         return result;
     }
 
-    bool pollSignal(const std::string &requestedSignal, AcquisitionSpectra &out) {
+    bool pollSignal(const std::string &requestedSignal, int64_t lastRefTrigger, AcquisitionSpectra &out) {
         auto signalData     = _signalsMap.at(requestedSignal);
 
         out.refTriggerStamp = 0;
         out.channelName     = requestedSignal;
 
-        std::vector<RingBufferData> new_values;
-        signalData.ringBuffer->get_all(new_values);
-        if (!new_values.empty()) {
-            RingBufferData last_val = new_values.back();
-            out.refTriggerStamp = last_val.timestamp;
-            out.channelMagnitudeValues.assign(last_val.chunk.begin(), last_val.chunk.end());
-
+        std::vector<RingBufferData> currentValues;
+        signalData.ringBuffer->get_all(currentValues);
+        size_t             chunkSize = 0;
+        int                numData   = 0;
+        std::vector<float> stridedValues;
+        if (!currentValues.empty()) {
+            out.channelMagnitude_values.clear(); // TODO is clear working?
+            out.channelMagnitude_dim1_discrete_time_values.clear();
+            out.channelTimeSinceRefTrigger.clear();
+            int64_t firstTimestamp = 0;
+            for (RingBufferData bufferData : currentValues) {
+                if (bufferData.timestamp > lastRefTrigger) {
+                    if (firstTimestamp == 0) {
+                        firstTimestamp = bufferData.timestamp;
+                    }
+                    out.refTriggerStamp = bufferData.timestamp;
+                    chunkSize           = bufferData.chunk.size();
+                    stridedValues.insert(stridedValues.end(), bufferData.chunk.begin(), bufferData.chunk.end());
+                    out.channelMagnitude_dim1_discrete_time_values.push_back(bufferData.timestamp);
+                    out.channelTimeSinceRefTrigger.push_back(static_cast<float>(bufferData.timestamp - firstTimestamp) / 1e9f);
+                    numData++;
+                }
+            }
+            out.channelMagnitude_values = opencmw::MultiArray<float, 2>(std::move(stridedValues), { static_cast<uint32_t>(numData), static_cast<uint32_t>(chunkSize) });
             //  generate frequency values
-            size_t vectorSize = out.channelMagnitudeValues.size();
-            float  bandwidth  = signalData.sink->get_bandwidth();
-            out.channelFrequencyValues.clear();
-            out.channelFrequencyValues.reserve(vectorSize);
-            float freqStartValue = 0; //-(bandwidth / 2);
-            float freqStepValue  = 0.5f * bandwidth / static_cast<float>(vectorSize);
-            for (size_t i = 0; i < vectorSize; i++) {
-                out.channelFrequencyValues.push_back(freqStartValue + static_cast<float>(i) * freqStepValue);
+            const int   vectorSize = static_cast<int>(chunkSize);
+            const float sampleRate = signalData.sink->get_sample_rate();
+            out.channelMagnitude_dim2_discrete_freq_values.clear();
+            out.channelMagnitude_dim2_discrete_freq_values.reserve(chunkSize);
+            const float freqStartValue = 0;
+            const float freqStepValue  = 0.5f * sampleRate / static_cast<float>(vectorSize);
+            for (int i = 0; i < vectorSize; i++) {
+                out.channelMagnitude_dim2_discrete_freq_values.push_back(freqStartValue + static_cast<float>(i) * freqStepValue);
             }
             return true;
         }
         return false;
-    }
-
-    bool checkRequestedSignals(const FreqDomainContext &filterIn, std::set<std::string, std::less<>> &requestedSignals) {
-        auto signals = std::string_view(filterIn.channelNameFilter) | std::ranges::views::split(',');
-        for (const auto &signal : signals) {
-            requestedSignals.emplace(std::string_view(signal.begin(), signal.end()));
-        }
-        if (requestedSignals.empty()) {
-            respondWithEmptyResponse(filterIn, "no signals requested, sending empty response\n");
-            return false;
-        }
-
-        // check if signals exist
-        std::vector<std::string> unknownSignals;
-        for (const auto &requestedSignal : requestedSignals) {
-            if (!_signalsMap.contains(requestedSignal)) {
-                unknownSignals.push_back(requestedSignal);
-            }
-        }
-        if (!unknownSignals.empty()) {
-            respondWithEmptyResponse(filterIn, fmt::format("requested unknown signals: {}\n", unknownSignals));
-            return false;
-        }
-
-        return true;
-    }
-
-    void respondWithEmptyResponse(const FreqDomainContext &filter, const std::string_view errorText) {
-        fmt::print("{}\n", errorText);
-        super_t::notify("/AcquisitionSpectra", filter, AcquisitionSpectra());
     }
 };
 
