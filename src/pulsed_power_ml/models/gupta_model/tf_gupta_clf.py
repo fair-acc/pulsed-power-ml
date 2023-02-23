@@ -18,7 +18,7 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_transform_spec
 N_PEAKS_MAX = 9
 DATA_POINT_SIZE = 3 * 2**16 + 4
 
-class TFGuptaClassifier(keras.Model):
+class TFGuptaClassifierOLD(keras.Model):
 
     def __init__(self,
                  background_n: tf.Tensor = tf.constant(2, dtype=tf.int32),
@@ -36,7 +36,7 @@ class TFGuptaClassifier(keras.Model):
                  training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  verbose: tf.Tensor = tf.constant(False, dtype=tf.bool),
                  reverse_input: tf.Tensor = tf.constant(False, dtype=tf.bool),
-                 name="TFGuptaClassifier",
+                 name="TFGuptaClassifierOLD",
                  **kwargs
                  ) -> None:
         """
@@ -76,7 +76,7 @@ class TFGuptaClassifier(keras.Model):
         reverse_input
             If True, reverse input tensors
         """
-        super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
+        super(TFGuptaClassifierOLD, self).__init__(name=name, **kwargs)
 
         # verbose flag
         self.verbose = verbose
