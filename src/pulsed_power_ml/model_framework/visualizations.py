@@ -60,6 +60,7 @@ def plot_state_vector_array(state_vector_list: np.array,
         Array w/ true, total apparent power values (S from raw data).
     v_line:
         Plot a vertical line in all plots to indicate which part of the data is unseen by the model.
+
     Returns
     -------
     Figure containing one plot per appliance
