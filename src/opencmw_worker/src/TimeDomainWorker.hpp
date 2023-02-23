@@ -64,7 +64,7 @@ private:
         std::string              _channelNameFilter; // signalName1@sampleRate,signalName2@sampleRate...
         float                    _sampleRate = 0;
         ringbuffer_t             _ringBuffer;
-        const size_t RING_BUFFER_SIZE = 128;
+        const size_t             RING_BUFFER_SIZE = 128;
 
     public:
         GRSink() = delete;

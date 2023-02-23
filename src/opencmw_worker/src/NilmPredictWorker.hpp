@@ -180,7 +180,7 @@ public:
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
-            });
+        });
 
         _predictThread   = std::jthread([this, updateInterval] {
             std::chrono::duration<double, std::milli> predictDuration;
@@ -246,7 +246,7 @@ public:
                     fmt::print("Data prediction too slow\n");
                 }
             }
-          });
+        });
 
         super_t::setCallback([this](RequestContext &rawCtx, const NilmContext &,
                                      const Empty &, NilmContext &,

@@ -64,7 +64,8 @@ int opencmw_freq_sink_impl::work(int noutput_items,
     if (_timestamp == 0) {
         _timestamp =
             duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-                .count(); // TODO first vlaue at _timestamp - noutput_items * static_cast<int64_t>(1e9 / _sample_rate)?
+                .count(); // TODO first vlaue at _timestamp - noutput_items *
+                          // static_cast<int64_t>(1e9 / _sample_rate)?
     }
 
     for (auto callback : _cb_copy_data) {
