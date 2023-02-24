@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
+import sys
+sys.path.append("../../../")
+
 from src.pulsed_power_ml.model_framework.data_io import read_training_files
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import gupta_offline_switch_detection
 
@@ -57,6 +60,7 @@ def plot_state_vector_array(state_vector_list: np.array,
         Array w/ true, total apparent power values (S from raw data).
     v_line:
         Plot a vertical line in all plots to indicate which part of the data is unseen by the model.
+
     Returns
     -------
     Figure containing one plot per appliance

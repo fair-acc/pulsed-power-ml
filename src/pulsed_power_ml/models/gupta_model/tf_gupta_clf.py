@@ -9,6 +9,7 @@ from tensorflow import keras
 
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_transform_spectrum
 
 
 # Define some constants
@@ -32,6 +33,8 @@ class TFGuptaClassifier(keras.Model):
                  distance_threshold: tf.Tensor = tf.constant(10, dtype=tf.float32),
                  training_data_features: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
+                 verbose: tf.Tensor = tf.constant(False, dtype=tf.bool),
+                 reverse_input: tf.Tensor = tf.constant(False, dtype=tf.bool),
                  name="TFGuptaClassifier",
                  **kwargs
                  ) -> None:
@@ -72,8 +75,18 @@ class TFGuptaClassifier(keras.Model):
             Unscaled (!) features of the training data
         training_data_labels
             Corresponding labels for the provided training data
+        verbose
+            If True, increase verbosity.
+        reverse_input
+            If True, reverse input tensors
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
+
+        # verbose flag
+        self.verbose = verbose
+
+        # reverse flag
+        self.reverse_input = reverse_input
 
         # Parameters
         self.fft_size_real = fft_size_real
@@ -190,7 +203,6 @@ class TFGuptaClassifier(keras.Model):
 
         else:
             # weight classes with distances (similar to scikit learns weights="distance" weighting)
-
             weighted_label_tensor = label_tensor / tf.expand_dims(k_smallest_distances,
                                                                   axis=-1)
 
@@ -201,6 +213,14 @@ class TFGuptaClassifier(keras.Model):
             # Create result tensor (one-hot encoded w/ length=N+1)
             result_tensor = tf.one_hot(indices=result_index,
                                        depth=self.training_data_labels.shape[1])
+
+        if self.verbose:
+            tf.print('\n')
+            tf.print('# +++++++++++++++++++++++++++++++++++++ In "call_knn()" +++++++++++++++++++++++++++++++++++++ #')
+            tf.print('Feature vector "input" = ', input, summarize=-1)
+            tf.print('distances = ', distances, summarize=-1)
+            tf.print('k_smallest_distances = ', k_smallest_distances, summarize=-1)
+            tf.print('result_tensor = ', result_tensor, summarize=-1)
 
         return k_smallest_distances, result_tensor
 
@@ -232,11 +252,27 @@ class TFGuptaClassifier(keras.Model):
         raw_spectrum, apparent_power = self.crop_data_point(X)
         spectrum = 10.0 * tf.math.log(raw_spectrum) / tf.math.log(10.0) + 30.0
 
+        # #++++++++++++++++++++++++++++++++# #
+        # #+++ Print out spectrum (dBm) +++# #
+        # #++++++++++++++++++++++++++++++++# #
+        if self.verbose:
+            tf.print('\n')
+            tf.print('# +++++++++++++++++++++++++++++++++++++ In "call()" +++++++++++++++++++++++++++++++++++++ #')
+            top_k_values, top_k_indices = tf.math.top_k(input=spectrum, k=5)
+            tf.print('Indices of top 5 entries in input (transformed) = ', top_k_indices, summarize=-1)
+            tf.print('Values of top 5 entries in input (transformed) = ', top_k_values, summarize=-1)
+            tf.print('Min entry in input = ', tf.math.reduce_min(spectrum))
+            tf.print('Mean value of input = ', tf.math.reduce_mean(spectrum))
+            tf.print('Number of entries in window = ', self.n_frames_in_window)
+            tf.print('Max window size = ', self.window_size)
+            tf.print('Step size for rolling window = ', self.step_size)
+
         # #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++# #
         # #+++ Check if there are enough frames in the current window +++# #
         # #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++# #
         self.update_window(spectrum)
         if tf.math.less(self.n_frames_in_window, self.window_size * 3):
+
             self.current_state_vector.assign(
                 self.calculate_unknown_apparent_power(current_apparent_power=apparent_power)
             )
@@ -424,6 +460,7 @@ class TFGuptaClassifier(keras.Model):
         -------
         updated_state_vector
         """
+        # 1. Calculate feature vector
         self.feature_vector.assign(tf_calculate_feature_vector(cleaned_spectrum=cleaned_spectrum,
                                                                n_peaks_max=self.n_peaks_max,
                                                                fft_size_real=self.fft_size_real,
