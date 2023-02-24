@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+using std::pair;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -86,6 +87,21 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
     return true;
 }
 
+bool receivedConvertedSignals(std::vector<std::string> receivedSignals) {
+    std::vector<std::string> expectedSignals = { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" };
+    if (receivedSignals.size() != expectedSignals.size()) {
+        std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
+        return false;
+    }
+    for (int i = 0; i < receivedSignals.size(); i++) {
+        if (receivedSignals[i] != expectedSignals[i]) {
+            std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 Acquisition::Acquisition() {}
 
 Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
@@ -112,11 +128,41 @@ void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector
     }
 }
 
+struct ConvertPair {
+    std::vector<double> first;
+    uint64_t            second;
+} typedef Convert;
+
+ConvertPair convertValues(const std::vector<double> &relativeTimestamps, uint64_t refTrigger_ns) {
+    ConvertPair ret;
+    double      max   = relativeTimestamps[relativeTimestamps.size() - 1];
+    double      delta = max - relativeTimestamps[relativeTimestamps.size() - 2];
+    delta *= 1000;
+    double newRelativeTimestamp = 60;
+    refTrigger_ns               = 0;
+    std::vector<double> newRelativeTimestamps;
+    for (auto it = relativeTimestamps.end(); it != relativeTimestamps.begin(); it--) {
+        newRelativeTimestamps.push_back(newRelativeTimestamp);
+        newRelativeTimestamp -= delta;
+        /*if (newRelativeTimestamp < 0) {
+            break;
+        }*/
+    }
+    std::reverse(newRelativeTimestamps.begin(), newRelativeTimestamps.end());
+    /*for (int i = 0; i < 11; i++) {
+        std::cout << newRelativeTimestamps[i] << std::endl;
+    }*/
+    ret.first  = newRelativeTimestamps;
+    ret.second = refTrigger_ns;
+    return ret;
+}
+
 void Acquisition::deserialize() {
     std::vector<double> relativeTimestamps = {};
     uint64_t            refTrigger_ns      = 0;
     StrideArray         strideArray;
-    auto                json_obj = json::parse(this->jsonString);
+    auto                json_obj          = json::parse(this->jsonString);
+    bool                convertValuesBool = false;
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -129,14 +175,20 @@ void Acquisition::deserialize() {
                 return;
             }
             std::cout << "Received expected signal (Acquisition)" << std::endl;
+            convertValuesBool = receivedConvertedSignals(element.value());
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             relativeTimestamps.assign(element.value().begin(), element.value().end());
+
         } else if (element.key() == "channelValues") {
             strideArray.dims   = std::vector<int>(element.value()["dims"]);
             strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
-
+    if (convertValuesBool) {
+        auto ret           = convertValues(relativeTimestamps, refTrigger_ns);
+        relativeTimestamps = ret.first;
+        refTrigger_ns      = ret.second;
+    }
     this->lastRefTrigger = refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
     addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
