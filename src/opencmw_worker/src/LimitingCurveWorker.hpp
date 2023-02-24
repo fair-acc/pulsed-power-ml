@@ -2,52 +2,65 @@
 #define LIMITING_CURVE_WORKER_H
 
 #include <majordomo/Worker.hpp>
+#include <MultiArray.hpp>
+
+struct TestContext {
+    opencmw::TimingCtx      ctx;
+    std::string             testFilter;
+    opencmw::MIME::MimeType contentType = opencmw::MIME::BINARY;
+};
+
+ENABLE_REFLECTION_FOR(TestContext, ctx, testFilter, contentType)
 
 class LimitingCurve {
 public:
-    std::string        refTriggerName         = { "NO_REF_TRIGGER" };
-    int64_t            refTriggerStamp        = -1; // time not relevant
-    std::string        channelName            = "limiting_curve";
-    std::vector<float> channelMagnitudeValues = {};
-    std::vector<float> channelFrequencyValues = {};
-    std::string        channelUnit;
+    std::string                   refTriggerName  = { "NO_REF_TRIGGER" };
+    int64_t                       refTriggerStamp = -1; // time not relevant
+    std::vector<float>            channelTimeSinceRefTrigger;
+    std::string                   channelName = "limiting_curve";
+    opencmw::MultiArray<float, 2> channelMagnitude_values;
+    std::string                   channelMagnitude_unit;
+    std::vector<long>             channelMagnitude_dim1_discrete_time_values;
+    std::vector<float>            channelMagnitude_dim2_discrete_freq_values;
+    opencmw::MultiArray<float, 2> channelPhase_values;
+    std::string                   channelPhase_unit;
+    std::vector<long>             channelPhase_dim1_discrete_time_values;
+    std::vector<float>            channelPhase_dim2_discrete_freq_values;
 
     LimitingCurve() {
-        channelMagnitudeValues = { 15, 15, 10, 10, 25, 25, 20, 20, 30, 30, 25, 15, 10, 10 };
-        channelFrequencyValues = { 0, 0.05, 0.1, 0.3, 0.4, 0.8, 0.85, 2.6, 2.65, 4.4, 4.8, 5.2, 5.6, 6.8 };
-        // channelFrequencyValues = { 0, 0.05 * 1000, 0.1 * 1000, 0.3 * 1000, 0.4 * 1000, 0.8 * 1000, 0.85 * 1000, 2.6 * 1000, 2.65 * 1000, 4.4 * 1000, 4.8 * 1000, 5.2 * 1000, 5.6 * 1000, 6.8 * 1000 };
+        std::vector<float> channelMagnitudeValuesArray = { 15, 15, 10, 10, 25, 25, 20, 20, 30, 30, 25, 15, 10, 10 };
+        channelMagnitude_values                        = opencmw::MultiArray<float, 2>(std::move(channelMagnitudeValuesArray), { static_cast<uint32_t>(1), static_cast<uint32_t>(14) });
+        channelMagnitude_dim2_discrete_freq_values     = { 0.0f, 0.05f, 0.1f, 0.3f, 0.4f, 0.8f, 0.85f, 2.6f, 2.65f, 4.4f, 4.8f, 5.2f, 5.6f, 6.8f };
     }
 };
 
-ENABLE_REFLECTION_FOR(LimitingCurve, refTriggerName, refTriggerStamp, channelName, channelMagnitudeValues, channelFrequencyValues, channelUnit)
+ENABLE_REFLECTION_FOR(LimitingCurve, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelName, channelMagnitude_values, channelMagnitude_unit, channelMagnitude_dim1_discrete_time_values, channelMagnitude_dim2_discrete_freq_values, channelPhase_values, channelPhase_unit, channelPhase_dim1_discrete_time_values, channelPhase_dim2_discrete_freq_values)
 
 using namespace opencmw::majordomo;
-template<units::basic_fixed_string serviceName, typename... Meta>
+template<units::basic_fixed_string ServiceName, typename... Meta>
 class LimitingCurveWorker
-    : public Worker<serviceName, TestContext, Empty, LimitingCurve, Meta...> {
-    std::atomic<bool>     shutdownRequested;
-    std::jthread          notifyThread;
-    LimitingCurve         limitingCurve;
-
+    : public Worker<ServiceName, TestContext, Empty, LimitingCurve, Meta...> {
+    std::atomic<bool> _shutdownRequested;
+    std::jthread      _pollingThread;
+    // std::chrono::duration<std::chrono::milliseconds> _updateInterval = std::chrono::milliseconds(40);
+    LimitingCurve         _limitingCurve;
     static constexpr auto PROPERTY_NAME = std::string_view("testLimitingCurve");
 
 public:
-    using super_t = Worker<serviceName, TestContext, Empty, LimitingCurve, Meta...>;
+    using super_t = Worker<ServiceName, TestContext, Empty, LimitingCurve, Meta...>;
 
     template<typename BrokerType>
-    explicit LimitingCurveWorker(const BrokerType &broker,
-            std::chrono::milliseconds              updateInterval)
+    explicit LimitingCurveWorker(const BrokerType &broker)
         : super_t(broker, {}) {
-        notifyThread = std::jthread([this, updateInterval] {
-            while (!shutdownRequested) {
-                std::this_thread::sleep_for(updateInterval);
+        _pollingThread = std::jthread([this] {
+            while (!_shutdownRequested) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(40));
                 TestContext context;
                 context.contentType = opencmw::MIME::JSON;
-                LimitingCurve reply = limitingCurve;
+                LimitingCurve reply = _limitingCurve;
                 super_t::notify("limitingCurve", context, reply);
             }
         });
-
         super_t::setCallback([this](RequestContext &rawCtx, const TestContext &,
                                      const Empty &, TestContext &,
                                      LimitingCurve &out) {
@@ -55,13 +68,13 @@ public:
             const auto topicPath = URI<RELAXED>(std::string(rawCtx.request.topic()))
                                            .path()
                                            .value_or("");
-            out = limitingCurve;
+            out = _limitingCurve;
         });
     }
 
     ~LimitingCurveWorker() {
-        shutdownRequested = true;
-        notifyThread.join();
+        _shutdownRequested = true;
+        _pollingThread.join();
     }
 };
 
