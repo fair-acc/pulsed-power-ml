@@ -293,7 +293,7 @@ def gupta_offline_switch_detection(data_point_array: np.array,
     Returns
     -------
     switch_array
-        Array w/ the same length as data_point_array containing 1s
+        Array w/ the same length as data_point_array containing 1s at indices where switches have been detected.
     """
     if step_size is None:
         step_size = window_size
@@ -322,7 +322,6 @@ def gupta_offline_switch_detection(data_point_array: np.array,
 
         raw_signal = data_point_array[k:l,
                                       spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
-
 
         background_mean = raw_background.mean(axis=0)
         signal_mean = raw_signal.mean(axis=0)

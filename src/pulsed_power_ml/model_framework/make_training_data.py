@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append("../../../")
-from src.pulsed_power_ml.model_framework.data_io import read_training_files
+from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
 from src.pulsed_power_ml.model_framework.training_data_labelling import get_features_from_raw_data
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
 
@@ -13,9 +13,9 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
 def main():
 
     parser = argparse.ArgumentParser(description='CLI tool to produce training files from raw data')
-    parser.add_argument('--input-folder',
+    parser.add_argument('--input',
                         '-i',
-                        help='Path to the input folder',
+                        help='Path to the input binary containing the raw data.',
                         required=True)
     parser.add_argument('--output-folder',
                         '-o',
@@ -34,7 +34,8 @@ def main():
     parameter_dict = read_parameters(args.parameter_file)
 
     # Load data points
-    data_point_array = read_training_files(args.input_folder, fft_size=parameter_dict['fft_size'])
+    data_point_array = load_binary_data_array(args.input,
+                                              fft_size_data_point=parameter_dict['fft_size_real'])
 
     # Produce features
     features_array, switch_positions = get_features_from_raw_data(data_point_array, parameter_dict)
@@ -65,11 +66,17 @@ def main():
     ax.legend()
     ax.set_title(f'Apparent Power & Switch Positions for {args.prefix}')
 
+    # Add numbers to switching events
+    for i, s in enumerate(np.nonzero(switch_positions)[0]):
+        y = -1.25 if i % 2 != 0 else -0.5
+        ax.text(x=s,
+                y=y,
+                s=i)
+
     figure_output_file_name = f'{args.output_folder}/{args.prefix}_switch_positions.pdf'
     fig.savefig(figure_output_file_name)
 
     return
 
 if __name__ == '__main__':
-    print(sys.path)
     main()

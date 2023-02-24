@@ -350,7 +350,8 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
                                      window_size: int = 25,
                                      threshold: float = 2000,
                                      log_scale: bool = False,
-                                     fft_size: int = 2**17) -> matplotlib.figure.Figure:
+                                     fft_size: int = 2**17,
+                                     add_labels: bool = True) -> matplotlib.figure.Figure:
     """
     Returns a figure containing one plot showing the apparent power versus time and the detected
     switching events.
@@ -367,6 +368,8 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
         If True, convert difference spectrum to dBm scale before applying threshold.
     fft_size
         Full FFT size.
+    add_labels
+        If True, add numbers to each detected switching event.
 
     Returns
     -------
@@ -392,10 +395,6 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
     # Create figure
     fig = plt.figure(figsize=(16, 9), layout='tight')
     ax = fig.add_subplot()
-    ax.grid(True)
-    ax.set_title("Switch Detection - Gupta Approach")
-    ax.set_xlabel("Time [au]")
-    ax.set_ylabel("S [VA]")
 
     # Plot s
     ax.plot(
@@ -427,8 +426,19 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
         label='Dead time'
     )
 
+    # Add numbers to switching events
+    for i, s in enumerate(switch_positions):
+        y = -1.25 if i % 2 != 0 else -0.5
+        ax.text(x=s,
+                y=y,
+                s=i)
+
     # Some cosmetics
     ax.legend()
+    ax.grid(True)
+    ax.set_title("Switch Detection - Gupta Approach")
+    ax.set_xlabel("Time [au]")
+    ax.set_ylabel("S [VA]")
 
     return fig
 

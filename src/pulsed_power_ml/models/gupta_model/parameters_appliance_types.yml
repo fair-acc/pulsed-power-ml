@@ -8,7 +8,7 @@ appliances:
   - 7: R1 # Fluoreszenzroehren
 window_size: 10
 step_size: 10
-switch_threshold: 9
+switch_threshold: 20
 distance_threshold: 100
 fft_size: 131072
 fft_size_real: 65536
