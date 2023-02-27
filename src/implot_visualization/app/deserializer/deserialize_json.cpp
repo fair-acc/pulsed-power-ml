@@ -4,7 +4,6 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-using std::pair;
 
 constexpr DataPoint::DataPoint()
     : x(0.0f), y(0.0f) {}
@@ -87,13 +86,14 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
     return true;
 }
 
-bool receivedConvertedSignals(std::vector<std::string> receivedSignals) {
+bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" };
     if (receivedSignals.size() != expectedSignals.size()) {
         std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
+        // if (receivedSignals[i].find(expectedSignals[i]) != std::string::npos) {
         if (receivedSignals[i] != expectedSignals[i]) {
             std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
             return false;
@@ -161,8 +161,8 @@ void Acquisition::deserialize() {
     std::vector<double> relativeTimestamps = {};
     uint64_t            refTrigger_ns      = 0;
     StrideArray         strideArray;
-    auto                json_obj          = json::parse(this->jsonString);
     bool                convertValuesBool = false;
+    auto                json_obj          = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -175,7 +175,7 @@ void Acquisition::deserialize() {
                 return;
             }
             std::cout << "Received expected signal (Acquisition)" << std::endl;
-            convertValuesBool = receivedConvertedSignals(element.value());
+            convertValuesBool = receivedVoltageCurrentData(element.value());
         } else if (element.key() == "channelTimeSinceRefTrigger") {
             relativeTimestamps.assign(element.value().begin(), element.value().end());
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deserialize_json.h>
+#include <fmt/core.h>
 #include <IconsFontAwesome6.h>
 #include <implot.h>
 #include <vector>
@@ -193,6 +194,31 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     }
 }
 
+template<typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
+
+template<Numeric T>
+std::string to_si_prefix(T value_base, std::string_view unit = "s", std::size_t significant_digits = 0) {
+    static constexpr std::array si_prefixes{ 'q', 'r', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q' };
+    static constexpr double     base     = 1000.0;
+    long double                 value    = value_base;
+
+    std::size_t                 exponent = 10;
+    if (value == 0) {
+        return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
+    }
+    while (value >= base && exponent < si_prefixes.size()) {
+        value /= base;
+        ++exponent;
+    }
+    while (value < 1.0 && exponent > 0) {
+        value *= base;
+        --exponent;
+    }
+
+    return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
+}
+
 void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
@@ -227,7 +253,10 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
             // Add tags with signal value
             DataPoint lastPoint = signal.data.back();
             ImVec4    col       = ImPlot::GetLastItemColor();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            // ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            // std::string tagValue = to_si_prefix(lastPoint.y, "s", 3);
+            std::string tagValue = to_si_prefix(lastPoint.y, " ", 2);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
         }
     }
 }
@@ -497,9 +526,10 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
                     2 * sizeof(double));
 
             // Add tags with signal value
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            DataPoint lastPoint = signals[i].data.back();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            DataPoint   lastPoint = signals[i].data.back();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 2);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
@@ -533,9 +563,10 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
                     2 * sizeof(double));
 
             // Add tags with signal value
-            DataPoint lastPoint = signal.data.back();
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            DataPoint   lastPoint = signal.data.back();
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 3);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
         }
     }
 }
