@@ -4,7 +4,7 @@ category: "[pulsed_power]"
 
 templates:
   imports: from gnuradio import pulsed_power
-  make: pulsed_power.integration(${step_size})
+  make: pulsed_power.integration()
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -16,6 +16,10 @@ parameters:
   - id: step_size
     label: step_size
     dtype: float
+  - id: decimation
+    label: Decimation
+    dtype: float
+
 # - id: ...
 #   label: ...
 #   dtype: ...
@@ -33,16 +37,7 @@ inputs:
     dtype: float
 
 outputs:
-  - label: mean
-    domain: stream
-    dtype: float
-  - label: min
-    domain: stream
-    dtype: float
-  - label: max
-    domain: stream
-    dtype: float
-  - label: std_deviation
+  - label: out
     domain: stream
     dtype: float
 

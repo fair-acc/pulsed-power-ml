@@ -1397,14 +1397,15 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
+    decimation: '10'
     maxoutbuf: '0'
     minoutbuf: '0'
-    step_size: 1/sample_rate
+    step_size: 1/in_sample_rate
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 2464.0]
+    coordinate: [2312, 2468.0]
     rotation: 0
     state: true
 - name: pulsed_power_mains_frequency_calc_0
@@ -1432,8 +1433,10 @@ blocks:
     alias: ''
     bandwidth: in_samp_rate
     comment: ''
+    sample_rate: in_samp_rate
     signal_name: Apparent Power
     signal_unit: VA
+    vector_size: '1'
   states:
     bus_sink: false
     bus_source: false
@@ -1448,8 +1451,10 @@ blocks:
     alias: ''
     bandwidth: in_samp_rate
     comment: ''
+    sample_rate: in_samp_rate
     signal_name: Current
     signal_unit: A
+    vector_size: '1'
   states:
     bus_sink: false
     bus_source: false
@@ -1464,8 +1469,10 @@ blocks:
     alias: ''
     bandwidth: in_samp_rate
     comment: ''
+    sample_rate: in_samp_rate
     signal_name: Voltage
     signal_unit: V
+    vector_size: '1'
   states:
     bus_sink: false
     bus_source: false
@@ -1480,8 +1487,10 @@ blocks:
     alias: ''
     bandwidth: '50'
     comment: ''
+    sample_rate: '50'
     signal_name: Apparent Power
     signal_unit: VA
+    vector_size: '512'
   states:
     bus_sink: false
     bus_source: false
@@ -1503,7 +1512,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2600, 2444.0]
+    coordinate: [2600, 2460.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0
