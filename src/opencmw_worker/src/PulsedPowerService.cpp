@@ -95,24 +95,24 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = true;
+    bool                 use_picoscope = false;
     PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
     flowgraph.start();
 
     // OpenCMW workers
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
+    // LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
 
     // run workers in separate threads
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
-    std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
+    // std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
-    limitingCurveWorkerThread.join();
+    // limitingCurveWorkerThread.join();
 }
