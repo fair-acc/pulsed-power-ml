@@ -1,7 +1,9 @@
 #ifndef GR_FLOWGRAPHS_HPP
 #define GR_FLOWGRAPHS_HPP
 
+#include <gnuradio/analog/noise_source.h>
 #include <gnuradio/analog/sig_source.h>
+#include <gnuradio/blocks/add_blk.h>
 #include <gnuradio/blocks/complex_to_mag.h>
 #include <gnuradio/blocks/complex_to_mag_squared.h>
 #include <gnuradio/blocks/divide.h>
@@ -179,17 +181,41 @@ public:
 
         } else {
             // blocks
-            auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
-            auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+            auto analog_sig_source_voltage0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
+            auto analog_sig_source_current0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+            auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f);
 
-            auto voltage0                   = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-            auto current0                   = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+            auto noise_source_current0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
+            auto noise_source_voltage0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 16.25f);
+
+            auto throttle_voltage0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+            auto throttle_current0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+            auto throttle_freq_modulation          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+            auto throttle_noise_voltage0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+            auto throttle_noise_current0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+
+            auto multiply_freq_modulation          = gr::blocks::multiply_ff::make();
+
+            auto add_noise_current0                = gr::blocks::add_ff::make(1);
+            auto add_noise_voltage0                = gr::blocks::add_ff::make(1);
 
             // connections
-            top->hier_block2::connect(analog_sig_source_voltage0, 0, voltage0, 0);
-            top->hier_block2::connect(analog_sig_source_current0, 0, current0, 0);
-            top->hier_block2::connect(voltage0, 0, source_interface_voltage0, 0);
-            top->hier_block2::connect(current0, 0, source_interface_current0, 0);
+            top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
+            top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
+            top->hier_block2::connect(analog_sig_source_freq_modulation, 0, throttle_freq_modulation, 0);
+            top->hier_block2::connect(noise_source_voltage0, 0, throttle_noise_voltage0, 0);
+            top->hier_block2::connect(noise_source_current0, 0, throttle_noise_current0, 0);
+            // multiply frequency modulation
+            top->hier_block2::connect(throttle_current0, 0, multiply_freq_modulation, 0);
+            top->hier_block2::connect(throttle_freq_modulation, 0, multiply_freq_modulation, 1);
+            // add noise
+            top->hier_block2::connect(throttle_voltage0, 0, add_noise_voltage0, 0);
+            top->hier_block2::connect(throttle_noise_voltage0, 0, add_noise_voltage0, 1);
+            top->hier_block2::connect(multiply_freq_modulation, 0, add_noise_current0, 0);
+            top->hier_block2::connect(throttle_noise_current0, 0, add_noise_current0, 1);
+            // connect to interface
+            top->hier_block2::connect(add_noise_voltage0, 0, source_interface_voltage0, 0);
+            top->hier_block2::connect(add_noise_current0, 0, source_interface_current0, 0);
         }
 
         // parameters
