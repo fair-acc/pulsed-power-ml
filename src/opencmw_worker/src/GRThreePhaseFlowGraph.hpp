@@ -40,27 +40,27 @@ private:
 public:
     GRThreePhaseFlowGraph(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
-        // flowgraph setup (dummy test data setup)
+        ///flowgraph setup (dummy test data setup)
         const float samp_rate = 4'000.0f;
 
-        // sinus_signal --> throttle --> opencmw_time_sink
+        ///sinus_signal --> throttle --> opencmw_time_sink
         // first phase:
         auto signal_source_0_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
         auto throttle_block_0_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
-        pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
+        auto pulsed_power_opencmw_sink_0_1 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
+        pulsed_power_opencmw_sink_0_1->set_max_noutput_items(noutput_items);
         // second phase:
         auto signal_source_0_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
         auto throttle_block_0_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
         auto pulsed_power_opencmw_sink_0_2 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
         pulsed_power_opencmw_sink_0_2->set_max_noutput_items(noutput_items);
         // third phase:
-        auto signal_source_0_2             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
-        auto throttle_block_0_2            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
-        auto pulsed_power_opencmw_sink_0_2 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
-        pulsed_power_opencmw_sink_0_2->set_max_noutput_items(noutput_items);
+        auto signal_source_0_3             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
+        auto throttle_block_0_3            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
+        auto pulsed_power_opencmw_sink_0_3 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
+        pulsed_power_opencmw_sink_0_3->set_max_noutput_items(noutput_items);
 
-        // saw_signal --> throttle --> opencmw_time_sink
+        ///saw_signal --> throttle --> opencmw_time_sink
         // first phase:
         auto signal_source_1_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SAW_WAVE, 3, 4, 0, 0);
         auto throttle_block_1_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
@@ -77,7 +77,7 @@ public:
         auto pulsed_power_opencmw_sink_1_3 = gr::pulsed_power::opencmw_time_sink::make({ "saw" }, { "A" }, samp_rate);
         pulsed_power_opencmw_sink_1_3->set_max_noutput_items(noutput_items);
 
-        // square_signal --> throttle --> opencmw_time_sink
+        ///square_signal --> throttle --> opencmw_time_sink
         //first phase:
         auto signal_source_2_1             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SQR_WAVE, 0.7, 3, 0, 0);
         auto throttle_block_2_1            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
@@ -94,7 +94,8 @@ public:
         auto pulsed_power_opencmw_sink_2_3 = gr::pulsed_power::opencmw_time_sink::make({ "square" }, { "A" }, samp_rate);
         pulsed_power_opencmw_sink_2_3->set_max_noutput_items(noutput_items);
 
-        // sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
+        ///sinus_signal --> throttle --> stream_to_vector --> fft --> fast_multiply_constant --> complex_to_mag^2 --> log10 --> opencmw_freq_sink
+        //for each phase needed?
         const float  samp_rate_2                      = 32'000.0f;
         const size_t vec_length                       = 1024;
         const size_t fft_size                         = vec_length;
@@ -108,25 +109,46 @@ public:
         auto         nlog10_ff_0                      = gr::blocks::nlog10_ff::make(10, vec_length, 0);
         auto         pulsed_power_opencmw_freq_sink_0 = gr::pulsed_power::opencmw_freq_sink::make({ "sinus_fft" }, { "dB" }, samp_rate_2, bandwidth);
 
-        // nilm worker (time and frequency sink)
-        auto nilm_time_sink = gr::pulsed_power::opencmw_time_sink::make({ "P", "Q", "S", "Phi" }, { "W", "Var", "VA", "deg" }, samp_rate);
+        ///nilm worker (time and frequency sink) //expanded for three phases
+        auto nilm_time_sink = gr::pulsed_power::opencmw_time_sink::make({ "P_1", "Q_1", "S_1", "Phi_1", "P_2", "Q_2", "S_2", "Phi_2", "P_3", "Q_3", "S_3", "Phi_3", "P_acc", "Q_acc", "S_acc" }, { "W", "Var", "VA", "deg", "W", "Var", "VA", "deg","W", "Var", "VA", "deg","W", "Var", "VA" }, samp_rate);
         nilm_time_sink->set_max_noutput_items(noutput_items);
-
+        //S? voltage, current, detaphi expected (von mir)//thomas nochmal fragen wg nilm allgemein
         auto nilm_freq_sink = gr::pulsed_power::opencmw_freq_sink::make({ "S", "U", "I" }, { "dB", "dB", "dB" }, samp_rate, samp_rate);
         nilm_freq_sink->set_max_noutput_items(noutput_items);
 
-        // connections
-        // time-domain sinks
+        ///connections
+        ///time-domain sinks
+        //first phase
         top->hier_block2::connect(signal_source_0_1, 0, throttle_block_0_1, 0);
-        top->hier_block2::connect(throttle_block_0_1, 0, pulsed_power_opencmw_sink_0, 0);
+        top->hier_block2::connect(throttle_block_0_1, 0, pulsed_power_opencmw_sink_0_1, 0);
 
         top->hier_block2::connect(signal_source_1_1, 0, throttle_block_1_1, 0);
         top->hier_block2::connect(throttle_block_1_1, 0, pulsed_power_opencmw_sink_1_1, 0);
 
-        top->hier_block2::connect(signal_source_2, 0, throttle_block_2, 0);
-        top->hier_block2::connect(throttle_block_2, 0, pulsed_power_opencmw_sink_0, 1);
+        top->hier_block2::connect(signal_source_2_1, 0, throttle_block_2_1, 0);
+        top->hier_block2::connect(throttle_block_2_1, 0, pulsed_power_opencmw_sink_0_1, 1);
 
-        // frequency-domain sinks
+        //second phase
+        top->hier_block2::connect(signal_source_0_2, 0, throttle_block_0_2, 0);
+        top->hier_block2::connect(throttle_block_0_2, 0, pulsed_power_opencmw_sink_0_2, 0);
+
+        top->hier_block2::connect(signal_source_1_2, 0, throttle_block_1_2, 0);
+        top->hier_block2::connect(throttle_block_1_2, 0, pulsed_power_opencmw_sink_1_2, 0);
+
+        top->hier_block2::connect(signal_source_2_2, 0, throttle_block_2_2, 0);
+        top->hier_block2::connect(throttle_block_2_2, 0, pulsed_power_opencmw_sink_0_2, 1);
+
+        //third Phase
+        top->hier_block2::connect(signal_source_0_3, 0, throttle_block_0_3, 0);
+        top->hier_block2::connect(throttle_block_0_3, 0, pulsed_power_opencmw_sink_0_3, 0);
+        
+        top->hier_block2::connect(signal_source_1_3, 0, throttle_block_1_3, 0);
+        top->hier_block2::connect(throttle_block_1_3, 0, pulsed_power_opencmw_sink_1_3, 0);
+
+        top->hier_block2::connect(signal_source_2_3, 0, throttle_block_2_3, 0);
+        top->hier_block2::connect(throttle_block_2_3, 0, pulsed_power_opencmw_sink_0_3, 1);
+
+        // frequency-domain sinks //was des
         top->hier_block2::connect(signal_source_3, 0, throttle_block_3, 0);
         top->hier_block2::connect(throttle_block_3, 0, stream_to_vector_0, 0);
         top->hier_block2::connect(stream_to_vector_0, 0, fft_vxx_0, 0);
@@ -135,10 +157,10 @@ public:
         top->hier_block2::connect(complex_to_mag_squared_0, 0, nlog10_ff_0, 0);
         top->hier_block2::connect(nlog10_ff_0, 0, pulsed_power_opencmw_freq_sink_0, 0);
 
-        // nilm worker (time and frequency sink)
+        // nilm worker (time and frequency sink) //schon gefragt
         top->hier_block2::connect(throttle_block_0_1, 0, nilm_time_sink, 0);
         top->hier_block2::connect(throttle_block_1_1, 0, nilm_time_sink, 1);
-        top->hier_block2::connect(throttle_block_2, 0, nilm_time_sink, 2);
+        top->hier_block2::connect(throttle_block_2_1, 0, nilm_time_sink, 2);
         top->hier_block2::connect(throttle_block_3, 0, nilm_time_sink, 3);
         top->hier_block2::connect(nlog10_ff_0, 0, nilm_freq_sink, 0);
         top->hier_block2::connect(nlog10_ff_0, 0, nilm_freq_sink, 1);
@@ -172,12 +194,12 @@ public:
             picoscope_source->set_trigger_once(false);
             picoscope_source->set_samp_rate(source_samp_rate);
             picoscope_source->set_downsampling(picoscope_downsampling_mode, 1);
-            picoscope_source->set_aichan_a(true, 5, picoscope_coupling, 0.0);
-            picoscope_source->set_aichan_b(true, 1, picoscope_coupling, 0.0);
-            picoscope_source->set_aichan_c(false, 5.0, picoscope_coupling, 5.0);
-            picoscope_source->set_aichan_d(false, 5.0, picoscope_coupling, 0.0);
-            picoscope_source->set_aichan_e(false, 5, picoscope_coupling, 0.0);
-            picoscope_source->set_aichan_f(false, 5, picoscope_coupling, 0.0);
+            picoscope_source->set_aichan_a(true, 5, picoscope_coupling, 0.0); //i_1
+            picoscope_source->set_aichan_b(true, 1, picoscope_coupling, 0.0); //u_1
+            picoscope_source->set_aichan_c(true, 5, picoscope_coupling, 0.0); //i_2
+            picoscope_source->set_aichan_d(true, 1, picoscope_coupling, 0.0); //u_2
+            picoscope_source->set_aichan_e(true, 5, picoscope_coupling, 0.0); //i_3
+            picoscope_source->set_aichan_f(true, 1, picoscope_coupling, 0.0); //u_3
             picoscope_source->set_aichan_g(false, 5.0, picoscope_coupling, 5.0);
             picoscope_source->set_aichan_h(false, 5.0, picoscope_coupling, 0.0);
 
