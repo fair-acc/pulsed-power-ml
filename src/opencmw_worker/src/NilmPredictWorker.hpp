@@ -9,8 +9,8 @@
 #include <cppflow/ops.h>
 #include <cppflow/tensor.h>
 
-#include "NilmDataWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 // #include "TimeDomainWorker.hpp"
 
@@ -93,10 +93,10 @@ public:
         return _responseOk;
     }
 
-     void updateTimeStamp(Acquisition &data) {
-         if (!data.channelTimeSinceRefTrigger.empty()) {
-             _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
-         }
+    void updateTimeStamp(Acquisition &data) {
+        if (!data.channelTimeSinceRefTrigger.empty()) {
+            _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
+        }
     }
 };
 
@@ -117,8 +117,8 @@ class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPre
     NilmPredictData                  _nilmData;
     std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
 
-    std::shared_ptr<SUIDataSink>     _suiDataSink    = std::make_shared<SUIDataSink>();
-    std::shared_ptr<PQSPhiDataSink>  _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
+    std::shared_ptr<SUIDataSink>     _suiDataSink     = std::make_shared<SUIDataSink>();
+    std::shared_ptr<PQSPhiDataSink>  _pqsphiDataSink  = std::make_shared<PQSPhiDataSink>();
 
     Mode                             _mode            = Mode::Normal;
     std::ofstream                    _dataPointFile;
@@ -265,7 +265,7 @@ public:
     }
 
 private:
-        void mergeValues(const AcquisitionNilm &acqNilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
+    void mergeValues(const AcquisitionNilm &acqNilmData, size_t i, size_t vectorSize, std::vector<float> &output) {
         // model requires only first half of the spectrum (2^16)
         size_t fftNilmSize = vectorSize / 2;
         output.clear();
