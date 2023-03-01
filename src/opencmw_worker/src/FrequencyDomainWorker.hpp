@@ -11,6 +11,8 @@
 #include <chrono>
 #include <unordered_map>
 
+#include <iostream>
+
 using opencmw::Annotated;
 using opencmw::NoUnit;
 
@@ -47,7 +49,7 @@ template<units::basic_fixed_string ServiceName, typename... Meta>
 class FrequencyDomainWorker
     : public Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    const size_t       RING_BUFFER_SIZE = 128;
+    const size_t       RING_BUFFER_SIZE = 512;
     const std::string  _deviceName;
     std::atomic<bool>  _shutdownRequested;
     std::jthread       _pollingThread;

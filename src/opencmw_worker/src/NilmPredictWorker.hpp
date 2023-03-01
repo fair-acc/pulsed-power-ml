@@ -10,6 +10,8 @@
 #include <cppflow/tensor.h>
 
 #include "NilmDataWorker.hpp"
+#include "FrequencyDomainWorker.hpp"
+#include "TimeDomainWorker.hpp"
 // #include "TimeDomainWorker.hpp"
 
 using opencmw::Annotated;
@@ -40,6 +42,21 @@ struct NilmPredictData {
 };
 
 ENABLE_REFLECTION_FOR(NilmPredictData, timestamp, values, names, dayUsage, weekUsage, monthUsage)
+
+struct PQSPhiDataSink {
+    int64_t timestamp;
+    float   p;
+    float   q;
+    float   s;
+    float   phi;
+};
+
+struct SUIDataSink {
+    int64_t            timestamp;
+    std::vector<float> u;
+    std::vector<float> i;
+    std::vector<float> s;
+};
 
 template<typename Acq>
 class DataFetcher {
@@ -76,11 +93,11 @@ public:
         return _responseOk;
     }
 
-    // void updateTimeStamp(Acquisition &data) {
-    //     if (!data.channelTimeSinceRefTrigger.empty()) {
-    //         _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
-    //     }
-    // }
+     void updateTimeStamp(Acquisition &data) {
+         if (!data.channelTimeSinceRefTrigger.empty()) {
+             _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
+         }
+    }
 };
 
 using namespace opencmw::disruptor;
@@ -91,11 +108,17 @@ class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPre
     cppflow::model                   _model{ MODEL_PATH };
 
     DataFetcher<AcquisitionNilm>     _acquisitionNilmFetcher{ "pulsed_power_nilm" };
+    DataFetcher<Acquisition>         _dataFetcherAcq        = DataFetcher<Acquisition>("pulsed_power/Acquisition", "P@100Hz,Q@100Hz,S@100Hz,phi@100Hz");
+    DataFetcher<AcquisitionSpectra>  _dataFetcherAcqSpectra = DataFetcher<AcquisitionSpectra>("pulsed_power_freq/AcquisitionSpectra", "S@200000Hz");
 
     std::atomic<bool>                _shutdownRequested;
     std::jthread                     _predictThread;
+    std::jthread                     _fetchThread;
     NilmPredictData                  _nilmData;
     std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
+
+    std::shared_ptr<SUIDataSink>     _suiDataSink    = std::make_shared<SUIDataSink>();
+    std::shared_ptr<PQSPhiDataSink>  _pqsphiDataSink = std::make_shared<PQSPhiDataSink>();
 
     Mode                             _mode            = Mode::Normal;
     std::ofstream                    _dataPointFile;
@@ -111,14 +134,14 @@ public:
             _dataPointFile.open(_dataPointCapturePath.c_str(), std::ios::binary);
         }
 
-        _fetchThread     = std::jthread([this] {
+        /*_fetchThread     = std::jthread([this] {
             std::chrono::duration<double, std::milli> fetchDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
 
                 // fetch P,Q,S,phi from PulsedPowerService
                 Acquisition acqPQSPhi;
-                auto        response = _dataFetcherAcq.fetch(acqPQSPhi);
+                auto        response = _dataFetcherAcq.get(acqPQSPhi);
                 _dataFetcherAcq.updateTimeStamp(acqPQSPhi);
                 if (response.error() == httplib::Error::Success && response->status == 200) {
                     if (!acqPQSPhi.channelNames.empty()) {
@@ -134,7 +157,7 @@ public:
 
                 // fetch Apparent Power (S) from PulsedPowerService
                 AcquisitionSpectra acqSData;
-                response = _dataFetcherAcqSpectra.fetch(acqSData);
+                response = _dataFetcherAcqSpectra.get(acqSData);
                 if (response.error() == httplib::Error::Success && response->status == 200) {
                     // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitude_values.element_count(), acqSData.channelName);
                     if (acqSData.channelMagnitude_values.dimensions()[1] > 0) {
@@ -149,7 +172,7 @@ public:
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
-            });
+            });*/
 
         _predictThread = std::jthread([this, updateInterval, mode] {
             std::chrono::duration<double, std::milli> predictDuration;
@@ -238,6 +261,7 @@ public:
         }
         _shutdownRequested = true;
         _predictThread.join();
+        //_fetchThread.join();
     }
 
 private:

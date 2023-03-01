@@ -222,8 +222,6 @@ public:
         float     bandwidth_nilm   = source_samp_rate;
 
         // blocks
-        auto multiply_voltage_current_nilm = gr::blocks::multiply_ff::make(1);
-
         auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size_nilm);
         auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), false, 1);
         auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
@@ -237,7 +235,7 @@ public:
         auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(vector_size_nilm);
 
         auto multiply_voltage_current      = gr::blocks::multiply_ff::make(1);
-        auto frequency_spec_one_in_n       = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
+        auto frequency_spec_one_in_n       = gr::blocks::keep_one_in_n::make(sizeof(float), 4000);
         auto frequency_spec_low_pass       = gr::filter::fft_filter_fff::make(
                 10,
                 gr::filter::firdes::low_pass(
@@ -603,14 +601,12 @@ public:
         top->hier_block2::connect(stream_to_vector_I, 0, fft_I, 0);
         top->hier_block2::connect(fft_I, 0, complex_to_mag_I, 0);
         top->hier_block2::connect(complex_to_mag_I, 0, opencmw_freq_sink_nilm_I, 0); // freq_spectra current
-        top->hier_block2::connect(source_interface_voltage0, 0, multiply_voltage_current_nilm, 0);
-        top->hier_block2::connect(source_interface_current0, 0, multiply_voltage_current_nilm, 1);
-        top->hier_block2::connect(multiply_voltage_current_nilm, 0, stream_to_vector_S, 0);
+        top->hier_block2::connect(source_interface_current0, 0, multiply_voltage_current, 0);
+        top->hier_block2::connect(source_interface_voltage0, 0, multiply_voltage_current, 1);
+        top->hier_block2::connect(multiply_voltage_current, 0, stream_to_vector_S, 0);
         top->hier_block2::connect(stream_to_vector_S, 0, fft_S, 0);
         top->hier_block2::connect(fft_S, 0, complex_to_mag_S, 0);
         top->hier_block2::connect(complex_to_mag_S, 0, opencmw_freq_sink_nilm_S, 0); // freq_spectra apparent power (nilm)
-        top->hier_block2::connect(source_interface_current0, 0, multiply_voltage_current, 0);
-        top->hier_block2::connect(source_interface_voltage0, 0, multiply_voltage_current, 1);
         top->hier_block2::connect(multiply_voltage_current, 0, frequency_spec_one_in_n, 0);
         top->hier_block2::connect(frequency_spec_one_in_n, 0, frequency_spec_low_pass, 0);
         top->hier_block2::connect(frequency_spec_low_pass, 0, frequency_spec_stream_to_vec, 0);
