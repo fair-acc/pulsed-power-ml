@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from training_data_labelling import remove_false_positive_switching_events
-from data_io import read_training_files
+from data_io import load_binary_data_array
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
                      'corresponding switch_positions file')
     )
     parser.add_argument('-r',
-                        '--raw-data-folder',
+                        '--raw-data',
                         help='Path to raw data',
                         required=True)
     parser.add_argument('-f',
@@ -48,7 +48,7 @@ def main():
     args = parser.parse_args()
 
     # Load training files
-    data_point_array = read_training_files(args.raw_data_folder, args.fft_size)
+    data_point_array = load_binary_data_array(args.raw_data, int(args.fft_size / 2))
     apparent_power_array = data_point_array[:, -2]
 
     # Load feature file
@@ -78,7 +78,7 @@ def main():
                 s=i)
 
     ax.legend()
-    original_switch_pos_file_name = f'{args.output_folder}/original_switch_position.pdf'
+    original_switch_pos_file_name = f'{args.output_folder}/{args.prefix}_original_switch_position.pdf'
     print(f'Store plot with original switch positions in {original_switch_pos_file_name}.')
     fig.savefig(original_switch_pos_file_name)
 
@@ -120,18 +120,18 @@ def main():
             color='C2')
     ax.legend()
 
-    corrected_switch_pos_file_name = f'{args.output_folder}/{args.prefix}_switch_position.pdf'
+    corrected_switch_pos_file_name = f'{args.output_folder}/{args.prefix}_corrected_switch_position.pdf'
     print(f'Store plot with corrected switch positions in {corrected_switch_pos_file_name}.')
     fig.savefig(corrected_switch_pos_file_name)
 
     # Write corrected features and csv to disk
-    corrected_features_file_name = f'{args.output_folder}/{args.prefix}_features.csv'
+    corrected_features_file_name = f'{args.output_folder}/{args.prefix}_corrected_features.csv'
     print(f'Write corrected features in {corrected_features_file_name}')
     np.savetxt(fname=corrected_features_file_name,
                X=corrected_features,
                delimiter=',')
 
-    corrected_switch_positions_file_name = f'{args.output_folder}/{args.prefix}_switch_positions.csv'
+    corrected_switch_positions_file_name = f'{args.output_folder}/{args.prefix}_corrected_switch_positions.csv'
     print(f'Write corrected switch positions in {corrected_switch_positions_file_name}')
     np.savetxt(fname=corrected_switch_positions_file_name,
                X=corrected_switch_positions,
