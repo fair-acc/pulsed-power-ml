@@ -12,25 +12,7 @@ from scipy.optimize import curve_fit
 import tensorflow as tf
 
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file
-
-
-def read_parameters(parameter_path: str) -> dict:
-    """
-    Read parameters from a parameter yml file into a dictionary.
-
-    Parameters
-    ----------
-    parameter_path
-        Path to the .yml file.
-
-    Returns
-    -------
-    Dictionary of parameters.
-    """
-    param_dic = yaml.safe_load(Path(parameter_path).read_text())
-    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_rate']
-    param_dic['freq_per_bin'] = param_dic['sample_rate'] / param_dic['fft_size']
-    return param_dic
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 
 
 def read_power_data_base(path_to_file: str) -> list:
@@ -375,16 +357,16 @@ def tf_switch_detected(res_spectrum: tf.Tensor,
         return tf.constant(False, dtype=tf.bool)
 
 @tf.function
-def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+def tf_calculate_gaussian_params_for_peak(x_: tf.Tensor, y_: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Calculates the parameters of a gaussian function given the values in x and y.
 
     This is not a fit(!), but an exact calculation. x and y need to be of length 3.
 
     Parameters
     ----------
-    x
+    x_
         Tensor of shape (3, 1) containing the x values in ascending order.
-    y
+    y_
         Tensor of shape (3, 1) containing the matching y values.
 
     Returns
@@ -392,6 +374,18 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[t
     gauss_params
         Tensor of shape (3, 1) containing the three parameters of a gaussian function.
     """
+
+    # need double precision here
+    x = tf.cast(x_, dtype=tf.float64)
+    y = tf.cast(y_, dtype=tf.float64)
+
+    # assert, that x is in ascending order
+    if x[0] > x[1] or x[1] > x[2]:
+        tf.print("x-Values no in ascending order! x = ", x)
+
+    # assert, that y contains a peak
+    if y[0] > y[1] or y[1] < y[2]:
+        tf.print("y-values do not contain peak! y = ", y)
 
     z = tf.math.log(y)
 
@@ -413,7 +407,11 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[t
     b = beta * c**2
     a = tf.math.exp(gamma + (b**2 / (2*c**2)))
 
-    return a, b, c
+    a_ = tf.cast(a, dtype=tf.float32)
+    b_ = tf.cast(b, dtype=tf.float32)
+    c_ = tf.cast(c, dtype=tf.float32)
+
+    return a_, b_, c_
 
 @tf.function(
     input_signature=[tf.TensorSpec(shape=(2**16), dtype=tf.float32),
@@ -544,7 +542,6 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     #                                          axis=0,
     #                                          name="min_peak_height")
 
-    # ToDo: Is min peak height necessary?
     min_peak_height = tf.constant(0, dtype=tf.float32)
     # Determine if peaks have positive or negative amplitude
     switch_off_factor = tf.cond(
@@ -601,8 +598,8 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
         amplitudes = cleaned_spectrum[low_index[0]:high_index[0]+1]
 
         a, mu, sigma = tf_calculate_gaussian_params_for_peak(
-            x=frequencies,
-            y=amplitudes * switch_off_factor
+            x_=frequencies,
+            y_=amplitudes * switch_off_factor
         )
 
         feature_vector = feature_vector.write(i*3, a * switch_off_factor)

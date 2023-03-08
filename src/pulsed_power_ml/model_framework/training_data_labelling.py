@@ -75,6 +75,15 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
                                                          sample_rate=tf.constant(sample_rate, dtype=tf.int32))\
                                                          .numpy()\
                                                          .reshape((-1))
+
+            assert np.isnan(feature_vector).any() == False, \
+                ("Found NAN in feature vector! |"
+                 f"{mean_clf=} |"
+                 f"nans in mean_clf = {np.isnan(mean_clf).any()} |"
+                 f"{n_peaks=} |"
+                 f"{fft_size_real=} |"
+                 f"{sample_rate=} |")
+
             feature_list.append(feature_vector)
             window.clear()
             continue

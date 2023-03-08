@@ -4,9 +4,11 @@ This module contains functions for the model framework concerning data I/O.
 
 import glob
 import warnings
+from pathlib import Path
 
 import numpy as np
 
+import yaml
 
 FFT_APPARENT_POWER_FIX = "FFTApparentPower"
 FFT_VOLTAGE_FIX = "FFTVoltage"
@@ -39,6 +41,26 @@ def load_binary_data_array(path_to_file: str,
     """
     data_point_len = 3 * fft_size_data_point + 4
     return np.fromfile(path_to_file, dtype=np.float32).reshape((-1, data_point_len))
+
+
+def read_parameters(parameter_path: str) -> dict:
+    """
+    Read parameters from a parameter yml file into a dictionary.
+
+    Parameters
+    ----------
+    parameter_path
+        Path to the .yml file.
+
+    Returns
+    -------
+    Dictionary of parameters.
+    """
+    param_dic = yaml.safe_load(Path(parameter_path).read_text())
+    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_rate']
+    param_dic['freq_per_bin'] = param_dic['sample_rate'] / param_dic['fft_size']
+    return param_dic
+
 
 def load_fft_file(path_to_file: str,
                   fft_size: int) -> np.array:
