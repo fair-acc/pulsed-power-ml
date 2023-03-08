@@ -228,11 +228,9 @@ static void main_loop(void *arg) {
 
         app_header::draw_header_bar("Non-Intrusive Load Monitoring", args->fonts.title);
 
-        static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 1;
-        static int                cols      = 2;
-        static float              rratios[] = { 1, 1, 1, 1 };
-        static float              cratios[] = { 1, 1, 1, 1 };
+        static ImPlotSubplotFlags flags = ImPlotSubplotFlags_NoTitle;
+        static int                rows  = 1;
+        static int                cols  = 2;
 
         std::string               output_symbol;
 

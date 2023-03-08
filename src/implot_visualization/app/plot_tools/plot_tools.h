@@ -419,13 +419,8 @@ void plotNestTable(
 
 void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
     printf("Ploting Table, init %d\n", powerUsage.init);
-    static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    ImGuiWindow           *window     = ImGui::GetCurrentWindow();
-    ImGuiContext          &g          = *GImGui;
-    const ImGuiStyle      &style      = g.Style;
-
-    //  off
-    const ImVec4 &disable_col = style.Colors[ImGuiCol_TextDisabled];
+    ImGuiContext     &g     = *GImGui;
+    const ImGuiStyle &style = g.Style;
 
     //  on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];

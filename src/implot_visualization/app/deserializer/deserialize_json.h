@@ -64,6 +64,8 @@ public:
     IAcquisition();
     IAcquisition(const std::vector<std::string> _signalNames);
 
+    virtual ~IAcquisition()    = default;
+
     virtual void deserialize() = 0;
 
 protected:
@@ -74,6 +76,8 @@ class Acquisition : public IAcquisition<ScrollingBuffer> {
 public:
     Acquisition();
     Acquisition(const std::vector<std::string> &_signalNames);
+
+    ~Acquisition(){};
 
     void deserialize();
 
@@ -87,6 +91,8 @@ class AcquisitionSpectra : public IAcquisition<Buffer> {
 public:
     AcquisitionSpectra();
     AcquisitionSpectra(const std::vector<std::string> &_signalNames);
+
+    ~AcquisitionSpectra(){};
 
     void deserialize();
 
@@ -112,6 +118,8 @@ public:
     PowerUsage();
     PowerUsage(const std::vector<std::string> &_signalNames);
 
+    ~PowerUsage(){};
+
     void   deserialize();
     void   fail();
     double sumOfUsage();
@@ -132,6 +140,8 @@ public:
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);
+
+    ~RealPowerUsage(){};
 
     void deserialize();
     void fail();
