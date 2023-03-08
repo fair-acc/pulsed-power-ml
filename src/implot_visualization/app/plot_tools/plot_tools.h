@@ -566,7 +566,29 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     }
 }
 
-void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {
+bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) {
+    bool violates = false;
+    for (Buffer buffer : buffers) {
+        for (int idxBuffer = 0; idxBuffer < buffer.data.size(); idxBuffer++) {
+            for (int idxLimit = 0; idxBuffer < limitingCurve.data.size() - 1; idxLimit++) {
+                if (buffer.data[idxBuffer].x >= limitingCurve.data[idxLimit].x && buffer.data[idxBuffer].x < limitingCurve.data[idxLimit + 1].x) {
+                    // linear interpolation
+                    DataPoint limitLeft  = limitingCurve.data[idxLimit];
+                    DataPoint limitRight = limitingCurve.data[idxLimit + 1];
+                    double    slope      = (limitRight.y - limitLeft.y) / (limitRight.x - limitLeft.x);
+                    double    yshift     = limitLeft.y;
+                    double    limitY     = slope * buffer.data[idxBuffer].x + yshift;
+                    if (limitY < buffer.data[idxBuffer].y) {
+                        return violates = true;
+                    }
+                }
+            }
+        }
+    }
+    return violates;
+}
+
+void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, bool violation, ImFont *fontawesome) {
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
@@ -576,6 +598,9 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
     ImPlot::SetupLegend(legendLoc, legendFlags);
     plotSignals(signals);
     plotSignals(limitingCurve);
+    if (limitingCurve.size() == 1) {
+        violation = violatesLimitingCurve(limitingCurve[0], signals);
+    }
     if (violation) {
         addPlotNotice("error: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
         addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
