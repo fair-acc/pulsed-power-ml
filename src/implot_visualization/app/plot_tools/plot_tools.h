@@ -133,6 +133,17 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
         }
     }*/
 
+    // color axis
+    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
+
+    ImPlotAxis &axis_Y2 = plot.Axes[ImAxis_Y2];
+    axis_Y2.ColorTxt    = 4283584196;
+    axis_Y2.ColorTick   = 4283584196;
+
+    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
+    axis_Y1.ColorTxt    = 4289753676;
+    axis_Y1.ColorTick   = 4289753676;
+
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -166,7 +177,9 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_Segments;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
+
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
+
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
     ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
@@ -174,6 +187,7 @@ void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
+
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
