@@ -7,6 +7,8 @@ from typing import Union, List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
 
 import sys
 sys.path.append("../../../")
@@ -442,7 +444,67 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
 
     return fig
 
+def add_pca_plot(ax: matplotlib.axis.Axis,
+                 feature_array: np.array,
+                 label_array: np.array,
+                 use_scaler: bool = True) -> matplotlib.axis.Axis:
+    """
 
+    Parameters
+    ----------
+    ax
+        Axis instance to plot on.
+    feature_array
+        Array containing the feature vectors.
+    label_array
+        Array containing label names. These will be used for the legend.
+    use_scaler
+        If True (default) features will be scaled with a MinMax scaler.
 
+    Returns
+    -------
+    ax
+        Axis incl. plot
+    """
+    # Check data
 
+    # check for nans in feature_array
+    assert np.isnan(feature_array).any() == False, 'Found nan in feature array!'
 
+    # check that feature array and label array have the same length
+    assert len(feature_array) == len(label_array), 'Feature array and label array do not have the same length!'
+
+    # scale input
+    if use_scaler == True:
+        scaler = MinMaxScaler()
+        pca_input = scaler.fit_transform(feature_array)
+    else:
+        pca_input = feature_array
+
+    # Perform PCA
+    pca_values = PCA(n_components=2).fit_transform(pca_input)
+
+    # Plot to axis
+    cmap = matplotlib.colormaps["tab20"]
+    unique_labels = np.unique(label_array)
+    color_dict = {label:cmap(i / (len(unique_labels) - 1)) for i, label in enumerate(unique_labels)}
+
+    legend_added = list()
+
+    for data_point, label in zip(pca_values, label_array):
+        legend_label = None
+        if label not in legend_added:
+            legend_label = label
+            legend_added.append(label)
+
+        ax.scatter(data_point[0],
+                   data_point[1],
+                   label=legend_label,
+                   marker='x',
+                   color=color_dict[label])
+
+    ax.set_title("PCA of features")
+    ax.grid(True)
+    ax.legend(scatterpoints=1, bbox_to_anchor=[1.05, 1])
+
+    return ax
