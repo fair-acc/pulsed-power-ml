@@ -34,7 +34,6 @@ class TFGuptaClassifier(keras.Model):
                  training_data_features: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  training_data_labels: tf.Tensor = tf.constant(1, dtype=tf.float32),
                  verbose: tf.Tensor = tf.constant(False, dtype=tf.bool),
-                 reverse_input: tf.Tensor = tf.constant(False, dtype=tf.bool),
                  name="TFGuptaClassifier",
                  **kwargs
                  ) -> None:
@@ -77,16 +76,11 @@ class TFGuptaClassifier(keras.Model):
             Corresponding labels for the provided training data
         verbose
             If True, increase verbosity.
-        reverse_input
-            If True, reverse input tensors
         """
         super(TFGuptaClassifier, self).__init__(name=name, **kwargs)
 
         # verbose flag
         self.verbose = verbose
-
-        # reverse flag
-        self.reverse_input = reverse_input
 
         # Parameters
         self.fft_size_real = fft_size_real

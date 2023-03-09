@@ -4,7 +4,6 @@ This module implements an easy method to test the performance of a Gupta model.
 
 import argparse
 import sys
-import os
 
 import tensorflow as tf
 import numpy as np
@@ -13,7 +12,7 @@ from tqdm import tqdm
 sys.path.append("../../../../")
 
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
-from src.pulsed_power_ml.model_framework.data_io import read_training_files
+from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 from src.pulsed_power_ml.model_framework.visualizations import plot_state_vector_array
 from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
@@ -26,8 +25,8 @@ def main():
         description='This script provides an easy and quick way to test a NILM model given previously recorded data.'
     )
     parser.add_argument('-i',
-                        '--input-folder',
-                        help='Path to folder containing raw data.',
+                        '--input',
+                        help='Path to raw data.',
                         required=True)
     parser.add_argument('-m',
                         '--model',
@@ -50,13 +49,6 @@ def main():
                         help='Pass this flag to include a vertical line into prediction plot at 70%% of time.',
                         action='store_true',
                         default=False)
-    parser.add_argument('--new-flowgraph',
-                        help='Use alternative method to read raw files from disk.',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--input-filename',
-                        help='Name of the input file (no path). Required if "--new-flowgraph" option is used.',
-                        type=str)
     args = parser.parse_args()
 
     # Load parameters
@@ -72,19 +64,9 @@ def main():
     model = tf.saved_model.load(args.model)
 
     # Load data
-    print(f'\nLoad data in {args.input_folder}')
-    if args.new_flowgraph:
-        if args.input_filename is None:
-            print(f'ERROR: "input-filename" must be provided if "--new-flowgraph" flag is set!')
-            exit(-1)
-        data_point_array = np.fromfile(
-            file=f'{args.input_folder}/{args.input_filename}',
-            dtype=np.float32)\
-            .reshape((-1, 3 * int(parameter_dict['fft_size_real']) + 4))
-
-    else:
-        data_point_array = read_training_files(path_to_folder=args.input_folder,
-                                               fft_size=parameter_dict["fft_size"])
+    print(f'\nLoad data in {args.input}')
+    data_point_array = load_binary_data_array(args.input,
+                                              parameter_dict["fft_size_real"])
 
     # Apply model
     state_vector_list = list()

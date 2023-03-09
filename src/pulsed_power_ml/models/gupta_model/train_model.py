@@ -47,11 +47,6 @@ def main():
                         help='Increase the verbosity of the model',
                         action='store_true',
                         default=False)
-    parser.add_argument('-r',
-                        '--reverse-input',
-                        help='If True, reverse input tensor in model call',
-                        action='store_true',
-                        default=False)
     args = parser.parse_args()
 
     # Load parameters
@@ -70,7 +65,9 @@ def main():
 
     # Instantiate model
     gupta_model = TFGuptaClassifier(
-        background_n=parameter_dict["background_n"],
+        window_size=parameter_dict["window_size"],
+        step_size=parameter_dict["step_size"],
+        switch_threshold=parameter_dict["switch_threshold"],
         fft_size_real=parameter_dict["fft_size_real"],
         sample_rate=parameter_dict["sample_rate"],
         n_known_appliances=parameter_dict["n_known_appliances"],
@@ -81,7 +78,6 @@ def main():
         training_data_features=tf.constant(features, dtype=np.float32),
         training_data_labels=tf.constant(labels, dtype=np.float32),
         verbose=tf.constant(args.verbose, dtype=tf.bool),
-        reverse_input=tf.constant(args.reverse_input, dtype=tf.bool)
     )
 
     # Reset model
