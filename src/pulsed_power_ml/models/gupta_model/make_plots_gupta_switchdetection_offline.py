@@ -26,5 +26,6 @@ def main():
         print(f'Storing data in {full_output_name}')
         fig.savefig(full_output_name)
 
+
 if __name__ == '__main__':
     main()

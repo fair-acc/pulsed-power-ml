@@ -12,7 +12,7 @@ import tensorflow as tf
 sys.path.append("../../../../")
 
 from src.pulsed_power_ml.models.gupta_model.tf_gupta_clf import TFGuptaClassifier
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 
 

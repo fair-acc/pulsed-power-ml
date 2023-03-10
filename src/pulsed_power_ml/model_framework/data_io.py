@@ -207,11 +207,3 @@ def read_training_files(path_to_folder: str,
                             phase_difference[:min_length]])
 
     return data_array
-
-
-if __name__ == "__main__":
-    test = read_training_files(
-        "/home/thomas/projects/nilm_at_fair/training_data/training_data_2022-10-12/halo/",
-        fft_size=2**14,
-    )
-    print(test.shape)

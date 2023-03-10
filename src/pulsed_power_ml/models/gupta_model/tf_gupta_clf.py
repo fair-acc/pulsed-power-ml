@@ -9,12 +9,12 @@ from tensorflow import keras
 
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_transform_spectrum
 
 
 # Define some constants
 N_PEAKS_MAX = 9
 DATA_POINT_SIZE = 3 * 2**16 + 4
+
 
 class TFGuptaClassifier(keras.Model):
 
@@ -26,7 +26,6 @@ class TFGuptaClassifier(keras.Model):
                  sample_rate: tf.Tensor = tf.constant(2_000_000, dtype=tf.int32),
                  n_known_appliances: tf.Tensor = tf.constant(10, dtype=tf.int32),
                  spectrum_type: tf.Tensor = tf.constant(2, dtype=tf.int32),
-                 # n_peaks_max: tf.Tensor = tf.constant(10, dtype=tf.int32),
                  apparent_power_list: tf.Tensor = tf.constant(value=tf.zeros([10]),
                                                               dtype=tf.float32),
                  n_neighbors: tf.Tensor = tf.constant(3, dtype=tf.int32),
@@ -138,7 +137,7 @@ class TFGuptaClassifier(keras.Model):
         )
 
         self.training_data_features_scaled = tf.math.divide_no_nan(self.training_data_features_raw,
-                                                                   self.scale_tensor[:,0])
+                                                                   self.scale_tensor[:, 0])
 
         self.feature_vector = tf.Variable(
             initial_value=tf.ones(shape=(3 * self.n_peaks_max, 1), dtype=tf.float32),
@@ -152,13 +151,13 @@ class TFGuptaClassifier(keras.Model):
     @tf.function(
         input_signature=[tf.TensorSpec(shape=(3 * N_PEAKS_MAX, 1), dtype=tf.float32)]
     )
-    def call_knn(self, input: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    def call_knn(self, input_tensor: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Method to use this model for inference.
 
         Parameters
         ----------
-        input
+        input_tensor
             Tensor consisting of one feature vector.
 
         Returns
@@ -168,12 +167,12 @@ class TFGuptaClassifier(keras.Model):
             label: Tensor containing the classification result.
         """
         # Shape must be (n_features, 1) for both
-        scaled_input = tf.math.divide_no_nan(input,
+        scaled_input = tf.math.divide_no_nan(input_tensor,
                                              self.scale_tensor)
 
         difference_vectors = tf.math.subtract(
             self.training_data_features_scaled,
-            scaled_input[:,0])
+            scaled_input[:, 0])
 
         distances = tf.norm(difference_vectors, axis=1)
 
@@ -211,7 +210,7 @@ class TFGuptaClassifier(keras.Model):
         if self.verbose:
             tf.print('\n')
             tf.print('# +++++++++++++++++++++++++++++++++++++ In "call_knn()" +++++++++++++++++++++++++++++++++++++ #')
-            tf.print('Feature vector "input" = ', input, summarize=-1)
+            tf.print('Feature vector "input" = ', input_tensor, summarize=-1)
             tf.print('distances = ', distances, summarize=-1)
             tf.print('k_smallest_distances = ', k_smallest_distances, summarize=-1)
             tf.print('result_tensor = ', result_tensor, summarize=-1)
@@ -219,7 +218,7 @@ class TFGuptaClassifier(keras.Model):
         return k_smallest_distances, result_tensor
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=(DATA_POINT_SIZE), dtype=tf.float32)]
+        input_signature=[tf.TensorSpec(shape=DATA_POINT_SIZE, dtype=tf.float32)]
     )
     def call(self, X: tf.Tensor) -> tf.Tensor:
         """
@@ -460,7 +459,6 @@ class TFGuptaClassifier(keras.Model):
                                                                fft_size_real=self.fft_size_real,
                                                                sample_rate=self.sample_rate))
 
-
         # 2. Classify event
         distances, event_class = self.call_knn(self.feature_vector)
 
@@ -488,16 +486,16 @@ class TFGuptaClassifier(keras.Model):
 
         return self.current_state_vector
 
-    def update_window(self, input: tf.Tensor) -> None:
+    def update_window(self, input_tensor: tf.Tensor) -> None:
         """
         Function to add spectrum to window and, if necessary, increase frames counter.
 
         Parameters
         ----------
-        input
+        input_tensor
             Spectrum
         """
-        self.window_eviction(input)
+        self.window_eviction(input_tensor)
 
         if tf.math.less(self.n_frames_in_window, self.window_size * 3):
 
@@ -510,20 +508,20 @@ class TFGuptaClassifier(keras.Model):
 
         return None
 
-    def window_eviction(self, input: tf.Tensor) -> None:
+    def window_eviction(self, input_tensor: tf.Tensor) -> None:
         """
         Function to replace the oldest spectrum in window with **input**.
 
         Parameters
         ----------
-        input
+        input_tensor
             Spectrum to be added to the current window.
         """
         self.window.assign(
             tf.tensor_scatter_nd_update(
                 tensor=tf.roll(input=self.window, shift=1, axis=0),
                 indices=tf.constant([[0]], dtype=tf.int32),
-                updates=tf.reshape(input, shape=(1, -1))
+                updates=tf.reshape(input_tensor, shape=(1, -1))
             )
         )
         return None

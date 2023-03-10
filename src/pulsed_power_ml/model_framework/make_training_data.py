@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 sys.path.append("../../../")
 from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
 from src.pulsed_power_ml.model_framework.training_data_labelling import get_features_from_raw_data
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 
 
 def main():
@@ -77,6 +77,7 @@ def main():
     fig.savefig(figure_output_file_name)
 
     return
+
 
 if __name__ == '__main__':
     main()

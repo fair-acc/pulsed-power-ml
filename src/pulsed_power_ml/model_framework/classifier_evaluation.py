@@ -1,8 +1,9 @@
-from sklearn.decomposition import PCA
-from sklearn.pipeline import make_pipeline
+"""
+This module contains functions to help with model evaluation and optimization.
+"""
+
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler
 from sklearn.metrics import accuracy_score
-from sklearn.metrics import confusion_matrix 
 from sklearn.metrics import ConfusionMatrixDisplay
 
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ import numpy as np
 
 from src.pulsed_power_ml.models.gupta_model.gupta_clf import GuptaClassifier
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 
 
 def redefine_labels_different(labels: np.ndarray) -> np.ndarray:
@@ -28,15 +29,15 @@ def redefine_labels_different(labels: np.ndarray) -> np.ndarray:
     labels:
         redefined labels.
     """
-    merge_cats = [(1,2), # F1, F2 on
-                  (4,5), # H1, H2 on
-                  (6,7), # L1, L2 on
-                  (9,10), # R1, R2 on
-                  (12,13), # F1, F2 off
-                  (15,16), # H1, H2 off
-                  (17,18), # L1, L2 off
-                  (20,21)] # R1, R2 off
-    new_cats = [0,1,2,3,4,6,8,9,11,12,14,15,17,19,20]
+    merge_cats = [(1, 2), # F1, F2 on
+                  (4, 5), # H1, H2 on
+                  (6, 7), # L1, L2 on
+                  (9, 10), # R1, R2 on
+                  (12, 13), # F1, F2 off
+                  (15, 16), # H1, H2 off
+                  (17, 18), # L1, L2 off
+                  (20, 21)] # R1, R2 off
+    new_cats = [0, 1, 2, 3, 4, 6, 8, 9, 11, 12, 14, 15, 17, 19, 20]
     for merge in merge_cats:
         for ii in range(0,labels.__len__()):
             cat = labels[ii].argmax()
@@ -55,7 +56,6 @@ def evaluate_knn_classifier(parameter_file: str,
                             validation_folder: str,
                             n_neighb: int,
                             knn_weights: str = "distance",
-                            n_known_appliances: int = 11,
                             distance_thres: float = np.inf, 
                             scaler: str = "NoScaler",
                             makeplot: bool=True,
@@ -75,14 +75,8 @@ def evaluate_knn_classifier(parameter_file: str,
     validation_folder:
         Path to validation data, containing Features_ApparentPower_0.3_p.csv 
         and Labels_ApparentPower_0.3_p.csv
-    n_known_appliances
-        Number of known appliances.
-    n_neighbors
-        Number of nearest neighbors which should be checked during the classification.
     knn_weights
         How to weight the distance of al neighbors.
-    distance_threshold
-        If distance to the nearest neighbor is above this threshold, an event is classified as "other"
     makeplot
         Boolean, if True plot confusion matrix
     types

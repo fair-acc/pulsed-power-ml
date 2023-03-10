@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 sys.path.append("../../../../")
 
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
 from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 from src.pulsed_power_ml.model_framework.visualizations import plot_state_vector_array
 from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array

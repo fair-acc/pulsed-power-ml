@@ -15,7 +15,7 @@ from src.pulsed_power_ml.models.gupta_model.tf_gupta_clf import TFGuptaClassifie
 
 from src.pulsed_power_ml.model_framework.data_io import read_training_files
 from src.pulsed_power_ml.model_framework.visualizations import make_eval_plot
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 
 from src.pulsed_power_ml.model_framework.training_data_labelling import trainingdata_switch_detector
@@ -108,7 +108,7 @@ def get_raw_data(name: str) -> Tuple[List[tf.Tensor], List]:
     Parameters
     ----------
     name
-        Name of the measurement series (basically name of the respective folder
+        Name of the measurement series (basically name of the respective folder)
 
     Returns
     -------
@@ -139,7 +139,7 @@ def main():
     # load raw data
     raw_data_list, data_point_array = get_raw_data(appliance)
 
-    switch_positions = trainingdata_switch_detector(data_point_array[start_frame:stop_frame,2*2**16:3*2**16],
+    switch_positions = trainingdata_switch_detector(data_point_array[start_frame:stop_frame, 2*2**16:3*2**16],
                                                     parameter_dict)
 
     del data_point_array
@@ -161,7 +161,7 @@ def main():
 
     # Make plot
     fig = make_eval_plot(power_array=np.array(raw_data_list)[start_frame:stop_frame, -2],
-                         state_array=np.array(state_vector_list)[:,0])
+                         state_array=np.array(state_vector_list)[:, 0])
 
     fig.savefig(f"{OUTPUT_PATH}/nan_test_tf_gupta_{appliance}_e1_.pdf")
 
@@ -186,6 +186,7 @@ def main():
     # Save figure
 
     return
+
 
 if __name__ == "__main__":
     main()
