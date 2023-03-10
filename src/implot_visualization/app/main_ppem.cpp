@@ -213,11 +213,11 @@ static void main_loop(void *arg) {
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 2;
+        static int                rows      = 1;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
-        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
+        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
             // Raw Signals Plot
             static ImPlotColormap Test = -1;
             if (Test == -1) {
@@ -244,14 +244,23 @@ static void main_loop(void *arg) {
             }
 
             // Power Plot
-            if (ImPlot::BeginPlot("")) {
+            /*if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() > 2) {
                     Plotter::plotPower(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();
-            }
+            }*/
 
             // Power Statistics
+            /*if (ImPlot::BeginPlot("")) {
+                if (subscriptionsTimeDomain.size() > 1) {
+                    Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
+                }
+                ImPlot::EndPlot();
+            }*/
+            ImPlot::EndSubplots();
+        }
+        if (ImPlot::BeginSubplots("My Subplots2", 1, 1, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
             if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() > 1) {
                     Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
