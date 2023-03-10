@@ -251,16 +251,10 @@ static void main_loop(void *arg) {
                 ImPlot::EndPlot();
             }*/
 
-            // Power Statistics
-            /*if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 1) {
-                    Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
-                }
-                ImPlot::EndPlot();
-            }*/
             ImPlot::EndSubplots();
         }
         if (ImPlot::BeginSubplots("My Subplots2", 1, 1, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
+            // Power Statistics
             if (ImPlot::BeginPlot("")) {
                 if (subscriptionsTimeDomain.size() > 1) {
                     Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
