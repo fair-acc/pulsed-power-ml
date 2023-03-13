@@ -86,52 +86,15 @@ static void plotSignals(std::vector<T> &signals) {
 }
 
 void plotSignals(std::vector<ScrollingBuffer> &signals) {
-    // static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
-    // auto   clock       = std::chrono::system_clock::now();
-    // double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    // ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
-    // ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
-    /*if (signals.length == 4) { //seperated function for signals
-        std::vector<ScrollingBuffer> rawSignals[2];
-        std::vector<ScrollingBuffer> plotBpfSignals[2];
-        rawSignals[0]     = signals[0];
-        rawSignals[1]     = signals[1];
-        plotBpfSignals[0] = signals[2];
-        plotBpfSignals[1] = signals[3];
-        rawSignals(rawSignals);
-        plotBpfSignals(plotBpfSignals);
-    }
-
-    void rawSignals(std::vector<ScrollingBuffer> rawSignals) {
-        for(const auto &signal in rawSignals){
-            if (!signal.data.empty()) {
-                int offset = 0;
-                if constexpr (requires { signal.offset; }) {
-                    offset = signal.offset;
-                }
-            }
-        }
-    }
-    void plotBpfSignals(std::vector<ScrollingBuffer> plotBpfSignals) {
-        for (const auto &signal in plotBpfSignals){
-            if (!signal.data.empty()) {
-                int offset = 0;
-                if constexpr (requires { signal.offset; }) {
-                    offset = signal.offset;
-                }
-            }
-        }
-    }*/
 
     // color axis
     ImPlotPlot &plot    = *GImPlot->CurrentPlot;
@@ -155,7 +118,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             }
             if (signal.signalName.find("bpf") != std::string::npos) {
                 lineFlag = ImPlotLineFlags_Segments;
-                // legendFlags = ImPlotLegendFlags_None;
             } else {
                 lineFlag = ImPlotLineFlags_None;
             }
@@ -167,43 +129,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
                     offset,
                     2 * sizeof(double));
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
-        }
-    }
-}
-
-void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_Segments;
-    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
-    static ImPlotLegendFlags legendFlags = 0;
-
-    ImPlot::SetupAxes("", "U(V)", xflags, yflags);
-
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
-    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
-    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    ImPlot::SetupLegend(legendLoc, legendFlags);
-
-    for (const auto &signal : signals) {
-        if (!signal.data.empty()) {
-            int offset = 0;
-            if constexpr (requires { signal.offset; }) {
-                offset = signal.offset;
-            }
-            if (signal.signalName.find("I") != std::string::npos) {
-                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
-            }
-            ImPlot::PlotLine((signal.signalName).c_str(),
-                    &signal.data[0].x,
-                    &signal.data[0].y,
-                    signal.data.size(),
-                    lineFlag,
-                    offset,
-                    2 * sizeof(double));
         }
     }
 }
@@ -265,17 +190,14 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
                     2 * sizeof(double));
 
             // Add tags with signal value
-            DataPoint lastPoint = signal.data.back();
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            // ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
-            // std::string tagValue = to_si_prefix(lastPoint.y, "s", 3);
-            std::string tagValue = to_si_prefix(lastPoint.y, " ", 2);
+            DataPoint   lastPoint = signal.data.back();
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 2);
             ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
         }
     }
 }
 
-// void plotBarchart(PowerUsage &powerUsage) {
 void plotBarchart(std::vector<double> &day_values) {
     if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
         // Todo - dates
@@ -343,11 +265,9 @@ void plotNestTable(
     //  on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    // const ImVec4& able_col = ImVec4(0.9, 0.7, 0, 1);
+    double        sum_of_usage;
 
-    double      sum_of_usage;
-
-    std::string timePeriod;
+    std::string   timePeriod;
 
     switch (m_d_w) {
     case 0:
@@ -525,7 +445,6 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
             if (signals[i].signalName.find("phi") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
-            // ImPlot::PushStyleColor(ImPlotCol_Line, col);
             ImPlot::PlotLine((signals[i].signalName).c_str(),
                     &signals[i].data[0].x,
                     &signals[i].data[0].y,

@@ -74,8 +74,8 @@ int         main(int argc, char **argv) {
     }
 
     // Setup subscriptions
-    Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    Subscription<Acquisition>        powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
+    Subscription<Acquisition> signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
+    // Subscription<Acquisition>        powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
     Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
@@ -88,7 +88,7 @@ int         main(int argc, char **argv) {
     // Subscription<AcquisitionSpectra>              frequencySubscription("http://10.0.0.2:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     // Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://10.0.0.2:8080/", { "limiting_curve" }, 1.0f);
 
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, mainsFreqSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
     // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
     AppState appState(subscriptionsTimeDomain, subscriptionsFrequency, Interval);
@@ -228,7 +228,7 @@ static void main_loop(void *arg) {
             }
             ImPlot::PushColormap(Test);
             if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
-                if (subscriptionsTimeDomain.size() > 3) {
+                if (subscriptionsTimeDomain.size() >= 3) {
                     Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 }
                 ImPlot::EndPlot();
@@ -237,19 +237,11 @@ static void main_loop(void *arg) {
 
             // Mains Frequency Plot
             if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
-                if (subscriptionsTimeDomain.size() > 3) {
-                    Plotter::plotMainsFrequency(subscriptionsTimeDomain[3].acquisition.buffers, Interval);
+                if (subscriptionsTimeDomain.size() >= 3) {
+                    Plotter::plotMainsFrequency(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();
             }
-
-            // Power Plot
-            /*if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 2) {
-                    Plotter::plotPower(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
-                }
-                ImPlot::EndPlot();
-            }*/
 
             ImPlot::EndSubplots();
         }
