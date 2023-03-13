@@ -16,6 +16,7 @@ sys.path.append("../../../")
 from src.pulsed_power_ml.model_framework.data_io import read_training_files
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import gupta_offline_switch_detection
 
+
 def make_eval_plot(power_array: Union[np.array, List],
                    state_array: Union[np.array, List],
                    appliance_power: float = 1) -> matplotlib.figure.Figure:
@@ -44,6 +45,7 @@ def make_eval_plot(power_array: Union[np.array, List],
             label="Predicted Power")
 
     return fig
+
 
 def plot_state_vector_array(state_vector_list: np.array,
                             label_list: Union[List[str], None] = None,
@@ -75,7 +77,7 @@ def plot_state_vector_array(state_vector_list: np.array,
 
     for i in range(n_figures):
         ax = fig.add_subplot(n_figures, 1, i+1)
-        ax.plot(state_vector_list[:,i],
+        ax.plot(state_vector_list[:, i],
                 "-",
                 label='Predicted')
 
@@ -100,6 +102,7 @@ def plot_state_vector_array(state_vector_list: np.array,
         ax.legend(loc='upper left')
 
     return fig
+
 
 def plot_data_point_array(list_of_data_points: Union[List, np.array],
                           fft_size: int,
@@ -139,7 +142,7 @@ def plot_data_point_array(list_of_data_points: Union[List, np.array],
     phi_ax = fig.add_subplot(n_fig, 1, 5)
 
     if plot_spectra:
-    # Add spectrum plots
+        # Add spectrum plots
         min_max_freq = [0, 1_000]
         spectrum_size = int(fft_size/2)
         fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
@@ -170,9 +173,9 @@ def plot_data_point_array(list_of_data_points: Union[List, np.array],
     # add prediction plot
     if list_of_state_vectors is not None:
         pqs_predicted_ax = fig.add_subplot(n_fig, 1, 6)
-        pqs_predicted_ax = add_prediction_plot(state_vector_array=np.array(list_of_state_vectors),
-                                               pqs_array=list_of_data_points[:, -4:-1],
-                                               ax=pqs_predicted_ax)
+        _pqs_predicted_ax = add_prediction_plot(state_vector_array=np.array(list_of_state_vectors),
+                                                pqs_array=list_of_data_points[:, -4:-1],
+                                                ax=pqs_predicted_ax)
 
     return fig
 
@@ -348,6 +351,7 @@ def add_prediction_plot(state_vector_array: np.array,
 
     return ax
 
+
 def make_gupta_switch_detection_plot(path_to_data_folder: str,
                                      window_size: int = 25,
                                      threshold: float = 2000,
@@ -391,8 +395,8 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
         log_scale=log_scale
     )
 
-    switch_positions = np.argwhere(switch_array==1).reshape((-1,))
-    dead_time_positions = np.argwhere(switch_array==-1).reshape((-1,))
+    switch_positions = np.argwhere(switch_array == 1).reshape((-1,))
+    dead_time_positions = np.argwhere(switch_array == -1).reshape((-1,))
 
     # Create figure
     fig = plt.figure(figsize=(16, 9), layout='tight')
@@ -444,6 +448,7 @@ def make_gupta_switch_detection_plot(path_to_data_folder: str,
 
     return fig
 
+
 def add_pca_plot(ax: matplotlib.axis.Axis,
                  feature_array: np.array,
                  label_array: np.array,
@@ -469,13 +474,13 @@ def add_pca_plot(ax: matplotlib.axis.Axis,
     # Check data
 
     # check for nans in feature_array
-    assert np.isnan(feature_array).any() == False, 'Found nan in feature array!'
+    assert np.isnan(feature_array).any() is False, 'Found nan in feature array!'
 
     # check that feature array and label array have the same length
     assert len(feature_array) == len(label_array), 'Feature array and label array do not have the same length!'
 
     # scale input
-    if use_scaler == True:
+    if use_scaler is True:
         scaler = MinMaxScaler()
         pca_input = scaler.fit_transform(feature_array)
     else:
@@ -487,7 +492,7 @@ def add_pca_plot(ax: matplotlib.axis.Axis,
     # Plot to axis
     cmap = matplotlib.colormaps["tab20"]
     unique_labels = np.unique(label_array)
-    color_dict = {label:cmap(i / (len(unique_labels) - 1)) for i, label in enumerate(unique_labels)}
+    color_dict = {label: cmap(i / (len(unique_labels) - 1)) for i, label in enumerate(unique_labels)}
 
     legend_added = list()
 

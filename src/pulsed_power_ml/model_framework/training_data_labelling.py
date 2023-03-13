@@ -10,8 +10,8 @@ import numpy as np
 import tensorflow as tf
 
 from src.pulsed_power_ml.model_framework.data_io import load_fft_file
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_background
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import subtract_background
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import switch_detected
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import update_background_vector
@@ -28,7 +28,7 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
     ----------
     data_point_array
         Array of data points (fft_u, fft_i, fft_s, p, q, s, phi)
-    parameters
+    parameter_dict
         Parameter dictionary
 
     Returns
@@ -73,10 +73,10 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
                                                          n_peaks_max=tf.constant(n_peaks, dtype=tf.int32),
                                                          fft_size_real=tf.constant(fft_size_real, dtype=tf.int32),
                                                          sample_rate=tf.constant(sample_rate, dtype=tf.int32))\
-                                                         .numpy()\
-                                                         .reshape((-1))
+                .numpy()\
+                .reshape((-1))
 
-            assert np.isnan(feature_vector).any() == False, \
+            assert np.isnan(feature_vector).any() is False, \
                 ("Found NAN in feature vector! |"
                  f"{mean_clf=} |"
                  f"nans in mean_clf = {np.isnan(mean_clf).any()} |"
@@ -95,6 +95,7 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
                 _ = window.popleft()
 
     return np.array(feature_list), switch_positions
+
 
 def remove_false_positive_switching_events(feature_vector_array: np.array,
                                            switch_positions: np.array,
@@ -132,6 +133,7 @@ def remove_false_positive_switching_events(feature_vector_array: np.array,
 
     return corrected_feature_vector_array, corrected_switch_positions
 
+
 def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.ndarray:
     """
     Function to automatically label training spectra (from GNU Radio).
@@ -154,19 +156,19 @@ def trainingdata_switch_detector(spectra: np.ndarray, parameters: dict) -> np.nd
     current_background = None
     counter = 0
     for spectrum in spectra:
-        #spectrum = spectrum/spectrum.max()
+        # spectrum = spectrum/spectrum.max()
 
         # is there a background?
         if current_background is not None:
-            normed_spectrum = spectrum/spectrum.max()
-            normed_background = current_background/current_background.max()
+            normed_spectrum = spectrum / spectrum.max()
+            normed_background = current_background / current_background.max(initial=0)
             residual = subtract_background(normed_spectrum, normed_background)
             switch = switch_detected(residual, parameters['threshold'])
             if True in switch:
                 feature_spectrum = spectra[counter+parameters["switching_offset"]]
                 feature_spectrum = feature_spectrum/feature_spectrum.max()
                 switch_direction = switch_detected(subtract_background(feature_spectrum, normed_background),
-                                                    parameters['threshold'])
+                                                   parameters['threshold'])
                 if switch_direction.count(True) == 1:
                     switch_positions[switch_direction.index(True), counter] = 1
                 else:
@@ -211,28 +213,28 @@ def get_switch_features(spectra: np.ndarray, switch_positions: np.ndarray, param
         Array of feature vectors for each switch event marked in switch_positions.
     """
 
-    switch_indices = np.where(switch_positions==1)[1]
+    switch_indices = np.where(switch_positions == 1)[1]
     switch_features = []
     for ind in switch_indices:
         raw_spectra = spectra[ind-parameters['background_n']-1:ind]
         background_vector = np.array([])
         for spectrum in raw_spectra:
-            #spectrum = 10**spectrum
+            # spectrum = 10**spectrum
             if background_vector.__len__() == 0:
-                background_vector = spectrum.reshape(1,-1)
+                background_vector = spectrum.reshape(1, -1)
             else:
                 background_vector = np.vstack((background_vector, spectrum))
         
         current_background = calculate_background(background_vector)
         
         raw_switch_spectrum = spectra[ind+parameters["switching_offset"]]
-        #raw_switch_spectrum = 10**raw_switch_spectrum
+        # raw_switch_spectrum = 10**raw_switch_spectrum
         clean_switch_spectrum = subtract_background(raw_switch_spectrum, current_background)
         if switch_features.__len__() == 0:
             switch_features = calculate_feature_vector(clean_switch_spectrum, 
                                                        parameters['n_peaks'], 
                                                        parameters['fft_size']/2,
-                                                       parameters['sample_rate']).reshape(1,-1)
+                                                       parameters['sample_rate']).reshape(1, -1)
         else:
             switch_features = np.vstack((switch_features, calculate_feature_vector(clean_switch_spectrum,
                                                                                    parameters['n_peaks'], 
@@ -241,7 +243,6 @@ def get_switch_features(spectra: np.ndarray, switch_positions: np.ndarray, param
             
     return switch_features
         
-
 
 def make_labeled_training_data(training_file: str, parameter_file: str, percentage: float):
     """
@@ -299,7 +300,7 @@ def explode_to_complete_label_vector(labels: np.ndarray, appliance_id: np.ndarra
     ----------
     labels
         Array of single appliance labels, array[0] containing switch-on, array[1] switch_off events
-    appliance
+    appliance_id
         Appliance id, matching id given in parameter file.
         Length must be either 1 for single appliance or array of ids of same length as there are labels 
         (1 appliance id per switch event).
@@ -349,8 +350,8 @@ def explode_to_complete_label_vector(labels: np.ndarray, appliance_id: np.ndarra
             
     else:
         raise IndexError(
-            "Labels and appliance id lists should match in length but there are {1} labels and {2} appliances listed".format(
-                labels.__len__(), appliance_id.__len__()))
+            f"Labels and appliance id lists should match in length but there are {labels.__len__()}"
+            f" labels and {appliance_id.__len__()} appliances listed")
         
     return complete_label_vector
 
@@ -401,7 +402,7 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
             if appliance is not None: # single appliance, not mixed
                 features, labels = make_labeled_training_data(file, parameter_file, percentage)
                 if features.__len__() == 0:
-                    print("Warning: No switches found for "+ appliance + " in " + sort + "!")
+                    print(f"Warning: No switches found for {appliance} in {sort}!")
                 else:
                     compl_labels = explode_to_complete_label_vector(labels,appliance_id,parameter_file)
                     if allfeatures.__len__() == 0:
@@ -413,9 +414,11 @@ def write_training_data_csvs(path_to_training_data_folders: str, output_path: st
             # ToDo: elif here for mixed spectra   
 
         np.savetxt(output_path + "Features_" + sort + "_" + str(percentage) + "_p.csv", allfeatures, delimiter=",")
-        np.savetxt(output_path + "Labels_" + sort + "_" + str(percentage)+ "_p.csv", alllabels, delimiter=",")
-        
-    return(1)
+        np.savetxt(fname=f"{output_path}/Labels_{sort}_{percentage}_p.csv",
+                   X=alllabels,
+                   delimiter=",")
+
+    return 1
     
 
 def shorten_validation_data(training_labels_folder: str, validation_labels_folder: str, percentage: float=0.7):
@@ -428,6 +431,8 @@ def shorten_validation_data(training_labels_folder: str, validation_labels_folde
         Path to the folder containing the features and labels used for training the classifier.
     validation_labels_folder
         Path to the folder containing the features and labels used for validating the classifier.
+    percentage
+        Amount of data which should be used for training.
     
     Returns
     -------
@@ -435,8 +440,8 @@ def shorten_validation_data(training_labels_folder: str, validation_labels_folde
     """
     X = np.genfromtxt(training_labels_folder + "Features_ApparentPower_{0}_p.csv".format(percentage),
                       delimiter=",")
-    y = np.genfromtxt(training_labels_folder + "Labels_ApparentPower_{0}_p.csv".format(percentage),
-                      delimiter=",")
+    # y = np.genfromtxt(training_labels_folder + "Labels_ApparentPower_{0}_p.csv".format(percentage),
+    #                   delimiter=",")
 
     X_total = np.genfromtxt(validation_labels_folder + "Features_ApparentPower_1_p.csv", 
                           delimiter=",")
@@ -469,9 +474,9 @@ def make_training_validation_data(path_to_training_data_folders: str,
     ----------
     path_to_training_data_folders
         Path to the folder containing the subfolders for all the binary files of one date.
-    training_labels_folder
+    training_label_folder
         Path to the folder containing the features and labels used for training the classifier.
-    validation_labels_folder
+    validation_label_folder
         Path to the folder containing the features and labels used for validating the classifier.
     parameter_file
         Path to the yml file containing the parameters.
@@ -512,14 +517,14 @@ if __name__ == "__main__":
     # features, labels = make_labeled_training_data(training_file, parameter_file)
     # compl_labels = explode_to_complete_label_vector(labels,1,parameter_file)
     
-    path_to_training_data_folders = "../training_data/2022-11-16_training_data/"
-    training_label_folder = "../training_data/labels_20221202_9peaks/"
-    validation_label_folder = "../training_data/labels_20221202_9peaks_validation/"
-    parameter_file = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
-    percentage = 0.7
-    
-    _ = make_training_validation_data(path_to_training_data_folders,
-                                      training_label_folder,
-                                      validation_label_folder,
-                                      parameter_file,
-                                      percentage)
+    # path_to_training_data_folders = "../training_data/2022-11-16_training_data/"
+    # training_label_folder = "../training_data/labels_20221202_9peaks/"
+    # validation_label_folder = "../training_data/labels_20221202_9peaks_validation/"
+    # parameter_file = "src/pulsed_power_ml/models/gupta_model/parameters.yml"
+    # percentage = 0.7
+    #
+    # _ = make_training_validation_data(path_to_training_data_folders,
+    #                                   training_label_folder,
+    #                                   validation_label_folder,
+    #                                   parameter_file,
+    #                                   percentage)
