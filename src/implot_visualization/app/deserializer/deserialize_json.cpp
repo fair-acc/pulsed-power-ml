@@ -199,7 +199,8 @@ AcquisitionSpectra::AcquisitionSpectra() {}
 
 AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {
-    this->buffers.emplace(this->buffers.end(), _signalNames.size());
+    std::vector<Buffer> _buffer(_signalNames.size());
+    this->buffers = _buffer;
 }
 
 void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequencyValues, const std::vector<double> &channelMagnitudeValues) {

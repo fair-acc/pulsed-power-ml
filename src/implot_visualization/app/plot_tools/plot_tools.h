@@ -620,7 +620,8 @@ Buffer generateTestBuffer() {
     return testBuffer;
 }
 
-void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, bool violation, ImFont *fontawesome) {
+void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, ImFont *fontawesome) {
+    bool                     violation   = false;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;

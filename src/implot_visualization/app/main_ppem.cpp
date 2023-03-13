@@ -85,7 +85,7 @@ int         main(int argc, char **argv) {
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
-    Subscription<RealPowerUsage>     intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@100Hz", "S_Int@100Hz" }, updateFreq);
+    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@100Hz", "S_Int@100Hz" }, updateFreq);
 
     // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
     // Subscription<Acquisition>                     powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
@@ -96,7 +96,7 @@ int         main(int argc, char **argv) {
 
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain    = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency     = { frequencySubscription, limitingCurveSubscription };
-    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage = { intergratedValues };
+    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage = { integratedValues };
     AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
@@ -282,7 +282,7 @@ static void main_loop(void *arg) {
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
             if (subscriptionsFrequency.size() >= 2) {
-                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, false, args->fonts.fontawesome);
+                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, args->fonts.fontawesome);
             }
             ImPlot::EndPlot();
         }
