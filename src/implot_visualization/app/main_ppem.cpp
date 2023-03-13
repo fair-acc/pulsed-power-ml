@@ -21,6 +21,7 @@ public:
     SDL_GLContext                                 GLContext = nullptr;
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
+    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage;
     Plotter::DataInterval                         Interval;
     struct AppFonts {
         ImFont *title;
@@ -29,10 +30,14 @@ public:
     };
     AppState::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency, Plotter::DataInterval _Interval) {
-        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
-        this->subscriptionsFrequency  = _subscriptionsFrequency;
-        this->Interval                = _Interval;
+    AppState(std::vector<Subscription<Acquisition>>       &_subscriptionsTimeDomain,
+            std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency,
+            std::vector<Subscription<RealPowerUsage>>     &_subscriptionRealPowerUsage,
+            Plotter::DataInterval                          _Interval) {
+        this->subscriptionsTimeDomain    = _subscriptionsTimeDomain;
+        this->subscriptionsFrequency     = _subscriptionsFrequency;
+        this->subscriptionRealPowerUsage = _subscriptionRealPowerUsage;
+        this->Interval                   = _Interval;
     }
 };
 
@@ -80,6 +85,7 @@ int         main(int argc, char **argv) {
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
+    Subscription<RealPowerUsage>     intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@100Hz", "S_Int@100Hz" }, updateFreq);
 
     // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
     // Subscription<Acquisition>                     powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
@@ -88,10 +94,10 @@ int         main(int argc, char **argv) {
     // Subscription<AcquisitionSpectra>              frequencySubscription("http://10.0.0.2:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     // Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://10.0.0.2:8080/", { "limiting_curve" }, 1.0f);
 
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
-    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
-    AppState appState(subscriptionsTimeDomain, subscriptionsFrequency, Interval);
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain    = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency     = { frequencySubscription, limitingCurveSubscription };
+    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage = { intergratedValues };
+    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -170,10 +176,11 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    auto                                          *args                    = static_cast<AppState *>(arg);
-    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain = args->subscriptionsTimeDomain;
-    std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency  = args->subscriptionsFrequency;
-    Plotter::DataInterval                         &Interval                = args->Interval;
+    auto                                          *args                        = static_cast<AppState *>(arg);
+    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain     = args->subscriptionsTimeDomain;
+    std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency      = args->subscriptionsFrequency;
+    std::vector<Subscription<RealPowerUsage>>     &subscriptionRealPowerUsages = args->subscriptionRealPowerUsage;
+    Plotter::DataInterval                         &Interval                    = args->Interval;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool   show_demo_window = true;
@@ -205,6 +212,9 @@ static void main_loop(void *arg) {
         }
         for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
             subFreq.fetch();
+        }
+        for (Subscription<RealPowerUsage> &subInt : subscriptionRealPowerUsages) {
+            subInt.fetch();
         }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
@@ -259,6 +269,14 @@ static void main_loop(void *arg) {
                 ImPlot::EndPlot();
             }
             ImPlot::EndSubplots();
+        }
+
+        // Integrated Values
+        if (ImGui::BeginTable("Integrated Values", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders)) {
+            if (subscriptionRealPowerUsages.size() >= 1) {
+                Plotter::plotUsageTable(subscriptionRealPowerUsages[0].acquisition.realPowerUsages);
+            }
+            ImGui::EndTable();
         }
 
         // Power Spectrum

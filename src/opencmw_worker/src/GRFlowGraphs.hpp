@@ -254,7 +254,8 @@ public:
 
         auto calc_mains_frequency          = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
-        auto integrate                     = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate_S                   = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate_P                   = gr::pulsed_power::integration::make(10, 1000);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
@@ -409,8 +410,8 @@ public:
 
         // Integral sink
         auto opencmw_time_sink_int_shortterm = gr::pulsed_power::opencmw_time_sink::make(
-                { "S_Int" },
-                { "Wh" },
+                { "P_Int", "S_Int" },
+                { "", "Wh" },
                 out_samp_rate_power_shortterm);
 
         // Statistic sinks
@@ -528,9 +529,11 @@ public:
         top->hier_block2::connect(out_decimation_q_longterm, 0, opencmw_time_sink_power_longterm, 1);   // Q long-term
         top->hier_block2::connect(out_decimation_s_longterm, 0, opencmw_time_sink_power_longterm, 2);   // S long-term
         top->hier_block2::connect(out_decimation_phi_longterm, 0, opencmw_time_sink_power_longterm, 3); // phi long-term
-                                                                                                        // integral S
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate, 0);
-        top->hier_block2::connect(integrate, 0, opencmw_time_sink_int_shortterm, 0); // int S short-term
+        // Integrals
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P, 0);
+        top->hier_block2::connect(integrate_P, 0, opencmw_time_sink_int_shortterm, 0); // int P short-term
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S, 0);
+        top->hier_block2::connect(integrate_S, 0, opencmw_time_sink_int_shortterm, 1); // int S short-term
         // Statistics
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_shortterm, 0);

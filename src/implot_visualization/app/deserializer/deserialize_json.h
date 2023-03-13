@@ -132,11 +132,10 @@ private:
 
 class RealPowerUsage : public IAcquisition<PowerBuffer> {
 public:
-    double deliveryTime;
-    bool   init               = false;
+    double              deliveryTime;
+    bool                init = false;
 
-    double realPowerUsageOrig = 0.0;
-    double realPowerUsage     = 0.0;
+    std::vector<double> realPowerUsages;
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);
@@ -145,4 +144,5 @@ public:
 
     void deserialize();
     void fail();
+    void addPowerUsage(const StrideArray &strideArray);
 };

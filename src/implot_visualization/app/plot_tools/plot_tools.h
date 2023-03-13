@@ -640,4 +640,29 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
     }
 }
 
+void plotUsageTable(std::vector<double> powerUsages) {
+    ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+    ImGui::TableSetupColumn("Usage", ImGuiTableColumnFlags_WidthStretch, 200.0f);
+    ImGui::TableHeadersRow();
+    if (powerUsages.size() >= 2) {
+        ImGui::TableNextRow();
+        // Active power P
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Active power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("P");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kWh", powerUsages[0]);
+        ImGui::TableNextRow();
+        // Apparent power S
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Apparent power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("S");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kWh", powerUsages[1]);
+    }
+}
+
 } // namespace Plotter
