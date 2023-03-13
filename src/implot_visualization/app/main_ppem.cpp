@@ -227,7 +227,7 @@ static void main_loop(void *arg) {
                 Test                             = ImPlot::AddColormap("Test", Test_Data, 4);
             }
             ImPlot::PushColormap(Test);
-            if (ImPlot::BeginPlot("")) {
+            if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
                 if (subscriptionsTimeDomain.size() > 3) {
                     Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 }
