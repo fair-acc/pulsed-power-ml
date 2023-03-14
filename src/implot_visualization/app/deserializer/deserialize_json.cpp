@@ -62,8 +62,8 @@ template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
     for (auto name : _signalNames) {
-        if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
-            this->buffers.emplace(this->buffers.end(), 60);
+        if (name == "U@10000Hz" || name == "I@10000Hz" || name == "U_bpf@10000Hz" || name == "I_bpf@10000Hz") {
+            this->buffers.emplace(this->buffers.end(), 600);
         } else {
             this->buffers.emplace(this->buffers.end());
         }
@@ -87,7 +87,7 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
 }
 
 bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
-    std::vector<std::string> expectedSignals = { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" };
+    std::vector<std::string> expectedSignals = { "U@10000Hz", "I@10000Hz", "U_bpf@10000Hz", "I_bpf@10000Hz" };
     if (receivedSignals.size() != expectedSignals.size()) {
         std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
