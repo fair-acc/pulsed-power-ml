@@ -62,8 +62,8 @@ template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
     for (auto name : _signalNames) {
-        if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
-            this->buffers.emplace(this->buffers.end(), 60);
+        if (name == "U@10000Hz" || name == "I@10000Hz" || name == "U_bpf@10000Hz" || name == "I_bpf@10000Hz") {
+            this->buffers.emplace(this->buffers.end(), 600);
         } else {
             this->buffers.emplace(this->buffers.end());
         }
@@ -87,7 +87,7 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
 }
 
 bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
-    std::vector<std::string> expectedSignals = { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" };
+    std::vector<std::string> expectedSignals = { "U@10000Hz", "I@10000Hz", "U_bpf@10000Hz", "I_bpf@10000Hz" };
     if (receivedSignals.size() != expectedSignals.size()) {
         std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
@@ -119,6 +119,7 @@ void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector
         int offset2                 = i * stride;
 
         if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+            std::cout << "Invalid dimensions for strided array." << std::endl;
         }
         for (int j = 0; j < stride; j++) {
             absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
@@ -197,7 +198,10 @@ void Acquisition::deserialize() {
 AcquisitionSpectra::AcquisitionSpectra() {}
 
 AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {}
+    : IAcquisition(_signalNames) {
+    std::vector<Buffer> _buffer(_signalNames.size());
+    this->buffers = _buffer;
+}
 
 void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequencyValues, const std::vector<double> &channelMagnitudeValues) {
     for (int i = 0; i < signalNames.size(); i++) {
@@ -236,8 +240,7 @@ void AcquisitionSpectra::deserialize() {
 PowerUsage::PowerUsage() {}
 
 PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-}
+    : IAcquisition(_signalNames) {}
 
 void PowerUsage::deserialize() {
     auto json_obj = json::parse(this->jsonString);
@@ -328,22 +331,50 @@ RealPowerUsage::RealPowerUsage() {}
 
 RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {
+    std::vector<double> _realPowerUsages(_signalNames.size());
+    this->realPowerUsages = _realPowerUsages;
+}
+
+void RealPowerUsage::addPowerUsage(const StrideArray &strideArray) {
+    double value  = 0.0;
+    int    stride = strideArray.dims[1];
+
+    // Destride array
+    for (int i = 0; i < strideArray.dims[0]; i++) {
+        int offset = i * stride;
+
+        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+            std::cout << "Invalid dimensions for strided array." << std::endl;
+        }
+
+        value                    = strideArray.values[offset + stride - 1];
+        this->realPowerUsages[i] = value / 1000.0;
+    }
 }
 
 void RealPowerUsage::deserialize() {
-    auto json_obj = json::parse(jsonString);
+    StrideArray strideArray;
+
+    auto        json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
-        if (element.key() == "channelValues") {
-            auto values = std::vector<double>(element.value()["values"]);
-            if (!values.empty()) {
-                this->realPowerUsageOrig = values.back();
-                this->realPowerUsage     = this->realPowerUsageOrig / 1000.0;
-            }
-        } else if (element.key() == "refTriggerStamp") {
+        if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
                 return;
             }
             this->lastTimeStamp = element.value();
+        } else if (element.key() == "channelNames") {
+            if (!this->receivedRequestedSignals(element.value())) {
+                std::cout << "Received other signals than requested (RealPowerUsage)" << std::endl;
+                return;
+            }
+            std::cout << "Received expected signal (RealPowerUsage)" << std::endl;
+        } else if (element.key() == "channelValues") {
+            auto values = std::vector<double>(element.value()["values"]);
+            if (!values.empty()) {
+                strideArray.dims   = std::vector<int>(element.value()["dims"]);
+                strideArray.values = std::vector<double>(element.value()["values"]);
+                addPowerUsage(strideArray);
+            }
         }
     }
 

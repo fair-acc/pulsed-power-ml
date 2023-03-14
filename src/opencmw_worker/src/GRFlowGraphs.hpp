@@ -194,47 +194,50 @@ public:
 
         // parameters
         const float samp_rate_delta_phi_calc = 1'000.0f;
-        // parameters band pass filter
-        const int   decimation_bpf = static_cast<int>(source_samp_rate / samp_rate_delta_phi_calc);
-        const float bpf_high_cut   = 80.0f;
-        const float bpf_low_cut    = 20.0f;
-        const float bpf_trans      = 1000.0f;
-        // parameters low pass filter
-        const int   decimation_lpf   = 1;
-        const float lpf_in_samp_rate = samp_rate_delta_phi_calc;
-        const float lpf_trans        = 10.0f;
         // parameters decimation
-        const float out_samp_rate_ui                     = 1'000.0f;
+        const float out_samp_rate_ui                     = 10'000.0f;
         const float out_samp_rate_power_shortterm        = 100.0f;
         const float out_samp_rate_power_midterm          = 1.0f;
         const float out_samp_rate_power_longterm         = 1.0f / 60.0f;
         int         decimation_out_raw                   = static_cast<int>(source_samp_rate / out_samp_rate_ui);
-        int         decimation_out_bpf                   = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_ui);
+        int         decimation_out_bpf                   = static_cast<int>(source_samp_rate / out_samp_rate_ui);
         int         decimation_out_mains_freq_short_term = static_cast<int>(source_samp_rate / out_samp_rate_power_shortterm);
         int         decimation_out_mains_freq_mid_term   = static_cast<int>(source_samp_rate / out_samp_rate_power_midterm);
         int         decimation_out_mains_freq_long_term  = static_cast<int>(source_samp_rate / out_samp_rate_power_longterm);
         int         decimation_out_short_term            = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_shortterm);
         int         decimation_out_mid_term              = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_midterm);
         int         decimation_out_long_term             = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_longterm);
-        // parameters nilm
-        const int fft_size    = 131072;
-        size_t    vector_size = static_cast<size_t>(fft_size);
-        float     bandwidth   = source_samp_rate;
+        // parameters band pass filter
+        const int   decimation_bpf            = static_cast<int>(source_samp_rate / out_samp_rate_ui);
+        const float bpf_high_cut              = 80.0f;
+        const float bpf_low_cut               = 20.0f;
+        const float bpf_trans                 = 1000.0f;
+        const int   decimation_delta_phi_calc = static_cast<int>(out_samp_rate_ui / samp_rate_delta_phi_calc);
+        // parameters low pass filter
+        const int   decimation_lpf   = 1;
+        const float lpf_in_samp_rate = samp_rate_delta_phi_calc;
+        const float lpf_trans        = 10.0f;
+        // parameters frequency spectra
+        const int fft_size_ppem        = 512;
+        size_t    fft_vector_size_ppem = static_cast<size_t>(fft_size_ppem);
+        const int fft_size_nilm        = 131072;
+        size_t    fft_vector_size_nilm = static_cast<size_t>(fft_size_nilm);
+        float     bandwidth            = source_samp_rate;
 
         // blocks
         auto multiply_voltage_current_nilm = gr::blocks::multiply_ff::make(1);
 
-        auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_U            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_vector_size_nilm);
+        auto fft_U                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_U              = gr::blocks::complex_to_mag_squared::make(fft_vector_size_nilm);
 
-        auto stream_to_vector_I            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_I              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_I            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_vector_size_nilm);
+        auto fft_I                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_I              = gr::blocks::complex_to_mag_squared::make(fft_vector_size_nilm);
 
-        auto stream_to_vector_S            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, vector_size);
-        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size, gr::fft::window::blackmanharris(fft_size), true, 1);
-        auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(vector_size);
+        auto stream_to_vector_S            = gr::blocks::stream_to_vector::make(sizeof(float) * 1, fft_vector_size_nilm);
+        auto fft_S                         = gr::fft::fft_v<float, true>::make(fft_size_nilm, gr::fft::window::blackmanharris(fft_size_nilm), true, 1);
+        auto complex_to_mag_S              = gr::blocks::complex_to_mag_squared::make(fft_vector_size_nilm);
 
         auto multiply_voltage_current      = gr::blocks::multiply_ff::make(1);
         auto frequency_spec_one_in_n       = gr::blocks::keep_one_in_n::make(sizeof(float), 400);
@@ -247,14 +250,15 @@ public:
                               100,
                               gr::fft::window::win_type::WIN_HAMMING,
                               6.76));
-        auto frequency_spec_stream_to_vec  = gr::blocks::stream_to_vector::make(sizeof(float), 512);
-        auto frequency_spec_fft            = gr::fft::fft_v<float, true>::make(512, gr::fft::window::rectangular(512), true, 1);
-        auto frequency_multiply_const      = gr::blocks::multiply_const<gr_complex>::make(2.0 / (512.0), 512);
-        auto frequency_spec_complex_to_mag = gr::blocks::complex_to_mag::make(512);
+        auto frequency_spec_stream_to_vec  = gr::blocks::stream_to_vector::make(sizeof(float), fft_size_ppem);
+        auto frequency_spec_fft            = gr::fft::fft_v<float, true>::make(fft_size_ppem, gr::fft::window::rectangular(fft_size_ppem), true, 1);
+        auto frequency_multiply_const      = gr::blocks::multiply_const<gr_complex>::make(2.0 / static_cast<double>(fft_size_ppem), fft_vector_size_ppem);
+        auto frequency_spec_complex_to_mag = gr::blocks::complex_to_mag::make(fft_vector_size_ppem);
 
         auto calc_mains_frequency          = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
-        auto integrate                     = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate_S                   = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate_P                   = gr::pulsed_power::integration::make(10, 1000);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
@@ -341,6 +345,9 @@ public:
         auto out_decimation_mains_frequency_midterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_mid_term);
         auto out_decimation_mains_frequency_longterm  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_long_term);
 
+        auto decimation_block_current_bpf0            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
+        auto decimation_block_voltage_bpf0            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
+
         auto out_decimation_p_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
         auto out_decimation_q_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
         auto out_decimation_s_shortterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_short_term);
@@ -409,8 +416,8 @@ public:
 
         // Integral sink
         auto opencmw_time_sink_int_shortterm = gr::pulsed_power::opencmw_time_sink::make(
-                { "S_Int" },
-                { "Wh" },
+                { "P_Int", "S_Int" },
+                { "", "Wh" },
                 out_samp_rate_power_shortterm);
 
         // Statistic sinks
@@ -443,21 +450,21 @@ public:
                 { "V" },
                 source_samp_rate,
                 bandwidth,
-                vector_size);
+                fft_vector_size_nilm);
         opencmw_freq_sink_nilm_U->set_max_noutput_items(noutput_items);
         auto opencmw_freq_sink_nilm_I = gr::pulsed_power::opencmw_freq_sink::make(
                 { "I" },
                 { "A" },
                 source_samp_rate,
                 bandwidth,
-                vector_size);
+                fft_vector_size_nilm);
         opencmw_freq_sink_nilm_I->set_max_noutput_items(noutput_items);
         auto opencmw_freq_sink_nilm_S = gr::pulsed_power::opencmw_freq_sink::make(
                 { "S" },
                 { "VA" },
                 source_samp_rate,
                 bandwidth,
-                vector_size);
+                fft_vector_size_nilm);
         opencmw_freq_sink_nilm_S->set_max_noutput_items(noutput_items);
 
         // Connections:
@@ -480,12 +487,21 @@ public:
         top->hier_block2::connect(band_pass_filter_voltage0, 0, opencmw_time_sink_signals, 2); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, opencmw_time_sink_signals, 3); // I_bpf
         // Calculate phase shift
-        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_0, 0);
-        top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_1, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_2, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_3, 0);
-        top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_power_calc_ff_0_0, 0);
-        top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
+        top->hier_block2::connect(band_pass_filter_voltage0, 0, decimation_block_voltage_bpf0, 0);
+        top->hier_block2::connect(band_pass_filter_current0, 0, decimation_block_current_bpf0, 0);
+
+        top->hier_block2::connect(decimation_block_voltage_bpf0, 0, blocks_multiply_phase0_0, 0);
+        top->hier_block2::connect(decimation_block_voltage_bpf0, 0, blocks_multiply_phase0_1, 0);
+        top->hier_block2::connect(decimation_block_current_bpf0, 0, blocks_multiply_phase0_2, 0);
+        top->hier_block2::connect(decimation_block_current_bpf0, 0, blocks_multiply_phase0_3, 0);
+        top->hier_block2::connect(decimation_block_voltage_bpf0, 0, pulsed_power_power_calc_ff_0_0, 0);
+        top->hier_block2::connect(decimation_block_current_bpf0, 0, pulsed_power_power_calc_ff_0_0, 1);
+        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_0, 0);
+        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_1, 0);
+        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_2, 0);
+        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_3, 0);
+        // top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_power_calc_ff_0_0, 0);
+        // top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_2, 1);
         top->hier_block2::connect(analog_sig_source_phase0_cos, 0, blocks_multiply_phase0_1, 1);
@@ -528,9 +544,11 @@ public:
         top->hier_block2::connect(out_decimation_q_longterm, 0, opencmw_time_sink_power_longterm, 1);   // Q long-term
         top->hier_block2::connect(out_decimation_s_longterm, 0, opencmw_time_sink_power_longterm, 2);   // S long-term
         top->hier_block2::connect(out_decimation_phi_longterm, 0, opencmw_time_sink_power_longterm, 3); // phi long-term
-                                                                                                        // integral S
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate, 0);
-        top->hier_block2::connect(integrate, 0, opencmw_time_sink_int_shortterm, 0); // int S short-term
+        // Integrals
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P, 0);
+        top->hier_block2::connect(integrate_P, 0, opencmw_time_sink_int_shortterm, 0); // int P short-term
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S, 0);
+        top->hier_block2::connect(integrate_S, 0, opencmw_time_sink_int_shortterm, 1); // int S short-term
         // Statistics
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_shortterm, 0);

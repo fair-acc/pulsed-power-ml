@@ -503,14 +503,14 @@ bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) 
     bool violates = false;
     for (Buffer buffer : buffers) {
         for (int idxBuffer = 0; idxBuffer < buffer.data.size(); idxBuffer++) {
-            for (int idxLimit = 0; idxBuffer < limitingCurve.data.size() - 1; idxLimit++) {
+            for (int idxLimit = 0; idxLimit < limitingCurve.data.size() - 1; idxLimit++) {
                 if (buffer.data[idxBuffer].x >= limitingCurve.data[idxLimit].x && buffer.data[idxBuffer].x < limitingCurve.data[idxLimit + 1].x) {
                     // linear interpolation
                     DataPoint limitLeft  = limitingCurve.data[idxLimit];
                     DataPoint limitRight = limitingCurve.data[idxLimit + 1];
                     double    slope      = (limitRight.y - limitLeft.y) / (limitRight.x - limitLeft.x);
                     double    yshift     = limitLeft.y;
-                    double    limitY     = slope * buffer.data[idxBuffer].x + yshift;
+                    double    limitY     = slope * (buffer.data[idxBuffer].x - limitLeft.x) + yshift;
                     if (limitY < buffer.data[idxBuffer].y) {
                         return violates = true;
                     }
@@ -521,7 +521,26 @@ bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) 
     return violates;
 }
 
-void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, bool violation, ImFont *fontawesome) {
+Buffer generateTestBuffer() {
+    Buffer testBuffer(70);
+    testBuffer.signalName = "testBuffer";
+
+    // Generate vector with random values
+    std::vector<double> x(70, 0);
+    for (int i = 0; i < x.size(); i++) {
+        x[i] = i * 0.1;
+    }
+    std::vector<double> y(70, 1);
+    y[69] = 25;
+
+    // Assign random values to buffer
+    testBuffer.assign(x, y);
+
+    return testBuffer;
+}
+
+void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, ImFont *fontawesome) {
+    bool                     violation   = false;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
@@ -538,6 +557,31 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
         addPlotNotice("error: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
         addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
         addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, { 0, 0, 1.0, 1.0 }, { 0.15, 0.45 });
+    }
+}
+
+void plotUsageTable(std::vector<double> powerUsages) {
+    ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+    ImGui::TableSetupColumn("Usage", ImGuiTableColumnFlags_WidthStretch, 200.0f);
+    ImGui::TableHeadersRow();
+    if (powerUsages.size() >= 2) {
+        ImGui::TableNextRow();
+        // Active power P
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Active power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("P");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kWh", powerUsages[0]);
+        ImGui::TableNextRow();
+        // Apparent power S
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Apparent power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("S");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kWh", powerUsages[1]);
     }
 }
 
