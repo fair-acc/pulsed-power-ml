@@ -37,7 +37,6 @@ public:
     void erase();
 };
 
-// WIP
 class PowerBuffer {
 public:
     bool                init = false;
@@ -47,9 +46,16 @@ public:
     void                updateValues(const std::vector<double> &_values);
 };
 
-struct StrideArray {
+class StrideArray {
+public:
     std::vector<int>    dims;
     std::vector<double> values;
+
+    StrideArray();
+
+    ~StrideArray(){};
+
+    void cut(const std::vector<int> newDims);
 };
 
 struct ConvertPair {

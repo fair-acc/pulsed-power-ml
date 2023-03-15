@@ -89,13 +89,10 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
 bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
     std::vector<std::string> expectedSignals = { "U@10000Hz", "I@10000Hz", "U_bpf@10000Hz", "I_bpf@10000Hz" };
     if (receivedSignals.size() != expectedSignals.size()) {
-        std::cout << "received size: " << receivedSignals.size() << ", expected size: " << expectedSignals.size() << std::endl;
         return false;
     }
     for (int i = 0; i < receivedSignals.size(); i++) {
-        // if (receivedSignals[i].find(expectedSignals[i]) != std::string::npos) {
         if (receivedSignals[i] != expectedSignals[i]) {
-            std::cout << "received: " << receivedSignals[i] << ", expected: " << expectedSignals[i] << std::endl;
             return false;
         }
     }
@@ -116,41 +113,76 @@ void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector
     // Destride array
     for (int i = 0; i < strideArray.dims[0]; i++) {
         this->buffers[i].signalName = this->signalNames[i];
-        int offset2                 = i * stride;
+        int offset                  = i * stride;
 
         if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
             std::cout << "Invalid dimensions for strided array." << std::endl;
         }
         for (int j = 0; j < stride; j++) {
             absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
-            value             = strideArray.values[offset2 + j];
+            value             = strideArray.values[offset + j];
             this->buffers[i].addPoint(absoluteTimestamp, value);
         }
     }
 }
 
-const ConvertPair convertValues(const std::vector<double> &relativeTimestamps, uint64_t refTrigger_ns) {
-    ConvertPair ret;
-    // Abfrage >= 2
+StrideArray::StrideArray() {
+    this->dims   = { 0, 0 };
+    this->values = {};
+}
+
+void StrideArray::cut(const std::vector<int> newDims) {
+    StrideArray cutStrideArray;
+    cutStrideArray.dims = newDims;
+    int    stride       = this->dims[1];
+    int    newStride    = newDims[1];
+    double value        = 0.0;
+    for (int i = 0; i < this->dims[0]; i++) {
+        int offset = i * this->dims[1];
+
+        if (this->values.size() != (this->dims[0] * this->dims[1])) {
+            std::cout << "Invalid dimensions for strided array." << std::endl;
+        }
+        for (int j = 0; j < stride; j++) {
+            value = this->values[offset + j];
+            cutStrideArray.values.push_back(value);
+            // Cut stride
+            if (j >= newStride - 1) {
+                break;
+            }
+        }
+    }
+    this->dims   = cutStrideArray.dims;
+    this->values = cutStrideArray.values;
+}
+
+const ConvertPair convertValues(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps) {
+    ConvertPair         ret;
+    StrideArray         newStrideArray = strideArray;
+    std::vector<double> newRelativeTimestamps;
+    double              newRelativeTimestamp = 60;
+
+    if (relativeTimestamps.size() < 2) {
+        std::cout << "Not enough values to calculate relative data for U and I." << std::endl;
+        return ret;
+    }
+
     double max   = relativeTimestamps[relativeTimestamps.size() - 1];
     double delta = max - relativeTimestamps[relativeTimestamps.size() - 2];
     delta *= 1000;
-    double newRelativeTimestamp = 60;
-    refTrigger_ns               = 0;
-    std::vector<double> newRelativeTimestamps;
     for (auto it = relativeTimestamps.end(); it != relativeTimestamps.begin(); it--) {
+        // Calculate new relative timestamps
         newRelativeTimestamps.push_back(newRelativeTimestamp);
         newRelativeTimestamp -= delta;
         if (newRelativeTimestamp < 0) {
+            newStrideArray.cut({ strideArray.dims[0], static_cast<int>(newRelativeTimestamps.size()) });
             break;
         }
     }
     std::reverse(newRelativeTimestamps.begin(), newRelativeTimestamps.end());
-    for (int i = 0; i < 11; i++) {
-        std::cout << newRelativeTimestamps[i] << std::endl;
-    }
     ret.relativeTimestamps  = newRelativeTimestamps;
-    ret.referenceTimestamps = refTrigger_ns;
+    ret.referenceTimestamps = 0;
+    ret.strideArray         = newStrideArray;
     return ret;
 }
 
@@ -182,9 +214,10 @@ void Acquisition::deserialize() {
         }
     }
     if (convertValuesBool) {
-        ConvertPair ret    = convertValues(relativeTimestamps, refTrigger_ns);
+        ConvertPair ret    = convertValues(strideArray, relativeTimestamps);
         relativeTimestamps = ret.relativeTimestamps;
         refTrigger_ns      = ret.referenceTimestamps;
+        strideArray        = ret.strideArray;
     }
     this->lastRefTrigger = refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
