@@ -496,12 +496,6 @@ public:
         top->hier_block2::connect(decimation_block_current_bpf0, 0, blocks_multiply_phase0_3, 0);
         top->hier_block2::connect(decimation_block_voltage_bpf0, 0, pulsed_power_power_calc_ff_0_0, 0);
         top->hier_block2::connect(decimation_block_current_bpf0, 0, pulsed_power_power_calc_ff_0_0, 1);
-        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_0, 0);
-        // top->hier_block2::connect(band_pass_filter_voltage0, 0, blocks_multiply_phase0_1, 0);
-        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_2, 0);
-        // top->hier_block2::connect(band_pass_filter_current0, 0, blocks_multiply_phase0_3, 0);
-        // top->hier_block2::connect(band_pass_filter_voltage0, 0, pulsed_power_power_calc_ff_0_0, 0);
-        // top->hier_block2::connect(band_pass_filter_current0, 0, pulsed_power_power_calc_ff_0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_0, 1);
         top->hier_block2::connect(analog_sig_source_phase0_sin, 0, blocks_multiply_phase0_2, 1);
         top->hier_block2::connect(analog_sig_source_phase0_cos, 0, blocks_multiply_phase0_1, 1);

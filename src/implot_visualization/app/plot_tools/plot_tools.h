@@ -50,6 +50,28 @@ void addPlotNotice(
     ImGui::EndChild();
 }
 
+bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) {
+    bool violates = false;
+    for (Buffer buffer : buffers) {
+        for (int idxBuffer = 0; idxBuffer < buffer.data.size(); idxBuffer++) {
+            for (int idxLimit = 0; idxLimit < limitingCurve.data.size() - 1; idxLimit++) {
+                if (buffer.data[idxBuffer].x >= limitingCurve.data[idxLimit].x && buffer.data[idxBuffer].x < limitingCurve.data[idxLimit + 1].x) {
+                    // linear interpolation
+                    DataPoint limitLeft  = limitingCurve.data[idxLimit];
+                    DataPoint limitRight = limitingCurve.data[idxLimit + 1];
+                    double    slope      = (limitRight.y - limitLeft.y) / (limitRight.x - limitLeft.x);
+                    double    yshift     = limitLeft.y;
+                    double    limitY     = slope * (buffer.data[idxBuffer].x - limitLeft.x) + yshift;
+                    if (limitY < buffer.data[idxBuffer].y) {
+                        return violates = true;
+                    }
+                }
+            }
+        }
+    }
+    return violates;
+}
+
 double setTimeInterval(DataInterval Interval) {
     double dt = 0;
     switch (Interval) {
@@ -64,6 +86,31 @@ double setTimeInterval(DataInterval Interval) {
         break;
     }
     return dt;
+}
+
+template<typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
+
+template<Numeric T>
+std::string to_si_prefix(T value_base, std::string_view unit = "s", std::size_t significant_digits = 0) {
+    static constexpr std::array si_prefixes{ 'q', 'r', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q' };
+    static constexpr double     base     = 1000.0;
+    long double                 value    = value_base;
+
+    std::size_t                 exponent = 10;
+    if (value == 0) {
+        return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
+    }
+    while (value >= base && exponent < si_prefixes.size()) {
+        value /= base;
+        ++exponent;
+    }
+    while (value < 1.0 && exponent > 0) {
+        value *= base;
+        --exponent;
+    }
+
+    return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
 }
 
 template<typename T>
@@ -94,7 +141,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
     ImU32                    blue        = 4289753676;
     ImU32                    red         = 4283584196;
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
-    ImPlot::SetupAxesLimits(0, 60, -300, 300, ImPlotCond_Always);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
@@ -134,31 +180,6 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
-}
-
-template<typename T>
-concept Numeric = std::integral<T> || std::floating_point<T>;
-
-template<Numeric T>
-std::string to_si_prefix(T value_base, std::string_view unit = "s", std::size_t significant_digits = 0) {
-    static constexpr std::array si_prefixes{ 'q', 'r', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q' };
-    static constexpr double     base     = 1000.0;
-    long double                 value    = value_base;
-
-    std::size_t                 exponent = 10;
-    if (value == 0) {
-        return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
-    }
-    while (value >= base && exponent < si_prefixes.size()) {
-        value /= base;
-        ++exponent;
-    }
-    while (value < 1.0 && exponent > 0) {
-        value *= base;
-        --exponent;
-    }
-
-    return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
 }
 
 void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
@@ -203,10 +224,6 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
 
 void plotBarchart(std::vector<double> &day_values) {
     if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
-        // Todo - dates
-        // auto   clock       = std::chrono::system_clock::now();
-        // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-
         static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
         static ImPlotLegendFlags legendFlags = 0;
         ImPlot::SetupLegend(legendLoc, legendFlags);
@@ -225,8 +242,6 @@ void plotBarchart(std::vector<double> &day_values) {
         double max_element = *std::max_element(day_values.begin(), day_values.end());
 
         double plot_buffer = max_element * 0.1 + 5;
-
-        // ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
 
         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
@@ -471,6 +486,7 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
     ImPlot::SetupAxes("", "mains frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
@@ -479,6 +495,14 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
+
+    // color axis
+    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
+
+    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
+    axis_Y1.ColorTxt    = blue;
+    axis_Y1.ColorTick   = blue;
+
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -502,46 +526,6 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     }
 }
 
-bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) {
-    bool violates = false;
-    for (Buffer buffer : buffers) {
-        for (int idxBuffer = 0; idxBuffer < buffer.data.size(); idxBuffer++) {
-            for (int idxLimit = 0; idxLimit < limitingCurve.data.size() - 1; idxLimit++) {
-                if (buffer.data[idxBuffer].x >= limitingCurve.data[idxLimit].x && buffer.data[idxBuffer].x < limitingCurve.data[idxLimit + 1].x) {
-                    // linear interpolation
-                    DataPoint limitLeft  = limitingCurve.data[idxLimit];
-                    DataPoint limitRight = limitingCurve.data[idxLimit + 1];
-                    double    slope      = (limitRight.y - limitLeft.y) / (limitRight.x - limitLeft.x);
-                    double    yshift     = limitLeft.y;
-                    double    limitY     = slope * (buffer.data[idxBuffer].x - limitLeft.x) + yshift;
-                    if (limitY < buffer.data[idxBuffer].y) {
-                        return violates = true;
-                    }
-                }
-            }
-        }
-    }
-    return violates;
-}
-
-Buffer generateTestBuffer() {
-    Buffer testBuffer(70);
-    testBuffer.signalName = "testBuffer";
-
-    // Generate vector with random values
-    std::vector<double> x(70, 0);
-    for (int i = 0; i < x.size(); i++) {
-        x[i] = i * 0.1;
-    }
-    std::vector<double> y(70, 1);
-    y[69] = 25;
-
-    // Assign random values to buffer
-    testBuffer.assign(x, y);
-
-    return testBuffer;
-}
-
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, ImFont *fontawesome) {
     bool                     violation   = false;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
@@ -557,9 +541,9 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
         violation = violatesLimitingCurve(limitingCurve[0], signals);
     }
     if (violation) {
-        addPlotNotice("error: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
-        addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
-        addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, { 0, 0, 1.0, 1.0 }, { 0.15, 0.45 });
+        addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
+        // addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
+        // addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, { 0, 0, 1.0, 1.0 }, { 0.15, 0.45 });
     }
 }
 
@@ -584,7 +568,7 @@ void plotUsageTable(std::vector<double> powerUsages) {
         ImGui::TableSetColumnIndex(1);
         ImGui::Text("S");
         ImGui::TableSetColumnIndex(2);
-        ImGui::Text("%2f kWh", powerUsages[1]);
+        ImGui::Text("%2f kVAh", powerUsages[1]);
     }
 }
 

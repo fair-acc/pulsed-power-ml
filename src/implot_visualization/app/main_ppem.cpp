@@ -227,15 +227,15 @@ static void main_loop(void *arg) {
         static float              cratios[] = { 1, 1, 1, 1 };
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
             // Raw Signals Plot
-            static ImPlotColormap Test = -1;
-            if (Test == -1) {
-                static const ImVec4 blue         = ImVec4(0.298, 0.447, 0.690, 1);
-                static const ImVec4 red          = ImVec4(0.769, 0.306, 0.322, 1);
-                static const ImVec4 Test_Data[4] = { blue, red, blue, red };
-                Test                             = ImPlot::AddColormap("Test", Test_Data, 4);
+            static ImPlotColormap colormap = -1;
+            if (colormap == -1) {
+                static const ImVec4 blue                = ImVec4(0.298, 0.447, 0.690, 1);
+                static const ImVec4 red                 = ImVec4(0.769, 0.306, 0.322, 1);
+                static const ImVec4 signalPlotColors[4] = { blue, red, blue, red };
+                colormap                                = ImPlot::AddColormap("Test", signalPlotColors, 4);
             }
-            ImPlot::PushColormap(Test);
-            if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
+            ImPlot::PushColormap(colormap);
+            if (ImPlot::BeginPlot("##", ImVec2(), ImPlotFlags_NoLegend)) {
                 if (subscriptionsTimeDomain.size() >= 3) {
                     Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 }
@@ -244,7 +244,7 @@ static void main_loop(void *arg) {
             }
 
             // Mains Frequency Plot
-            if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
+            if (ImPlot::BeginPlot("##", ImVec2(), ImPlotFlags_NoLegend)) {
                 if (subscriptionsTimeDomain.size() >= 3) {
                     Plotter::plotMainsFrequency(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
                 }
@@ -253,15 +253,13 @@ static void main_loop(void *arg) {
 
             ImPlot::EndSubplots();
         }
-        if (ImPlot::BeginSubplots("My Subplots2", 1, 1, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
-            // Power Statistics
-            if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 1) {
-                    Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
-                }
-                ImPlot::EndPlot();
+
+        // Power Statistics
+        if (ImPlot::BeginPlot("##")) {
+            if (subscriptionsTimeDomain.size() > 1) {
+                Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
             }
-            ImPlot::EndSubplots();
+            ImPlot::EndPlot();
         }
 
         // Integrated Values
