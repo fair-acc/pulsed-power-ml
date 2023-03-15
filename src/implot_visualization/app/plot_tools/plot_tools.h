@@ -91,7 +91,10 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
     static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
+    ImPlot::SetupAxesLimits(0, 60, -300, 300, ImPlotCond_Always);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
@@ -100,12 +103,12 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
     ImPlotPlot &plot    = *GImPlot->CurrentPlot;
 
     ImPlotAxis &axis_Y2 = plot.Axes[ImAxis_Y2];
-    axis_Y2.ColorTxt    = 4283584196;
-    axis_Y2.ColorTick   = 4283584196;
+    axis_Y2.ColorTxt    = red;
+    axis_Y2.ColorTick   = red;
 
     ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
-    axis_Y1.ColorTxt    = 4289753676;
-    axis_Y1.ColorTick   = 4289753676;
+    axis_Y1.ColorTxt    = blue;
+    axis_Y1.ColorTick   = blue;
 
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {

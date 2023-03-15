@@ -52,6 +52,12 @@ struct StrideArray {
     std::vector<double> values;
 };
 
+struct ConvertPair {
+    std::vector<double> relativeTimestamps;
+    uint64_t            referenceTimestamps;
+    StrideArray         strideArray;
+} typedef Convert;
+
 template<typename T>
 class IAcquisition {
 public:

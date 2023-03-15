@@ -129,15 +129,11 @@ void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector
     }
 }
 
-struct ConvertPair {
-    std::vector<double> first;
-    uint64_t            second;
-} typedef Convert;
-
-ConvertPair convertValues(const std::vector<double> &relativeTimestamps, uint64_t refTrigger_ns) {
+const ConvertPair convertValues(const std::vector<double> &relativeTimestamps, uint64_t refTrigger_ns) {
     ConvertPair ret;
-    double      max   = relativeTimestamps[relativeTimestamps.size() - 1];
-    double      delta = max - relativeTimestamps[relativeTimestamps.size() - 2];
+    // Abfrage >= 2
+    double max   = relativeTimestamps[relativeTimestamps.size() - 1];
+    double delta = max - relativeTimestamps[relativeTimestamps.size() - 2];
     delta *= 1000;
     double newRelativeTimestamp = 60;
     refTrigger_ns               = 0;
@@ -145,16 +141,16 @@ ConvertPair convertValues(const std::vector<double> &relativeTimestamps, uint64_
     for (auto it = relativeTimestamps.end(); it != relativeTimestamps.begin(); it--) {
         newRelativeTimestamps.push_back(newRelativeTimestamp);
         newRelativeTimestamp -= delta;
-        /*if (newRelativeTimestamp < 0) {
+        if (newRelativeTimestamp < 0) {
             break;
-        }*/
+        }
     }
     std::reverse(newRelativeTimestamps.begin(), newRelativeTimestamps.end());
-    /*for (int i = 0; i < 11; i++) {
+    for (int i = 0; i < 11; i++) {
         std::cout << newRelativeTimestamps[i] << std::endl;
-    }*/
-    ret.first  = newRelativeTimestamps;
-    ret.second = refTrigger_ns;
+    }
+    ret.relativeTimestamps  = newRelativeTimestamps;
+    ret.referenceTimestamps = refTrigger_ns;
     return ret;
 }
 
@@ -186,9 +182,9 @@ void Acquisition::deserialize() {
         }
     }
     if (convertValuesBool) {
-        auto ret           = convertValues(relativeTimestamps, refTrigger_ns);
-        relativeTimestamps = ret.first;
-        refTrigger_ns      = ret.second;
+        ConvertPair ret    = convertValues(relativeTimestamps, refTrigger_ns);
+        relativeTimestamps = ret.relativeTimestamps;
+        refTrigger_ns      = ret.referenceTimestamps;
     }
     this->lastRefTrigger = refTrigger_ns;
     this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
