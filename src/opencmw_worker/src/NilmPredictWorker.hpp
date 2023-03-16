@@ -167,10 +167,10 @@ public:
                 AcquisitionSpectra acqSData;
                 response = _dataFetcherAcqSpectra.fetch(acqSData);
                 if (response.error() == httplib::Error::Success && response->status == 200) {
-                    // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitudeValues.size(), acqSData.channelName);
-                    if (!acqSData.channelMagnitudeValues.empty()) {
+                    // fmt::print("signal fft size: {}, signal_name: {}\n", acqSData.channelMagnitude_values.element_count(), acqSData.channelName);
+                    if (acqSData.channelMagnitude_values.dimensions()[1] > 0) {
                         _suiDataSink->timestamp = acqSData.refTriggerStamp;
-                        _suiDataSink->s         = std::move(acqSData.channelMagnitudeValues);
+                        _suiDataSink->s.assign(acqSData.channelMagnitude_values.elements().end() - acqSData.channelMagnitude_values.dimensions()[1], acqSData.channelMagnitude_values.elements().end());
                     }
                 }
 

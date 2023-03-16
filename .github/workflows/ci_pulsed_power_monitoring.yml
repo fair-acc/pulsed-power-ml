@@ -107,33 +107,34 @@ jobs:
         shell: bash
         run: sudo apt install xterm libsndfile1-dev libuhd-dev alsa-utils portaudio19-dev libuhd-dev libzmq3-dev libqwt-qt5-dev libiio-dev libad9361-dev libspdlog-dev libsoapysdr-dev libcodec2-dev
 
-      - name: Configure GNU Radio pulsed-power out of tree modules
+      - name: GNU Radio - Configure pulsed-power out of tree modules
         shell: bash
-        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build
+        run: cmake -S ${{env.SRC_DIR_GR}} -B ${{env.SRC_DIR_GR}}/build -DCMAKE_BUILD_TYPE=${{matrix.cmake-build-type}}
 
-      - name: Build GNU Radio pulsed-power out of tree modules
+      - name: GNU Radio- Build pulsed-power out of tree modules
         shell: bash
         run: |
           sudo cmake --build ${{env.SRC_DIR_GR}}/build --target install
           sudo ldconfig
 
-      - name: Test GNU Radio pulsed-power out of tree modules
+      - name: GNU Radio - Test pulsed-power out of tree modules
+        if: matrix.cmake-build-type == 'Debug'
         shell: bash
         run: ctest --test-dir ${{env.SRC_DIR_GR}}/build
 
       # OPENCMW
-      - name: Configure CMake
+      - name: Worker - Configure CMake
         # Use a bash shell, so we can use the same syntax for environment variable access regardless of the host operating system
         shell: bash
         run: cmake -S ${{env.SRC_DIR_WORKER}} -B ${{env.SRC_DIR_WORKER}}/build -DCMAKE_BUILD_TYPE=${{ matrix.cmake-build-type }}
 
-      - name: Build worker
+      - name: Worker - Build
         shell: bash
         # Execute the build. You can specify a specific target with "--target <NAME>"
         run: cmake --build ${{env.SRC_DIR_WORKER}}/build
 
-      - name: Run tests
-        if: matrix.configurations.name != env.REFERENCE_CONFIG || matrix.cmake-build-type != 'Debug'
+      - name: Worker - Run tests
+        if: matrix.configurations.name != env.REFERENCE_CONFIG || matrix.cmake-build-type == 'Debug'
         working-directory: ${{env.SRC_DIR_WORKER}}/build
         shell: bash
         # Execute tests defined by the CMake configuration. The coverage target runs the autodiscovered catch2 tests using
@@ -141,7 +142,7 @@ jobs:
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest -C ${{ matrix.cmake-build-type }}
 
-      - name: Run tests with coverage
+      - name: Worker - Run tests with coverage
         if: matrix.configurations.name == env.REFERENCE_CONFIG && matrix.cmake-build-type == 'Debug'
         working-directory: ${{env.SRC_DIR_WORKER}}/build
         shell: bash
@@ -155,24 +156,24 @@ jobs:
         with:
           files: ${{env.SRC_DIR_WORKER}}/build/coverage.xml
 
-      - name: coverage report - send to Codacy
+      - name: Worker - coverage report - send to Codacy
         if: matrix.configurations.name == env.REFERENCE_CONFIG && matrix.cmake-build-type == 'Debug'
         working-directory: ${{env.SRC_DIR_WORKER}}/build
         shell: bash
         run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml --skip --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
       # IMPLOT
-      - name: Install emscripten
+      - name: Dashboards - Install emscripten
         uses: mymindstorm/setup-emsdk@v11
         with:
           version: 3.1.31
           # actions-cache-folder: "emsdk-cache"
 
-      - name: Verify emscripten
+      - name: Dashboards - Verify emscripten
         run: emcc -v
 
-      - name: Generate visualization
+      - name: Dashboards - Configure CMake
         run: emcmake cmake -S ${{env.SRC_DIR_VIS}} -B ${{env.SRC_DIR_VIS}}/build
 
-      - name: Build visualization
+      - name: Dashboards - Build
         run: cd ${{env.SRC_DIR_VIS}}/build && emmake make

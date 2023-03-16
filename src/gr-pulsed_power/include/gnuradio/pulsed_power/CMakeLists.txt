@@ -27,8 +27,8 @@ install(FILES
     /opt/picoscope/include/libps4000a/ps4000aApi.h
     /opt/picoscope/include/libps4000a/PicoStatus.h
     picoscope_4000a_source.h
-    power_calc_ff.h
     mains_frequency_calc.h
+    power_calc_ff.h
     power_calc_cc.h 
     power_calc_mul_ph_ff.h DESTINATION include/gnuradio/pulsed_power
 )

@@ -7,7 +7,6 @@
 #include <iomanip>
 #include <thread>
 
-#include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
 #include "LimitingCurveWorker.hpp"
@@ -58,7 +57,6 @@ public:
 
     void registerHandlers() override {
         _svr.set_mount_point("/", _serverRoot.string());
-
         _svr.Post("/stdio.html", [](const httplib::Request &request, httplib::Response &response) {
             opencmw::debug::log() << "QtWASM:" << request.body;
             response.set_content("", "text/plain");
@@ -102,13 +100,11 @@ int main() {
     flowgraph.start();
 
     // OpenCMW workers
-    CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
 
     // run workers in separate threads
-    std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
@@ -116,7 +112,6 @@ int main() {
     brokerThread.join();
 
     // workers terminate when broker shuts down
-    counterWorkerThread.join();
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     limitingCurveWorkerThread.join();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Free Software Foundation, Inc.
+ * Copyright 2023 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -28,3 +28,21 @@ static const char* __doc_gr_pulsed_power_power_calc_cc_make = R"doc()doc";
 
 
 static const char* __doc_gr_pulsed_power_power_calc_cc_set_alpha = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_active_power = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_reactive_power = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_apparent_power = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_phi = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_rms_u = R"doc()doc";
+
+
+static const char* __doc_gr_pulsed_power_power_calc_cc_calc_rms_i = R"doc()doc";

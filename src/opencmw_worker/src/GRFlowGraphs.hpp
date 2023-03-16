@@ -445,6 +445,7 @@ public:
                 { "P_Int", "S_Int" },
                 { "", "Wh" },
                 out_samp_rate_power_shortterm);
+        opencmw_time_sink_int_shortterm->set_max_noutput_items(noutput_items);
 
         // Statistic sinks
         auto opencmw_time_sink_power_stats_shortterm = gr::pulsed_power::opencmw_time_sink::make(
@@ -471,6 +472,7 @@ public:
         auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make(
                 { "sinus_fft" },
                 { "W" }, 50, 50, 512);
+        frequency_spec_pulsed_power_opencmw_freq_sink->set_max_noutput_items(noutput_items);
         auto opencmw_freq_sink_nilm_U = gr::pulsed_power::opencmw_freq_sink::make(
                 { "U" },
                 { "V" },

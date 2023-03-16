@@ -1,4 +1,3 @@
-#include "power_calc_ff_impl.h"
 #include <gnuradio/attributes.h>
 #include <gnuradio/pulsed_power/power_calc_ff.h>
 #include <boost/test/unit_test.hpp>
@@ -17,7 +16,7 @@ bool isSimilar(float first, float second, float decimals)
 
 BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_active_and_reactive_power)
 {
-    power_calc_ff_impl* calc_block = new power_calc_ff_impl(0.0001);
+    auto calc_block = gr::pulsed_power::power_calc_ff::make(0.0001);
     float out_active_float[1] = { 0 };
     float* out_active = out_active_float;
     float out_reactive_float[1] = { 0 };
@@ -48,8 +47,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_active_and_reactive_power)
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     voltage[0] = 1;
     current[0] = nanf("");
@@ -57,8 +56,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_active_and_reactive_power)
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     voltage[0] = 1;
     current[0] = 1;
@@ -66,8 +65,8 @@ BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_active_and_reactive_power)
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 
     /**
      * checking for all inputs being NaN
@@ -78,13 +77,13 @@ BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_active_and_reactive_power)
     calc_block->calc_active_power(out_active, voltage, current, phi_out, noutput_items);
     calc_block->calc_reactive_power(
         out_reactive, voltage, current, phi_out, noutput_items);
-    BOOST_CHECK(isnan(out_active[0]));
-    BOOST_CHECK(isnan(out_reactive[0]));
+    BOOST_CHECK(std::isnan(out_active[0]));
+    BOOST_CHECK(std::isnan(out_reactive[0]));
 }
 
 BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_apparent_power)
 {
-    power_calc_ff_impl* calc_block = new power_calc_ff_impl(0.0001);
+    auto calc_block = gr::pulsed_power::power_calc_ff::make(0.0001);
     float out_float[1] = { 0 };
     float* out_apparent = out_float;
     float float_voltage[1] = { 2 };
@@ -98,23 +97,23 @@ BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_apparent_power)
     voltage[0] = nanf("");
     current[0] = 2;
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 
     voltage[0] = 2;
     current[0] = nanf("");
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 
     voltage[0] = nanf("");
     current[0] = nanf("");
     calc_block->calc_apparent_power(out_apparent, voltage, current, noutput_items);
-    BOOST_CHECK(isnan(out_apparent[0]));
+    BOOST_CHECK(std::isnan(out_apparent[0]));
 }
 
 BOOST_AUTO_TEST_CASE(test_power_calc_ff_Calc_rms)
 {
     float alpha = 0.0001;
-    power_calc_ff_impl* calc_block = new power_calc_ff_impl(alpha);
+    auto calc_block = gr::pulsed_power::power_calc_ff::make(0.0001);
     float out_u_float[1] = { 0 };
     float* out_rms_u = out_u_float;
     float out_i_float[1] = { 0 };

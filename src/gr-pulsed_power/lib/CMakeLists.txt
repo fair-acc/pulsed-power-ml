@@ -123,16 +123,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set_target_properties(${target_to_build} 
             PROPERTIES COMPILE_DEFINITIONS "BOOST_TEST_DYN_LINK;BOOST_TEST_MAIN"
         )
-        setup_target_for_coverage_gcovr_html(NAME "test_${truncated_qa_file}_coverage" 
-                                            EXECUTABLE ${target_to_build}  ctest
-                                            DEPENDENCIES ${target_to_build}  ${GR_TEST_TARGET_DEPS}
-        )
+        # setup_target_for_coverage_gcovr_html(NAME "test_${truncated_qa_file}_coverage" 
+        #                                     EXECUTABLE ${target_to_build}  ctest
+        #                                     DEPENDENCIES ${target_to_build}  ${GR_TEST_TARGET_DEPS}
+        # )
         add_test(NAME "ctest_${truncated_qa_file}"
                 COMMAND ${target_to_build} 
         )
         
     endforeach(qa_file)
-    append_coverage_compiler_flags()
+    # append_coverage_compiler_flags()
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 ########################################################################

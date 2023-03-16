@@ -256,9 +256,14 @@ void AcquisitionSpectra::deserialize() {
                 return;
             }
             std::cout << "Received expected signal (AcquisitionSpectra)" << std::endl;
-        } else if (element.key() == "channelMagnitudeValues") {
-            channelMagnitudeValues.assign(element.value().begin(), element.value().end());
-        } else if (element.key() == "channelFrequencyValues") {
+        } else if (element.key() == "channelMagnitude_values") {
+            int vectorSize = element.value()["dims"][1];
+            int numValues  = element.value()["dims"][0];
+            channelMagnitudeValues.clear(); // ??? Can be removed ???
+            for (int i = vectorSize * (numValues - 1); i < vectorSize * numValues; i++) {
+                channelMagnitudeValues.push_back(element.value()["values"][i]);
+            }
+        } else if (element.key() == "channelMagnitude_dim2_discrete_freq_values") {
             channelFrequencyValues.assign(element.value().begin(), element.value().end());
         }
     }
