@@ -223,7 +223,7 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
 }
 
 void plotBarchart(std::vector<double> &day_values) {
-    if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
+    if (ImPlot::BeginPlot("Usage Over Last 7 Days (kWh)")) {
         static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
         static ImPlotLegendFlags legendFlags = 0;
         ImPlot::SetupLegend(legendLoc, legendFlags);
@@ -246,7 +246,7 @@ void plotBarchart(std::vector<double> &day_values) {
         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
-        ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
+        ImPlot::PlotBars("Usage Over Last 6 Days (kWh)", kWh, 7, 0.7);
         ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
 
         for (int i = 0; i < 7; i++) {
@@ -290,21 +290,21 @@ void plotNestTable(
     switch (m_d_w) {
     case 0:
         sum_of_usage = month_value;
-        timePeriod   = "Relative Usage current month";
+        timePeriod   = "Relative Usage Current Month";
         break;
     case 1:
         sum_of_usage = week_value;
-        timePeriod   = "Relative Usage current week";
+        timePeriod   = "Relative Usage Current Week";
         break;
     case 2:
         sum_of_usage = day_value;
-        timePeriod   = "Relative Usage current day";
+        timePeriod   = "Relative Usage Current Day";
         break;
     default:
         break;
     }
 
-    if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1, 0))) {
+    if (ImGui::BeginTable("Devices Table", 4, tableFlags, ImVec2(-1, 0))) {
         ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 200.0f);
         ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
         ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
@@ -370,11 +370,10 @@ void plotNestTable(
 }
 
 void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
-    printf("Ploting Table, init %d\n", powerUsage.init);
     ImGuiContext     &g     = *GImGui;
     const ImGuiStyle &style = g.Style;
 
-    //  on
+    // on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
     int           rest     = 0;
     int           len      = 0;
@@ -556,7 +555,7 @@ void plotUsageTable(std::vector<double> powerUsages) {
         ImGui::TableNextRow();
         // Active power P
         ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Active power");
+        ImGui::Text("Active Power");
         ImGui::TableSetColumnIndex(1);
         ImGui::Text("P");
         ImGui::TableSetColumnIndex(2);
@@ -564,7 +563,7 @@ void plotUsageTable(std::vector<double> powerUsages) {
         ImGui::TableNextRow();
         // Apparent power S
         ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Apparent power");
+        ImGui::Text("Apparent Power");
         ImGui::TableSetColumnIndex(1);
         ImGui::Text("S");
         ImGui::TableSetColumnIndex(2);
