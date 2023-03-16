@@ -95,7 +95,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = true;
+    bool                 use_picoscope = false;
     PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
     flowgraph.start();
 

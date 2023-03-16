@@ -14,6 +14,12 @@
 namespace gr {
 namespace pulsed_power {
 
+enum INTEGRATION_DURATION {
+    DAY,
+    WEEK,
+    MONTH
+};
+
 /*!
  * \brief <+description of block+>
  * \ingroup pulsed_power
@@ -34,8 +40,9 @@ public:
      *
      * @param decimation Decimation
      * @param sample_rate Sample rate in Hz
+     * @param duration The time duration before reset.
      */
-    static sptr make(int decimation, int sample_rate);
+    static sptr make(int decimation, int sample_rate, INTEGRATION_DURATION duration);
 
     /*!
      * @brief Calculates the integral of the samples given in Watt

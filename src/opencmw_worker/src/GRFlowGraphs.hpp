@@ -254,7 +254,7 @@ public:
 
         auto calc_mains_frequency          = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
-        auto integrate                     = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate                     = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::DAY);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,

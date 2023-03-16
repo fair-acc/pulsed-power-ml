@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(integration.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(6c60e3a357e58ebee9b47e649a5cdfcf)                     */
+/* BINDTOOL_HEADER_FILE_HASH(4b0f2affe86c6c529acd8a5f154146fc)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -39,6 +39,7 @@ void bind_integration(py::module& m)
         .def(py::init(&integration::make),
              py::arg("decimation"),
              py::arg("sample_rate"),
+             py::arg("duration"),
              D(integration, make))
 
 
