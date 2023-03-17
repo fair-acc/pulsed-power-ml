@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 sys.path.append("../../../../")
 
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
-from src.pulsed_power_ml.model_framework.data_io import read_training_files
+from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
 from src.pulsed_power_ml.model_framework.visualizations import plot_state_vector_array
 from src.pulsed_power_ml.model_framework.visualizations import plot_data_point_array
@@ -25,8 +25,8 @@ def main():
         description='This script provides an easy and quick way to test a NILM model given previously recorded data.'
     )
     parser.add_argument('-i',
-                        '--input-folder',
-                        help='Path to folder containing raw data.',
+                        '--input',
+                        help='Path to raw data.',
                         required=True)
     parser.add_argument('-m',
                         '--model',
@@ -46,7 +46,7 @@ def main():
                         required=True)
     parser.add_argument('-v',
                         '--vertical-line',
-                        help='Pass this flag to include a vertical line into prediction plot at 70% of time.',
+                        help='Pass this flag to include a vertical line into prediction plot at 70%% of time.',
                         action='store_true',
                         default=False)
     args = parser.parse_args()
@@ -64,9 +64,9 @@ def main():
     model = tf.saved_model.load(args.model)
 
     # Load data
-    print(f'\nLoad data in {args.input_folder}')
-    data_point_array = read_training_files(path_to_folder=args.input_folder,
-                                           fft_size=parameter_dict["fft_size"])
+    print(f'\nLoad data in {args.input}')
+    data_point_array = load_binary_data_array(args.input,
+                                              parameter_dict["fft_size_real"])
 
     # Apply model
     state_vector_list = list()
