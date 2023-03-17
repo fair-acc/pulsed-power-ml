@@ -320,7 +320,7 @@ void plotNestTable(
                 ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%.2f", powerUsage.powerUsages[row]);
                 ImGui::TableSetColumnIndex(3);
-                double relative = 0;
+                double relative = 0.0;
                 switch (m_d_w) {
                 case 0:
                     if (row < powerUsage.powerUsagesMonth.size()) {

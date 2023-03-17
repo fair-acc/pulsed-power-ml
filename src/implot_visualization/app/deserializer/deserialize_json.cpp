@@ -195,6 +195,12 @@ PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
 void PowerUsage::deserialize() {
     auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
+        if (element.key() == "refTriggerStamp") {
+            if (element.value() == 0) {
+                return;
+            }
+            this->lastTimeStamp = element.value();
+        }
         if (element.key() == "values") {
             this->powerUsages.clear();
             this->powerUsages.assign(element.value().begin(), element.value().end());
@@ -206,15 +212,24 @@ void PowerUsage::deserialize() {
         if (element.key() == "timestamp") {
             timestamp = element.value();
         }
-        if (element.key() == "day_usage") {
+        if (element.key() == "dayUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesDay.clear();
             this->powerUsagesDay.assign(element.value().begin(), element.value().end());
         }
-        if (element.key() == "week_usage") {
+        if (element.key() == "weekUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesWeek.clear();
             this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
         }
-        if (element.key() == "month_usage") {
+        if (element.key() == "monthUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesMonth.clear();
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
