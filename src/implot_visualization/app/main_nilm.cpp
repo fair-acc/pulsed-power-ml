@@ -30,9 +30,6 @@ public:
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage;
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain;
     std::vector<Subscription<RealPowerUsage>> subscriptionsRealPowerUsage;
-    // Plotter                                       plotter;
-    // DeviceTable                                   deviceTable;
-    // double                                 lastFrequencyFetchTime = 0.0;
 
     struct AppFonts {
         ImFont *title;
@@ -75,13 +72,13 @@ int         main(int argc, char **argv) {
 
     float                                     updateFreq = 25.0f;
     Subscription<PowerUsage>                  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
-    Subscription<RealPowerUsage>              intergratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "S_Int@100Hz" }, updateFreq);
+    Subscription<RealPowerUsage>              integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@100Hz", "S_Int@100Hz" }, updateFreq);
     Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=",
                                     { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
 
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
-    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { intergratedValues };
+    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { integratedValues };
     AppState                                  appState(subscriptionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage);
 
     // Setup SDL
@@ -212,7 +209,7 @@ static void main_loop(void *arg) {
 
         RealPowerUsage realPowerUsage     = subscriptionsRealPowerUsages[0].acquisition;
 
-        double         integratedValueDay = realPowerUsage.realPowerUsage;
+        double         integratedValueDay = realPowerUsage.realPowerUsages[1];
         // in Progress - Week and Month values
         double              integratedValueWeek  = integratedValueDay;
         double              integratedValueMonth = integratedValueDay;
@@ -223,16 +220,13 @@ static void main_loop(void *arg) {
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        // ImGui::Begin("Eletricity");
-        ImGui::Begin("Eletricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+        ImGui::Begin("Electricity", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 
         app_header::draw_header_bar("Non-Intrusive Load Monitoring", args->fonts.title);
 
-        static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 1;
-        static int                cols      = 2;
-        static float              rratios[] = { 1, 1, 1, 1 };
-        static float              cratios[] = { 1, 1, 1, 1 };
+        static ImPlotSubplotFlags flags = ImPlotSubplotFlags_NoTitle;
+        static int                rows  = 1;
+        static int                cols  = 2;
 
         std::string               output_symbol;
 

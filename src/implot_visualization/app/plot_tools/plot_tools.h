@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deserialize_json.h>
+#include <fmt/core.h>
 #include <IconsFontAwesome6.h>
 #include <implot.h>
 #include <vector>
@@ -49,6 +50,28 @@ void addPlotNotice(
     ImGui::EndChild();
 }
 
+bool violatesLimitingCurve(Buffer &limitingCurve, std::vector<Buffer> &buffers) {
+    bool violates = false;
+    for (Buffer buffer : buffers) {
+        for (int idxBuffer = 0; idxBuffer < buffer.data.size(); idxBuffer++) {
+            for (int idxLimit = 0; idxLimit < limitingCurve.data.size() - 1; idxLimit++) {
+                if (buffer.data[idxBuffer].x >= limitingCurve.data[idxLimit].x && buffer.data[idxBuffer].x < limitingCurve.data[idxLimit + 1].x) {
+                    // linear interpolation
+                    DataPoint limitLeft  = limitingCurve.data[idxLimit];
+                    DataPoint limitRight = limitingCurve.data[idxLimit + 1];
+                    double    slope      = (limitRight.y - limitLeft.y) / (limitRight.x - limitLeft.x);
+                    double    yshift     = limitLeft.y;
+                    double    limitY     = slope * (buffer.data[idxBuffer].x - limitLeft.x) + yshift;
+                    if (limitY < buffer.data[idxBuffer].y) {
+                        return violates = true;
+                    }
+                }
+            }
+        }
+    }
+    return violates;
+}
+
 double setTimeInterval(DataInterval Interval) {
     double dt = 0;
     switch (Interval) {
@@ -63,6 +86,31 @@ double setTimeInterval(DataInterval Interval) {
         break;
     }
     return dt;
+}
+
+template<typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
+
+template<Numeric T>
+std::string to_si_prefix(T value_base, std::string_view unit = "s", std::size_t significant_digits = 0) {
+    static constexpr std::array si_prefixes{ 'q', 'r', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y', 'R', 'Q' };
+    static constexpr double     base     = 1000.0;
+    long double                 value    = value_base;
+
+    std::size_t                 exponent = 10;
+    if (value == 0) {
+        return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
+    }
+    while (value >= base && exponent < si_prefixes.size()) {
+        value /= base;
+        ++exponent;
+    }
+    while (value < 1.0 && exponent > 0) {
+        value *= base;
+        --exponent;
+    }
+
+    return fmt::format("{:.{}f}{}{}{}", value, significant_digits, unit.empty() ? "" : " ", si_prefixes[exponent], unit);
 }
 
 template<typename T>
@@ -85,20 +133,29 @@ static void plotSignals(std::vector<T> &signals) {
 }
 
 void plotSignals(std::vector<ScrollingBuffer> &signals) {
-    // static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
     ImPlot::SetupAxes("", "U(V)", xflags, yflags);
-    // auto   clock       = std::chrono::system_clock::now();
-    // double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    // ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
-    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
+
+    // color axis
+    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
+
+    ImPlotAxis &axis_Y2 = plot.Axes[ImAxis_Y2];
+    axis_Y2.ColorTxt    = red;
+    axis_Y2.ColorTick   = red;
+
+    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
+    axis_Y1.ColorTxt    = blue;
+    axis_Y1.ColorTick   = blue;
+
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -108,11 +165,11 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
             if (signal.signalName.find("I") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
-            // if (signal.signalName.find("bpf") != std::string::npos) {
-            //     lineFlag = ImPlotLineFlags_Segments;
-            // } else {
-            //     lineFlag = ImPlotLineFlags_None;
-            // }
+            if (signal.signalName.find("bpf") != std::string::npos) {
+                lineFlag = ImPlotLineFlags_Segments;
+            } else {
+                lineFlag = ImPlotLineFlags_None;
+            }
             ImPlot::PlotLine((signal.signalName).c_str(),
                     &signal.data[0].x,
                     &signal.data[0].y,
@@ -120,42 +177,7 @@ void plotSignals(std::vector<ScrollingBuffer> &signals) {
                     lineFlag,
                     offset,
                     2 * sizeof(double));
-
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
-        }
-    }
-}
-
-void plotBandpassFilter(std::vector<ScrollingBuffer> &signals) {
-    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_Segments;
-    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
-    static ImPlotLegendFlags legendFlags = 0;
-    ImPlot::SetupAxes("", "U(V)", xflags, yflags);
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - 0.06, currentTime, ImGuiCond_Always);
-    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetupAxis(ImAxis_Y2, "I(A)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_AuxDefault);
-    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    ImPlot::SetupLegend(legendLoc, legendFlags);
-    for (const auto &signal : signals) {
-        if (!signal.data.empty()) {
-            int offset = 0;
-            if constexpr (requires { signal.offset; }) {
-                offset = signal.offset;
-            }
-            if (signal.signalName.find("I") != std::string::npos) {
-                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
-            }
-            ImPlot::PlotLine((signal.signalName).c_str(),
-                    &signal.data[0].x,
-                    &signal.data[0].y,
-                    signal.data.size(),
-                    lineFlag,
-                    offset,
-                    2 * sizeof(double));
         }
     }
 }
@@ -192,20 +214,16 @@ void plotPower(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Sh
                     2 * sizeof(double));
 
             // Add tags with signal value
-            DataPoint lastPoint = signal.data.back();
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            DataPoint   lastPoint = signal.data.back();
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 2);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
         }
     }
 }
 
-// void plotBarchart(PowerUsage &powerUsage) {
 void plotBarchart(std::vector<double> &day_values) {
-    if (ImPlot::BeginPlot("Usage over Last 7 Days (kWh)")) {
-        // Todo - dates
-        // auto   clock       = std::chrono::system_clock::now();
-        // double currentTime = (std::chrono::duration_cast<std::chrono::milliseconds>(clock.time_since_epoch()).count()) / 1000.0;
-
+    if (ImPlot::BeginPlot("Usage Over Last 7 Days (kWh)")) {
         static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
         static ImPlotLegendFlags legendFlags = 0;
         ImPlot::SetupLegend(legendLoc, legendFlags);
@@ -225,12 +243,10 @@ void plotBarchart(std::vector<double> &day_values) {
 
         double plot_buffer = max_element * 0.1 + 5;
 
-        // ImPlot::SetupLegend(ImPlotLocation_North | ImPlotLocation_West, ImPlotLegendFlags_Outside);
-
         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
-        ImPlot::PlotBars("Usage over Last 6 Days (kWh)", kWh, 7, 0.7);
+        ImPlot::PlotBars("Usage Over Last 6 Days (kWh)", kWh, 7, 0.7);
         ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
 
         for (int i = 0; i < 7; i++) {
@@ -267,30 +283,28 @@ void plotNestTable(
     //  on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    // const ImVec4& able_col = ImVec4(0.9, 0.7, 0, 1);
+    double        sum_of_usage;
 
-    double      sum_of_usage;
-
-    std::string timePeriod;
+    std::string   timePeriod;
 
     switch (m_d_w) {
     case 0:
         sum_of_usage = month_value;
-        timePeriod   = "Relative Usage current month";
+        timePeriod   = "Relative Usage Current Month";
         break;
     case 1:
         sum_of_usage = week_value;
-        timePeriod   = "Relative Usage current week";
+        timePeriod   = "Relative Usage Current Week";
         break;
     case 2:
         sum_of_usage = day_value;
-        timePeriod   = "Relative Usage current day";
+        timePeriod   = "Relative Usage Current Day";
         break;
     default:
         break;
     }
 
-    if (ImGui::BeginTable("Devices table", 4, tableFlags, ImVec2(-1, 0))) {
+    if (ImGui::BeginTable("Devices Table", 4, tableFlags, ImVec2(-1, 0))) {
         ImGui::TableSetupColumn("Device", ImGuiTableColumnFlags_WidthFixed, 200.0f);
         ImGui::TableSetupColumn("On/Off", ImGuiTableColumnFlags_WidthFixed, 50.0f);
         ImGui::TableSetupColumn("Apparent Power [VA]", ImGuiTableColumnFlags_WidthFixed, 150.0f);
@@ -356,16 +370,10 @@ void plotNestTable(
 }
 
 void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
-    printf("Ploting Table, init %d\n", powerUsage.init);
-    static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    ImGuiWindow           *window     = ImGui::GetCurrentWindow();
-    ImGuiContext          &g          = *GImGui;
-    const ImGuiStyle      &style      = g.Style;
+    ImGuiContext     &g     = *GImGui;
+    const ImGuiStyle &style = g.Style;
 
-    //  off
-    const ImVec4 &disable_col = style.Colors[ImGuiCol_TextDisabled];
-
-    //  on
+    // on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
     int           rest     = 0;
     int           len      = 0;
@@ -454,7 +462,6 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
             if (signals[i].signalName.find("phi") != std::string::npos) {
                 ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
             }
-            // ImPlot::PushStyleColor(ImPlotCol_Line, col);
             ImPlot::PlotLine((signals[i].signalName).c_str(),
                     &signals[i].data[0].x,
                     &signals[i].data[0].y,
@@ -464,9 +471,10 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
                     2 * sizeof(double));
 
             // Add tags with signal value
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            DataPoint lastPoint = signals[i].data.back();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            DataPoint   lastPoint = signals[i].data.back();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 2);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
             ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
         }
     }
@@ -477,6 +485,7 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
     ImPlot::SetupAxes("", "mains frequency (Hz)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
@@ -485,6 +494,14 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
     ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
+
+    // color axis
+    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
+
+    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
+    axis_Y1.ColorTxt    = blue;
+    axis_Y1.ColorTick   = blue;
+
     for (const auto &signal : signals) {
         if (!signal.data.empty()) {
             int offset = 0;
@@ -500,14 +517,16 @@ void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Inte
                     2 * sizeof(double));
 
             // Add tags with signal value
-            DataPoint lastPoint = signal.data.back();
-            ImVec4    col       = ImPlot::GetLastItemColor();
-            ImPlot::TagY(lastPoint.y, col, "%2f", lastPoint.y);
+            DataPoint   lastPoint = signal.data.back();
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 3);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
         }
     }
 }
 
-void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, const bool violation, ImFont *fontawesome) {
+void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, ImFont *fontawesome) {
+    bool                     violation   = false;
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
@@ -517,10 +536,38 @@ void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limiti
     ImPlot::SetupLegend(legendLoc, legendFlags);
     plotSignals(signals);
     plotSignals(limitingCurve);
+    if (limitingCurve.size() == 1) {
+        violation = violatesLimitingCurve(limitingCurve[0], signals);
+    }
     if (violation) {
-        addPlotNotice("error: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
-        addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
-        addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, { 0, 0, 1.0, 1.0 }, { 0.15, 0.45 });
+        addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1.0, 0, 0, 1.0 }, { 0.15, 0.05 });
+        // addPlotNotice("warning: pulsed power limits exceeded!", fontawesome, ICON_FA_TRIANGLE_EXCLAMATION, { 1, 0.5, 0, 1.0 }, { 0.15, 0.25 });
+        // addPlotNotice("info: pulsed power limits exceeded!", fontawesome, ICON_FA_CIRCLE_QUESTION, { 0, 0, 1.0, 1.0 }, { 0.15, 0.45 });
+    }
+}
+
+void plotUsageTable(std::vector<double> powerUsages) {
+    ImGui::TableSetupColumn("Signal", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+    ImGui::TableSetupColumn("Usage", ImGuiTableColumnFlags_WidthStretch, 200.0f);
+    ImGui::TableHeadersRow();
+    if (powerUsages.size() >= 2) {
+        ImGui::TableNextRow();
+        // Active power P
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Active Power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("P");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kWh", powerUsages[0]);
+        ImGui::TableNextRow();
+        // Apparent power S
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Apparent Power");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("S");
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%2f kVAh", powerUsages[1]);
     }
 }
 

@@ -89,7 +89,7 @@ PowerIntegrator::PowerIntegrator(const size_t amount_of_devices, const std::stri
     fmt::print("\tcurrent path {0}\n", std::filesystem::current_path());
 
     if (!create_directory(data_path)) {
-        fmt::print("Can not create or open {}\n", data_path);
+        fmt::print("Cannot create or open {}\n", data_path);
     }
 
     // init usage day, week, month
@@ -175,7 +175,6 @@ bool PowerIntegrator::create_directory(std::string directory_path) {
 }
 
 void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
-    // fmt::print("Integrator: Update\n");
     if (timestamp == 0) return;
 
     if (last_timestamp == timestamp) return;
@@ -247,7 +246,7 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
     _counter++;
 
     if (_counter == _save_interval) {
-        fmt::print("Save data form Integrator\n");
+        fmt::print("Save data from integrator\n");
         fmt::print("Save month data\n");
         save_month_usage();
         fmt::print("Save week and day data\n");
@@ -276,9 +275,7 @@ float PowerIntegrator::calculate_usage(int64_t t_0, float last_value, int64_t t_
 }
 
 bool PowerIntegrator::read_values_from_file() {
-    std::string file_path = _data_path + file_values;
-    // fmt::print("read_values_from_file, data_path: {0}\n", file_path);
-
+    std::string        file_path = _data_path + file_values;
     std::ifstream      values_file(file_path.c_str(), std::ios_base::in);
 
     std::vector<float> previous_values    = {};
@@ -416,7 +413,7 @@ void PowerIntegrator::save_values_to_file() {
     output_file.open(file_path);
     output_file << last_timestamp << std::endl;
 
-    // optimalization possibility - table with iterators
+    // optimization possibility -> table with iterators
 
     // save values from last week
     for (size_t j = 0; j < _timestamps_week.size(); j++) {
