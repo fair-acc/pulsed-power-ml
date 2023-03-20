@@ -474,10 +474,12 @@ def add_pca_plot(ax: matplotlib.axis.Axis,
     # Check data
 
     # check for nans in feature_array
-    assert np.isnan(feature_array).any() is False, 'Found nan in feature array!'
+    assert np.isnan(feature_array).any() == False, 'Found nan in feature array!'
 
     # check that feature array and label array have the same length
     assert len(feature_array) == len(label_array), 'Feature array and label array do not have the same length!'
+
+
 
     # scale input
     if use_scaler is True:
