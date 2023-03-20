@@ -14,11 +14,7 @@
 namespace gr {
 namespace pulsed_power {
 
-enum INTEGRATION_DURATION {
-    DAY,
-    WEEK,
-    MONTH
-};
+enum INTEGRATION_DURATION { DAY, WEEK, MONTH };
 
 /*!
  * \brief <+description of block+>
