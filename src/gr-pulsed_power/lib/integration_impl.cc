@@ -15,7 +15,8 @@ namespace pulsed_power {
 
 using input_type = float;
 using output_type = float;
-integration::sptr integration::make(int decimation, int sample_rate, INTEGRATION_DURATION duration)
+integration::sptr
+integration::make(int decimation, int sample_rate, INTEGRATION_DURATION duration)
 {
     return gnuradio::make_block_sptr<integration_impl>(decimation, sample_rate, duration);
 }
@@ -24,17 +25,22 @@ integration::sptr integration::make(int decimation, int sample_rate, INTEGRATION
 /*
  * The private constructor
  */
-integration_impl::integration_impl(int decimation, int sample_rate, INTEGRATION_DURATION duration)
+integration_impl::integration_impl(int decimation,
+                                   int sample_rate,
+                                   INTEGRATION_DURATION duration)
     : gr::sync_decimator("integration",
                          gr::io_signature::make(
                              1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                          gr::io_signature::make(1 /* min outputs */,
                                                 1 /*max outputs */,
                                                 sizeof(output_type)),
-                         decimation), d_step_size(1.0 / sample_rate), d_decimation(decimation), d_last_value(0.0), d_sum(0.0)
+                         decimation),
+      d_step_size(1.0 / sample_rate),
+      d_decimation(decimation),
+      d_last_value(0.0),
+      d_sum(0.0)
 {
-    switch (duration)
-    {
+    switch (duration) {
     case INTEGRATION_DURATION::DAY:
         d_duration = 24;
         break;
