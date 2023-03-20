@@ -246,7 +246,7 @@ void plotBarchart(std::vector<double> &day_values) {
         ImPlot::SetupAxesLimits(-0.5, 6.5, 0, max_element + plot_buffer, ImGuiCond_Always);
         ImPlot::SetupAxes("Day", "kWh");
         ImPlot::SetupAxisTicks(ImAxis_X1, positions, 7, labels);
-        ImPlot::PlotBars("Usage Over Last 6 Days (kWh)", kWh, 7, 0.7);
+        ImPlot::PlotBars("Usage Over Last 7 Days (kWh)", kWh, 7, 0.7);
         ImPlot::PlotBars("Usage Today (kWh)", kWhToday, 7, 0.7);
 
         for (int i = 0; i < 7; i++) {
@@ -262,13 +262,11 @@ void plotBarchart(std::vector<double> &day_values) {
 }
 
 void plotNestTable(
-        PowerUsage &powerUsage,
-        int         offset,
-        int         len,
-        int         m_d_w,
-        double      month_value = 0,
-        double      week_value  = 0,
-        double      day_value   = 0) {
+        PowerUsage  &powerUsage,
+        int          offset,
+        int          len,
+        DataInterval m_d_w,
+        double       integratedValue = 0) {
     static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
     ImDrawList            *draw_list  = ImGui::GetWindowDrawList();
@@ -283,22 +281,17 @@ void plotNestTable(
     //  on
     const ImVec4 &able_col = style.Colors[ImGuiCol_PlotHistogram];
 
-    double        sum_of_usage;
-
     std::string   timePeriod;
 
     switch (m_d_w) {
-    case 0:
-        sum_of_usage = month_value;
-        timePeriod   = "Relative Usage Current Month";
+    case Long:
+        timePeriod = "Relative Usage Current Month";
         break;
-    case 1:
-        sum_of_usage = week_value;
-        timePeriod   = "Relative Usage Current Week";
+    case Mid:
+        timePeriod = "Relative Usage Current Week";
         break;
-    case 2:
-        sum_of_usage = day_value;
-        timePeriod   = "Relative Usage Current Day";
+    case Short:
+        timePeriod = "Relative Usage Current Day";
         break;
     default:
         break;
@@ -338,24 +331,24 @@ void plotNestTable(
                 switch (m_d_w) {
                 case 0:
                     if (row < powerUsage.powerUsagesMonth.size()) {
-                        if (sum_of_usage > 0) {
-                            relative = powerUsage.powerUsagesMonth[row] / sum_of_usage;
+                        if (integratedValue > 0) {
+                            relative = powerUsage.powerUsagesMonth[row] / integratedValue;
                         }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
                 case 1:
                     if (row < powerUsage.powerUsagesWeek.size()) {
-                        if (sum_of_usage > 0) {
-                            relative = powerUsage.powerUsagesWeek[row] / sum_of_usage;
+                        if (integratedValue > 0) {
+                            relative = powerUsage.powerUsagesWeek[row] / integratedValue;
                         }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
                 case 2:
                     if (row < powerUsage.powerUsagesDay.size()) {
-                        if (sum_of_usage > 0) {
-                            relative = powerUsage.powerUsagesDay[row] / sum_of_usage;
+                        if (integratedValue > 0) {
+                            relative = powerUsage.powerUsagesDay[row] / integratedValue;
                         }
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
@@ -369,7 +362,7 @@ void plotNestTable(
     }
 }
 
-void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double week_value = 0, double day_value = 0) {
+void plotTable(PowerUsage &powerUsage, DataInterval m_d_w, double integratedValue = 0) {
     ImGuiContext     &g     = *GImGui;
     const ImGuiStyle &style = g.Style;
 
@@ -386,9 +379,9 @@ void plotTable(PowerUsage &powerUsage, int m_d_w, double month_value = 0, double
 
     if (ImGui::BeginTable("table_nested", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody)) {
         ImGui::TableNextColumn();
-        plotNestTable(powerUsage, 0, len + rest, m_d_w, month_value, week_value, day_value);
+        plotNestTable(powerUsage, 0, len + rest, m_d_w, integratedValue);
         ImGui::TableNextColumn();
-        plotNestTable(powerUsage, len + rest, len, m_d_w, month_value, week_value, day_value);
+        plotNestTable(powerUsage, len + rest, len, m_d_w, integratedValue);
         ImGui::EndTable();
     }
 

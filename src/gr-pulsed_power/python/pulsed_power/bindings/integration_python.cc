@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(integration.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(4b0f2affe86c6c529acd8a5f154146fc)                     */
+/* BINDTOOL_HEADER_FILE_HASH(b721a35f6ec2ad7ef9f7961cb714bf10)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -60,4 +60,12 @@ void bind_integration(py::module& m)
              D(integration, add_new_steps))
 
         ;
+
+    py::enum_<::gr::pulsed_power::INTEGRATION_DURATION>(m, "INTEGRATION_DURATION")
+        .value("DAY", ::gr::pulsed_power::INTEGRATION_DURATION::DAY)     // 0
+        .value("WEEK", ::gr::pulsed_power::INTEGRATION_DURATION::WEEK)   // 1
+        .value("MONTH", ::gr::pulsed_power::INTEGRATION_DURATION::MONTH) // 2
+        .export_values();
+
+    py::implicitly_convertible<int, ::gr::pulsed_power::INTEGRATION_DURATION>();
 }
