@@ -30,6 +30,7 @@ public:
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage;
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain;
     std::vector<Subscription<RealPowerUsage>> subscriptionsRealPowerUsage;
+    Plotter::DataInterval                     Interval;
 
     struct AppFonts {
         ImFont *title;
@@ -38,11 +39,14 @@ public:
     };
     AppState::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<PowerUsage>> &_powerUsages, std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain,
-            std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage) {
+    AppState(std::vector<Subscription<PowerUsage>>    &_powerUsages,
+            std::vector<Subscription<Acquisition>>    &_subscriptionsTimeDomain,
+            std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage,
+            Plotter::DataInterval                      _Interval) {
         this->subscriptionsPowerUsage     = _powerUsages;
         this->subscriptionsTimeDomain     = _subscriptionsTimeDomain;
         this->subscriptionsRealPowerUsage = _subscriptionRealPowerUsage;
+        this->Interval                    = _Interval;
     }
 };
 
@@ -58,9 +62,27 @@ static void main_loop(void *);
 
 int         main(int argc, char **argv) {
     // Set color theme via query parameters of url
-    ColorTheme ColorTheme = Light;
+    Plotter::DataInterval Interval   = Plotter::Short;
+    std::string           sampRate   = "100Hz";
+    float                 updateFreq = 25.0f;
+    ColorTheme            ColorTheme = Light;
     for (int i = 0; i < argc; i++) {
         std::string arg = argv[i];
+        if (arg.find("interval") != std::string::npos) {
+            if (arg.find("short") != std::string::npos) {
+                Interval   = Plotter::Short;
+                sampRate   = "100Hz";
+                updateFreq = 25.0f;
+            } else if (arg.find("mid") != std::string::npos) {
+                Interval   = Plotter::Mid;
+                sampRate   = "1Hz";
+                updateFreq = 1.0f;
+            } else if (arg.find("long") != std::string::npos) {
+                Interval   = Plotter::Long;
+                sampRate   = "0.016666668Hz";
+                updateFreq = 0.1f;
+            }
+        }
         if (arg.find("color") != std::string::npos) {
             if (arg.find("light") != std::string::npos) {
                 ColorTheme = Light;
@@ -70,16 +92,14 @@ int         main(int argc, char **argv) {
         }
     }
 
-    float                                     updateFreq = 25.0f;
     Subscription<PowerUsage>                  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
-    Subscription<RealPowerUsage>              integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@100Hz", "S_Int@100Hz" }, updateFreq);
-    Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=",
-                                    { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
+    Subscription<RealPowerUsage>              integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
+    Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
 
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
     std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { integratedValues };
-    AppState                                  appState(subscriptionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage);
+    AppState                                  appState(subscriptionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -170,6 +190,7 @@ static void main_loop(void *arg) {
     std::vector<Subscription<PowerUsage>>     &subscriptionsPowerUsages     = args->subscriptionsPowerUsage;
     std::vector<Subscription<Acquisition>>    &subscriptionsTimeDomain      = args->subscriptionsTimeDomain;
     std::vector<Subscription<RealPowerUsage>> &subscriptionsRealPowerUsages = args->subscriptionsRealPowerUsage;
+    Plotter::DataInterval                     &Interval                     = args->Interval;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool show_demo_window = false;
@@ -207,16 +228,11 @@ static void main_loop(void *arg) {
             realPower.fetch();
         }
 
-        RealPowerUsage realPowerUsage     = subscriptionsRealPowerUsages[0].acquisition;
+        RealPowerUsage      realPowerUsage      = subscriptionsRealPowerUsages[0].acquisition;
+        double              integratedValue     = realPowerUsage.realPowerUsages[1];
 
-        double         integratedValueDay = realPowerUsage.realPowerUsages[1];
-        // in Progress - Week and Month values
-        double              integratedValueWeek  = integratedValueDay;
-        double              integratedValueMonth = integratedValueDay;
-
-        std::vector<double> day_values           = { 0, 0, 0, 0, 0, 0, integratedValueDay };
-
-        PowerUsage          powerUsageValues     = subscriptionsPowerUsages[0].acquisition;
+        std::vector<double> powerUsageOfDevices = { 0, 0, 0, 0, 0, 0, integratedValue };
+        PowerUsage          powerUsageValues    = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -224,11 +240,9 @@ static void main_loop(void *arg) {
 
         app_header::draw_header_bar("Non-Intrusive Load Monitoring", args->fonts.title);
 
-        static ImPlotSubplotFlags flags = ImPlotSubplotFlags_NoTitle;
-        static int                rows  = 1;
-        static int                cols  = 2;
-
-        std::string               output_symbol;
+        static ImPlotSubplotFlags flags      = ImPlotSubplotFlags_NoTitle;
+        static int                rows       = 1;
+        static int                cols       = 2;
 
         static ImGuiTableFlags    tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_NoBordersInBody;
 
@@ -241,29 +255,17 @@ static void main_loop(void *arg) {
             ImGui::EndTable();
         }
 
-        const char *items[]      = { "month", "week", "day" };
-        static int  item_current = 0;
-
-        // subplots
         if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, 400), flags)) {
+            // Power plot
             if (ImPlot::BeginPlot("Power")) {
-                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers);
+                Plotter::plotPower(subscriptionsTimeDomain[0].acquisition.buffers, Interval);
                 ImPlot::EndPlot();
             }
 
-            Plotter::plotBarchart(day_values);
+            // Barchart for usage of the last 7 days
+            Plotter::plotBarchart(powerUsageOfDevices);
 
             ImPlot::EndSubplots();
-        }
-
-        if (ImGui::BeginTable("ComboTime", 2, tableFlags, ImVec2(-1, 0))) {
-            ImGui::TableSetupColumn("time", ImGuiTableColumnFlags_WidthFixed, 400.0f);
-            ImGui::TableSetupColumn("empty");
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-            ImGui::Combo("month/week/day", &item_current, items, IM_ARRAYSIZE(items));
-            ImGui::EndTable();
         }
 
         ImGui::Spacing();
@@ -271,15 +273,15 @@ static void main_loop(void *arg) {
         if (realPowerUsage.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));
 
-            if (item_current == 0) {
+            if (Interval == Plotter::Long) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current month\n",
-                        ELECTRICY_PRICE * integratedValueMonth, integratedValueMonth);
-            } else if (item_current == 1) {
+                        ELECTRICY_PRICE * integratedValue, integratedValue);
+            } else if (Interval == Plotter::Mid) {
                 ImGui::Text("EURO %.2f / %.2f kWh used current week\n",
-                        ELECTRICY_PRICE * integratedValueWeek, integratedValueWeek);
+                        ELECTRICY_PRICE * integratedValue, integratedValue);
             } else {
                 ImGui::Text("EURO %.2f / %.2f kWh used today\n",
-                        ELECTRICY_PRICE * integratedValueDay, integratedValueDay);
+                        ELECTRICY_PRICE * integratedValue, integratedValue);
             }
 
             ImGui::PopStyleColor();
@@ -293,14 +295,13 @@ static void main_loop(void *arg) {
                 ImPlot::FormatDate(ImPlotTime::FromDouble(realPowerUsage.deliveryTime), buff, 32, ImPlotDateFmt_DayMoYr, ImPlot::GetStyle().UseISO8601);
                 ImPlot::FormatTime(ImPlotTime::FromDouble(realPowerUsage.deliveryTime), buff_time, 32, ImPlotTimeFmt_HrMinSMs, ImPlot::GetStyle().Use24HourClock);
                 ImGui::TextColored(ImVec4(1, 0.5, 0, 1), "Server not available - Last delivery time %s %s", buff, buff_time);
-                // ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available"); // delivry time?
             }
         } else {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Connection Error\n");
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", "Server not available");
         }
 
-        Plotter::plotTable(powerUsageValues, item_current, integratedValueMonth, integratedValueWeek, integratedValueDay);
+        Plotter::plotTable(powerUsageValues, Interval, integratedValue);
 
         ImGui::End();
     }

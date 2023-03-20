@@ -19,7 +19,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[2] = { 1.0, 1.0 };
     const float* sample = sample_float;
@@ -41,7 +42,8 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[2] = { -1.0, -1.0 };
     const float* sample = sample_float;
@@ -63,7 +65,8 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[1] = { 1.0 };
     const float* sample = sample_float;
@@ -84,7 +87,8 @@ BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) // What happens if there is no sample?
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[0] = {};
     const float* sample = sample_float;
@@ -106,7 +110,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[2] = { 1.0, -1.0 };
     const float* sample = sample_float;
@@ -127,7 +132,8 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     // Create instance
     int sample_rate = 100;
     int decimation = 1;
-    auto integration_block = gr::pulsed_power::integration::make(decimation, sample_rate);
+    auto integration_block = gr::pulsed_power::integration::make(
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
     // Create pointer and samples
     float sample_float[2] = { 0.0, 0.0 };
     const float* sample = sample_float;

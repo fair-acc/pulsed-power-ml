@@ -218,10 +218,10 @@ void power_calc_mul_ph_ff_impl::calc_acc_val_apparent_power(float* out,
                                                             int noutput_items)
 {
     // solve w pythagoras -> same result when calculated with complex values?
-    if (acc_active_power == NULL || acc_reactive_power == NULL) {
+    if (acc_active_power == 0 || acc_reactive_power == 0) {
         return;
     }
-    if (acc_active_power[0] == NULL || acc_reactive_power[0] == NULL) {
+    if (acc_active_power[0] == 0 || acc_reactive_power[0] == 0) {
         return;
     }
     for (int i = 0; i < noutput_items; i++) {

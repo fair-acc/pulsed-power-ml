@@ -283,8 +283,12 @@ public:
 
         auto calc_mains_frequency          = gr::pulsed_power::mains_frequency_calc::make(source_samp_rate, -100.0f, 100.0f);
 
-        auto integrate_S                   = gr::pulsed_power::integration::make(10, 1000);
-        auto integrate_P                   = gr::pulsed_power::integration::make(10, 1000);
+        auto integrate_S_day               = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::DAY);
+        auto integrate_S_week              = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::WEEK);
+        auto integrate_S_month             = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::MONTH);
+        auto integrate_P_day               = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::DAY);
+        auto integrate_P_week              = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::WEEK);
+        auto integrate_P_month             = gr::pulsed_power::integration::make(10, 1000, gr::pulsed_power::INTEGRATION_DURATION::MONTH);
 
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
@@ -440,12 +444,22 @@ public:
                 out_samp_rate_power_longterm);
         opencmw_time_sink_power_longterm->set_max_noutput_items(noutput_items);
 
-        // Integral sink
+        // Integral sinks
         auto opencmw_time_sink_int_shortterm = gr::pulsed_power::opencmw_time_sink::make(
                 { "P_Int", "S_Int" },
-                { "", "Wh" },
+                { "Wh", "VAh" },
                 out_samp_rate_power_shortterm);
         opencmw_time_sink_int_shortterm->set_max_noutput_items(noutput_items);
+        auto opencmw_time_sink_int_midterm = gr::pulsed_power::opencmw_time_sink::make(
+                { "P_Int", "S_Int" },
+                { "Wh", "VAh" },
+                out_samp_rate_power_midterm);
+        opencmw_time_sink_int_midterm->set_max_noutput_items(noutput_items);
+        auto opencmw_time_sink_int_longterm = gr::pulsed_power::opencmw_time_sink::make(
+                { "P_Int", "S_Int" },
+                { "Wh", "VAh" },
+                out_samp_rate_power_longterm);
+        opencmw_time_sink_int_longterm->set_max_noutput_items(noutput_items);
 
         // Statistic sinks
         auto opencmw_time_sink_power_stats_shortterm = gr::pulsed_power::opencmw_time_sink::make(
@@ -567,10 +581,18 @@ public:
         top->hier_block2::connect(out_decimation_s_longterm, 0, opencmw_time_sink_power_longterm, 2);   // S long-term
         top->hier_block2::connect(out_decimation_phi_longterm, 0, opencmw_time_sink_power_longterm, 3); // phi long-term
         // Integrals
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P, 0);
-        top->hier_block2::connect(integrate_P, 0, opencmw_time_sink_int_shortterm, 0); // int P short-term
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S, 0);
-        top->hier_block2::connect(integrate_S, 0, opencmw_time_sink_int_shortterm, 1); // int S short-term
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_day, 0);
+        top->hier_block2::connect(integrate_P_day, 0, opencmw_time_sink_int_shortterm, 0); // int P day
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_day, 0);
+        top->hier_block2::connect(integrate_S_day, 0, opencmw_time_sink_int_shortterm, 1); // int S day
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_week, 0);
+        top->hier_block2::connect(integrate_P_week, 0, opencmw_time_sink_int_midterm, 0); // int P week
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_week, 0);
+        top->hier_block2::connect(integrate_S_week, 0, opencmw_time_sink_int_midterm, 1); // int S week
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_month, 0);
+        top->hier_block2::connect(integrate_P_month, 0, opencmw_time_sink_int_longterm, 0); // int P month
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_month, 0);
+        top->hier_block2::connect(integrate_S_month, 0, opencmw_time_sink_int_longterm, 1); // int S month
         // Statistics
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_shortterm, 0);
