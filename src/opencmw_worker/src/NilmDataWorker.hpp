@@ -198,7 +198,8 @@ private:
 
                 } else {
                     // error writing into RingBuffer
-                    nitems = 0;
+                    // nitems = 0;
+                    std::cout << "Error writing to ringbuffer" << std::endl;
                 }
             }
         }
