@@ -27,7 +27,7 @@ def random_label_array(n_classes=N_CLASSES, n_data_points=N_DATA_POINTS):
 @pytest.fixture
 def random_feature_array_with_nan(random_feature_array):
     nan_feature_array = copy.deepcopy(random_feature_array)
-    nan_feature_array[42, 42] = np.nan
+    nan_feature_array[0, 0] = np.nan
     return nan_feature_array
 
 
