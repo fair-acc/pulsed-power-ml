@@ -80,15 +80,17 @@ An example of this models performance can be seen here:
 
 ## 4 Prerequisites <a name="prerequisites"></a>
 
-Make sure you have the following installed:
+Details for setup, configuration and versions used for this project are described in the [CI workflow](.github/workflows/ci_pulsed_power_monitoring.yml).
 
+According to the CI workflow, make sure you have the following installed:
+
+- Ubuntu ([CI config](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L26-L28))
+- GCC ([CI config](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L50-L54))
+- TensorFlow ([CI config](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L73-L88))
+- Picoscope dependencies ([CI config](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L91-L97))
+- GNU Radio and dependencies ([CI config](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L100-L108))
 - Emscripten from https://emscripten.org/docs/getting_started/downloads.html
-- Tensorflow C from https://www.tensorflow.org/install/lang_c
-  - You might need to set the enviromnet variables as described in https://www.tensorflow.org/install/lang_c
-- Install cppflow from https://github.com/serizba/cppflow
-- Some dependencies (openssl, zlib) are assumed to be installed system wide such that the opencmw project can access them with find_package.
-
-Further details for setup, configuration and versions used for this project can be found in the [CI workflow](.github/workflows/ci_pulsed_power_monitoring.yml).
+  (the supported version can be found [here](https://github.com/fair-acc/pulsed-power-ml/blob/develop/.github/workflows/ci_pulsed_power_monitoring.yml#L169))
 
 ## 5 Usage <a name="usage"></a>
 
