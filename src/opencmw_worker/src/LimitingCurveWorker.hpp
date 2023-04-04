@@ -52,7 +52,7 @@ public:
     template<typename BrokerType>
     explicit LimitingCurveWorker(const BrokerType &broker)
         : super_t(broker, {}) {
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             while (!_shutdownRequested) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(40));
                 TestContext context;
@@ -60,7 +60,7 @@ public:
                 LimitingCurve reply = _limitingCurve;
                 super_t::notify("limitingCurve", context, reply);
             }
-        });
+        });*/
         super_t::setCallback([this](RequestContext &rawCtx, const TestContext &,
                                      const Empty &, TestContext &,
                                      LimitingCurve &out) {

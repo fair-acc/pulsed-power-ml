@@ -78,7 +78,7 @@ public:
 
             std::vector<std::string> pqsphi_str{ "P", "Q", "S", "phi" };
             if (signal_names == pqsphi_str && sample_rate == 100.0f) {
-                fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
+                // fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
                 sink->set_callback(std::bind(&NilmDataWorker::handleReceivedTimeDataCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
             }
         }
@@ -92,7 +92,7 @@ public:
 
             std::vector<std::string> uis_str{ "ApparentPowerSpectrumNilm" };
             if (signal_names == uis_str) {
-                fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
+                // fmt::print("NilmDataWorker: name {}, unit {}, rate {}\n", signal_names, signal_units, sample_rate);
                 sink->set_callback(std::bind(&NilmDataWorker::handleReceivedFreqDataCb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
             }
         }
@@ -150,7 +150,7 @@ private:
         std::vector<std::string> pqsphi_str{ "P", "Q", "S", "phi" };
         if (signal_names == pqsphi_str) {
             int64_t timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            fmt::print("NilmDataWorker: Sink {}, {}ms\n", pqsphi_str, timestamp_ms);
+            // fmt::print("NilmDataWorker: Sink {}, {}ms\n", pqsphi_str, timestamp_ms);
 
             std::scoped_lock lock(_timeDataMutex);
             // get last sample for each signal
@@ -171,7 +171,7 @@ private:
         if (signal_names == sui_str) {
             using namespace std::chrono;
             int64_t timestamp_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-            fmt::print("NilmDataWorker: Sink {}, {}ms, vector_size: {}\n", sui_str, timestamp_ms, vector_size);
+            // fmt::print("NilmDataWorker: Sink {}, {}ms, vector_size: {}\n", sui_str, timestamp_ms, vector_size);
 
             for (int64_t k = 0; k < nitems; k++) {
                 auto offset = k * static_cast<int64_t>(vector_size);

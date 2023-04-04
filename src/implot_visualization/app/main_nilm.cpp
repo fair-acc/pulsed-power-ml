@@ -92,9 +92,13 @@ int         main(int argc, char **argv) {
         }
     }
 
-    Subscription<PowerUsage>                  nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
-    Subscription<RealPowerUsage>              integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
-    Subscription<Acquisition>                 powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
+    Subscription<PowerUsage>     nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
+    Subscription<RealPowerUsage> integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@1Hz", "S_Int@1Hz" }, updateFreq);
+    Subscription<Acquisition>    powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
+
+    // Subscription<PowerUsage>                  nilmSubscription("http://10.0.0.2:8081/", { "nilm_predict_values" }, updateFreq);
+    // Subscription<RealPowerUsage>              integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
+    // Subscription<Acquisition>                 powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
 
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };

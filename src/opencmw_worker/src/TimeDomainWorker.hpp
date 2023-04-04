@@ -148,7 +148,7 @@ public:
     explicit TimeDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
@@ -181,7 +181,7 @@ public:
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
-        });
+        });*/
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
         fmt::print("GR: OpenCMW: time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());

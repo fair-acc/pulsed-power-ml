@@ -73,7 +73,7 @@ public:
     explicit FrequencyDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             auto pollingDuration = std::chrono::duration<double, std::milli>();
             while (!_shutdownRequested) {
                 std::chrono::time_point timeStart = std::chrono::system_clock::now();
@@ -103,7 +103,7 @@ public:
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
                 std::this_thread::sleep_for(willSleepFor);
             }
-        });
+        });*/
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalFrequencySinksRegistryMutex);
         fmt::print("GR: number of frequency-domain sinks found: {}\n", gr::pulsed_power::globalFrequencySinksRegistry.size());

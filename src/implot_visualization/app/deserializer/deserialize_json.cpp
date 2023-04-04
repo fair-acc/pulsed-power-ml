@@ -62,7 +62,7 @@ template<typename T>
 IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
     : signalNames(_signalNames) {
     for (auto name : _signalNames) {
-        if (name == "U@10000Hz" || name == "I@10000Hz" || name == "U_bpf@10000Hz" || name == "I_bpf@10000Hz") {
+        if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
             this->buffers.emplace(this->buffers.end(), 600);
         } else {
             this->buffers.emplace(this->buffers.end());
