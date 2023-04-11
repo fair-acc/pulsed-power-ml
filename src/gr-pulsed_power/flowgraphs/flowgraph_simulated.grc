@@ -191,7 +191,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -207,7 +207,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -223,7 +223,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -568,7 +568,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [712, 512.0]
+    coordinate: [824, 1088.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_2_0
@@ -586,7 +586,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [720, 1904.0]
+    coordinate: [808, 1032.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_3
@@ -963,60 +963,6 @@ blocks:
     bus_structure: null
     coordinate: [1716.0, 1232]
     rotation: 270
-    state: true
-- name: blocks_vector_to_stream_0
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1592, 2312.0]
-    rotation: 0
-    state: true
-- name: blocks_vector_to_stream_0_0
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1592, 2200.0]
-    rotation: 0
-    state: true
-- name: blocks_vector_to_stream_0_1
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1592, 2088.0]
-    rotation: 0
     state: true
 - name: bp_decimation
   id: parameter
@@ -1545,7 +1491,7 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Apparent Power
     signal_unit: VA
-    vector_size: '1'
+    vector_size: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -1563,7 +1509,7 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Current
     signal_unit: A
-    vector_size: '1'
+    vector_size: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -1581,7 +1527,7 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Voltage
     signal_unit: V
-    vector_size: '1'
+    vector_size: fft_size
   states:
     bus_sink: false
     bus_source: false
@@ -1613,7 +1559,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
+    num_inputs: '2'
     sample_rate: '1'
     signal_name: S_Int
     signal_unit: Wh
@@ -1621,7 +1567,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2584, 2796.0]
+    coordinate: [2600, 2844.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0
@@ -1732,7 +1678,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
+    num_inputs: '2'
     sample_rate: '1'
     signal_name: S_Int
     signal_unit: Wh
@@ -1740,7 +1686,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2568, 868.0]
+    coordinate: [2568, 908.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_2
@@ -1749,7 +1695,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
+    num_inputs: '2'
     sample_rate: '1'
     signal_name: S_Int
     signal_unit: Wh
@@ -1757,92 +1703,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2576, 1828.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_0_3
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1'
-    signal_name: S_Int
-    signal_unit: Wh
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2568, 956.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_0_4
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1'
-    signal_name: S_Int
-    signal_unit: Wh
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2576, 1916.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_0_5
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1'
-    signal_name: S_Int
-    signal_unit: Wh
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [2584, 2884.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_4
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1000'
-    signal_name: voltage
-    signal_unit: Volt
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [880, 492.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_5
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: out_samp_rate_high
-    signal_name: voltage
-    signal_unit: Volt
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [944, 1156.0]
+    coordinate: [2576, 1876.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5_0
@@ -1902,7 +1763,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
+    num_inputs: '4'
     sample_rate: '1000'
     signal_name: current
     signal_unit: Ampere
@@ -1910,24 +1771,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [896, 1884.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_7_0
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1000'
-    signal_name: current_bpf
-    signal_unit: Ampere
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [944, 1692.0]
+    coordinate: [1024, 1032.0]
     rotation: 0
     state: true
 - name: pulsed_power_power_calc_ff_0
@@ -2164,9 +2008,9 @@ connections:
 - [analog_sig_source_x_0_1_0, '0', blocks_multiply_xx_0_3, '1']
 - [analog_sig_source_x_1_0, '0', blocks_throttle_0, '0']
 - [band_pass_filter_0_0_0, '0', blocks_keep_one_in_n_4, '0']
-- [band_pass_filter_0_0_0, '0', pulsed_power_opencmw_time_sink_5, '0']
+- [band_pass_filter_0_0_0, '0', pulsed_power_opencmw_time_sink_6_0, '2']
 - [band_pass_filter_0_1, '0', blocks_keep_one_in_n_5, '0']
-- [band_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_7_0, '0']
+- [band_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_6_0, '3']
 - [blocks_complex_to_mag_0_0_0, '0', pulsed_power_opencmw_freq_sink_0, '0']
 - [blocks_complex_to_mag_0_0_0_0, '0', pulsed_power_opencmw_freq_sink_0_0, '0']
 - [blocks_complex_to_mag_0_0_0_1, '0', pulsed_power_opencmw_freq_sink_0_1, '0']
@@ -2188,7 +2032,7 @@ connections:
 - [blocks_keep_one_in_n_1_3, '0', pulsed_power_opencmw_time_sink_0_0, '1']
 - [blocks_keep_one_in_n_1_3_0, '0', pulsed_power_opencmw_time_sink_0_0, '2']
 - [blocks_keep_one_in_n_1_3_1, '0', pulsed_power_opencmw_time_sink_0_0, '0']
-- [blocks_keep_one_in_n_2, '0', pulsed_power_opencmw_time_sink_4, '0']
+- [blocks_keep_one_in_n_2, '0', pulsed_power_opencmw_time_sink_6_0, '1']
 - [blocks_keep_one_in_n_2_0, '0', pulsed_power_opencmw_time_sink_6_0, '0']
 - [blocks_keep_one_in_n_3, '0', low_pass_filter_0, '0']
 - [blocks_keep_one_in_n_4, '0', blocks_multiply_xx_0_1_0, '0']
@@ -2220,12 +2064,9 @@ connections:
 - [blocks_throttle_0_0, '0', pulsed_power_mains_frequency_calc_0, '0']
 - [blocks_transcendental_0_0_0, '0', blocks_sub_xx_0_0, '1']
 - [blocks_transcendental_0_1, '0', blocks_sub_xx_0_0, '0']
-- [blocks_vector_to_stream_0, '0', blocks_complex_to_mag_0_0_0, '0']
-- [blocks_vector_to_stream_0_0, '0', blocks_complex_to_mag_0_0_0_0, '0']
-- [blocks_vector_to_stream_0_1, '0', blocks_complex_to_mag_0_0_0_1, '0']
-- [fft_vxx_0_0_0, '0', blocks_vector_to_stream_0, '0']
-- [fft_vxx_0_0_0_0, '0', blocks_vector_to_stream_0_0, '0']
-- [fft_vxx_0_0_0_1, '0', blocks_vector_to_stream_0_1, '0']
+- [fft_vxx_0_0_0, '0', blocks_complex_to_mag_0_0_0, '0']
+- [fft_vxx_0_0_0_0, '0', blocks_complex_to_mag_0_0_0_0, '0']
+- [fft_vxx_0_0_0_1, '0', blocks_complex_to_mag_0_0_0_1, '0']
 - [fft_vxx_0_0_0_2, '0', blocks_multiply_const_vxx_0, '0']
 - [low_pass_filter_0, '0', blocks_stream_to_vector_0_0_0_2, '0']
 - [low_pass_filter_0_1_0_0, '0', blocks_divide_xx_0_0_0, '1']
@@ -2235,9 +2076,9 @@ connections:
 - [pulsed_power_integration_0, '0', pulsed_power_opencmw_time_sink_0, '0']
 - [pulsed_power_integration_0_0, '0', pulsed_power_opencmw_time_sink_0_1, '0']
 - [pulsed_power_integration_0_1, '0', pulsed_power_opencmw_time_sink_0_2, '0']
-- [pulsed_power_integration_0_2, '0', pulsed_power_opencmw_time_sink_0_3, '0']
-- [pulsed_power_integration_0_3, '0', pulsed_power_opencmw_time_sink_0_4, '0']
-- [pulsed_power_integration_0_4, '0', pulsed_power_opencmw_time_sink_0_5, '0']
+- [pulsed_power_integration_0_2, '0', pulsed_power_opencmw_time_sink_0_1, '1']
+- [pulsed_power_integration_0_3, '0', pulsed_power_opencmw_time_sink_0_2, '1']
+- [pulsed_power_integration_0_4, '0', pulsed_power_opencmw_time_sink_0, '1']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0, '0']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0_0, '0']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0_0_0, '0']

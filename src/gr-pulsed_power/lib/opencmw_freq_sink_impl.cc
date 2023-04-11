@@ -78,7 +78,7 @@ int opencmw_freq_sink_impl::work(int noutput_items,
                     _timestamp);
     }
 
-    _timestamp += noutput_items * static_cast<int64_t>(1e9 / _sample_rate);
+    _timestamp += noutput_items * _vector_size * static_cast<int64_t>(1e9 / _sample_rate);
 
     return noutput_items;
 }

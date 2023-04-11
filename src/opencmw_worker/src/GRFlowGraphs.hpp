@@ -484,28 +484,28 @@ public:
         auto frequency_spec_pulsed_power_opencmw_freq_sink = gr::pulsed_power::opencmw_freq_sink::make(
                 { "sinus_fft" },
                 { "W" }, 50, 50, 512);
-        frequency_spec_pulsed_power_opencmw_freq_sink->set_max_noutput_items(noutput_items);
+        frequency_spec_pulsed_power_opencmw_freq_sink->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_U = gr::pulsed_power::opencmw_freq_sink::make(
                 { "VoltageSpectrumNilm" },
                 { "V" },
                 source_samp_rate,
                 bandwidth_nilm,
                 fft_vector_size_nilm);
-        opencmw_freq_sink_nilm_U->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_U->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_I = gr::pulsed_power::opencmw_freq_sink::make(
                 { "CurrentSpectrumNilm" },
                 { "A" },
                 source_samp_rate,
                 bandwidth_nilm,
                 fft_vector_size_nilm);
-        opencmw_freq_sink_nilm_I->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_I->set_max_noutput_items(1);
         auto opencmw_freq_sink_nilm_S = gr::pulsed_power::opencmw_freq_sink::make(
                 { "ApparentPowerSpectrumNilm" },
                 { "VA" },
                 source_samp_rate,
                 bandwidth_nilm,
                 fft_vector_size_nilm);
-        opencmw_freq_sink_nilm_S->set_max_noutput_items(noutput_items);
+        opencmw_freq_sink_nilm_S->set_max_noutput_items(1);
 
         // Connections:
         // signal
