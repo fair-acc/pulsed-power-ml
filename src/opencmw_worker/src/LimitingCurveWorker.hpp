@@ -40,8 +40,8 @@ using namespace opencmw::majordomo;
 template<units::basic_fixed_string ServiceName, typename... Meta>
 class LimitingCurveWorker
     : public Worker<ServiceName, TestContext, Empty, LimitingCurve, Meta...> {
-    std::atomic<bool> _shutdownRequested;
-    std::jthread      _pollingThread;
+    // std::atomic<bool> _shutdownRequested;
+    // std::jthread      _pollingThread;
     // std::chrono::duration<std::chrono::milliseconds> _updateInterval = std::chrono::milliseconds(40);
     LimitingCurve         _limitingCurve;
     static constexpr auto PROPERTY_NAME = std::string_view("testLimitingCurve");
@@ -72,10 +72,10 @@ public:
         });
     }
 
-    ~LimitingCurveWorker() {
-        _shutdownRequested = true;
+    ~LimitingCurveWorker() = default;
+    /*{     _shutdownRequested = true;
         _pollingThread.join();
-    }
+    } */
 };
 
 #endif /* LIMITING_CURVE_WORKER_H */
