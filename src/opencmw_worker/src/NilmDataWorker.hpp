@@ -176,7 +176,7 @@ private:
             for (int64_t k = 0; k < nitems; k++) {
                 auto offset = k * static_cast<int64_t>(vector_size);
 
-                bool result = _nilmDataBuffer->tryPublishEvent([&s, vector_size, offset, nitems, timestamp, this](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
+                bool result = _nilmDataBuffer->tryPublishEvent([&s, vector_size, offset, timestamp, this](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
                     // bufferData.freqData.realPowerMagnitudeValues.assign(p + offset, s + offset + vector_size);
                     // bufferData.freqData.reactivePowerMagnitudeValues.assign(q + offset, s + offset + vector_size);
                     bufferData.freqData.apparentPowerSpectrum.assign(s + offset, s + offset + vector_size);

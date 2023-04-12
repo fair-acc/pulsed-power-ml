@@ -186,9 +186,6 @@ public:
 
                 try {
                     _nilmData.timestamp = std::time(nullptr);
-                    _nilmData.dayUsage.clear();
-                    _nilmData.weekUsage.clear();
-                    _nilmData.monthUsage.clear();
 
                     // fetch AcquisitionNilm from PulsedPowerService
                     auto response = _acquisitionNilmFetcher.get(acquisitionNilm);

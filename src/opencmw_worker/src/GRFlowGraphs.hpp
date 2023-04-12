@@ -225,20 +225,20 @@ public:
         const float out_samp_rate_power_shortterm        = 100.0f;
         const float out_samp_rate_power_midterm          = 1.0f;
         const float out_samp_rate_power_longterm         = 1.0f / 60.0f;
-        int         decimation_out_raw                   = static_cast<int>(source_samp_rate / out_samp_rate_ui);
-        int         decimation_out_bpf                   = static_cast<int>(source_samp_rate / out_samp_rate_ui);
-        int         decimation_out_mains_freq_short_term = static_cast<int>(source_samp_rate / out_samp_rate_power_shortterm);
-        int         decimation_out_mains_freq_mid_term   = static_cast<int>(source_samp_rate / out_samp_rate_power_midterm);
-        int         decimation_out_mains_freq_long_term  = static_cast<int>(source_samp_rate / out_samp_rate_power_longterm);
-        int         decimation_out_short_term            = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_shortterm);
-        int         decimation_out_mid_term              = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_midterm);
-        int         decimation_out_long_term             = static_cast<int>(samp_rate_delta_phi_calc / out_samp_rate_power_longterm);
+        int         decimation_out_raw                   = static_cast<int>(roundf(source_samp_rate / out_samp_rate_ui));
+        int         decimation_out_bpf                   = static_cast<int>(roundf(source_samp_rate / out_samp_rate_ui));
+        int         decimation_out_mains_freq_short_term = static_cast<int>(roundf(source_samp_rate / out_samp_rate_power_shortterm));
+        int         decimation_out_mains_freq_mid_term   = static_cast<int>(roundf(source_samp_rate / out_samp_rate_power_midterm));
+        int         decimation_out_mains_freq_long_term  = static_cast<int>(roundf(source_samp_rate / out_samp_rate_power_longterm));
+        int         decimation_out_short_term            = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_shortterm));
+        int         decimation_out_mid_term              = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_midterm));
+        int         decimation_out_long_term             = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_longterm));
         // parameters band pass filter
-        const int   decimation_bpf            = static_cast<int>(source_samp_rate / out_samp_rate_ui);
+        const int   decimation_bpf            = static_cast<int>(roundf(source_samp_rate / out_samp_rate_ui));
         const float bpf_high_cut              = 80.0f;
         const float bpf_low_cut               = 20.0f;
         const float bpf_trans                 = 1000.0f;
-        const int   decimation_delta_phi_calc = static_cast<int>(out_samp_rate_ui / samp_rate_delta_phi_calc);
+        const int   decimation_delta_phi_calc = static_cast<int>(roundf(out_samp_rate_ui / samp_rate_delta_phi_calc));
         // parameters low pass filter
         const int   decimation_lpf   = 1;
         const float lpf_in_samp_rate = samp_rate_delta_phi_calc;
@@ -443,21 +443,21 @@ public:
         opencmw_time_sink_power_longterm->set_max_noutput_items(noutput_items);
 
         // Integral sinks
-        auto opencmw_time_sink_int_shortterm = gr::pulsed_power::opencmw_time_sink::make(
-                { "P_Int", "S_Int" },
+        auto opencmw_time_sink_int_day = gr::pulsed_power::opencmw_time_sink::make(
+                { "P_Int_Day", "S_Int_Day" },
                 { "Wh", "VAh" },
-                out_samp_rate_power_shortterm);
-        opencmw_time_sink_int_shortterm->set_max_noutput_items(noutput_items);
-        auto opencmw_time_sink_int_midterm = gr::pulsed_power::opencmw_time_sink::make(
-                { "P_Int", "S_Int" },
+                1.0f);
+        opencmw_time_sink_int_day->set_max_noutput_items(noutput_items);
+        auto opencmw_time_sink_int_week = gr::pulsed_power::opencmw_time_sink::make(
+                { "P_Int_Week", "S_Int_Week" },
                 { "Wh", "VAh" },
-                out_samp_rate_power_midterm);
-        opencmw_time_sink_int_midterm->set_max_noutput_items(noutput_items);
-        auto opencmw_time_sink_int_longterm = gr::pulsed_power::opencmw_time_sink::make(
-                { "P_Int", "S_Int" },
+                1.0f);
+        opencmw_time_sink_int_week->set_max_noutput_items(noutput_items);
+        auto opencmw_time_sink_int_month = gr::pulsed_power::opencmw_time_sink::make(
+                { "P_Int_Month", "S_Int_Month" },
                 { "Wh", "VAh" },
-                out_samp_rate_power_longterm);
-        opencmw_time_sink_int_longterm->set_max_noutput_items(noutput_items);
+                1.0f);
+        opencmw_time_sink_int_month->set_max_noutput_items(noutput_items);
 
         // Statistic sinks
         auto opencmw_time_sink_power_stats_shortterm = gr::pulsed_power::opencmw_time_sink::make(
@@ -526,7 +526,7 @@ public:
         top->hier_block2::connect(source_interface_current0, 0, band_pass_filter_current0, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, opencmw_time_sink_signals, 2); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, opencmw_time_sink_signals, 3); // I_bpf
-        // Calculate phase shift
+        //  Calculate phase shift
         top->hier_block2::connect(band_pass_filter_voltage0, 0, decimation_block_voltage_bpf0, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, decimation_block_current_bpf0, 0);
 
@@ -580,17 +580,17 @@ public:
         top->hier_block2::connect(out_decimation_phi_longterm, 0, opencmw_time_sink_power_longterm, 3); // phi long-term
         // Integrals
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_day, 0);
-        top->hier_block2::connect(integrate_P_day, 0, opencmw_time_sink_int_shortterm, 0); // int P day
+        top->hier_block2::connect(integrate_P_day, 0, opencmw_time_sink_int_day, 0); // int P day
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_day, 0);
-        top->hier_block2::connect(integrate_S_day, 0, opencmw_time_sink_int_shortterm, 1); // int S day
+        top->hier_block2::connect(integrate_S_day, 0, opencmw_time_sink_int_day, 1); // int S day
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_week, 0);
-        top->hier_block2::connect(integrate_P_week, 0, opencmw_time_sink_int_midterm, 0); // int P week
+        top->hier_block2::connect(integrate_P_week, 0, opencmw_time_sink_int_week, 0); // int P week
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_week, 0);
-        top->hier_block2::connect(integrate_S_week, 0, opencmw_time_sink_int_midterm, 1); // int S week
+        top->hier_block2::connect(integrate_S_week, 0, opencmw_time_sink_int_week, 1); // int S week
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, integrate_P_month, 0);
-        top->hier_block2::connect(integrate_P_month, 0, opencmw_time_sink_int_longterm, 0); // int P month
+        top->hier_block2::connect(integrate_P_month, 0, opencmw_time_sink_int_month, 0); // int P month
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_month, 0);
-        top->hier_block2::connect(integrate_S_month, 0, opencmw_time_sink_int_longterm, 1); // int S month
+        top->hier_block2::connect(integrate_S_month, 0, opencmw_time_sink_int_month, 1); // int S month
         // Statistics
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_shortterm, 0);

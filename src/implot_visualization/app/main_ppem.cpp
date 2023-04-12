@@ -84,7 +84,7 @@ int         main(int argc, char **argv) {
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
-    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@1Hz", "S_Int@1Hz" }, updateFreq);
+    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month@1Hz", "S_Int_Month@1Hz" }, updateFreq);
 
     // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
     // Subscription<Acquisition>                     powerStatsSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);

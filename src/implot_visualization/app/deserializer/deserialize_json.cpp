@@ -191,7 +191,11 @@ void Acquisition::deserialize() {
     uint64_t            refTrigger_ns      = 0;
     StrideArray         strideArray;
     bool                convertValuesBool = false;
-    auto                json_obj          = json::parse(this->jsonString);
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in Aquisition: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -242,7 +246,11 @@ void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequenc
 void AcquisitionSpectra::deserialize() {
     std::vector<double> channelMagnitudeValues;
     std::vector<double> channelFrequencyValues;
-    auto                json_obj = json::parse(this->jsonString);
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in AquisitionSpectra: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
@@ -277,6 +285,10 @@ PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
     : IAcquisition(_signalNames) {}
 
 void PowerUsage::deserialize() {
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in PowerUsage: " << this->jsonString << std::endl;
+        return;
+    }
     auto json_obj = json::parse(this->jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
@@ -403,8 +415,11 @@ void RealPowerUsage::addPowerUsage(const StrideArray &strideArray) {
 
 void RealPowerUsage::deserialize() {
     StrideArray strideArray;
-
-    auto        json_obj = json::parse(jsonString);
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in RealPowerUasge: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(jsonString);
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
             if (element.value() == 0) {
