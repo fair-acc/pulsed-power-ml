@@ -49,8 +49,8 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class TimeDomainWorker
     : public Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...> {
 private:
-    std::atomic<bool> _shutdownRequested;
-    std::jthread      _pollingThread;
+    // std::atomic<bool> _shutdownRequested;
+    // std::jthread      _pollingThread;
 
     class GRSink {
         struct RingBufferData {
@@ -204,10 +204,10 @@ public:
         });
     }
 
-    ~TimeDomainWorker() {
-        _shutdownRequested = true;
+    ~TimeDomainWorker() = default;
+    /*{    _shutdownRequested = true;
         _pollingThread.join();
-    }
+    }*/
 
 private:
     bool handleGetRequest(const TimeDomainContext &requestContext, Acquisition &out) {

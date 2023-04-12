@@ -49,10 +49,10 @@ template<units::basic_fixed_string ServiceName, typename... Meta>
 class FrequencyDomainWorker
     : public Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    const size_t       RING_BUFFER_SIZE = 512;
-    const std::string  _deviceName;
-    std::atomic<bool>  _shutdownRequested;
-    std::jthread       _pollingThread;
+    const size_t      RING_BUFFER_SIZE = 512;
+    const std::string _deviceName;
+    // std::atomic<bool>  _shutdownRequested;
+    // std::jthread       _pollingThread;
     AcquisitionSpectra _reply;
     struct RingBufferData {
         std::vector<float> chunk;
@@ -129,10 +129,10 @@ public:
         });
     }
 
-    ~FrequencyDomainWorker() {
-        _shutdownRequested = true;
+    ~FrequencyDomainWorker() = default;
+    /*{    _shutdownRequested = true;
         _pollingThread.join();
-    }
+    } */
 
     void callbackCopySinkData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float sample_rate, int64_t timestamp) {
         const float *in                 = static_cast<const float *>(input_items[0]);
