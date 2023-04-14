@@ -49,7 +49,8 @@ static void main_loop(void *);
 int         main(int argc, char **argv) {
     // Read query parameters
     Plotter::DataInterval Interval   = Plotter::Short;
-    std::string           sampRate   = "100Hz";
+    int                   timeRange  = 300;
+    double                sampRate   = 100;
     float                 updateFreq = 25.0f;
     ColorTheme            ColorTheme = Light;
     for (int i = 0; i < argc; i++) {
@@ -57,15 +58,18 @@ int         main(int argc, char **argv) {
         if (arg.find("interval") != std::string::npos) {
             if (arg.find("short") != std::string::npos) {
                 Interval   = Plotter::Short;
-                sampRate   = "100Hz";
+                timeRange  = 300;
+                sampRate   = 100;
                 updateFreq = 25.0f;
             } else if (arg.find("mid") != std::string::npos) {
                 Interval   = Plotter::Mid;
-                sampRate   = "1Hz";
+                timeRange  = 3'600;
+                sampRate   = 1;
                 updateFreq = 1.0f;
             } else if (arg.find("long") != std::string::npos) {
                 Interval   = Plotter::Long;
-                sampRate   = "0.016666668Hz";
+                timeRange  = 86'400;
+                sampRate   = 0.016666668;
                 updateFreq = 0.1f;
             }
         }
@@ -79,19 +83,19 @@ int         main(int argc, char **argv) {
     }
 
     // Setup subscriptions
-    Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
-    Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
-    Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
-    Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
-    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month@1Hz", "S_Int_Month@1Hz" }, updateFreq);
+    Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
+    Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" }, sampRate, timeRange * sampRate, updateFreq);
+    Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq" }, sampRate, timeRange * sampRate, updateFreq);
+    Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft" }, 50, 25 * 50, 1.0f);
+    Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 0, 1250, 1.0f);
+    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month", "S_Int_Month" }, 1, 1, updateFreq);
 
-    // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    // Subscription<Acquisition>                     powerStatsSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
-    // Subscription<Acquisition>                     mainsFreqSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
-    // Subscription<AcquisitionSpectra>              frequencySubscription("http://10.0.0.2:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
-    // Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://10.0.0.2:8080/", { "limiting_curve" }, 1.0f);
-    // Subscription<RealPowerUsage>                  integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
+    // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
+    // Subscription<Acquisition>                     powerStatsSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" }, sampRate, timeRange * sampRate, updateFreq);
+    // Subscription<Acquisition>                     mainsFreqSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq" }, sampRate, timeRange * sampRate, updateFreq);
+    // Subscription<AcquisitionSpectra>              frequencySubscription("http://10.0.0.2:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft" }, 50, 25 * 50, 1.0f);
+    // Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://10.0.0.2:8080/", { "limiting_curve" }, 0, 1250, 1.0f);
+    // Subscription<RealPowerUsage>                  integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month", "S_Int_Month" }, 1, 1, updateFreq);
 
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain    = { signalSubscription, powerStatsSubscription, mainsFreqSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency     = { frequencySubscription, limitingCurveSubscription };

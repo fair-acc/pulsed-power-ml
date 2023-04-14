@@ -59,14 +59,11 @@ template<typename T>
 IAcquisition<T>::IAcquisition() {}
 
 template<typename T>
-IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
+IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames, const int _bufferSize)
     : signalNames(_signalNames) {
+    T buffer(_bufferSize);
     for (auto name : _signalNames) {
-        if (name == "U@1000Hz" || name == "I@1000Hz" || name == "U_bpf@1000Hz" || name == "I_bpf@1000Hz") {
-            this->buffers.emplace(this->buffers.end(), 600);
-        } else {
-            this->buffers.emplace(this->buffers.end());
-        }
+        this->buffers.push_back(buffer);
     }
 }
 
@@ -84,46 +81,6 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
         }
     }
     return true;
-}
-
-bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
-    std::vector<std::string> expectedSignals = { "U@10000Hz", "I@10000Hz", "U_bpf@10000Hz", "I_bpf@10000Hz" };
-    if (receivedSignals.size() != expectedSignals.size()) {
-        return false;
-    }
-    for (int i = 0; i < receivedSignals.size(); i++) {
-        if (receivedSignals[i] != expectedSignals[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-Acquisition::Acquisition() {}
-
-Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {}
-
-void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps, double refTrigger_ns) {
-    double absoluteTimestamp = 0.0;
-    double value             = 0.0;
-    int    stride            = strideArray.dims[1];
-    double refTrigger_s      = refTrigger_ns / std::pow(10, 9);
-
-    // Destride array
-    for (int i = 0; i < strideArray.dims[0]; i++) {
-        this->buffers[i].signalName = this->signalNames[i];
-        int offset                  = i * stride;
-
-        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
-            std::cout << "Invalid dimensions for strided array." << std::endl;
-        }
-        for (int j = 0; j < stride; j++) {
-            absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
-            value             = strideArray.values[offset + j];
-            this->buffers[i].addPoint(absoluteTimestamp, value);
-        }
-    }
 }
 
 StrideArray::StrideArray() {
@@ -156,6 +113,18 @@ void StrideArray::cut(const std::vector<int> newDims) {
     this->values = cutStrideArray.values;
 }
 
+bool Acquisition::receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
+    bool containsCurrent = false;
+    bool containsVoltage = false;
+    for (auto signalName : receivedSignals) {
+        if (signalName.find("I@") != std::string::npos)
+            containsCurrent = true;
+        if (signalName.find("U@") != std::string::npos)
+            containsVoltage = true;
+    }
+    return containsCurrent * containsVoltage;
+}
+
 const ConvertPair convertValues(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps) {
     ConvertPair         ret;
     StrideArray         newStrideArray = strideArray;
@@ -184,6 +153,33 @@ const ConvertPair convertValues(const StrideArray &strideArray, const std::vecto
     ret.referenceTimestamps = 0;
     ret.strideArray         = newStrideArray;
     return ret;
+}
+
+Acquisition::Acquisition() {}
+
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
+
+void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps, double refTrigger_ns) {
+    double absoluteTimestamp = 0.0;
+    double value             = 0.0;
+    int    stride            = strideArray.dims[1];
+    double refTrigger_s      = refTrigger_ns / std::pow(10, 9);
+
+    // Destride array
+    for (int i = 0; i < strideArray.dims[0]; i++) {
+        this->buffers[i].signalName = this->signalNames[i];
+        int offset                  = i * stride;
+
+        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+            std::cout << "Invalid dimensions for strided array." << std::endl;
+        }
+        for (int j = 0; j < stride; j++) {
+            absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
+            value             = strideArray.values[offset + j];
+            this->buffers[i].addPoint(absoluteTimestamp, value);
+        }
+    }
 }
 
 void Acquisition::deserialize() {
@@ -230,11 +226,8 @@ void Acquisition::deserialize() {
 
 AcquisitionSpectra::AcquisitionSpectra() {}
 
-AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-    std::vector<Buffer> _buffer(_signalNames.size());
-    this->buffers = _buffer;
-}
+AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
 
 void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequencyValues, const std::vector<double> &channelMagnitudeValues) {
     for (int i = 0; i < signalNames.size(); i++) {
@@ -281,8 +274,8 @@ void AcquisitionSpectra::deserialize() {
 
 PowerUsage::PowerUsage() {}
 
-PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {}
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
 
 void PowerUsage::deserialize() {
     if (!json::accept(this->jsonString)) {
@@ -390,8 +383,8 @@ void PowerUsage::setSumOfUsageMonth() {
 
 RealPowerUsage::RealPowerUsage() {}
 
-RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
+RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {
     std::vector<double> _realPowerUsages(_signalNames.size());
     this->realPowerUsages = _realPowerUsages;
 }

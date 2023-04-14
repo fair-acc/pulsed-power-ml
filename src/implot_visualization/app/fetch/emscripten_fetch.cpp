@@ -37,16 +37,31 @@ void onDownloadFailed(emscripten_fetch_t *fetch) {
 }
 
 template<typename T>
-Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const float _updateFrequency)
-    : url(_url), requestedSignals(_requestedSignals), updateFrequency(_updateFrequency) {
-    for (std::string str : _requestedSignals) {
-        this->url = this->url + str + ",";
+std::string Subscription<T>::buildSignalString(const std::string name, const double sampRate) {
+    std::string sampRateStr = std::to_string(sampRate);
+    sampRateStr.erase(sampRateStr.find_last_not_of('0') + 1, std::string::npos);
+    sampRateStr.erase(sampRateStr.find_last_not_of('.') + 1, std::string::npos);
+    return name + "@" + sampRateStr + "Hz";
+}
+
+template<typename T>
+Subscription<T>::Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const double _sampRate, const int _bufferSize, const float _updateFrequency)
+    : url(_url), updateFrequency(_updateFrequency) {
+    for (std::string signalName : _requestedSignals) {
+        if (_sampRate == 0) {
+            requestedSignals.push_back(signalName);
+            this->url = this->url + signalName;
+        } else {
+            std::string fullSignalName = buildSignalString(signalName, _sampRate);
+            requestedSignals.push_back(fullSignalName);
+            this->url = this->url + fullSignalName + ",";
+        }
     }
     if (!this->url.empty()) {
         this->url.pop_back();
     }
 
-    T _acquisition(_requestedSignals);
+    T _acquisition(requestedSignals, _bufferSize);
     this->acquisition = _acquisition;
 
     if (url.find("channelNameFilter") != std::string::npos) {
