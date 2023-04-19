@@ -50,7 +50,7 @@ Subscription<T>::Subscription(const std::string &_url, const std::vector<std::st
     for (std::string signalName : _requestedSignals) {
         if (_sampRate == 0) {
             requestedSignals.push_back(signalName);
-            this->url = this->url + signalName;
+            this->url = this->url + signalName + ",";
         } else {
             std::string fullSignalName = buildSignalString(signalName, _sampRate);
             requestedSignals.push_back(fullSignalName);
