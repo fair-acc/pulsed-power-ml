@@ -14,7 +14,7 @@ public:
     bool           fetchFinished   = true;
     bool           fetchSuccessful = false;
 
-    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const float _updateFrequency);
+    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const double _sampRate, const int _bufferSize, const float _updateFrequency);
 
     void fetch();
     void downloadSucceeded(emscripten_fetch_t *fetch);
@@ -27,4 +27,5 @@ private:
     double                   lastFetchTime;
 
     void                     updateUrl();
+    std::string              buildSignalString(const std::string name, const double sampRate);
 };

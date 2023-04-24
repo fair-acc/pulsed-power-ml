@@ -74,7 +74,7 @@ public:
     bool                     success = false;
 
     IAcquisition();
-    IAcquisition(const std::vector<std::string> _signalNames);
+    IAcquisition(const std::vector<std::string> _signalNames, const int _bufferSize = 50'000);
 
     virtual ~IAcquisition()    = default;
 
@@ -87,7 +87,7 @@ protected:
 class Acquisition : public IAcquisition<ScrollingBuffer> {
 public:
     Acquisition();
-    Acquisition(const std::vector<std::string> &_signalNames);
+    Acquisition(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
 
     ~Acquisition(){};
 
@@ -97,12 +97,13 @@ private:
     uint64_t lastRefTrigger = 0;
 
     void     addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamp, double refTrigger_ns);
+    bool     receivedVoltageCurrentData(std::vector<std::string> receivedSignals);
 };
 
 class AcquisitionSpectra : public IAcquisition<Buffer> {
 public:
     AcquisitionSpectra();
-    AcquisitionSpectra(const std::vector<std::string> &_signalNames);
+    AcquisitionSpectra(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
 
     ~AcquisitionSpectra(){};
 
@@ -128,7 +129,7 @@ public:
     double                   kWhUsedWeek  = 0.0;
 
     PowerUsage();
-    PowerUsage(const std::vector<std::string> &_signalNames);
+    PowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
 
     ~PowerUsage(){};
 
@@ -150,7 +151,7 @@ public:
     std::vector<double> realPowerUsages;
 
     RealPowerUsage();
-    RealPowerUsage(const std::vector<std::string> &_signalNames);
+    RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
 
     ~RealPowerUsage(){};
 
