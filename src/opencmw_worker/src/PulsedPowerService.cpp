@@ -95,8 +95,9 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = true;
-    PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
+    bool                 use_picoscope = false;
+    bool                 add_noise     = true;
+    PulsedPowerFlowgraph flowgraph(1024, use_picoscope, add_noise);
     flowgraph.start();
 
     // OpenCMW workers
