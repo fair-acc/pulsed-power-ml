@@ -42,7 +42,7 @@ public:
     static sptr make(int decimation,
                      int sample_rate,
                      INTEGRATION_DURATION duration,
-                     std::string savefilename);
+                     const std::string savefilename);
 
     /*!
      * @brief Calculates the integral of the samples given in Watt

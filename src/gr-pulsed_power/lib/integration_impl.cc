@@ -18,7 +18,7 @@ using output_type = float;
 integration::sptr integration::make(int decimation,
                                     int sample_rate,
                                     INTEGRATION_DURATION duration,
-                                    std::string savefilename)
+                                    const std::string savefilename)
 {
     return gnuradio::make_block_sptr<integration_impl>(
         decimation, sample_rate, duration, savefilename);
@@ -31,7 +31,7 @@ integration::sptr integration::make(int decimation,
 integration_impl::integration_impl(int decimation,
                                    int sample_rate,
                                    INTEGRATION_DURATION duration,
-                                   std::string savefilename)
+                                   const std::string savefilename)
     : gr::sync_decimator("integration",
                          gr::io_signature::make(
                              1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),

@@ -40,7 +40,7 @@ private:
     gr::top_block_sptr top;
 
 public:
-    GRFlowGraph(int noutput_items)
+    explicit GRFlowGraph(int noutput_items)
         : top(gr::make_top_block("GNURadio")) {
         // flowgraph setup
         const float samp_rate = 4'000.0f;

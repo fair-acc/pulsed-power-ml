@@ -69,7 +69,7 @@ private:
 
     public:
         GRSink() = delete;
-        GRSink(gr::pulsed_power::opencmw_time_sink *sink)
+        explicit GRSink(gr::pulsed_power::opencmw_time_sink *sink)
             : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()) {
             _ringBuffer = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
             for (size_t i = 0; i < _channelNames.size(); i++) {
