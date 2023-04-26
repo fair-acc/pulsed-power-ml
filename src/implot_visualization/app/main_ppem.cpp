@@ -48,29 +48,33 @@ static void main_loop(void *);
 
 int         main(int argc, char **argv) {
     // Read query parameters
-    Plotter::DataInterval Interval   = Plotter::Short;
-    int                   timeRange  = 300;
-    double                sampRate   = 100;
-    float                 updateFreq = 25.0f;
-    ColorTheme            ColorTheme = Light;
+    Plotter::DataInterval Interval            = Plotter::Short;
+    int                   timeRange           = 300;
+    double                sampRate            = 100;
+    float                 updateFreq          = 25.0f;
+    std::string           integrationInterval = "Day";
+    ColorTheme            ColorTheme          = Light;
     for (int i = 0; i < argc; i++) {
         std::string arg = argv[i];
         if (arg.find("interval") != std::string::npos) {
             if (arg.find("short") != std::string::npos) {
-                Interval   = Plotter::Short;
-                timeRange  = 300;
-                sampRate   = 100;
-                updateFreq = 25.0f;
+                        Interval            = Plotter::Short;
+                        timeRange           = 300;
+                        sampRate            = 100;
+                        updateFreq          = 25.0f;
+                        integrationInterval = "Day";
             } else if (arg.find("mid") != std::string::npos) {
-                Interval   = Plotter::Mid;
-                timeRange  = 3'600;
-                sampRate   = 1;
-                updateFreq = 1.0f;
+                        Interval            = Plotter::Mid;
+                        timeRange           = 3'600;
+                        sampRate            = 1;
+                        updateFreq          = 1.0f;
+                        integrationInterval = "Week";
             } else if (arg.find("long") != std::string::npos) {
-                Interval   = Plotter::Long;
-                timeRange  = 86'400;
-                sampRate   = 0.016666668;
-                updateFreq = 0.1f;
+                        Interval            = Plotter::Long;
+                        timeRange           = 86'400;
+                        sampRate            = 0.016666668;
+                        updateFreq          = 0.1f;
+                        integrationInterval = "Month";
             }
         }
         if (arg.find("color") != std::string::npos) {
@@ -86,9 +90,9 @@ int         main(int argc, char **argv) {
     Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
     Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" }, sampRate, timeRange * sampRate, updateFreq);
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq" }, sampRate, timeRange * sampRate, updateFreq);
-    Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft" }, 50, 25 * 50, 1.0f);
+    Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft" }, 50, 512, 1.0f);
     Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 0, 1250, 1.0f);
-    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month", "S_Int_Month" }, 1, 1, updateFreq);
+    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval, "S_Int_" + integrationInterval }, 1, 1, updateFreq);
 
     // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
     // Subscription<Acquisition>                     powerStatsSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" }, sampRate, timeRange * sampRate, updateFreq);

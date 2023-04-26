@@ -37,8 +37,12 @@ public:
      * @param decimation Decimation
      * @param sample_rate Sample rate in Hz
      * @param duration The time duration before reset.
+     * @param savefilename The name of the file to save the integrated values.
      */
-    static sptr make(int decimation, int sample_rate, INTEGRATION_DURATION duration);
+    static sptr make(int decimation,
+                     int sample_rate,
+                     INTEGRATION_DURATION duration,
+                     std::string savefilename);
 
     /*!
      * @brief Calculates the integral of the samples given in Watt
