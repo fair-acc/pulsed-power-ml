@@ -47,7 +47,7 @@ enum ColorTheme { Light,
 static void main_loop(void *);
 
 int         main(int argc, char **argv) {
-    // Read query parameters
+            // Read query parameters
     Plotter::DataInterval Interval            = Plotter::Short;
     int                   timeRange           = 300;
     double                sampRate            = 100;
@@ -55,9 +55,9 @@ int         main(int argc, char **argv) {
     std::string           integrationInterval = "Day";
     ColorTheme            ColorTheme          = Light;
     for (int i = 0; i < argc; i++) {
-        std::string arg = argv[i];
-        if (arg.find("interval") != std::string::npos) {
-            if (arg.find("short") != std::string::npos) {
+                std::string arg = argv[i];
+                if (arg.find("interval") != std::string::npos) {
+                    if (arg.find("short") != std::string::npos) {
                         Interval            = Plotter::Short;
                         timeRange           = 300;
                         sampRate            = 100;
@@ -77,11 +77,11 @@ int         main(int argc, char **argv) {
                         integrationInterval = "Month";
             }
         }
-        if (arg.find("color") != std::string::npos) {
-            if (arg.find("light") != std::string::npos) {
-                ColorTheme = Light;
+                if (arg.find("color") != std::string::npos) {
+                    if (arg.find("light") != std::string::npos) {
+                        ColorTheme = Light;
             } else if (arg.find("dark") != std::string::npos) {
-                ColorTheme = Dark;
+                        ColorTheme = Dark;
             }
         }
     }
@@ -108,8 +108,8 @@ int         main(int argc, char **argv) {
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
+                printf("Error: %s\n", SDL_GetError());
+                return -1;
     }
 
     // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
@@ -133,8 +133,8 @@ int         main(int argc, char **argv) {
     appState.window    = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
-        fprintf(stderr, "Failed to initialize WebGL context!\n");
-        return 1;
+                fprintf(stderr, "Failed to initialize WebGL context!\n");
+                return 1;
     }
 
     // Setup Dear ImGui context
@@ -146,7 +146,7 @@ int         main(int argc, char **argv) {
     // Setup Colors
     ImGui::StyleColorsLight();
     if (ColorTheme == Dark) {
-        ImGui::StyleColorsDark();
+                ImGui::StyleColorsDark();
     }
 
     // For an Emscripten build we are disabling file-system access, so let's not
@@ -173,6 +173,10 @@ int         main(int argc, char **argv) {
     // appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
 
     app_header::load_header_assets();
+
+    ImPlot::GetStyle().UseISO8601     = true;
+    ImPlot::GetStyle().UseLocalTime   = true;
+    ImPlot::GetStyle().Use24HourClock = true;
 
     emscripten_set_main_loop_arg(main_loop, &appState, 0, true);
 
