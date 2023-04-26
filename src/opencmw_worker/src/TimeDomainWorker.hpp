@@ -9,6 +9,7 @@
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
 #include <chrono>
+#include <iostream>
 #include <unordered_map>
 
 using opencmw::Annotated;
@@ -64,7 +65,7 @@ private:
         std::string              _channelNameFilter; // signalName1@sampleRate,signalName2@sampleRate...
         float                    _sampleRate = 0;
         ringbuffer_t             _ringBuffer;
-        const size_t             RING_BUFFER_SIZE = 1024;
+        const size_t             RING_BUFFER_SIZE = 512;
 
     public:
         GRSink() = delete;
@@ -105,7 +106,6 @@ private:
                             out.refTriggerStamp = bufData.timestamp;
                             firstChunk          = false;
                         }
-
                         stridedValues.insert(stridedValues.end(), bufData.chunk[i].begin(), bufData.chunk[i].end());
                     }
                 }

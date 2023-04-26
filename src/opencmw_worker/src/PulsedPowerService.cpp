@@ -96,7 +96,7 @@ int main() {
 
     // flowgraph setup
     bool                 use_picoscope = true;
-    PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
+    PulsedPowerFlowgraph flowgraph(256, use_picoscope);
     flowgraph.start();
 
     // OpenCMW workers

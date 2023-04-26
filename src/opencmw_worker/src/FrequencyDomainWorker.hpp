@@ -181,10 +181,10 @@ private:
             for (RingBufferData bufferData : currentValues) {
                 if (bufferData.timestamp > lastRefTrigger) {
                     if (firstTimestamp == 0) {
-                        firstTimestamp = bufferData.timestamp;
+                        firstTimestamp      = bufferData.timestamp;
+                        out.refTriggerStamp = bufferData.timestamp;
                     }
-                    out.refTriggerStamp = bufferData.timestamp;
-                    chunkSize           = bufferData.chunk.size();
+                    chunkSize = bufferData.chunk.size();
                     stridedValues.insert(stridedValues.end(), bufferData.chunk.begin(), bufferData.chunk.end());
                     out.channelMagnitude_dim1_discrete_time_values.push_back(bufferData.timestamp);
                     out.channelTimeSinceRefTrigger.push_back(static_cast<float>(bufferData.timestamp - firstTimestamp) / 1e9f);

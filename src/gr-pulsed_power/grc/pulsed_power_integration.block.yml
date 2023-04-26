@@ -23,6 +23,9 @@ parameters:
     label: Duration
     dtype: INTEGRATION_DURATION
     default: DAY
+  - id: savefilename
+    label: Save File Name
+    default: t.txt
 
 # - id: ...
 #   label: ...
