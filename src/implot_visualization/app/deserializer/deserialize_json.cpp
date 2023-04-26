@@ -192,11 +192,12 @@ void Acquisition::deserialize() {
         return;
     }
     auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
             refTrigger_ns = element.value();
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
@@ -213,15 +214,19 @@ void Acquisition::deserialize() {
             strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
-    if (convertValuesBool) {
-        ConvertPair ret    = convertValues(strideArray, relativeTimestamps);
-        relativeTimestamps = ret.relativeTimestamps;
-        refTrigger_ns      = ret.referenceTimestamps;
-        strideArray        = ret.strideArray;
-    }
     this->lastRefTrigger = refTrigger_ns;
-    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+        if (convertValuesBool) {
+            ConvertPair ret    = convertValues(strideArray, relativeTimestamps);
+            relativeTimestamps = ret.relativeTimestamps;
+            refTrigger_ns      = ret.referenceTimestamps;
+            strideArray        = ret.strideArray;
+        }
+        addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
+    } else {
+        this->lastTimeStamp = this->lastRefTrigger;
+    }
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
@@ -239,17 +244,20 @@ void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequenc
 void AcquisitionSpectra::deserialize() {
     std::vector<double> channelMagnitudeValues;
     std::vector<double> channelFrequencyValues;
+    uint64_t            refTrigger_ns      = 0;
+    std::vector<double> relativeTimestamps = {};
     if (!json::accept(this->jsonString)) {
         std::cout << "Invalid json string in AquisitionSpectra: " << this->jsonString << std::endl;
         return;
     }
     auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
-            this->lastTimeStamp = element.value();
+            refTrigger_ns = element.value();
         } else if (element.key() == "channelName") {
             std::vector<std::string> channelNames = { element.value().get<std::string>() };
             if (!this->receivedRequestedSignals(channelNames)) {
@@ -266,9 +274,15 @@ void AcquisitionSpectra::deserialize() {
             }
         } else if (element.key() == "channelMagnitude_dim2_discrete_freq_values") {
             channelFrequencyValues.assign(element.value().begin(), element.value().end());
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            relativeTimestamps.assign(element.value().begin(), element.value().end());
         }
     }
-
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = refTrigger_ns + relativeTimestamps.back() * 1e9;
+    } else {
+        this->lastTimeStamp = refTrigger_ns;
+    }
     addToBuffers(channelFrequencyValues, channelMagnitudeValues);
 }
 
@@ -283,11 +297,12 @@ void PowerUsage::deserialize() {
         return;
     }
     auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
             this->lastTimeStamp = element.value();
         }
         if (element.key() == "values") {
@@ -407,18 +422,21 @@ void RealPowerUsage::addPowerUsage(const StrideArray &strideArray) {
 }
 
 void RealPowerUsage::deserialize() {
-    StrideArray strideArray;
+    StrideArray         strideArray;
+    uint64_t            refTrigger_ns      = 0;
+    std::vector<double> relativeTimestamps = {};
     if (!json::accept(this->jsonString)) {
         std::cout << "Invalid json string in RealPowerUasge: " << this->jsonString << std::endl;
         return;
     }
     auto json_obj = json::parse(jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
-            this->lastTimeStamp = element.value();
+            refTrigger_ns = element.value();
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested (RealPowerUsage)" << std::endl;
@@ -432,7 +450,14 @@ void RealPowerUsage::deserialize() {
                 strideArray.values = std::vector<double>(element.value()["values"]);
                 addPowerUsage(strideArray);
             }
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            relativeTimestamps.assign(element.value().begin(), element.value().end());
         }
+    }
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = refTrigger_ns + relativeTimestamps.back() * 1e9;
+    } else {
+        this->lastTimeStamp = refTrigger_ns;
     }
 
     this->init         = true;
