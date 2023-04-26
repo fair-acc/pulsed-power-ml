@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
     int sample_rate = 100;
     int decimation = 1;
     auto integration_block = gr::pulsed_power::integration::make(
-        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY);
+        decimation, sample_rate, gr::pulsed_power::INTEGRATION_DURATION::DAY, "test.txt");
     // Create pointer and samples
     float sample_float[1] = { 1.0 };
     const float* sample = sample_float;
