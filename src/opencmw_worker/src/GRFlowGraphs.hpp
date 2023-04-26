@@ -123,7 +123,7 @@ private:
     gr::top_block_sptr top;
 
 public:
-    PulsedPowerFlowgraph(int noutput_items, bool use_picoscope = false)
+    PulsedPowerFlowgraph(int noutput_items, bool use_picoscope = false, bool add_noise = true)
         : top(gr::make_top_block("GNURadio")) {
         float source_samp_rate          = 2'000'000.0f;
         auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
@@ -180,42 +180,73 @@ public:
             top->hier_block2::connect(current0, 0, source_interface_current0, 0);
 
         } else {
-            // blocks
-            auto analog_sig_source_voltage0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
-            auto analog_sig_source_current0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
-            auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f);
+            if (add_noise) {
+                // blocks
+                auto analog_sig_source_voltage0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
+                auto analog_sig_source_current0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+                auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f);
 
-            auto noise_source_current0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
-            auto noise_source_voltage0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 16.25f);
+                auto noise_source_current0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
+                auto noise_source_voltage0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 16.25f);
 
-            auto throttle_voltage0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-            auto throttle_current0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-            auto throttle_freq_modulation          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-            auto throttle_noise_voltage0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-            auto throttle_noise_current0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_voltage0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_current0                 = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_freq_modulation          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_noise_voltage0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_noise_current0           = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
 
-            auto multiply_freq_modulation          = gr::blocks::multiply_ff::make();
+                auto multiply_freq_modulation          = gr::blocks::multiply_ff::make();
 
-            auto add_noise_current0                = gr::blocks::add_ff::make(1);
-            auto add_noise_voltage0                = gr::blocks::add_ff::make(1);
+                auto add_noise_current0                = gr::blocks::add_ff::make(1);
+                auto add_noise_voltage0                = gr::blocks::add_ff::make(1);
 
-            // connections
-            top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
-            top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
-            top->hier_block2::connect(analog_sig_source_freq_modulation, 0, throttle_freq_modulation, 0);
-            top->hier_block2::connect(noise_source_voltage0, 0, throttle_noise_voltage0, 0);
-            top->hier_block2::connect(noise_source_current0, 0, throttle_noise_current0, 0);
-            // multiply frequency modulation
-            top->hier_block2::connect(throttle_current0, 0, multiply_freq_modulation, 0);
-            top->hier_block2::connect(throttle_freq_modulation, 0, multiply_freq_modulation, 1);
-            // add noise
-            top->hier_block2::connect(throttle_voltage0, 0, add_noise_voltage0, 0);
-            top->hier_block2::connect(throttle_noise_voltage0, 0, add_noise_voltage0, 1);
-            top->hier_block2::connect(multiply_freq_modulation, 0, add_noise_current0, 0);
-            top->hier_block2::connect(throttle_noise_current0, 0, add_noise_current0, 1);
-            // connect to interface
-            top->hier_block2::connect(add_noise_voltage0, 0, source_interface_voltage0, 0);
-            top->hier_block2::connect(add_noise_current0, 0, source_interface_current0, 0);
+                // connections
+                top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
+                top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
+                top->hier_block2::connect(analog_sig_source_freq_modulation, 0, throttle_freq_modulation, 0);
+                top->hier_block2::connect(noise_source_voltage0, 0, throttle_noise_voltage0, 0);
+                top->hier_block2::connect(noise_source_current0, 0, throttle_noise_current0, 0);
+                // multiply frequency modulation
+                top->hier_block2::connect(throttle_current0, 0, multiply_freq_modulation, 0);
+                top->hier_block2::connect(throttle_freq_modulation, 0, multiply_freq_modulation, 1);
+                // add noise
+                top->hier_block2::connect(throttle_voltage0, 0, add_noise_voltage0, 0);
+                top->hier_block2::connect(throttle_noise_voltage0, 0, add_noise_voltage0, 1);
+                top->hier_block2::connect(multiply_freq_modulation, 0, add_noise_current0, 0);
+                top->hier_block2::connect(throttle_noise_current0, 0, add_noise_current0, 1);
+                // connect to interface
+                top->hier_block2::connect(add_noise_voltage0, 0, source_interface_voltage0, 0);
+                top->hier_block2::connect(add_noise_current0, 0, source_interface_current0, 0);
+            } else {
+                // blocks
+                auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
+                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+
+                auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_current0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+
+                // connections
+                top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
+                top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
+                // connect to interface
+                top->hier_block2::connect(throttle_voltage0, 0, source_interface_voltage0, 0);
+                top->hier_block2::connect(throttle_current0, 0, source_interface_current0, 0);
+            }
+            if (true) {
+                // blocks
+                auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 5, 1, 0, 0.0f); // U_raw
+                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 5, 1, 0, 0.0f); // I_raw
+
+                auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+                auto throttle_current0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
+
+                // connections
+                top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
+                top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
+                // connect to interface
+                top->hier_block2::connect(throttle_voltage0, 0, source_interface_voltage0, 0);
+                top->hier_block2::connect(throttle_current0, 0, source_interface_current0, 0);
+            }
         }
 
         // parameters
