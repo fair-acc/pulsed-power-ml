@@ -1,5 +1,5 @@
-#include <cmath>
 #include "deserialize_json.h"
+#include <cmath>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -298,13 +298,10 @@ void PowerUsage::deserialize() {
     }
     auto json_obj = json::parse(this->jsonString);
     // empty response
-    if (json_obj["refTriggerStamp"] == 0) {
+    if (json_obj["timestamp"] == 0) {
         return;
     }
     for (auto &element : json_obj.items()) {
-        if (element.key() == "refTriggerStamp") {
-            this->lastTimeStamp = element.value();
-        }
         if (element.key() == "values") {
             this->powerUsages.clear();
             this->powerUsages.assign(element.value().begin(), element.value().end());
