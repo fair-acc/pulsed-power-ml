@@ -97,6 +97,7 @@ int main() {
     // flowgraph setup
     bool                 use_picoscope = false;
     bool                 add_noise     = true;
+
     PulsedPowerFlowgraph flowgraph(256, use_picoscope, add_noise);
     flowgraph.start();
 
