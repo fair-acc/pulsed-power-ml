@@ -96,7 +96,9 @@ int main() {
 
     // flowgraph setup
     bool                 use_picoscope = true;
-    PulsedPowerFlowgraph flowgraph(256, use_picoscope);
+    bool                 add_noise     = true; // adds noise on simulated data - has no effect on picoscope data
+
+    PulsedPowerFlowgraph flowgraph(256, use_picoscope, add_noise);
     flowgraph.start();
 
     // OpenCMW workers
