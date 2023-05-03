@@ -36,7 +36,7 @@ void bind_integration(py::module& m)
     py::class_<integration, gr::sync_decimator, std::shared_ptr<integration>>(
         m, "integration", D(integration))
 
-        .def(py::init(&integration::make),  
+        .def(py::init(&integration::make),
              py::arg("decimation"),
              py::arg("sample_rate"),
              py::arg("duration"),

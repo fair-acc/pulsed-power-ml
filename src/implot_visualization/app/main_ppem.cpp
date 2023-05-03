@@ -47,7 +47,7 @@ enum ColorTheme { Light,
 static void main_loop(void *);
 
 int         main(int argc, char **argv) {
-            // Read query parameters
+    // Read query parameters
     Plotter::DataInterval Interval            = Plotter::Short;
     int                   timeRange           = 300;
     double                sampRate            = 100;
@@ -55,33 +55,33 @@ int         main(int argc, char **argv) {
     std::string           integrationInterval = "Day";
     ColorTheme            ColorTheme          = Light;
     for (int i = 0; i < argc; i++) {
-                std::string arg = argv[i];
-                if (arg.find("interval") != std::string::npos) {
-                    if (arg.find("short") != std::string::npos) {
-                        Interval            = Plotter::Short;
-                        timeRange           = 300;
-                        sampRate            = 100;
-                        updateFreq          = 25.0f;
-                        integrationInterval = "Day";
+        std::string arg = argv[i];
+        if (arg.find("interval") != std::string::npos) {
+            if (arg.find("short") != std::string::npos) {
+                Interval            = Plotter::Short;
+                timeRange           = 300;
+                sampRate            = 100;
+                updateFreq          = 25.0f;
+                integrationInterval = "Day";
             } else if (arg.find("mid") != std::string::npos) {
-                        Interval            = Plotter::Mid;
-                        timeRange           = 3'600;
-                        sampRate            = 1;
-                        updateFreq          = 1.0f;
-                        integrationInterval = "Week";
+                Interval            = Plotter::Mid;
+                timeRange           = 3'600;
+                sampRate            = 1;
+                updateFreq          = 1.0f;
+                integrationInterval = "Week";
             } else if (arg.find("long") != std::string::npos) {
-                        Interval            = Plotter::Long;
-                        timeRange           = 86'400;
-                        sampRate            = 0.016666668;
-                        updateFreq          = 0.1f;
-                        integrationInterval = "Month";
+                Interval            = Plotter::Long;
+                timeRange           = 86'400;
+                sampRate            = 0.016666668;
+                updateFreq          = 0.1f;
+                integrationInterval = "Month";
             }
         }
-                if (arg.find("color") != std::string::npos) {
-                    if (arg.find("light") != std::string::npos) {
-                        ColorTheme = Light;
+        if (arg.find("color") != std::string::npos) {
+            if (arg.find("light") != std::string::npos) {
+                ColorTheme = Light;
             } else if (arg.find("dark") != std::string::npos) {
-                        ColorTheme = Dark;
+                ColorTheme = Dark;
             }
         }
     }
@@ -108,8 +108,8 @@ int         main(int argc, char **argv) {
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-                printf("Error: %s\n", SDL_GetError());
-                return -1;
+        printf("Error: %s\n", SDL_GetError());
+        return -1;
     }
 
     // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
@@ -133,8 +133,8 @@ int         main(int argc, char **argv) {
     appState.window    = SDL_CreateWindow("Pulsed Power Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
-                fprintf(stderr, "Failed to initialize WebGL context!\n");
-                return 1;
+        fprintf(stderr, "Failed to initialize WebGL context!\n");
+        return 1;
     }
 
     // Setup Dear ImGui context
@@ -146,7 +146,7 @@ int         main(int argc, char **argv) {
     // Setup Colors
     ImGui::StyleColorsLight();
     if (ColorTheme == Dark) {
-                ImGui::StyleColorsDark();
+        ImGui::StyleColorsDark();
     }
 
     // For an Emscripten build we are disabling file-system access, so let's not
