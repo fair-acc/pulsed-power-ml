@@ -232,21 +232,6 @@ public:
                 top->hier_block2::connect(throttle_voltage0, 0, source_interface_voltage0, 0);
                 top->hier_block2::connect(throttle_current0, 0, source_interface_current0, 0);
             }
-            if (true) {
-                // blocks
-                auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 5, 1, 0, 0.0f); // U_raw
-                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 5, 1, 0, 0.0f); // I_raw
-
-                auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-                auto throttle_current0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
-
-                // connections
-                top->hier_block2::connect(analog_sig_source_voltage0, 0, throttle_voltage0, 0);
-                top->hier_block2::connect(analog_sig_source_current0, 0, throttle_current0, 0);
-                // connect to interface
-                top->hier_block2::connect(throttle_voltage0, 0, source_interface_voltage0, 0);
-                top->hier_block2::connect(throttle_current0, 0, source_interface_current0, 0);
-            }
         }
 
         // parameters

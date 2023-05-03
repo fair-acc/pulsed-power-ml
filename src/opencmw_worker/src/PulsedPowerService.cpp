@@ -95,8 +95,8 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = false;
-    bool                 add_noise     = true;
+    bool                 use_picoscope = true;
+    bool                 add_noise     = true; // adds noise on simulated data - has no effect on picoscope data
 
     PulsedPowerFlowgraph flowgraph(256, use_picoscope, add_noise);
     flowgraph.start();
