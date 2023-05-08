@@ -95,7 +95,7 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = true;
+    bool                 use_picoscope = false;
     PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
     flowgraph.start();
 
@@ -105,7 +105,7 @@ int main() {
     LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
     NilmDataWorker<"pulsed_power_nilm", description<"Nilm Data Worker">>                                  nilmDataWorker(broker);
 
-    // run workers in separate threads
+    // run workers in separate threads ////runs not found
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
@@ -118,4 +118,4 @@ int main() {
     freqSinkWorkerThread.join();
     limitingCurveWorkerThread.join();
     nilmDataWorkerThread.join();
-}
+};
