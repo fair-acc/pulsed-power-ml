@@ -64,7 +64,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [224, 1060.0]
+    coordinate: [240, 1228.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_0_0_0
@@ -86,7 +86,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [808, 1364.0]
+    coordinate: [824, 1532.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_0_1_0
@@ -108,7 +108,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [808, 1156.0]
+    coordinate: [824, 1324.0]
     rotation: 0
     state: true
 - name: analog_sig_source_x_1_0
@@ -130,7 +130,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [216, 1268.0]
+    coordinate: [232, 1436.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_0_0
@@ -155,7 +155,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [664, 1044.0]
+    coordinate: [680, 1212.0]
     rotation: 0
     state: true
 - name: band_pass_filter_0_1
@@ -180,7 +180,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [664, 1252.0]
+    coordinate: [680, 1420.0]
     rotation: 0
     state: true
 - name: blocks_complex_to_mag_0_0_0
@@ -191,12 +191,12 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1760, 2144.0]
+    coordinate: [1776, 2312.0]
     rotation: 0
     state: enabled
 - name: blocks_complex_to_mag_0_0_0_0
@@ -207,12 +207,12 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1760, 2032.0]
+    coordinate: [1776, 2200.0]
     rotation: 0
     state: enabled
 - name: blocks_complex_to_mag_0_0_0_1
@@ -223,12 +223,12 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    vlen: '1'
+    vlen: fft_size
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1760, 1920.0]
+    coordinate: [1776, 2088.0]
     rotation: 0
     state: enabled
 - name: blocks_complex_to_mag_0_0_0_2
@@ -244,7 +244,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1760, 2276.0]
+    coordinate: [1776, 2444.0]
     rotation: 0
     state: enabled
 - name: blocks_divide_xx_0_0_0
@@ -262,7 +262,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1568, 1384.0]
+    coordinate: [1584, 1552.0]
     rotation: 0
     state: true
 - name: blocks_divide_xx_0_1
@@ -280,7 +280,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1560, 1072.0]
+    coordinate: [1576, 1240.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_0
@@ -291,14 +291,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '2000'
+    n: '20000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [992, 576.0]
+    coordinate: [1008, 744.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_0_0
@@ -309,14 +309,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '200000'
+    n: '2000000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [992, 664.0]
+    coordinate: [1008, 832.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_0_0_0
@@ -327,14 +327,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '12000000'
+    n: '120000000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [992, 752.0]
+    coordinate: [1008, 920.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1
@@ -370,7 +370,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 1616.0]
+    coordinate: [2328, 1784.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_1
@@ -388,7 +388,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 1576.0]
+    coordinate: [2328, 1744.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_1_0
@@ -406,7 +406,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 1536.0]
+    coordinate: [2328, 1704.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_2
@@ -424,7 +424,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 1496.0]
+    coordinate: [2328, 1664.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_2_0
@@ -442,7 +442,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 2288.0]
+    coordinate: [2336, 2632.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_2_0_0
@@ -460,7 +460,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 2328.0]
+    coordinate: [2336, 2672.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_2_0_1
@@ -478,7 +478,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 2408.0]
+    coordinate: [2336, 2752.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_2_0_2
@@ -496,7 +496,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2320, 2368.0]
+    coordinate: [2336, 2712.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_1_3
@@ -561,14 +561,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '200'
+    n: '2000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [696, 344.0]
+    coordinate: [824, 1088.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_2_0
@@ -579,14 +579,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '200'
+    n: '2000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 1736.0]
+    coordinate: [808, 1032.0]
     rotation: 0
     state: true
 - name: blocks_keep_one_in_n_3
@@ -597,14 +597,50 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n: '400'
+    n: '4000'
     type: float
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [824, 2280.0]
+    coordinate: [840, 2448.0]
+    rotation: 0
+    state: true
+- name: blocks_keep_one_in_n_4
+  id: blocks_keep_one_in_n
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '1'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [912, 1272.0]
+    rotation: 0
+    state: true
+- name: blocks_keep_one_in_n_5
+  id: blocks_keep_one_in_n
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '1'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [912, 1480.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_0
@@ -622,7 +658,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1568, 2268.0]
+    coordinate: [1584, 2436.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0
@@ -640,25 +676,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [696, 2128.0]
-    rotation: 0
-    state: enabled
-- name: blocks_multiply_xx_0_0
-  id: blocks_multiply_xx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '2'
-    type: float
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [696, 2264.0]
+    coordinate: [712, 2296.0]
     rotation: 0
     state: enabled
 - name: blocks_multiply_xx_0_0_0
@@ -676,7 +694,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1184, 1344.0]
+    coordinate: [1200, 1512.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_1_0
@@ -694,7 +712,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1184, 1176.0]
+    coordinate: [1200, 1344.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_2_0
@@ -712,7 +730,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1184, 1280.0]
+    coordinate: [1200, 1448.0]
     rotation: 0
     state: true
 - name: blocks_multiply_xx_0_3
@@ -730,7 +748,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1184, 1112.0]
+    coordinate: [1200, 1280.0]
     rotation: 0
     state: true
 - name: blocks_null_sink_0_0_1
@@ -764,7 +782,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2576, 1320.0]
+    coordinate: [2584, 1488.0]
     rotation: 0
     state: true
 - name: blocks_null_sink_0_0_1_1
@@ -781,7 +799,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2568, 2104.0]
+    coordinate: [2584, 2448.0]
     rotation: 0
     state: true
 - name: blocks_stream_to_vector_0_0_0
@@ -799,7 +817,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1152, 2144.0]
+    coordinate: [1168, 2312.0]
     rotation: 0
     state: enabled
 - name: blocks_stream_to_vector_0_0_0_0
@@ -817,7 +835,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1152, 2032.0]
+    coordinate: [1168, 2200.0]
     rotation: 0
     state: enabled
 - name: blocks_stream_to_vector_0_0_0_1
@@ -835,7 +853,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1152, 1920.0]
+    coordinate: [1168, 2088.0]
     rotation: 0
     state: enabled
 - name: blocks_stream_to_vector_0_0_0_2
@@ -853,7 +871,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1152, 2280.0]
+    coordinate: [1168, 2448.0]
     rotation: 0
     state: enabled
 - name: blocks_sub_xx_0_0
@@ -871,7 +889,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1832, 1232.0]
+    coordinate: [1848, 1400.0]
     rotation: 0
     state: enabled
 - name: blocks_throttle_0
@@ -890,7 +908,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [448, 1308.0]
+    coordinate: [464, 1476.0]
     rotation: 0
     state: true
 - name: blocks_throttle_0_0
@@ -909,7 +927,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [440, 1100.0]
+    coordinate: [456, 1268.0]
     rotation: 0
     state: true
 - name: blocks_transcendental_0_0_0
@@ -926,7 +944,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1700.0, 1336]
+    coordinate: [1716.0, 1504]
     rotation: 90
     state: true
 - name: blocks_transcendental_0_1
@@ -943,62 +961,8 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1700.0, 1064]
+    coordinate: [1716.0, 1232]
     rotation: 270
-    state: true
-- name: blocks_vector_to_stream_0
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1576, 2144.0]
-    rotation: 0
-    state: true
-- name: blocks_vector_to_stream_0_0
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1576, 2032.0]
-    rotation: 0
-    state: true
-- name: blocks_vector_to_stream_0_1
-  id: blocks_vector_to_stream
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_items: fft_size
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1576, 1920.0]
-    rotation: 0
     state: true
 - name: bp_decimation
   id: parameter
@@ -1009,7 +973,7 @@ blocks:
     label: band pass decimation
     short_id: ''
     type: intx
-    value: '200'
+    value: '2000'
   states:
     bus_sink: false
     bus_source: false
@@ -1082,7 +1046,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1600, 108.0]
+    coordinate: [1880, 108.0]
     rotation: 0
     state: true
 - name: decimation_mid_term
@@ -1099,7 +1063,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1680, 12.0]
+    coordinate: [1960, 12.0]
     rotation: 0
     state: true
 - name: decimation_short_term
@@ -1116,7 +1080,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1512, 12.0]
+    coordinate: [1792, 12.0]
     rotation: 0
     state: true
 - name: fft_vxx_0_0_0
@@ -1137,7 +1101,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1328, 2108.0]
+    coordinate: [1344, 2276.0]
     rotation: 0
     state: enabled
 - name: fft_vxx_0_0_0_0
@@ -1158,7 +1122,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1328, 1996.0]
+    coordinate: [1344, 2164.0]
     rotation: 0
     state: enabled
 - name: fft_vxx_0_0_0_1
@@ -1179,7 +1143,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1328, 1884.0]
+    coordinate: [1344, 2052.0]
     rotation: 0
     state: enabled
 - name: fft_vxx_0_0_0_2
@@ -1200,7 +1164,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1328, 2244.0]
+    coordinate: [1344, 2412.0]
     rotation: 0
     state: enabled
 - name: in_samp_rate
@@ -1212,7 +1176,7 @@ blocks:
     label: in-coming samp rate
     short_id: ''
     type: eng_float
-    value: '200000'
+    value: '2000000'
   states:
     bus_sink: false
     bus_source: false
@@ -1228,12 +1192,12 @@ blocks:
     beta: '6.76'
     comment: ''
     cutoff_freq: '20'
-    decim: '200'
+    decim: '10'
     gain: '1'
     interp: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
-    samp_rate: in_samp_rate
+    samp_rate: '5000'
     type: fir_filter_fff
     width: '100'
     win: window.WIN_HAMMING
@@ -1241,7 +1205,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [960, 2228.0]
+    coordinate: [976, 2396.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_0_0
@@ -1265,7 +1229,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1344, 1436.0]
+    coordinate: [1360, 1604.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_1_0
@@ -1289,7 +1253,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1344, 1116.0]
+    coordinate: [1360, 1284.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_2_0
@@ -1313,7 +1277,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1344, 1292.0]
+    coordinate: [1360, 1460.0]
     rotation: 0
     state: true
 - name: low_pass_filter_0_1_3
@@ -1337,7 +1301,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1344, 972.0]
+    coordinate: [1360, 1140.0]
     rotation: 0
     state: true
 - name: lp_decimation
@@ -1397,15 +1361,117 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
+<<<<<<< HEAD
     decimation: '10'
     maxoutbuf: '0'
     minoutbuf: '0'
     step_size: 1/in_sample_rate
+=======
+    decimation: '1000'
+    duration: MONTH
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+>>>>>>> inferenceTool
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
+<<<<<<< HEAD
     coordinate: [2312, 2468.0]
+=======
+    coordinate: [2336, 2796.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_integration_0_0
+  id: pulsed_power_integration
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: '1000'
+    duration: DAY
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2320, 868.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_integration_0_1
+  id: pulsed_power_integration
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: '1000'
+    duration: WEEK
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2328, 1828.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_integration_0_2
+  id: pulsed_power_integration
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: '1000'
+    duration: DAY
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2320, 956.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_integration_0_3
+  id: pulsed_power_integration
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: '1000'
+    duration: WEEK
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2328, 1916.0]
+    rotation: 0
+    state: true
+- name: pulsed_power_integration_0_4
+  id: pulsed_power_integration
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decimation: '1000'
+    duration: MONTH
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate_delta_phi_calc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2336, 2884.0]
+>>>>>>> inferenceTool
     rotation: 0
     state: true
 - name: pulsed_power_mains_frequency_calc_0
@@ -1414,7 +1480,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    expected_sample_rate: '200000'
+    expected_sample_rate: in_samp_rate
     high_threshold: '100'
     low_threshold: '-100'
     maxoutbuf: '0'
@@ -1423,7 +1489,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [648, 644.0]
+    coordinate: [664, 812.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_freq_sink_0
@@ -1436,12 +1502,16 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Apparent Power
     signal_unit: VA
+<<<<<<< HEAD
     vector_size: '1'
+=======
+    vector_size: fft_size
+>>>>>>> inferenceTool
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1952, 2124.0]
+    coordinate: [1968, 2292.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_freq_sink_0_0
@@ -1454,12 +1524,16 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Current
     signal_unit: A
+<<<<<<< HEAD
     vector_size: '1'
+=======
+    vector_size: fft_size
+>>>>>>> inferenceTool
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1952, 2012.0]
+    coordinate: [1968, 2180.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_freq_sink_0_1
@@ -1472,12 +1546,16 @@ blocks:
     sample_rate: in_samp_rate
     signal_name: Voltage
     signal_unit: V
+<<<<<<< HEAD
     vector_size: '1'
+=======
+    vector_size: fft_size
+>>>>>>> inferenceTool
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1952, 1900.0]
+    coordinate: [1968, 2068.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_freq_sink_0_2
@@ -1495,7 +1573,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1952, 2260.0]
+    coordinate: [1968, 2428.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0
@@ -1504,15 +1582,19 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
-    sample_rate: '100'
+    num_inputs: '2'
+    sample_rate: '1'
     signal_name: S_Int
     signal_unit: Wh
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
+<<<<<<< HEAD
     coordinate: [2600, 2460.0]
+=======
+    coordinate: [2600, 2844.0]
+>>>>>>> inferenceTool
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0
@@ -1546,7 +1628,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2568, 1504.0]
+    coordinate: [2576, 1672.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0_1_0
@@ -1563,7 +1645,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2568, 2296.0]
+    coordinate: [2584, 2640.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0_2
@@ -1597,7 +1679,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2576, 928.0]
+    coordinate: [2584, 1096.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_0_0_2_1
@@ -1614,41 +1696,41 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2568, 1712.0]
+    coordinate: [2584, 2056.0]
     rotation: 0
     state: true
-- name: pulsed_power_opencmw_time_sink_4
+- name: pulsed_power_opencmw_time_sink_0_1
   id: pulsed_power_opencmw_time_sink
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
-    sample_rate: '1000'
-    signal_name: voltage
-    signal_unit: Volt
+    num_inputs: '2'
+    sample_rate: '1'
+    signal_name: S_Int
+    signal_unit: Wh
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [864, 324.0]
+    coordinate: [2568, 908.0]
     rotation: 0
     state: true
-- name: pulsed_power_opencmw_time_sink_5
+- name: pulsed_power_opencmw_time_sink_0_2
   id: pulsed_power_opencmw_time_sink
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
-    sample_rate: out_samp_rate_high
-    signal_name: voltage
-    signal_unit: Volt
+    num_inputs: '2'
+    sample_rate: '1'
+    signal_name: S_Int
+    signal_unit: Wh
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [928, 988.0]
+    coordinate: [2576, 1876.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5_0
@@ -1665,7 +1747,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 556.0]
+    coordinate: [1192, 724.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5_0_0
@@ -1682,7 +1764,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 644.0]
+    coordinate: [1192, 812.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_5_0_1
@@ -1699,7 +1781,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 732.0]
+    coordinate: [1192, 900.0]
     rotation: 0
     state: true
 - name: pulsed_power_opencmw_time_sink_6_0
@@ -1708,7 +1790,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    num_inputs: '1'
+    num_inputs: '4'
     sample_rate: '1000'
     signal_name: current
     signal_unit: Ampere
@@ -1716,24 +1798,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [880, 1716.0]
-    rotation: 0
-    state: true
-- name: pulsed_power_opencmw_time_sink_7_0
-  id: pulsed_power_opencmw_time_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    num_inputs: '1'
-    sample_rate: '1000'
-    signal_name: current_bpf
-    signal_unit: Ampere
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [928, 1524.0]
+    coordinate: [1024, 1032.0]
     rotation: 0
     state: true
 - name: pulsed_power_power_calc_ff_0
@@ -1749,7 +1814,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2040, 1200.0]
+    coordinate: [2056, 1368.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0
@@ -1813,7 +1878,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 1216.0]
+    coordinate: [2320, 1384.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_0_0_0_0
@@ -1829,7 +1894,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 2000.0]
+    coordinate: [2328, 2344.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_0_1
@@ -1861,7 +1926,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 1360.0]
+    coordinate: [2320, 1528.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_0_1_0_0
@@ -1877,7 +1942,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 2144.0]
+    coordinate: [2328, 2488.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_0_2
@@ -1893,7 +1958,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 1072.0]
+    coordinate: [2320, 1240.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_0_2_0
@@ -1909,7 +1974,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 1856.0]
+    coordinate: [2328, 2200.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_1
@@ -1925,7 +1990,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 928.0]
+    coordinate: [2320, 1096.0]
     rotation: 0
     state: true
 - name: pulsed_power_statistics_0_1_0
@@ -1941,7 +2006,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2312, 1712.0]
+    coordinate: [2328, 2056.0]
     rotation: 0
     state: true
 - name: samp_rate_delta_phi_calc
@@ -1969,14 +2034,10 @@ connections:
 - [analog_sig_source_x_0_1_0, '0', blocks_multiply_xx_0_2_0, '1']
 - [analog_sig_source_x_0_1_0, '0', blocks_multiply_xx_0_3, '1']
 - [analog_sig_source_x_1_0, '0', blocks_throttle_0, '0']
-- [band_pass_filter_0_0_0, '0', blocks_multiply_xx_0_1_0, '0']
-- [band_pass_filter_0_0_0, '0', blocks_multiply_xx_0_3, '0']
-- [band_pass_filter_0_0_0, '0', pulsed_power_opencmw_time_sink_5, '0']
-- [band_pass_filter_0_0_0, '0', pulsed_power_power_calc_ff_0, '0']
-- [band_pass_filter_0_1, '0', blocks_multiply_xx_0_0_0, '0']
-- [band_pass_filter_0_1, '0', blocks_multiply_xx_0_2_0, '0']
-- [band_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_7_0, '0']
-- [band_pass_filter_0_1, '0', pulsed_power_power_calc_ff_0, '1']
+- [band_pass_filter_0_0_0, '0', blocks_keep_one_in_n_4, '0']
+- [band_pass_filter_0_0_0, '0', pulsed_power_opencmw_time_sink_6_0, '2']
+- [band_pass_filter_0_1, '0', blocks_keep_one_in_n_5, '0']
+- [band_pass_filter_0_1, '0', pulsed_power_opencmw_time_sink_6_0, '3']
 - [blocks_complex_to_mag_0_0_0, '0', pulsed_power_opencmw_freq_sink_0, '0']
 - [blocks_complex_to_mag_0_0_0_0, '0', pulsed_power_opencmw_freq_sink_0_0, '0']
 - [blocks_complex_to_mag_0_0_0_1, '0', pulsed_power_opencmw_freq_sink_0_1, '0']
@@ -1998,12 +2059,18 @@ connections:
 - [blocks_keep_one_in_n_1_3, '0', pulsed_power_opencmw_time_sink_0_0, '1']
 - [blocks_keep_one_in_n_1_3_0, '0', pulsed_power_opencmw_time_sink_0_0, '2']
 - [blocks_keep_one_in_n_1_3_1, '0', pulsed_power_opencmw_time_sink_0_0, '0']
-- [blocks_keep_one_in_n_2, '0', pulsed_power_opencmw_time_sink_4, '0']
+- [blocks_keep_one_in_n_2, '0', pulsed_power_opencmw_time_sink_6_0, '1']
 - [blocks_keep_one_in_n_2_0, '0', pulsed_power_opencmw_time_sink_6_0, '0']
 - [blocks_keep_one_in_n_3, '0', low_pass_filter_0, '0']
+- [blocks_keep_one_in_n_4, '0', blocks_multiply_xx_0_1_0, '0']
+- [blocks_keep_one_in_n_4, '0', blocks_multiply_xx_0_3, '0']
+- [blocks_keep_one_in_n_4, '0', pulsed_power_power_calc_ff_0, '0']
+- [blocks_keep_one_in_n_5, '0', blocks_multiply_xx_0_0_0, '0']
+- [blocks_keep_one_in_n_5, '0', blocks_multiply_xx_0_2_0, '0']
+- [blocks_keep_one_in_n_5, '0', pulsed_power_power_calc_ff_0, '1']
 - [blocks_multiply_const_vxx_0, '0', blocks_complex_to_mag_0_0_0_2, '0']
+- [blocks_multiply_xx_0, '0', blocks_keep_one_in_n_3, '0']
 - [blocks_multiply_xx_0, '0', blocks_stream_to_vector_0_0_0, '0']
-- [blocks_multiply_xx_0_0, '0', blocks_keep_one_in_n_3, '0']
 - [blocks_multiply_xx_0_0_0, '0', low_pass_filter_0_1_0_0, '0']
 - [blocks_multiply_xx_0_1_0, '0', low_pass_filter_0_1_1_0, '0']
 - [blocks_multiply_xx_0_2_0, '0', low_pass_filter_0_1_2_0, '0']
@@ -2016,22 +2083,17 @@ connections:
 - [blocks_throttle_0, '0', band_pass_filter_0_1, '0']
 - [blocks_throttle_0, '0', blocks_keep_one_in_n_2_0, '0']
 - [blocks_throttle_0, '0', blocks_multiply_xx_0, '1']
-- [blocks_throttle_0, '0', blocks_multiply_xx_0_0, '1']
 - [blocks_throttle_0, '0', blocks_stream_to_vector_0_0_0_0, '0']
 - [blocks_throttle_0_0, '0', band_pass_filter_0_0_0, '0']
 - [blocks_throttle_0_0, '0', blocks_keep_one_in_n_2, '0']
 - [blocks_throttle_0_0, '0', blocks_multiply_xx_0, '0']
-- [blocks_throttle_0_0, '0', blocks_multiply_xx_0_0, '0']
 - [blocks_throttle_0_0, '0', blocks_stream_to_vector_0_0_0_1, '0']
 - [blocks_throttle_0_0, '0', pulsed_power_mains_frequency_calc_0, '0']
 - [blocks_transcendental_0_0_0, '0', blocks_sub_xx_0_0, '1']
 - [blocks_transcendental_0_1, '0', blocks_sub_xx_0_0, '0']
-- [blocks_vector_to_stream_0, '0', blocks_complex_to_mag_0_0_0, '0']
-- [blocks_vector_to_stream_0_0, '0', blocks_complex_to_mag_0_0_0_0, '0']
-- [blocks_vector_to_stream_0_1, '0', blocks_complex_to_mag_0_0_0_1, '0']
-- [fft_vxx_0_0_0, '0', blocks_vector_to_stream_0, '0']
-- [fft_vxx_0_0_0_0, '0', blocks_vector_to_stream_0_0, '0']
-- [fft_vxx_0_0_0_1, '0', blocks_vector_to_stream_0_1, '0']
+- [fft_vxx_0_0_0, '0', blocks_complex_to_mag_0_0_0, '0']
+- [fft_vxx_0_0_0_0, '0', blocks_complex_to_mag_0_0_0_0, '0']
+- [fft_vxx_0_0_0_1, '0', blocks_complex_to_mag_0_0_0_1, '0']
 - [fft_vxx_0_0_0_2, '0', blocks_multiply_const_vxx_0, '0']
 - [low_pass_filter_0, '0', blocks_stream_to_vector_0_0_0_2, '0']
 - [low_pass_filter_0_1_0_0, '0', blocks_divide_xx_0_0_0, '1']
@@ -2039,12 +2101,20 @@ connections:
 - [low_pass_filter_0_1_2_0, '0', blocks_divide_xx_0_0_0, '0']
 - [low_pass_filter_0_1_3, '0', blocks_divide_xx_0_1, '0']
 - [pulsed_power_integration_0, '0', pulsed_power_opencmw_time_sink_0, '0']
+- [pulsed_power_integration_0_0, '0', pulsed_power_opencmw_time_sink_0_1, '0']
+- [pulsed_power_integration_0_1, '0', pulsed_power_opencmw_time_sink_0_2, '0']
+- [pulsed_power_integration_0_2, '0', pulsed_power_opencmw_time_sink_0_1, '1']
+- [pulsed_power_integration_0_3, '0', pulsed_power_opencmw_time_sink_0_2, '1']
+- [pulsed_power_integration_0_4, '0', pulsed_power_opencmw_time_sink_0, '1']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0, '0']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0_0, '0']
 - [pulsed_power_mains_frequency_calc_0, '0', blocks_keep_one_in_n_0_0_0, '0']
 - [pulsed_power_power_calc_ff_0, '0', blocks_keep_one_in_n_1_2, '0']
 - [pulsed_power_power_calc_ff_0, '0', blocks_keep_one_in_n_1_2_0, '0']
 - [pulsed_power_power_calc_ff_0, '0', blocks_keep_one_in_n_1_3_1, '0']
+- [pulsed_power_power_calc_ff_0, '0', pulsed_power_integration_0_0, '0']
+- [pulsed_power_power_calc_ff_0, '0', pulsed_power_integration_0_1, '0']
+- [pulsed_power_power_calc_ff_0, '0', pulsed_power_integration_0_4, '0']
 - [pulsed_power_power_calc_ff_0, '0', pulsed_power_statistics_0, '0']
 - [pulsed_power_power_calc_ff_0, '0', pulsed_power_statistics_0_1, '0']
 - [pulsed_power_power_calc_ff_0, '0', pulsed_power_statistics_0_1_0, '0']
@@ -2058,6 +2128,8 @@ connections:
 - [pulsed_power_power_calc_ff_0, '2', blocks_keep_one_in_n_1_2_0_2, '0']
 - [pulsed_power_power_calc_ff_0, '2', blocks_keep_one_in_n_1_3_0, '0']
 - [pulsed_power_power_calc_ff_0, '2', pulsed_power_integration_0, '0']
+- [pulsed_power_power_calc_ff_0, '2', pulsed_power_integration_0_2, '0']
+- [pulsed_power_power_calc_ff_0, '2', pulsed_power_integration_0_3, '0']
 - [pulsed_power_power_calc_ff_0, '2', pulsed_power_statistics_0_0_0, '0']
 - [pulsed_power_power_calc_ff_0, '2', pulsed_power_statistics_0_0_0_0, '0']
 - [pulsed_power_power_calc_ff_0, '2', pulsed_power_statistics_0_0_0_0_0, '0']
@@ -2124,4 +2196,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.1
+  grc_version: 3.10.5.0

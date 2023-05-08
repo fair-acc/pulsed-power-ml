@@ -77,6 +77,9 @@ mains_frequency_calc_impl::~mains_frequency_calc_impl() {}
  */
 void mains_frequency_calc_impl::calc_frequency_per_halfed_period(int current_count)
 {
+    if (current_count == 0) {
+        return;
+    }
     double seconds_per_halfed_period = ((double)current_count / d_expected_sample_rate);
 
     current_half_frequency =

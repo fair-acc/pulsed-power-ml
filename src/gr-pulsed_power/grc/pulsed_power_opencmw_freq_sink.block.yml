@@ -28,6 +28,10 @@ parameters:
   - id: sample_rate
     label: Sample Rate
     dtype: float
+<<<<<<< HEAD
+=======
+    default: samp_rate
+>>>>>>> inferenceTool
   - id: vector_size
     label: Vector Size
     dtype: int

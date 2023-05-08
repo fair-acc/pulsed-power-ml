@@ -8,7 +8,7 @@ import numpy as np
 
 from src.pulsed_power_ml.model_framework.data_io import read_training_files
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_power_data_base
-from src.pulsed_power_ml.models.gupta_model.gupta_utils import read_parameters
+from src.pulsed_power_ml.model_framework.data_io import read_parameters
 from src.pulsed_power_ml.models.gupta_model.tf_gupta_clf import TFGuptaClassifier
 
 
@@ -51,11 +51,12 @@ def tf_gupta_model(features,
                    parameter_dict,
                    data_point_array):
     model = TFGuptaClassifier(
-        background_n=tf.constant(parameter_dict["background_n"], dtype=tf.int32),
+        window_size=tf.constant(parameter_dict["window_size"], dtype=tf.int32),
+        step_size=tf.constant(parameter_dict['step_size'], dtype=tf.int32),
+        switch_threshold=tf.constant(parameter_dict['switch_threshold'], dtype=tf.float32),
         n_known_appliances=tf.constant(parameter_dict["n_known_appliances"], dtype=tf.int32),
         apparent_power_list=tf.constant(apparent_power_list, dtype=tf.float32),
         n_neighbors=tf.constant(parameter_dict["n_neighbors"], dtype=tf.int32),
-        switching_offset=tf.constant(parameter_dict["switching_offset"], dtype=tf.int32),
         distance_threshold=tf.constant(parameter_dict["distance_threshold"], dtype=tf.float32),
         fft_size_real=tf.constant(parameter_dict["fft_size_real"], dtype=tf.int32),
         sample_rate=tf.constant(parameter_dict["sample_rate"], dtype=tf.int32),
@@ -126,8 +127,8 @@ class TestTFGuptaClassifier:
         for model in (tf_gupta_model, loaded_model):
             assert not tf.math.reduce_all(
                 tf.math.equal(
-                    x=model.background_vector,
-                    y=tf.zeros_like(model.background_vector, dtype=tf.float32)
+                    x=model.window,
+                    y=tf.zeros_like(model.window, dtype=tf.float32)
                 )
             )
 
@@ -149,29 +150,18 @@ class TestTFGuptaClassifier:
             # check background_vector
             assert tf.math.reduce_all(
                 tf.math.equal(
-                    x=model.background_vector,
-                    y=tf.zeros_like(model.background_vector, dtype=tf.float32)
+                    x=model.window,
+                    y=tf.zeros_like(model.window, dtype=tf.float32)
                 )
             )
 
             # check current_background_size
             assert tf.math.reduce_all(
                 tf.math.equal(
-                    x=model.current_background_size,
-                    y=tf.zeros_like(model.current_background_size, dtype=tf.int32)
+                    x=model.n_frames_in_window,
+                    y=tf.zeros_like(model.n_frames_in_window, dtype=tf.int32)
                 )
             )
-
-            # check n_data_points_skipped
-            assert tf.math.reduce_all(
-                tf.math.equal(
-                    x=model.n_data_points_skipped,
-                    y=tf.zeros_like(model.n_data_points_skipped, dtype=tf.int32)
-                )
-            )
-
-            # check skip_data_point (must be False)
-            assert not model.skip_data_point
 
             # check current_state_vector
             assert tf.math.reduce_all(

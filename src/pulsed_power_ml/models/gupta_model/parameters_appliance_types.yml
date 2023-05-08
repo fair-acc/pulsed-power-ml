@@ -1,12 +1,14 @@
 appliances:
   - 1: E1 # LED
-  - 2: F1 # Foen
+  - 2: F1, F2 # Foen
   - 3: FP1 # Festplatte
-  - 4: H1 # Halogen
-  - 5: L1 # Laptop
+  - 4: H1, H2 # Halogen
+  - 5: L1, L2 # Laptop
   - 6: PS1 # Power supply
-  - 7: R1 # Fluoreszenzroehren
-background_n: 10
+  - 7: R1, R2 # Fluoreszenzroehren
+window_size: 10
+step_size: 10
+switch_threshold: 20
 distance_threshold: 100
 fft_size: 131072
 fft_size_real: 65536

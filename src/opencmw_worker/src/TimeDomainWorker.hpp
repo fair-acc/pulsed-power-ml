@@ -1,7 +1,9 @@
 #ifndef TIME_DOMAIN_WORKER_H
 #define TIME_DOMAIN_WORKER_H
 
-#include <disruptor/RingBuffer.hpp>
+#define BOOST_BIND_NO_PLACEHOLDERS
+
+#include "Ringbuffer.hpp"
 #include <majordomo/Worker.hpp>
 
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
@@ -42,37 +44,33 @@ struct Acquisition {
 
 ENABLE_REFLECTION_FOR(Acquisition, refTriggerName, refTriggerStamp, channelTimeSinceRefTrigger, channelUserDelay, channelActualDelay, channelNames, channelValues, channelErrors, channelUnits, status, channelRangeMin, channelRangeMax, temperature)
 
-using namespace opencmw::disruptor;
 using namespace opencmw::majordomo;
 template<units::basic_fixed_string serviceName, typename... Meta>
 class TimeDomainWorker
     : public Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...> {
 private:
-    static const size_t RING_BUFFER_SIZE = 256;
-    std::atomic<bool>   _shutdownRequested;
-    std::jthread        _pollingThread;
+    // std::atomic<bool> _shutdownRequested;
+    // std::jthread      _pollingThread;
 
     class GRSink {
         struct RingBufferData {
             std::vector<std::vector<float>> chunk;
             int64_t                         timestamp = 0;
         };
-        using ringbuffer_t = std::shared_ptr<RingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, SingleThreadedStrategy>>;
-        using sequence_t   = std::shared_ptr<Sequence>;
+        using ringbuffer_t = std::shared_ptr<Ringbuffer<RingBufferData>>;
 
         std::vector<std::string> _channelNames;      // { signalName1, signalName2, ... }
         std::vector<std::string> _channelUnits;      // { signalUnit1, signalUnit2, ... }
         std::string              _channelNameFilter; // signalName1@sampleRate,signalName2@sampleRate...
         float                    _sampleRate = 0;
         ringbuffer_t             _ringBuffer;
-        sequence_t               _tail;
+        const size_t             RING_BUFFER_SIZE = 1024;
 
     public:
         GRSink() = delete;
         GRSink(gr::pulsed_power::opencmw_time_sink *sink)
-            : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()), _ringBuffer(newRingBuffer<RingBufferData, RING_BUFFER_SIZE, BusySpinWaitStrategy, ProducerType::Single>()), _tail(std::make_shared<Sequence>()) {
-            _ringBuffer->addGatingSequences({ _tail });
-
+            : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()) {
+            _ringBuffer = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
             for (size_t i = 0; i < _channelNames.size(); i++) {
                 _channelNameFilter.append(fmt::format("{}@{}Hz", _channelNames[i], _sampleRate));
                 _channelUnits = sink->get_signal_units();
@@ -91,15 +89,13 @@ private:
         };
 
         void fetchData(const int64_t lastRefTrigger, Acquisition &out) {
-            std::vector<float> stridedValues;
-            int64_t            tail       = _tail->value();
-            int64_t            head       = _ringBuffer->cursor();
+            std::vector<float>          stridedValues;
 
-            bool               firstChunk = true;
+            bool                        firstChunk = true;
+            std::vector<RingBufferData> currentValues;
+            _ringBuffer->get_all(currentValues);
             for (size_t i = 0; i < _channelNames.size(); i++) {
-                for (int64_t sequence = tail; sequence <= head; sequence++) {
-                    const RingBufferData &bufData = (*_ringBuffer)[sequence];
-
+                for (RingBufferData bufData : currentValues) {
                     if (bufData.timestamp > lastRefTrigger) {
                         if (firstChunk) {
                             for (const auto &channelName : _channelNames) {
@@ -132,29 +128,13 @@ private:
 
         void copySinkData(std::vector<const void *> &input_items, int &noutput_items, const std::vector<std::string> &signal_names, float /* sample_rate */, int64_t timestamp_ns) {
             if (signal_names == _channelNames) {
-                bool result = _ringBuffer->tryPublishEvent([&input_items, noutput_items, timestamp_ns](RingBufferData &&bufferData, std::int64_t /*sequence*/) noexcept {
-                    bufferData.timestamp = timestamp_ns;
-                    bufferData.chunk.clear();
-                    for (size_t i = 0; i < input_items.size(); i++) {
-                        const float *in = static_cast<const float *>(input_items[i]);
-                        bufferData.chunk.emplace_back(std::vector<float>(in, in + noutput_items));
-                    }
-                });
-
-                if (result) {
-                    auto       headValue       = _ringBuffer->cursor();
-                    auto       tailValue       = _tail->value();
-
-                    const auto tailOffsetValue = static_cast<int64_t>(RING_BUFFER_SIZE) * 50 / 100; // 50 %
-
-                    if (headValue > (tailValue + tailOffsetValue)) {
-                        _tail->setValue(headValue - tailOffsetValue);
-                    }
-
-                } else {
-                    // error writing into RingBuffer
-                    noutput_items = 0;
+                RingBufferData bufferData;
+                bufferData.timestamp = timestamp_ns;
+                for (size_t i = 0; i < input_items.size(); i++) {
+                    const float *in = static_cast<const float *>(input_items[i]);
+                    bufferData.chunk.emplace_back(std::vector<float>(in, in + noutput_items));
                 }
+                _ringBuffer->push(bufferData);
             }
         }
     };
@@ -168,7 +148,7 @@ public:
     explicit TimeDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
@@ -201,8 +181,7 @@ public:
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
-        });
-
+        });*/
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
         fmt::print("GR: OpenCMW: time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
@@ -225,10 +204,10 @@ public:
         });
     }
 
-    ~TimeDomainWorker() {
-        _shutdownRequested = true;
+    ~TimeDomainWorker() = default;
+    /*{    _shutdownRequested = true;
         _pollingThread.join();
-    }
+    }*/
 
 private:
     bool handleGetRequest(const TimeDomainContext &requestContext, Acquisition &out) {

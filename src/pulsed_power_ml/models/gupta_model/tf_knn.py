@@ -44,13 +44,13 @@ class TFKNeighborsClassifier(keras.Model):
         self.training_data_labels = y
         return
 
-    def call(self, input: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    def call(self, input_tensor: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Method to use this model for inference.
 
         Parameters
         ----------
-        input
+        input_tensor
             Tensor consisting of one feature vector.
 
         Returns
@@ -59,7 +59,7 @@ class TFKNeighborsClassifier(keras.Model):
             distances to the nearest neighbors
             label: Tensor containing the classification result.
         """
-        difference_vectors = self.training_data_features - input
+        difference_vectors = self.training_data_features - input_tensor
         distances = tf.norm(difference_vectors, axis=1)
 
         k_smallest_distances, k_smallest_indices = tf.math.top_k(
@@ -92,7 +92,7 @@ class TFKNeighborsClassifier(keras.Model):
 if __name__ == "__main__":
     model = TFKNeighborsClassifier()
 
-    train_x = tf.random.uniform(shape=tf.constant((20,5)), dtype=tf.float32)
+    train_x = tf.random.uniform(shape=tf.constant((20, 5)), dtype=tf.float32)
     train_y = tf.one_hot(indices=tf.constant((1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2),
                                              dtype=tf.int32),
                          depth=4)

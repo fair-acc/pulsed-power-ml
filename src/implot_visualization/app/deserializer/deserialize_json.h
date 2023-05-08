@@ -37,7 +37,6 @@ public:
     void erase();
 };
 
-// WIP
 class PowerBuffer {
 public:
     bool                init = false;
@@ -47,10 +46,23 @@ public:
     void                updateValues(const std::vector<double> &_values);
 };
 
-struct StrideArray {
+class StrideArray {
+public:
     std::vector<int>    dims;
     std::vector<double> values;
+
+    StrideArray();
+
+    ~StrideArray(){};
+
+    void cut(const std::vector<int> newDims);
 };
+
+struct ConvertPair {
+    std::vector<double> relativeTimestamps;
+    uint64_t            referenceTimestamps;
+    StrideArray         strideArray;
+} typedef Convert;
 
 template<typename T>
 class IAcquisition {
@@ -64,6 +76,8 @@ public:
     IAcquisition();
     IAcquisition(const std::vector<std::string> _signalNames);
 
+    virtual ~IAcquisition()    = default;
+
     virtual void deserialize() = 0;
 
 protected:
@@ -74,6 +88,8 @@ class Acquisition : public IAcquisition<ScrollingBuffer> {
 public:
     Acquisition();
     Acquisition(const std::vector<std::string> &_signalNames);
+
+    ~Acquisition(){};
 
     void deserialize();
 
@@ -87,6 +103,8 @@ class AcquisitionSpectra : public IAcquisition<Buffer> {
 public:
     AcquisitionSpectra();
     AcquisitionSpectra(const std::vector<std::string> &_signalNames);
+
+    ~AcquisitionSpectra(){};
 
     void deserialize();
 
@@ -112,6 +130,8 @@ public:
     PowerUsage();
     PowerUsage(const std::vector<std::string> &_signalNames);
 
+    ~PowerUsage(){};
+
     void   deserialize();
     void   fail();
     double sumOfUsage();
@@ -124,15 +144,17 @@ private:
 
 class RealPowerUsage : public IAcquisition<PowerBuffer> {
 public:
-    double deliveryTime;
-    bool   init               = false;
+    double              deliveryTime;
+    bool                init = false;
 
-    double realPowerUsageOrig = 0.0;
-    double realPowerUsage     = 0.0;
+    std::vector<double> realPowerUsages;
 
     RealPowerUsage();
     RealPowerUsage(const std::vector<std::string> &_signalNames);
 
+    ~RealPowerUsage(){};
+
     void deserialize();
     void fail();
+    void addPowerUsage(const StrideArray &strideArray);
 };

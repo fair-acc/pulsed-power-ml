@@ -21,6 +21,7 @@ public:
     SDL_GLContext                                 GLContext = nullptr;
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency;
+    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage;
     Plotter::DataInterval                         Interval;
     struct AppFonts {
         ImFont *title;
@@ -29,10 +30,14 @@ public:
     };
     AppState::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<Acquisition>> &_subscriptionsTimeDomain, std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency, Plotter::DataInterval _Interval) {
-        this->subscriptionsTimeDomain = _subscriptionsTimeDomain;
-        this->subscriptionsFrequency  = _subscriptionsFrequency;
-        this->Interval                = _Interval;
+    AppState(std::vector<Subscription<Acquisition>>       &_subscriptionsTimeDomain,
+            std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency,
+            std::vector<Subscription<RealPowerUsage>>     &_subscriptionRealPowerUsage,
+            Plotter::DataInterval                          _Interval) {
+        this->subscriptionsTimeDomain    = _subscriptionsTimeDomain;
+        this->subscriptionsFrequency     = _subscriptionsFrequency;
+        this->subscriptionRealPowerUsage = _subscriptionRealPowerUsage;
+        this->Interval                   = _Interval;
     }
 };
 
@@ -75,23 +80,23 @@ int         main(int argc, char **argv) {
 
     // Setup subscriptions
     Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    Subscription<Acquisition>        powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
     Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     Subscription<AcquisitionSpectra> frequencySubscription("http://localhost:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     Subscription<AcquisitionSpectra> limitingCurveSubscription("http://localhost:8080/", { "limiting_curve" }, 1.0f);
+    Subscription<RealPowerUsage>     integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_Month@1Hz", "S_Int_Month@1Hz" }, updateFreq);
 
     // Subscription<Acquisition>                     signalSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "U@1000Hz", "I@1000Hz", "U_bpf@1000Hz", "I_bpf@1000Hz" }, 25.0f);
-    // Subscription<Acquisition>                     powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
     // Subscription<Acquisition>                     powerStatsSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean@" + sampRate, "P_min@" + sampRate, "P_max@" + sampRate, "Q_mean@" + sampRate, "Q_min@" + sampRate, "Q_max@" + sampRate, "S_mean@" + sampRate, "S_min@" + sampRate, "S_max@" + sampRate, "phi_mean@" + sampRate, "phi_min@" + sampRate, "phi_max@" + sampRate }, updateFreq);
     // Subscription<Acquisition>                     mainsFreqSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq@" + sampRate }, updateFreq);
     // Subscription<AcquisitionSpectra>              frequencySubscription("http://10.0.0.2:8080/pulsed_power_freq/AcquisitionSpectra?channelNameFilter=", { "sinus_fft@50Hz" }, 1.0f);
     // Subscription<AcquisitionSpectra>              limitingCurveSubscription("http://10.0.0.2:8080/", { "limiting_curve" }, 1.0f);
+    // Subscription<RealPowerUsage>                  integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
 
-    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain = { signalSubscription, powerStatsSubscription, powerSubscription, mainsFreqSubscription };
-    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency  = { frequencySubscription, limitingCurveSubscription };
-    // std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency = {};
-    AppState appState(subscriptionsTimeDomain, subscriptionsFrequency, Interval);
+    std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain    = { signalSubscription, powerStatsSubscription, mainsFreqSubscription };
+    std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency     = { frequencySubscription, limitingCurveSubscription };
+    std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage = { integratedValues };
+    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -170,10 +175,11 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    auto                                          *args                    = static_cast<AppState *>(arg);
-    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain = args->subscriptionsTimeDomain;
-    std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency  = args->subscriptionsFrequency;
-    Plotter::DataInterval                         &Interval                = args->Interval;
+    auto                                          *args                        = static_cast<AppState *>(arg);
+    std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain     = args->subscriptionsTimeDomain;
+    std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency      = args->subscriptionsFrequency;
+    std::vector<Subscription<RealPowerUsage>>     &subscriptionRealPowerUsages = args->subscriptionRealPowerUsage;
+    Plotter::DataInterval                         &Interval                    = args->Interval;
 
     // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool   show_demo_window = false;
@@ -206,6 +212,9 @@ static void main_loop(void *arg) {
         for (Subscription<AcquisitionSpectra> &subFreq : subscriptionsFrequency) {
             subFreq.fetch();
         }
+        for (Subscription<RealPowerUsage> &subInt : subscriptionRealPowerUsages) {
+            subInt.fetch();
+        }
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -213,49 +222,59 @@ static void main_loop(void *arg) {
         app_header::draw_header_bar("PulsedPowerMonitoring", args->fonts.title);
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
-        static int                rows      = 2;
+        static int                rows      = 1;
         static int                cols      = 2;
         static float              rratios[] = { 1, 1, 1, 1 };
         static float              cratios[] = { 1, 1, 1, 1 };
-        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 2 / 3) - 30), flags, rratios, cratios)) {
+        if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1, (window_height * 1 / 3) - 30), flags, rratios, cratios)) {
             // Raw Signals Plot
-            if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 3) {
+            static ImPlotColormap colormap = -1;
+            if (colormap == -1) {
+                static const ImVec4 blue                = ImVec4(0.298, 0.447, 0.690, 1);
+                static const ImVec4 red                 = ImVec4(0.769, 0.306, 0.322, 1);
+                static const ImVec4 signalPlotColors[4] = { blue, red, blue, red };
+                colormap                                = ImPlot::AddColormap("Test", signalPlotColors, 4);
+            }
+            ImPlot::PushColormap(colormap);
+            if (ImPlot::BeginPlot("##", ImVec2(), ImPlotFlags_NoLegend)) {
+                if (subscriptionsTimeDomain.size() >= 3) {
                     Plotter::plotSignals(subscriptionsTimeDomain[0].acquisition.buffers);
                 }
                 ImPlot::EndPlot();
+                ImPlot::PopColormap();
             }
 
             // Mains Frequency Plot
-            if (ImPlot::BeginPlot("", ImVec2(), ImPlotFlags_NoLegend)) {
-                if (subscriptionsTimeDomain.size() > 3) {
-                    Plotter::plotMainsFrequency(subscriptionsTimeDomain[3].acquisition.buffers, Interval);
+            if (ImPlot::BeginPlot("##", ImVec2(), ImPlotFlags_NoLegend)) {
+                if (subscriptionsTimeDomain.size() >= 3) {
+                    Plotter::plotMainsFrequency(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
                 }
                 ImPlot::EndPlot();
             }
 
-            // Power Plot
-            if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 2) {
-                    Plotter::plotPower(subscriptionsTimeDomain[2].acquisition.buffers, Interval);
-                }
-                ImPlot::EndPlot();
-            }
-
-            // Power Statistics
-            if (ImPlot::BeginPlot("")) {
-                if (subscriptionsTimeDomain.size() > 1) {
-                    Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
-                }
-                ImPlot::EndPlot();
-            }
             ImPlot::EndSubplots();
+        }
+
+        // Power Statistics
+        if (ImPlot::BeginPlot("##")) {
+            if (subscriptionsTimeDomain.size() > 1) {
+                Plotter::plotStatistics(subscriptionsTimeDomain[1].acquisition.buffers, Interval);
+            }
+            ImPlot::EndPlot();
+        }
+
+        // Integrated Values
+        if (ImGui::BeginTable("Integrated Values", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders)) {
+            if (subscriptionRealPowerUsages.size() >= 1) {
+                Plotter::plotUsageTable(subscriptionRealPowerUsages[0].acquisition.realPowerUsages);
+            }
+            ImGui::EndTable();
         }
 
         // Power Spectrum
         if (ImPlot::BeginPlot("Power Spectrum")) {
             if (subscriptionsFrequency.size() >= 2) {
-                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, false, args->fonts.fontawesome);
+                Plotter::plotPowerSpectrum(subscriptionsFrequency[0].acquisition.buffers, subscriptionsFrequency[1].acquisition.buffers, args->fonts.fontawesome);
             }
             ImPlot::EndPlot();
         }

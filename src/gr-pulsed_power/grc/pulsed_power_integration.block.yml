@@ -13,12 +13,19 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-  - id: step_size
-    label: step_size
+  - id: sample_rate
+    label: Sample Rate
     dtype: float
   - id: decimation
     label: Decimation
     dtype: float
+<<<<<<< HEAD
+=======
+  - id: duration
+    label: Duration
+    dtype: INTEGRATION_DURATION
+    default: DAY
+>>>>>>> inferenceTool
 
 # - id: ...
 #   label: ...

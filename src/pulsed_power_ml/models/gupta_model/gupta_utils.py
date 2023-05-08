@@ -5,32 +5,11 @@ from typing import Tuple, Union
 import yaml
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
+
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
 import tensorflow as tf
-
-from src.pulsed_power_ml.model_framework.data_io import load_fft_file
-
-
-def read_parameters(parameter_path: str) -> dict:
-    """
-    Read parameters from a parameter yml file into a dictionary.
-
-    Parameters
-    ----------
-    parameter_path
-        Path to the .yml file.
-
-    Returns
-    -------
-    Dictionary of parameters.
-    """
-    param_dic = yaml.safe_load(Path(parameter_path).read_text())
-    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_rate']
-    param_dic['freq_per_bin'] = param_dic['sample_rate'] / param_dic['fft_size']
-    return param_dic
 
 
 def read_power_data_base(path_to_file: str) -> list:
@@ -108,27 +87,22 @@ def switch_detected(res_spectrum: np.ndarray, threshold: int) -> Tuple[bool, boo
         Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
         a "switch off" event ist detected.
     """
-
     # Normalize cleaned spectrum
 
-
     # sum above threshold?
-    sum_above_thr = res_spectrum.sum()>threshold
-    sum_below_minus_thr = res_spectrum.sum()<-1*threshold
+    sum_above_thr = res_spectrum.sum() > threshold
+    sum_below_minus_thr = res_spectrum.sum() < -1 * threshold
 
     switchon = False
     switchoff = False
     
-    if sum_above_thr:# >= 1:
-        #switchon = True # This way for raw specrra minus raw background
-        switchoff = True # This way for normed spectra minus normed background
+    if sum_above_thr:  # >= 1:
+        switchoff = True  # This way for normed spectra minus normed background
 
-    elif sum_below_minus_thr:# >= 1:
-        #switchoff = True # This way for raw specrra minus raw background
-        switchon = True # This way for normed spectra minus normed background
+    elif sum_below_minus_thr:  # >= 1:
+        switchon = True  # This way for normed spectra minus normed background
         
     return switchon, switchoff
-    
 
 
 def update_background_vector(old_background_vector: np.ndarray, raw_spectrum: np.ndarray) -> np.ndarray:
@@ -190,7 +164,7 @@ def fit_gaussian_to_peak(frequency_window: np.ndarray, magnitude_window: np.ndar
         Array with [a, mu, sigma]
     """
     # Initial guesses
-    a_init = magnitude_window.max()
+    a_init = magnitude_window.max(initial=0)
     mu_init = frequency_window.mean()
     sigma_init = np.sqrt(sum(magnitude_window * (frequency_window - mu_init)**2) / sum(magnitude_window))
 
@@ -234,7 +208,6 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
     peak_indices, peak_properties = find_peaks(x=cleaned_spectrum * switch_off_factor,
                                                height=min_peak_height)
 
-
     # remove peaks in the first and last bin of the spectrum (cannot be used for gaussian fit)
     peak_height_list = [(peak_index, peak_height)
                         for peak_index, peak_height in zip(peak_indices, peak_properties['peak_heights'])
@@ -257,15 +230,16 @@ def calculate_feature_vector(cleaned_spectrum: np.ndarray,
         try:
             a, mu, sigma = fit_gaussian_to_peak(np.array(frequencies), np.array(magnitudes))
         except RuntimeError:
-            a=0
-            mu=0
-            sigma=0
+            a = 0
+            mu = 0
+            sigma = 0
             print("WARNING: FIT NOT POSSIBLE")
         feature_vector[i * 3] = a  # * switch_off_factor For switch off events, amplitudes should be negative
         feature_vector[i * 3 + 1] = mu
         feature_vector[i * 3 + 2] = sigma
 
     return feature_vector
+
 
 def gupta_offline_switch_detection(data_point_array: np.array,
                                    window_size: int,
@@ -283,17 +257,21 @@ def gupta_offline_switch_detection(data_point_array: np.array,
         Array with respective data points
     window_size
         Number of spectra, that should be included in one window
+    spectrum_type
+        Which spectrum to use: 0: voltage, 1: current, 2: apparent power.
     fft_size
         Full size of FFT.
     step_size
         Step size for the windows. Default = window_size
+    threshold
+        Min value of difference spectrum for switch detection.
     log_scale
         If True, use logarithmic scale for data points.
 
     Returns
     -------
     switch_array
-        Array w/ the same length as data_point_array containing 1s
+        Array w/ the same length as data_point_array containing 1s at indices where switches have been detected.
     """
     if step_size is None:
         step_size = window_size
@@ -318,11 +296,10 @@ def gupta_offline_switch_detection(data_point_array: np.array,
         m = i * step_size + 3 * window_size
 
         raw_background = data_point_array[j:k,
-                                          spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
+                                          spectrum_type_offset:spectrum_type_offset + int(fft_size / 2)]
 
         raw_signal = data_point_array[k:l,
-                                      spectrum_type_offset : spectrum_type_offset + int(fft_size / 2)]
-
+                                      spectrum_type_offset:spectrum_type_offset + int(fft_size / 2)]
 
         background_mean = raw_background.mean(axis=0)
         signal_mean = raw_signal.mean(axis=0)
@@ -333,17 +310,18 @@ def gupta_offline_switch_detection(data_point_array: np.array,
             difference_spectrum = np.max(np.abs(background_mean - signal_mean))
 
         if np.abs(difference_spectrum).max() > threshold:
-            switch_array[k:l] = 1 # somewhere in this window a switch has been detected
-            switch_array[l:m] = -1 # Dead time
-            dead_time_counter = 2 # number of windows that will be skipped
+            switch_array[k:l] = 1  # somewhere in this window a switch has been detected
+            switch_array[l:m] = -1  # Dead time
+            dead_time_counter = 2  # number of windows that will be skipped
 
     return switch_array
 
-def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+
+def tf_switch_detected(res_spectrum: tf.Tensor,
+                       threshold: tf.Tensor,
+                       verbose: tf.Tensor = tf.constant(False, dtype=tf.bool)) -> tf.Tensor:
     """
-    Scans background subtracted spectrum for switch event
-    (signal larger than input parameter threshold value)
-    to avoid dead time because of background re-calculation.
+    Determines if min / max peak in res_spectrum is below / above threshold.
 
     Parameters
     ----------
@@ -351,38 +329,41 @@ def tf_switch_detected(res_spectrum: tf.Tensor, threshold: tf.Tensor) -> Tuple[t
         Background subtracted spectrum.
     threshold
         Threshold value
+    verbose
+        Increase verbosity is set to True. Default False.
 
     Returns
     -------
-    flag_tuple
-        Tuple containing two boolean values, first is True, if a "switch on" event is detected, second is True if
-        a "switch off" event ist detected.
+    switch_flag
+        True, if switch has been detected.
     """
+    spectrum_min = tf.reduce_min(res_spectrum)
+    spectrum_max = tf.reduce_max(res_spectrum)
 
-    # sum above threshold?
-    spectrum_sum = tf.math.reduce_sum(res_spectrum)
-    sum_above_thr = tf.math.greater(spectrum_sum, threshold)
-    sum_below_minus_thr = tf.math.less(spectrum_sum, tf.math.multiply(tf.constant(-1, dtype=tf.float32), threshold))
-    # # ToDo: Remove print
-    # tf.print("\n\n ###########")
-    # tf.print("In tf_switch_detected")
-    # tf.print("spectrum_sum = ", spectrum_sum)
-    # tf.print(f"Result = {sum_above_thr, sum_below_minus_thr}")
-    # tf.print("############\n\n")
-    # #
-    return sum_below_minus_thr, sum_above_thr
+    if tf.math.equal(verbose, tf.constant(True, dtype=tf.bool)):
+        tf.print('\n')
+        tf.print('# ++++++++++++++++++++++++++++++++++ In "tf_switch_detection()" ++++++++++++++++++++++++++++++++++ #')
+        tf.print('Threshold = ', threshold)
+        tf.print('spectrum_min = ', spectrum_min)
+        tf.print('spectrum_max = ', spectrum_max)
+
+    if tf.greater_equal(spectrum_max, threshold) or tf.less_equal(spectrum_min, threshold):
+        return tf.constant(True, dtype=tf.bool)
+    else:
+        return tf.constant(False, dtype=tf.bool)
+
 
 @tf.function
-def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+def tf_calculate_gaussian_params_for_peak(x_: tf.Tensor, y_: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Calculates the parameters of a gaussian function given the values in x and y.
 
     This is not a fit(!), but an exact calculation. x and y need to be of length 3.
 
     Parameters
     ----------
-    x
+    x_
         Tensor of shape (3, 1) containing the x values in ascending order.
-    y
+    y_
         Tensor of shape (3, 1) containing the matching y values.
 
     Returns
@@ -390,6 +371,18 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[t
     gauss_params
         Tensor of shape (3, 1) containing the three parameters of a gaussian function.
     """
+
+    # need double precision here
+    x = tf.cast(x_, dtype=tf.float64)
+    y = tf.cast(y_, dtype=tf.float64)
+
+    # assert, that x is in ascending order
+    if x[0] > x[1] or x[1] > x[2]:
+        tf.print("x-Values no in ascending order! x = ", x)
+
+    # assert, that y contains a peak
+    if y[0] > y[1] or y[1] < y[2]:
+        tf.print("y-values do not contain peak! y = ", y)
 
     z = tf.math.log(y)
 
@@ -411,19 +404,23 @@ def tf_calculate_gaussian_params_for_peak(x: tf.Tensor, y: tf.Tensor) -> Tuple[t
     b = beta * c**2
     a = tf.math.exp(gamma + (b**2 / (2*c**2)))
 
-    return a, b, c
+    a_ = tf.cast(a, dtype=tf.float32)
+    b_ = tf.cast(b, dtype=tf.float32)
+    c_ = tf.cast(c, dtype=tf.float32)
+
+    return a_, b_, c_
+
 
 @tf.function(
     input_signature=[tf.TensorSpec(shape=(2**16), dtype=tf.float32),
-                     tf.TensorSpec(shape=(), dtype=tf.float32),
-                     tf.TensorSpec(shape=(), dtype=tf.int32)]
+                     tf.TensorSpec(shape=(), dtype=tf.float32)]
 )
 def tf_find_peaks(data: tf.Tensor,
-                  min_height: tf.Tensor,
-                  min_output_length: tf.Tensor = tf.constant(10, dtype=tf.int32)) -> Tuple[tf.Tensor, tf.Tensor]:
+                  min_height: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """Find peaks in 1-D tensor x.
 
-    Considers three values at a time, if the max value is located at the center of the window (length=3) a peak is found.
+    Considers three values at a time, if the max value is located at the center of the window (length=3) a peak is
+    found.
 
     Parameters
     ----------
@@ -464,32 +461,6 @@ def tf_find_peaks(data: tf.Tensor,
 
     # get the peak heights
     peak_heights = tf.gather_nd(params=data, indices=peak_indices)
-
-    # # Pad peaks to ensure data independent output shape
-    # zero_tensor = tf.zeros(min_output_length,
-    #                        dtype=tf.int32)
-    #
-    # # ToDo: fix output shape here...
-    #
-    # tf.print("################### TEST ################")
-    # tf.print(tf.reshape(zero_tensor, shape=(-1, 1)).shape)
-    # tf.print(tf.size(peak_indices))
-    # tf.print(tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1)))
-    # tf.print(peak_indices.shape)
-    #
-    # peak_indices_padded = tf.tensor_scatter_nd_update(
-    #     tensor=tf.reshape(zero_tensor, shape=(-1, 1)),
-    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
-    #     updates=peak_indices
-    # )
-    #
-    # peak_heights_padded = tf.tensor_scatter_nd_update(
-    #     tensor=tf.reshape(tf.cast(zero_tensor, dtype=tf.float32), shape=(-1, 1)),
-    #     indices=tf.reshape(tf.range(tf.size(peak_indices)), shape=(-1, 1))[:min_output_length],
-    #     updates=tf.reshape(peak_heights, shape=(-1, 1))
-    # )
-    #
-    # return peak_indices_padded, peak_heights_padded
 
     return peak_indices, peak_heights
 
@@ -568,7 +539,6 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     #                                          axis=0,
     #                                          name="min_peak_height")
 
-    # ToDo: Is min peak height necessary?
     min_peak_height = tf.constant(0, dtype=tf.float32)
     # Determine if peaks have positive or negative amplitude
     switch_off_factor = tf.cond(
@@ -582,8 +552,7 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
     # Get peaks
     peak_indices, peak_heights = tf_find_peaks(data=cleaned_spectrum * switch_off_factor,
-                                               min_height=min_peak_height,
-                                               min_output_length=n_peaks_max)
+                                               min_height=min_peak_height)
 
     # select only the highest n_peaks_max peaks
     _, indices_unsorted = tf.math.top_k(
@@ -599,7 +568,6 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
 
     k_largest_peaks_indices = tf.gather_nd(peak_indices,
                                            indices=tf.reshape(indices, (-1, 1)))
-
 
     k_largest_peaks_lower_indices = k_largest_peaks_indices - 1
     k_largest_peaks_higher_indices = k_largest_peaks_indices + 1
@@ -625,14 +593,13 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
         amplitudes = cleaned_spectrum[low_index[0]:high_index[0]+1]
 
         a, mu, sigma = tf_calculate_gaussian_params_for_peak(
-            x=frequencies,
-            y=amplitudes * switch_off_factor
+            x_=frequencies,
+            y_=amplitudes * switch_off_factor
         )
 
         feature_vector = feature_vector.write(i*3, a * switch_off_factor)
         feature_vector = feature_vector.write(i*3+1, mu)
         feature_vector = feature_vector.write(i*3+2, sigma)
-
 
     feature_tensor = feature_vector.stack()
 
@@ -640,35 +607,52 @@ def tf_calculate_feature_vector(cleaned_spectrum: tf.Tensor,
     return feature_tensor
 
 
-if __name__ == "__main__":
+@tf.function(
+    input_signature=[
+        tf.TensorSpec(shape=(2**16), dtype=tf.float32),
+        tf.TensorSpec(shape=(), dtype=tf.bool)
+    ])
+def tf_transform_spectrum(new_spectrum: tf.Tensor, reverse: tf.Tensor) -> tf.Tensor:
+    """
+    Function to transform apparent power spectra from the new and probably correct flowgraph to be more like the
+    training data, which have been produced w/ an old and incorrect version of the flowgraph.
+    As soon as trainind data and inference is done w/ the exact same flowgraph, this function can be removed.
 
-    from src.pulsed_power_ml.model_framework.data_io import read_training_files, load_pqsphi_file, load_fft_file, \
-        reshape_one_dim_array
-    from src.pulsed_power_ml.model_framework.visualizations import add_contour_plot, plot_data_point_array, \
-        get_frequencies_from_spectrum
+    Parameters
+    ----------
+    new_spectrum
+        Apparent power spectrum
+    reverse
+        If True, output will be additionally reversed.
 
-    folder = "/home/thomas/projects/nilm_at_fair/training_data/2022-10-25_training_data/tube/"
-    p_file = "S_LEDOnOff_FFTSize131072"
-    fft_file = "FFTCurrent_LEDOnOff_FFTSize131072"
-    fft_size = 2 ** 17
+    Returns
+    -------
+    transformed_apparent_power_spectrum
+    """
 
-    data_point_array = read_training_files(folder, fft_size)
+    factor = tf.constant(0.5002719012720522, dtype=tf.float32)
 
-    background_vector = data_point_array[50:75, int(2 * fft_size / 2):int(3 * fft_size / 2)]
-    for i in range(background_vector.shape[0]):
-        background_vector[i] = 10 ** background_vector[i]
+    offset = tf.constant(-8.881469725920565, dtype=tf.float32)
 
-    background = calculate_background(background_vector)
-    signal = data_point_array[200, int(2 * fft_size / 2):int(3 * fft_size / 2)]
-    signal = 10 ** signal
+    new_spectrum_dbm = 10 * tf.math.log(new_spectrum) / tf.math.log(tf.constant(10, dtype=tf.float32)) + 30
 
-    cleaned_spectrum = signal - background
-
-    feature_vector = tf_calculate_feature_vector(
-        tf.constant(cleaned_spectrum, dtype=tf.float32),
-        tf.constant(10, dtype=tf.int32),
-        tf.constant(2 ** 16, dtype=tf.int32),
-        tf.constant(2_000_000, dtype=tf.int32)
+    transformed_spectrum_dbm = tf.math.add(
+        tf.math.multiply(new_spectrum_dbm, factor),
+        offset
     )
 
-    print(feature_vector)
+    transformed_apparent_power_spectrum = tf.math.pow(
+        tf.constant(10, dtype=tf.float32),
+        tf.math.multiply(
+            tf.math.subtract(
+                transformed_spectrum_dbm,
+                tf.constant(30, dtype=tf.float32)
+            ),
+            tf.constant(0.1, dtype=tf.float32)
+        )
+    )
+
+    if reverse:
+        return tf.reverse(transformed_apparent_power_spectrum, axis=tf.constant([0]))
+    else:
+        return transformed_apparent_power_spectrum

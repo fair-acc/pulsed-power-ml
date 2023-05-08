@@ -7,11 +7,10 @@
 #include <iomanip>
 #include <thread>
 
-#include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
 #include "LimitingCurveWorker.hpp"
-#include "NilmPredictWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -58,7 +57,6 @@ public:
 
     void registerHandlers() override {
         _svr.set_mount_point("/", _serverRoot.string());
-
         _svr.Post("/stdio.html", [](const httplib::Request &request, httplib::Response &response) {
             opencmw::debug::log() << "QtWASM:" << request.body;
             response.set_content("", "text/plain");
@@ -97,27 +95,27 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    bool                 use_picoscope = false;
+    bool                 use_picoscope = true;
     PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
     flowgraph.start();
 
     // OpenCMW workers
-    CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
+    NilmDataWorker<"pulsed_power_nilm", description<"Nilm Data Worker">>                                  nilmDataWorker(broker);
 
     // run workers in separate threads
-    std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
-    counterWorkerThread.join();
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     limitingCurveWorkerThread.join();
+    nilmDataWorkerThread.join();
 }
