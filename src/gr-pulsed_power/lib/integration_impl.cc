@@ -15,10 +15,13 @@ namespace pulsed_power {
 
 using input_type = float;
 using output_type = float;
-integration::sptr
-integration::make(int decimation, int sample_rate, INTEGRATION_DURATION duration)
+integration::sptr integration::make(int decimation,
+                                    int sample_rate,
+                                    INTEGRATION_DURATION duration,
+                                    const std::string savefilename)
 {
-    return gnuradio::make_block_sptr<integration_impl>(decimation, sample_rate, duration);
+    return gnuradio::make_block_sptr<integration_impl>(
+        decimation, sample_rate, duration, savefilename);
 }
 
 
@@ -27,7 +30,8 @@ integration::make(int decimation, int sample_rate, INTEGRATION_DURATION duration
  */
 integration_impl::integration_impl(int decimation,
                                    int sample_rate,
-                                   INTEGRATION_DURATION duration)
+                                   INTEGRATION_DURATION duration,
+                                   const std::string savefilename)
     : gr::sync_decimator("integration",
                          gr::io_signature::make(
                              1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
@@ -38,7 +42,8 @@ integration_impl::integration_impl(int decimation,
       d_step_size(1.0 / sample_rate),
       d_decimation(decimation),
       d_last_value(0.0),
-      d_sum(0.0)
+      d_sum(0.0),
+      d_filename(savefilename)
 {
     switch (duration) {
     case INTEGRATION_DURATION::DAY:
@@ -99,7 +104,7 @@ void integration_impl::add_new_steps(float* out,
         rewrite_save_file = true;
         d_last_save = now;
     }
-    // reset every 30 days (also if no vlaues from file?)
+    // reset (also if no vlaues from file?)
     if (now - d_last_reset > std::chrono::hours(d_duration)) {
         rewrite_save_file = true;
         d_last_save = now;
@@ -136,7 +141,7 @@ int integration_impl::get_values_from_file(
         long last_reset_duration;
         long last_save_duration;
         std::ifstream read_stream;
-        read_stream.open("t.txt", std::ifstream::in);
+        read_stream.open(d_filename, std::ifstream::in);
         if (!read_stream.is_open()) {
             return -1;
         }
@@ -170,7 +175,7 @@ int integration_impl::write_to_file(
         long last_reset_duration = last_reset_s.time_since_epoch().count();
         long last_save_duration = last_save_s.time_since_epoch().count();
         std::ofstream write_stream;
-        write_stream.open("t.txt", std::ofstream::out | std::ofstream::trunc);
+        write_stream.open(d_filename, std::ofstream::out | std::ofstream::trunc);
         if (!write_stream.is_open()) {
             return -1;
         }

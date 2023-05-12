@@ -11,6 +11,8 @@
 #include <chrono>
 #include <unordered_map>
 
+#include <iostream>
+
 using opencmw::Annotated;
 using opencmw::NoUnit;
 
@@ -47,10 +49,10 @@ template<units::basic_fixed_string ServiceName, typename... Meta>
 class FrequencyDomainWorker
     : public Worker<ServiceName, FreqDomainContext, Empty, AcquisitionSpectra, Meta...> {
 private:
-    const size_t       RING_BUFFER_SIZE = 128;
-    const std::string  _deviceName;
-    std::atomic<bool>  _shutdownRequested;
-    std::jthread       _pollingThread;
+    const size_t      RING_BUFFER_SIZE = 512;
+    const std::string _deviceName;
+    // std::atomic<bool>  _shutdownRequested;
+    // std::jthread       _pollingThread;
     AcquisitionSpectra _reply;
     struct RingBufferData {
         std::vector<float> chunk;
@@ -71,7 +73,7 @@ public:
     explicit FrequencyDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             auto pollingDuration = std::chrono::duration<double, std::milli>();
             while (!_shutdownRequested) {
                 std::chrono::time_point timeStart = std::chrono::system_clock::now();
@@ -101,7 +103,7 @@ public:
                 auto willSleepFor = std::chrono::milliseconds(40) - pollingDuration;
                 std::this_thread::sleep_for(willSleepFor);
             }
-        });
+        });*/
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalFrequencySinksRegistryMutex);
         fmt::print("GR: number of frequency-domain sinks found: {}\n", gr::pulsed_power::globalFrequencySinksRegistry.size());
@@ -127,10 +129,10 @@ public:
         });
     }
 
-    ~FrequencyDomainWorker() {
-        _shutdownRequested = true;
+    ~FrequencyDomainWorker() = default;
+    /*{    _shutdownRequested = true;
         _pollingThread.join();
-    }
+    } */
 
     void callbackCopySinkData(std::vector<const void *> &input_items, int &nitems, size_t vector_size, const std::vector<std::string> &signal_name, float sample_rate, int64_t timestamp) {
         const float *in                 = static_cast<const float *>(input_items[0]);
@@ -179,10 +181,10 @@ private:
             for (RingBufferData bufferData : currentValues) {
                 if (bufferData.timestamp > lastRefTrigger) {
                     if (firstTimestamp == 0) {
-                        firstTimestamp = bufferData.timestamp;
+                        firstTimestamp      = bufferData.timestamp;
+                        out.refTriggerStamp = bufferData.timestamp;
                     }
-                    out.refTriggerStamp = bufferData.timestamp;
-                    chunkSize           = bufferData.chunk.size();
+                    chunkSize = bufferData.chunk.size();
                     stridedValues.insert(stridedValues.end(), bufferData.chunk.begin(), bufferData.chunk.end());
                     out.channelMagnitude_dim1_discrete_time_values.push_back(bufferData.timestamp);
                     out.channelTimeSinceRefTrigger.push_back(static_cast<float>(bufferData.timestamp - firstTimestamp) / 1e9f);

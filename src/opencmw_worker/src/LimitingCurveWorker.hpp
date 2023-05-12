@@ -40,8 +40,8 @@ using namespace opencmw::majordomo;
 template<units::basic_fixed_string ServiceName, typename... Meta>
 class LimitingCurveWorker
     : public Worker<ServiceName, TestContext, Empty, LimitingCurve, Meta...> {
-    std::atomic<bool> _shutdownRequested;
-    std::jthread      _pollingThread;
+    // std::atomic<bool> _shutdownRequested;
+    // std::jthread      _pollingThread;
     // std::chrono::duration<std::chrono::milliseconds> _updateInterval = std::chrono::milliseconds(40);
     LimitingCurve         _limitingCurve;
     static constexpr auto PROPERTY_NAME = std::string_view("testLimitingCurve");
@@ -52,7 +52,7 @@ public:
     template<typename BrokerType>
     explicit LimitingCurveWorker(const BrokerType &broker)
         : super_t(broker, {}) {
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             while (!_shutdownRequested) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(40));
                 TestContext context;
@@ -60,7 +60,7 @@ public:
                 LimitingCurve reply = _limitingCurve;
                 super_t::notify("limitingCurve", context, reply);
             }
-        });
+        });*/
         super_t::setCallback([this](RequestContext &rawCtx, const TestContext &,
                                      const Empty &, TestContext &,
                                      LimitingCurve &out) {
@@ -72,10 +72,10 @@ public:
         });
     }
 
-    ~LimitingCurveWorker() {
-        _shutdownRequested = true;
+    ~LimitingCurveWorker() = default;
+    /*{     _shutdownRequested = true;
         _pollingThread.join();
-    }
+    } */
 };
 
 #endif /* LIMITING_CURVE_WORKER_H */

@@ -9,6 +9,7 @@
 #include <gnuradio/pulsed_power/opencmw_time_sink.h>
 
 #include <chrono>
+#include <iostream>
 #include <unordered_map>
 
 using opencmw::Annotated;
@@ -49,8 +50,8 @@ template<units::basic_fixed_string serviceName, typename... Meta>
 class TimeDomainWorker
     : public Worker<serviceName, TimeDomainContext, Empty, Acquisition, Meta...> {
 private:
-    std::atomic<bool> _shutdownRequested;
-    std::jthread      _pollingThread;
+    // std::atomic<bool> _shutdownRequested;
+    // std::jthread      _pollingThread;
 
     class GRSink {
         struct RingBufferData {
@@ -64,11 +65,11 @@ private:
         std::string              _channelNameFilter; // signalName1@sampleRate,signalName2@sampleRate...
         float                    _sampleRate = 0;
         ringbuffer_t             _ringBuffer;
-        const size_t             RING_BUFFER_SIZE = 128;
+        const size_t             RING_BUFFER_SIZE = 512;
 
     public:
         GRSink() = delete;
-        GRSink(gr::pulsed_power::opencmw_time_sink *sink)
+        explicit GRSink(gr::pulsed_power::opencmw_time_sink *sink)
             : _channelNames(sink->get_signal_names()), _sampleRate(sink->get_sample_rate()) {
             _ringBuffer = std::make_shared<Ringbuffer<RingBufferData>>(RING_BUFFER_SIZE);
             for (size_t i = 0; i < _channelNames.size(); i++) {
@@ -105,7 +106,6 @@ private:
                             out.refTriggerStamp = bufData.timestamp;
                             firstChunk          = false;
                         }
-
                         stridedValues.insert(stridedValues.end(), bufData.chunk[i].begin(), bufData.chunk[i].end());
                     }
                 }
@@ -148,7 +148,7 @@ public:
     explicit TimeDomainWorker(const BrokerType &broker)
         : super_t(broker, {}) {
         // polling thread
-        _pollingThread = std::jthread([this] {
+        /*_pollingThread = std::jthread([this] {
             std::chrono::duration<double, std::milli> pollingDuration;
             while (!_shutdownRequested) {
                 std::chrono::time_point time_start = std::chrono::system_clock::now();
@@ -181,7 +181,7 @@ public:
                     std::this_thread::sleep_for(willSleepFor);
                 }
             }
-        });
+        });*/
         // map signal names and ringbuffers, register callback
         std::scoped_lock lock(gr::pulsed_power::globalTimeSinksRegistryMutex);
         fmt::print("GR: OpenCMW: time-domain sinks found: {}\n", gr::pulsed_power::globalTimeSinksRegistry.size());
@@ -204,10 +204,10 @@ public:
         });
     }
 
-    ~TimeDomainWorker() {
-        _shutdownRequested = true;
+    ~TimeDomainWorker() = default;
+    /*{    _shutdownRequested = true;
         _pollingThread.join();
-    }
+    }*/
 
 private:
     bool handleGetRequest(const TimeDomainContext &requestContext, Acquisition &out) {

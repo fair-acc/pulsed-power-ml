@@ -9,3 +9,10 @@ pyzmq
 pandas
 pyqt6
 pyqtgraph
+sklearn
+matplotlib
+pyyaml
+tensorflow
+tqdm
+scipy
+pytest

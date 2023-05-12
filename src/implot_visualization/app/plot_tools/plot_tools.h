@@ -327,9 +327,9 @@ void plotNestTable(
                 ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%.2f", powerUsage.powerUsages[row]);
                 ImGui::TableSetColumnIndex(3);
-                double relative = 0;
+                double relative = 0.0;
                 switch (m_d_w) {
-                case 0:
+                case Long:
                     if (row < powerUsage.powerUsagesMonth.size()) {
                         if (integratedValue > 0) {
                             relative = powerUsage.powerUsagesMonth[row] / integratedValue;
@@ -337,7 +337,7 @@ void plotNestTable(
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
-                case 1:
+                case Mid:
                     if (row < powerUsage.powerUsagesWeek.size()) {
                         if (integratedValue > 0) {
                             relative = powerUsage.powerUsagesWeek[row] / integratedValue;
@@ -345,7 +345,7 @@ void plotNestTable(
                         ImGui::Text("%3.2f %%", relative * 100);
                     }
                     break;
-                case 2:
+                case Short:
                     if (row < powerUsage.powerUsagesDay.size()) {
                         if (integratedValue > 0) {
                             relative = powerUsage.powerUsagesDay[row] / integratedValue;

@@ -1,5 +1,5 @@
+#include "deserialize_json.h"
 #include <cmath>
-#include <deserialize_json.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -59,14 +59,11 @@ template<typename T>
 IAcquisition<T>::IAcquisition() {}
 
 template<typename T>
-IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames)
+IAcquisition<T>::IAcquisition(const std::vector<std::string> _signalNames, const int _bufferSize)
     : signalNames(_signalNames) {
+    T buffer(_bufferSize);
     for (auto name : _signalNames) {
-        if (name == "U@10000Hz" || name == "I@10000Hz" || name == "U_bpf@10000Hz" || name == "I_bpf@10000Hz") {
-            this->buffers.emplace(this->buffers.end(), 600);
-        } else {
-            this->buffers.emplace(this->buffers.end());
-        }
+        this->buffers.push_back(buffer);
     }
 }
 
@@ -84,46 +81,6 @@ bool IAcquisition<T>::receivedRequestedSignals(std::vector<std::string> received
         }
     }
     return true;
-}
-
-bool receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
-    std::vector<std::string> expectedSignals = { "U@10000Hz", "I@10000Hz", "U_bpf@10000Hz", "I_bpf@10000Hz" };
-    if (receivedSignals.size() != expectedSignals.size()) {
-        return false;
-    }
-    for (int i = 0; i < receivedSignals.size(); i++) {
-        if (receivedSignals[i] != expectedSignals[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-Acquisition::Acquisition() {}
-
-Acquisition::Acquisition(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {}
-
-void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps, double refTrigger_ns) {
-    double absoluteTimestamp = 0.0;
-    double value             = 0.0;
-    int    stride            = strideArray.dims[1];
-    double refTrigger_s      = refTrigger_ns / std::pow(10, 9);
-
-    // Destride array
-    for (int i = 0; i < strideArray.dims[0]; i++) {
-        this->buffers[i].signalName = this->signalNames[i];
-        int offset                  = i * stride;
-
-        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
-            std::cout << "Invalid dimensions for strided array." << std::endl;
-        }
-        for (int j = 0; j < stride; j++) {
-            absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
-            value             = strideArray.values[offset + j];
-            this->buffers[i].addPoint(absoluteTimestamp, value);
-        }
-    }
 }
 
 StrideArray::StrideArray() {
@@ -156,6 +113,18 @@ void StrideArray::cut(const std::vector<int> newDims) {
     this->values = cutStrideArray.values;
 }
 
+bool Acquisition::receivedVoltageCurrentData(std::vector<std::string> receivedSignals) {
+    bool containsCurrent = false;
+    bool containsVoltage = false;
+    for (auto signalName : receivedSignals) {
+        if (signalName.find("I@") != std::string::npos)
+            containsCurrent = true;
+        if (signalName.find("U@") != std::string::npos)
+            containsVoltage = true;
+    }
+    return containsCurrent * containsVoltage;
+}
+
 const ConvertPair convertValues(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps) {
     ConvertPair         ret;
     StrideArray         newStrideArray = strideArray;
@@ -186,17 +155,49 @@ const ConvertPair convertValues(const StrideArray &strideArray, const std::vecto
     return ret;
 }
 
+Acquisition::Acquisition() {}
+
+Acquisition::Acquisition(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
+
+void Acquisition::addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamps, double refTrigger_ns) {
+    double absoluteTimestamp = 0.0;
+    double value             = 0.0;
+    int    stride            = strideArray.dims[1];
+    double refTrigger_s      = refTrigger_ns / std::pow(10, 9);
+
+    // Destride array
+    for (int i = 0; i < strideArray.dims[0]; i++) {
+        this->buffers[i].signalName = this->signalNames[i];
+        int offset                  = i * stride;
+
+        if (strideArray.values.size() != (strideArray.dims[0] * strideArray.dims[1])) {
+            std::cout << "Invalid dimensions for strided array." << std::endl;
+        }
+        for (int j = 0; j < stride; j++) {
+            absoluteTimestamp = refTrigger_s + relativeTimestamps[j];
+            value             = strideArray.values[offset + j];
+            this->buffers[i].addPoint(absoluteTimestamp, value);
+        }
+    }
+}
+
 void Acquisition::deserialize() {
     std::vector<double> relativeTimestamps = {};
     uint64_t            refTrigger_ns      = 0;
     StrideArray         strideArray;
     bool                convertValuesBool = false;
-    auto                json_obj          = json::parse(this->jsonString);
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in Aquisition: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
             refTrigger_ns = element.value();
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
@@ -213,24 +214,25 @@ void Acquisition::deserialize() {
             strideArray.values = std::vector<double>(element.value()["values"]);
         }
     }
-    if (convertValuesBool) {
-        ConvertPair ret    = convertValues(strideArray, relativeTimestamps);
-        relativeTimestamps = ret.relativeTimestamps;
-        refTrigger_ns      = ret.referenceTimestamps;
-        strideArray        = ret.strideArray;
-    }
     this->lastRefTrigger = refTrigger_ns;
-    this->lastTimeStamp  = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
-    addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = this->lastRefTrigger + relativeTimestamps.back() * 1e9;
+        if (convertValuesBool) {
+            ConvertPair ret    = convertValues(strideArray, relativeTimestamps);
+            relativeTimestamps = ret.relativeTimestamps;
+            refTrigger_ns      = ret.referenceTimestamps;
+            strideArray        = ret.strideArray;
+        }
+        addToBuffers(strideArray, relativeTimestamps, refTrigger_ns);
+    } else {
+        this->lastTimeStamp = this->lastRefTrigger;
+    }
 }
 
 AcquisitionSpectra::AcquisitionSpectra() {}
 
-AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
-    std::vector<Buffer> _buffer(_signalNames.size());
-    this->buffers = _buffer;
-}
+AcquisitionSpectra::AcquisitionSpectra(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
 
 void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequencyValues, const std::vector<double> &channelMagnitudeValues) {
     for (int i = 0; i < signalNames.size(); i++) {
@@ -242,13 +244,20 @@ void AcquisitionSpectra::addToBuffers(const std::vector<double> &channelFrequenc
 void AcquisitionSpectra::deserialize() {
     std::vector<double> channelMagnitudeValues;
     std::vector<double> channelFrequencyValues;
-    auto                json_obj = json::parse(this->jsonString);
+    uint64_t            refTrigger_ns      = 0;
+    std::vector<double> relativeTimestamps = {};
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in AquisitionSpectra: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
-            this->lastTimeStamp = element.value();
+            refTrigger_ns = element.value();
         } else if (element.key() == "channelName") {
             std::vector<std::string> channelNames = { element.value().get<std::string>() };
             if (!this->receivedRequestedSignals(channelNames)) {
@@ -265,19 +274,33 @@ void AcquisitionSpectra::deserialize() {
             }
         } else if (element.key() == "channelMagnitude_dim2_discrete_freq_values") {
             channelFrequencyValues.assign(element.value().begin(), element.value().end());
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            relativeTimestamps.assign(element.value().begin(), element.value().end());
         }
     }
-
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = refTrigger_ns + relativeTimestamps.back() * 1e9;
+    } else {
+        this->lastTimeStamp = refTrigger_ns;
+    }
     addToBuffers(channelFrequencyValues, channelMagnitudeValues);
 }
 
 PowerUsage::PowerUsage() {}
 
-PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {}
+PowerUsage::PowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {}
 
 void PowerUsage::deserialize() {
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in PowerUsage: " << this->jsonString << std::endl;
+        return;
+    }
     auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["timestamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "values") {
             this->powerUsages.clear();
@@ -290,15 +313,24 @@ void PowerUsage::deserialize() {
         if (element.key() == "timestamp") {
             timestamp = element.value();
         }
-        if (element.key() == "day_usage") {
+        if (element.key() == "dayUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesDay.clear();
             this->powerUsagesDay.assign(element.value().begin(), element.value().end());
         }
-        if (element.key() == "week_usage") {
+        if (element.key() == "weekUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesWeek.clear();
             this->powerUsagesWeek.assign(element.value().begin(), element.value().end());
         }
-        if (element.key() == "month_usage") {
+        if (element.key() == "monthUsage") {
+            if (element.value().size() == 0) {
+                return;
+            }
             this->powerUsagesMonth.clear();
             this->powerUsagesMonth.assign(element.value().begin(), element.value().end());
         }
@@ -363,8 +395,8 @@ void PowerUsage::setSumOfUsageMonth() {
 
 RealPowerUsage::RealPowerUsage() {}
 
-RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames)
-    : IAcquisition(_signalNames) {
+RealPowerUsage::RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {
     std::vector<double> _realPowerUsages(_signalNames.size());
     this->realPowerUsages = _realPowerUsages;
 }
@@ -387,15 +419,21 @@ void RealPowerUsage::addPowerUsage(const StrideArray &strideArray) {
 }
 
 void RealPowerUsage::deserialize() {
-    StrideArray strideArray;
-
-    auto        json_obj = json::parse(jsonString);
+    StrideArray         strideArray;
+    uint64_t            refTrigger_ns      = 0;
+    std::vector<double> relativeTimestamps = {};
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in RealPowerUasge: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(jsonString);
+    // empty response
+    if (json_obj["refTriggerStamp"] == 0) {
+        return;
+    }
     for (auto &element : json_obj.items()) {
         if (element.key() == "refTriggerStamp") {
-            if (element.value() == 0) {
-                return;
-            }
-            this->lastTimeStamp = element.value();
+            refTrigger_ns = element.value();
         } else if (element.key() == "channelNames") {
             if (!this->receivedRequestedSignals(element.value())) {
                 std::cout << "Received other signals than requested (RealPowerUsage)" << std::endl;
@@ -409,7 +447,14 @@ void RealPowerUsage::deserialize() {
                 strideArray.values = std::vector<double>(element.value()["values"]);
                 addPowerUsage(strideArray);
             }
+        } else if (element.key() == "channelTimeSinceRefTrigger") {
+            relativeTimestamps.assign(element.value().begin(), element.value().end());
         }
+    }
+    if (!relativeTimestamps.empty()) {
+        this->lastTimeStamp = refTrigger_ns + relativeTimestamps.back() * 1e9;
+    } else {
+        this->lastTimeStamp = refTrigger_ns;
     }
 
     this->init         = true;

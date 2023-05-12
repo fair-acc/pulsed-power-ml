@@ -10,7 +10,7 @@
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
 #include "LimitingCurveWorker.hpp"
-#include "NilmPredictWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -96,18 +96,22 @@ int main() {
 
     // flowgraph setup
     bool                 use_picoscope = true;
-    PulsedPowerFlowgraph flowgraph(1024, use_picoscope);
+    bool                 add_noise     = true; // adds noise on simulated data - has no effect on picoscope data
+
+    PulsedPowerFlowgraph flowgraph(256, use_picoscope, add_noise);
     flowgraph.start();
 
     // OpenCMW workers
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
     LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
+    NilmDataWorker<"pulsed_power_nilm", description<"Nilm Data Worker">>                                  nilmDataWorker(broker);
 
     // run workers in separate threads
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
     std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
 
     brokerThread.join();
 
@@ -115,4 +119,5 @@ int main() {
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
     limitingCurveWorkerThread.join();
+    nilmDataWorkerThread.join();
 }
