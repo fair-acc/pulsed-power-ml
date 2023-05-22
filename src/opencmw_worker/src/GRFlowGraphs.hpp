@@ -653,8 +653,8 @@ public:
         top->hier_block2::connect(frequency_spec_fft, 0, frequency_multiply_const, 0);
         top->hier_block2::connect(frequency_multiply_const, 0, frequency_spec_complex_to_mag, 0);
         top->hier_block2::connect(frequency_spec_complex_to_mag, 0, frequency_spec_pulsed_power_opencmw_freq_sink, 0); // freq_spectra apparent power
-        phase1_phi_phase_calculation(source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage1, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
-        phase2_phi_phase_calculation(source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage2, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
+        phase1_phi_phase_calculation(source_interface_current1, pulsed_power_power_calc_ff_0_0, source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage1, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
+        phase2_phi_phase_calculation(source_interface_current2, pulsed_power_power_calc_ff_0_0, source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage2, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
     }
     ~PulsedPowerFlowgraph() { top->stop(); }
     // start gnuradio flowgraph
@@ -774,7 +774,7 @@ public:
                 top->hier_block2::connect(throttle_current2, 0, source_interface_current2, 0);
         }
     }
-    void phase1_phi_phase_calculation(const float source_samp_rate, const float bpf_low_cut, const float bpf_high_cut, const int bpf_trans,
+    void phase1_phi_phase_calculation(std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current1, gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0, const float source_samp_rate, const float bpf_low_cut, const float bpf_high_cut, const int bpf_trans,
         const int decimation_bpf, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage1, const float samp_rate_delta_phi_calc,
         const int decimation_lpf, const float lpf_in_samp_rate, const float lpf_trans, const int decimation_delta_phi_calc){
         auto band_pass_filter_current1     = gr::filter::fft_filter_fff::make(
@@ -852,12 +852,11 @@ public:
         auto blocks_sub_phase1                        = gr::blocks::sub_ff::make(1);
         auto decimation_block_current_bpf1            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
         auto decimation_block_voltage_bpf1            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
-        void phase_calc_connections_1(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0,
-                source_interface_voltage1, band_pass_filter_voltage1, band_pass_filter_current1, decimation_block_current_bpf1,
-                decimation_block_voltage_bpf1, analog_sig_source_phase1_sin, analog_sig_source_phase1_cos, low_pass_filter_voltage1_0,
+        phase_calc_connections_1(pulsed_power_power_calc_ff_0_0, source_interface_voltage1, source_interface_current1, band_pass_filter_voltage1, band_pass_filter_current1,
+                decimation_block_current_bpf1, decimation_block_voltage_bpf1, blocks_multiply_phase1_0, blocks_multiply_phase1_1, blocks_multiply_phase1_2,
+                blocks_multiply_phase1_3, analog_sig_source_phase1_sin, analog_sig_source_phase1_cos,
                 low_pass_filter_voltage1_0, low_pass_filter_voltage1_1, low_pass_filter_current1_0, low_pass_filter_current1_1,
                 blocks_divide_phase1_0, blocks_divide_phase1_1, blocks_transcendental_phase1_0, blocks_transcendental_phase1_1, blocks_sub_phase1);
-
     }
 
 
@@ -868,7 +867,7 @@ public:
         std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase1_0, std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase1_1,
         std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase1_2, std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase1_3,
         std::shared_ptr<gr::analog::sig_source_f> analog_sig_source_phase1_sin, std::shared_ptr<gr::analog::sig_source_f> analog_sig_source_phase1_cos,
-        gr::filter::fft_filter_fff::sptr low_pass_filter_voltage1_0, gr::filter::fft_filter_fff::sptr low_pass_filter_voltage1_0,
+        gr::filter::fft_filter_fff::sptr low_pass_filter_voltage1_0,
         gr::filter::fft_filter_fff::sptr low_pass_filter_voltage1_1, gr::filter::fft_filter_fff::sptr low_pass_filter_current1_0,
         gr::filter::fft_filter_fff::sptr low_pass_filter_current1_1,  std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase1_0,
         std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase1_1, gr::blocks::transcendental::sptr blocks_transcendental_phase1_0,
@@ -919,9 +918,12 @@ public:
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, null_sink_p_q_s_phi_acc, 1);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, null_sink_p_q_s_phi_acc, 2);
     }
-    void phase2_phi_phase_calculation(const float source_samp_rate, const float bpf_low_cut, const float bpf_high_cut, const int bpf_trans,
-        const int decimation_bpf, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage2, const float samp_rate_delta_phi_calc,
-        const int decimation_lpf, const float lpf_in_samp_rate, const float lpf_trans, const int decimation_delta_phi_calc){
+    void phase2_phi_phase_calculation(std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current2,
+        gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0, const float source_samp_rate, const float bpf_low_cut,
+        const float bpf_high_cut, const int bpf_trans, const int decimation_bpf, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage2,
+        const float samp_rate_delta_phi_calc, const int decimation_lpf, const float lpf_in_samp_rate, const float lpf_trans,
+        const int decimation_delta_phi_calc)
+        {
         auto band_pass_filter_current2     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
                     gr::filter::firdes::band_pass(
@@ -997,12 +999,12 @@ public:
         auto blocks_sub_phase2                        = gr::blocks::sub_ff::make(1);
         auto decimation_block_current_bpf2            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
         auto decimation_block_voltage_bpf2            = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_delta_phi_calc);
-        void phase_calc_connections_2(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0,
-                source_interface_voltage2, band_pass_filter_voltage2, band_pass_filter_current2, decimation_block_current_bpf2,
-                decimation_block_voltage_bpf2, analog_sig_source_phase2_sin, analog_sig_source_phase2_cos, low_pass_filter_voltage2_0,
+        phase_calc_connections_2(pulsed_power_power_calc_ff_0_0, source_interface_voltage2, source_interface_current2, band_pass_filter_voltage2,
+                band_pass_filter_current2, decimation_block_current_bpf2, decimation_block_voltage_bpf2, blocks_multiply_phase2_0,
+                blocks_multiply_phase2_1, blocks_multiply_phase2_2, blocks_multiply_phase2_3, analog_sig_source_phase2_sin, analog_sig_source_phase2_cos,
                 low_pass_filter_voltage2_0, low_pass_filter_voltage2_1, low_pass_filter_current2_0, low_pass_filter_current2_1,
-                blocks_divide_phase2_0, blocks_divide_phase2_1, blocks_transcendental_phase2_0, blocks_transcendental_phase2_1, blocks_sub_phase2);
-
+                blocks_divide_phase2_0, blocks_divide_phase2_1, blocks_transcendental_phase2_0, blocks_transcendental_phase2_1, blocks_sub_phase2
+                );
     }
 
     
@@ -1013,11 +1015,12 @@ public:
         std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase2_0, std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase2_1,
         std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase2_2, std::shared_ptr<gr::blocks::multiply_ff> blocks_multiply_phase2_3,
         std::shared_ptr<gr::analog::sig_source_f> analog_sig_source_phase2_sin, std::shared_ptr<gr::analog::sig_source_f> analog_sig_source_phase2_cos,
-        gr::filter::fft_filter_fff::sptr low_pass_filter_voltage2_0, gr::filter::fft_filter_fff::sptr low_pass_filter_voltage2_0,
-        gr::filter::fft_filter_fff::sptr low_pass_filter_voltage2_1, gr::filter::fft_filter_fff::sptr low_pass_filter_current2_0,
-        gr::filter::fft_filter_fff::sptr low_pass_filter_current2_1,  std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase2_0,
-        std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase2_1, gr::blocks::transcendental::sptr blocks_transcendental_phase2_0,
-        gr::blocks::transcendental::sptr blocks_transcendental_phase2_1, std::shared_ptr<gr::blocks::sub_ff> blocks_sub_phase2){
+        gr::filter::fft_filter_fff::sptr low_pass_filter_voltage2_0, gr::filter::fft_filter_fff::sptr low_pass_filter_voltage2_1,
+        gr::filter::fft_filter_fff::sptr low_pass_filter_current2_0, gr::filter::fft_filter_fff::sptr low_pass_filter_current2_1,
+        std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase2_0, std::shared_ptr<gr::blocks::divide_ff> blocks_divide_phase2_1,
+        gr::blocks::transcendental::sptr blocks_transcendental_phase2_0, gr::blocks::transcendental::sptr blocks_transcendental_phase2_1,
+        std::shared_ptr<gr::blocks::sub_ff> blocks_sub_phase2)
+        {
         auto null_sink_p_q_s_phi_1 = gr::blocks::null_sink::make(sizeof(float));
         auto null_sink_p_q_s_phi_2 = gr::blocks::null_sink::make(sizeof(float));
         auto null_sink_p_q_s_phi_acc = gr::blocks::null_sink::make(sizeof(float));
