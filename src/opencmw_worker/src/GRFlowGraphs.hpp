@@ -654,6 +654,7 @@ public:
         top->hier_block2::connect(frequency_multiply_const, 0, frequency_spec_complex_to_mag, 0);
         top->hier_block2::connect(frequency_spec_complex_to_mag, 0, frequency_spec_pulsed_power_opencmw_freq_sink, 0); // freq_spectra apparent power
         phase1_phi_phase_calculation(source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage1, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
+        phase2_phi_phase_calculation(source_samp_rate, bpf_low_cut, bpf_high_cut, bpf_trans, decimation_bpf, source_interface_voltage2, samp_rate_delta_phi_calc, decimation_lpf, lpf_in_samp_rate, lpf_trans, decimation_delta_phi_calc);
     }
     ~PulsedPowerFlowgraph() { top->stop(); }
     // start gnuradio flowgraph
@@ -1005,7 +1006,7 @@ public:
     }
 
     
-    void phase_calc_connections_1(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0,
+    void phase_calc_connections_2(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0,
         std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage2, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current2,
         gr::filter::fft_filter_fff::sptr band_pass_filter_voltage2, gr::filter::fft_filter_fff::sptr band_pass_filter_current2,
         gr::blocks::keep_one_in_n::sptr decimation_block_current_bpf2, gr::blocks::keep_one_in_n::sptr decimation_block_voltage_bpf2,
