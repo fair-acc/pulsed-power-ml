@@ -9,6 +9,8 @@
 #include <cppflow/ops.h>
 #include <cppflow/tensor.h>
 
+#include <chrono>
+
 #include "FrequencyDomainWorker.hpp"
 #include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
@@ -115,7 +117,7 @@ class NilmPredictWorker : public Worker<serviceName, NilmContext, Empty, NilmPre
     std::jthread                     _predictThread;
     std::jthread                     _fetchThread;
     NilmPredictData                  _nilmData;
-    std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", 1);
+    std::shared_ptr<PowerIntegrator> _powerIntegrator = std::make_shared<PowerIntegrator>(_nilmData.names.size(), "./src/data/", std::chrono::minutes(10));
 
     std::shared_ptr<SUIDataSink>     _suiDataSink     = std::make_shared<SUIDataSink>();
     std::shared_ptr<PQSPhiDataSink>  _pqsphiDataSink  = std::make_shared<PQSPhiDataSink>();
@@ -208,21 +210,18 @@ public:
                             auto            output = _model({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
                             auto            values = output[0].get_data<float>();
-
-                            // values print
-                            fmt::print("input:  {}\n", input);
-                            fmt::print("output: {}\n", output[0]);
-                            fmt::print("output data: {}\n", values);
-
+                        
+ 
                             // fill data for REST
                             _nilmData.values.clear();
                             for (auto v : values) {
                                 _nilmData.values.push_back(static_cast<double>(v));
                             }
-                            _powerIntegrator->update(acquisitionNilm.refTriggerStamp[i], values);
-
-                            super_t::notify("/nilmPredictData", context, _nilmData);
-                        }
+                           _powerIntegrator->update(acquisitionNilm.refTriggerStamp[i], values);
+                         }
+                    }
+                    else {
+                         fmt::print("Invalid response \n");
                     }
 
                     fillDayUsage();
@@ -238,9 +237,10 @@ public:
                 auto willSleepFor = updateInterval - predictDuration;
 
                 if (willSleepFor > 0ms) {
+                    fmt::print("Data prediction took {}\n", predictDuration);
                     std::this_thread::sleep_for(willSleepFor);
                 } else {
-                    fmt::print("Data prediction too slow\n");
+                    fmt::print("Data prediction too slow, took {} \n", predictDuration);
                 }
             }
         });
@@ -292,7 +292,7 @@ private:
         _nilmData.dayUsage.clear();
         // dummy data
         // _nilmData.dayUsage = { 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 500.55, 100.0, 323.34, 234.33, 21.9 };
-        auto powerDay = _powerIntegrator->get_power_usages_day();
+        auto powerDay = _powerIntegrator->getPowerUsagesDay();
         for (auto v : powerDay) {
             _nilmData.dayUsage.push_back(v);
         }
@@ -302,7 +302,7 @@ private:
         _nilmData.weekUsage.clear();
         // dummy data
         // _nilmData.weekUsage = { 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 3500.55, 700.0, 2123.34, 1434.33, 100.0 };
-        auto powerWeek = _powerIntegrator->get_power_usages_week();
+        auto powerWeek = _powerIntegrator->getPowerUsagesWeek();
         for (auto v : powerWeek) {
             _nilmData.weekUsage.push_back(v);
         }
@@ -312,7 +312,7 @@ private:
         _nilmData.monthUsage.clear();
         // dummy data
         // _nilmData.monthUsage = { 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 1200.89, 1500.232, 3000.99, 2599.34, 300.0 };
-        auto powerMonth = _powerIntegrator->get_power_usages_month();
+        auto powerMonth = _powerIntegrator->getPowerUsagesMonth();
         for (auto v : powerMonth) {
             _nilmData.monthUsage.push_back(v);
         }

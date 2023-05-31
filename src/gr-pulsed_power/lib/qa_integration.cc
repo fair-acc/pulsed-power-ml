@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSamplesReturnPositiveValue)
     const float* sample = sample_float;
     int num_samples = 2;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
@@ -49,8 +49,8 @@ BOOST_AUTO_TEST_CASE(constantNegativeSamplesReturnNegativeValue)
     const float* sample = sample_float;
     int num_samples = 2;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(ConstantSingleSampleReturnsZero)
     const float* sample = sample_float;
     int num_samples = 1;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(NoSampleReturnsZero) // What happens if there is no sample?
     const float* sample = sample_float;
     int num_samples = 0;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(constantPositiveSampleAndConstantNegativeSampleReturnZero)
     const float* sample = sample_float;
     int num_samples = 2;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);
@@ -139,8 +139,8 @@ BOOST_AUTO_TEST_CASE(constantZeroSamplesReturnZero)
     const float* sample = sample_float;
     int num_samples = 2;
     // Create pointer for output
-    float out_float[1] = { 0.0 };
-    float* out = out_float;
+    double out_double[1] = { 0.0 };
+    double* out = out_double;
 
     // Call function
     integration_block->integrate(out[0], sample, num_samples, false);

@@ -9,6 +9,7 @@
 #include <gnuradio/io_signature.h>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 
 namespace gr {
 namespace pulsed_power {
@@ -113,13 +114,13 @@ void integration_impl::add_new_steps(float* out,
     }
 
     for (int i = 0; i < number_of_calculations; i++) {
-        float int_value = 0.0;
+        double int_value = 0.0;
         integrate(int_value,
                   &sample[i * d_decimation],
                   d_decimation,
                   calculate_with_last_value);
         d_sum = d_sum + int_value;
-        out[i] = d_sum;
+        out[i] = static_cast<double>(d_sum);
         d_last_value = sample[((i + 1) * d_decimation) - 1];
         calculate_with_last_value = true;
     }
@@ -135,7 +136,7 @@ void integration_impl::add_new_steps(float* out,
 int integration_impl::get_values_from_file(
     std::chrono::time_point<std::chrono::system_clock>& last_reset,
     std::chrono::time_point<std::chrono::system_clock>& last_save,
-    float& sum)
+    double& sum)
 {
     try {
         long last_reset_duration;
@@ -166,7 +167,7 @@ int integration_impl::get_values_from_file(
 int integration_impl::write_to_file(
     std::chrono::time_point<std::chrono::system_clock> last_reset,
     std::chrono::time_point<std::chrono::system_clock> last_save,
-    float sum)
+    double sum)
 {
     try {
         auto last_reset_s =
@@ -181,24 +182,24 @@ int integration_impl::write_to_file(
         }
         write_stream << last_reset_duration << '\n';
         write_stream << last_save_duration << '\n';
-        write_stream << sum;
+        write_stream << std::setprecision(16) << sum;
         return 0;
     } catch (...) {
         return -1;
     }
 }
 
-void integration_impl::integrate(float& out,
+void integration_impl::integrate(double& out,
                                  const float* sample,
                                  int n_samples,
                                  bool calculate_with_last_value)
 {
-    double value = 0;
+    double value = 0.0;
     if (calculate_with_last_value) {
-        value += d_step_size * ((d_last_value + sample[0]) / 2);
+        value += d_step_size * ((d_last_value + sample[0]) / 2.0);
     }
     for (int i = 1; i < n_samples; i++) {
-        value += d_step_size * ((sample[i - 1] + sample[i]) / 2);
+        value += d_step_size * ((sample[i - 1] + sample[i]) / 2.0);
     }
     out = value / 3600.0;
 }

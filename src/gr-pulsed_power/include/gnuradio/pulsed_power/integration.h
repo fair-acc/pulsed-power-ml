@@ -47,14 +47,14 @@ public:
     /*!
      * @brief Calculates the integral of the samples given in Watt
      *
-     * @param out Result pointer to integrated values in Watt/hour
+     * @param out Result pointer to integrated values in Wh
      * @param sample Pointer to samples that shall be integrated
      * @param n_samples Number of samples over that is integrated
      * @param calculate_with_last_value if true the last value of the last sequence is
      * used to calculate the value of the integral since then. Only do this if the
      * last_value variable was set.
      */
-    virtual void integrate(float& out,
+    virtual void integrate(double& out,
                            const float* sample,
                            int n_samples,
                            bool calculate_with_last_value) = 0;
