@@ -5,16 +5,16 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <vector>
 
 class PowerIntegrator {
 private:
-    const double                                       _unitFactor          = 0.000000000000001 / 3.6;
-    const std::string                                  _file                 = "nilm_usage.txt";
+    const double                                       _unitFactor         = 0.000000000000001 / 3.6;
+    const std::string                                  _file               = "nilm_usage.txt";
     const std::chrono::hours                           _resetIntervalMonth = std::chrono::hours(24 * 30);
     const std::chrono::hours                           _resetIntervalWeek  = std::chrono::hours(24 * 7);
     const std::chrono::hours                           _resetIntervalDay   = std::chrono::hours(24);
@@ -22,6 +22,7 @@ private:
     const size_t                                       _amountOfDevices;
     const std::string                                  _dataPath;
     const std::chrono::minutes                         _saveInterval;
+    const std::chrono::seconds                         _updateInterval = std::chrono::seconds(10);
 
     std::chrono::time_point<std::chrono::system_clock> _lastSave;
     std::chrono::time_point<std::chrono::system_clock> _lastResetDay;
@@ -32,15 +33,15 @@ private:
     std::vector<float>                                 _lastValues;
 
     // current cumulate power usage of devices
-    std::vector<double>                                        _powerUsagesMonth;
-    std::vector<double>                                        _powerUsagesWeek;
-    std::vector<double>                                        _powerUsagesDay;
+    std::vector<double>                                       _powerUsagesMonth;
+    std::vector<double>                                       _powerUsagesWeek;
+    std::vector<double>                                       _powerUsagesDay;
 
     std::mutex                                                _dataMutex;
     std::atomic<bool>                                         _shutdownRequested;
     std::jthread                                              _resetAndUpdateThread;
 
-    static bool                                               createDirectory(const std::string& directoryPath);
+    static bool                                               createDirectory(const std::string &directoryPath);
     static int64_t                                            getUnixTimestampFromTimepoint(std::chrono::time_point<std::chrono::system_clock> timePoint);
     static std::chrono::time_point<std::chrono::system_clock> getTimePointFromUnixTimestamp(int64_t timestamp);
 
@@ -55,11 +56,11 @@ public:
     std::vector<float> getPowerUsagesWeek() const;
     std::vector<float> getPowerUsagesDay() const;
 
-    explicit PowerIntegrator(size_t amountOfDevices, std::string dataPath = "./", std::chrono::minutes saveInterval = std::chrono::minutes(10));
+    explicit PowerIntegrator(size_t amountOfDevices, const std::string &dataPath = "./", std::chrono::minutes saveInterval = std::chrono::minutes(10));
     ~PowerIntegrator();
 };
 
-PowerIntegrator::PowerIntegrator(const size_t amountOfDevices, const std::string dataPath, const std::chrono::minutes saveInterval)
+PowerIntegrator::PowerIntegrator(const size_t amountOfDevices, const std::string &dataPath, const std::chrono::minutes saveInterval)
     : _amountOfDevices(amountOfDevices), _dataPath(dataPath), _saveInterval(saveInterval), _shutdownRequested(false) {
     std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
 
@@ -76,7 +77,7 @@ PowerIntegrator::PowerIntegrator(const size_t amountOfDevices, const std::string
     }
 
     if (!readValuesFromFile()) {
-        _lastSave        = now;
+        _lastSave       = now;
         _lastResetDay   = now;
         _lastResetWeek  = now;
         _lastResetMonth = now;
@@ -88,7 +89,7 @@ PowerIntegrator::PowerIntegrator(const size_t amountOfDevices, const std::string
     _resetAndUpdateThread = std::jthread([this] {
         while (!_shutdownRequested) {
             resetValuesAndRewriteFile();
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            std::this_thread::sleep_for(_updateInterval);
         }
     });
 }
@@ -98,7 +99,7 @@ PowerIntegrator::~PowerIntegrator() {
     _resetAndUpdateThread.join();
 }
 
-bool PowerIntegrator::createDirectory(const std::string& directoryPath) {
+bool PowerIntegrator::createDirectory(const std::string &directoryPath) {
     if (std::filesystem::exists(std::filesystem::status(directoryPath.c_str()))) {
         return std::filesystem::is_directory(std::filesystem::status(directoryPath.c_str()));
     } else {
@@ -128,18 +129,18 @@ void PowerIntegrator::update(int64_t timestamp, std::vector<float> &values) {
 
 double PowerIntegrator::calculateUsage(int64_t t_0, float lastValue, int64_t t_1, float currentValue) const {
     int64_t deltaTimeInt = t_1 - t_0;
-    double  deltaTime     = static_cast<double>(deltaTimeInt);
-    double  valueSum      = static_cast<double>(lastValue + currentValue);
-    double  result         = deltaTime * (valueSum / 2.0) * _unitFactor;
+    double  deltaTime    = static_cast<double>(deltaTimeInt);
+    double  valueSum     = static_cast<double>(lastValue + currentValue);
+    double  result       = deltaTime * (valueSum / 2.0) * _unitFactor;
     return result;
 }
 
 bool PowerIntegrator::readValuesFromFile() {
-    int64_t     lastResetDayTimestamp = 0;
-    int64_t     lastResetWeekTimestamp = 0;
-    int64_t     lastResetMonthTimestamp = 0;
-    int64_t     lastSaveTimestamp = 0;
-    const std::string filePath = _dataPath + _file;
+    int64_t           lastResetDayTimestamp   = 0;
+    int64_t           lastResetWeekTimestamp  = 0;
+    int64_t           lastResetMonthTimestamp = 0;
+    int64_t           lastSaveTimestamp       = 0;
+    const std::string filePath                = _dataPath + _file;
     try {
         std::ifstream readStream;
         readStream.open(filePath, std::ifstream::in);
@@ -153,7 +154,7 @@ bool PowerIntegrator::readValuesFromFile() {
         readStream >> lastResetMonthTimestamp;
         _lastResetMonth = getTimePointFromUnixTimestamp(lastResetMonthTimestamp);
         readStream >> lastSaveTimestamp;
-        _lastSave = getTimePointFromUnixTimestamp(lastSaveTimestamp);
+        _lastSave    = getTimePointFromUnixTimestamp(lastSaveTimestamp);
 
         double value = 0.0;
         for (size_t i = 0; i < _amountOfDevices; i++) {
@@ -232,7 +233,7 @@ std::vector<float> PowerIntegrator::getPowerUsagesWeek() const {
 }
 
 std::vector<float> PowerIntegrator::getPowerUsagesDay() const {
-     std::vector<float> powerUsagesFloat;
+    std::vector<float> powerUsagesFloat;
     for (double value : _powerUsagesDay) {
         powerUsagesFloat.push_back(static_cast<float>(value));
     }
