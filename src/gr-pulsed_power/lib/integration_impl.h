@@ -25,6 +25,7 @@ private:
     time_point<system_clock> d_last_reset;
     float d_sum;
     int d_duration;
+    const std::string d_filename;
 
     int get_values_from_file(time_point<system_clock>& last_reset,
                              time_point<system_clock>& last_save,
@@ -34,7 +35,10 @@ private:
                       float sum);
 
 public:
-    integration_impl(int decimation, int sample_rate, INTEGRATION_DURATION duration);
+    integration_impl(int decimation,
+                     int sample_rate,
+                     INTEGRATION_DURATION duration,
+                     const std::string savefilename);
     ~integration_impl() override;
 
     void add_new_steps(float* out, const float* sample, int noutput_items) override;

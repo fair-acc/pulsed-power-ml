@@ -63,7 +63,7 @@ static void main_loop(void *);
 int         main(int argc, char **argv) {
     // Set color theme via query parameters of url
     Plotter::DataInterval Interval            = Plotter::Short;
-    std::string           sampRate            = "100Hz";
+    double                sampRate            = 100;
     float                 updateFreq          = 25.0f;
     ColorTheme            ColorTheme          = Light;
     std::string           integrationInterval = "Day";
@@ -72,17 +72,17 @@ int         main(int argc, char **argv) {
         if (arg.find("interval") != std::string::npos) {
             if (arg.find("short") != std::string::npos) {
                 Interval            = Plotter::Short;
-                sampRate            = "100Hz";
+                sampRate            = 100;
                 updateFreq          = 25.0f;
                 integrationInterval = "Day";
             } else if (arg.find("mid") != std::string::npos) {
                 Interval            = Plotter::Mid;
-                sampRate            = "1Hz";
+                sampRate            = 1;
                 updateFreq          = 1.0f;
                 integrationInterval = "Week";
             } else if (arg.find("long") != std::string::npos) {
                 Interval            = Plotter::Long;
-                sampRate            = "0.016666668Hz";
+                sampRate            = 0.016666668;
                 updateFreq          = 0.1f;
                 integrationInterval = "Month";
             }
@@ -96,13 +96,13 @@ int         main(int argc, char **argv) {
         }
     }
 
-    Subscription<PowerUsage>     nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, updateFreq);
-    Subscription<RealPowerUsage> integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval + "@1Hz", "S_Int_" + integrationInterval + "@1Hz" }, updateFreq);
-    Subscription<Acquisition>    powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@" + sampRate, "Q@" + sampRate, "S@" + sampRate, "phi@" + sampRate }, updateFreq);
+    Subscription<PowerUsage>     nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, 0, 1, updateFreq);
+    Subscription<RealPowerUsage> integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval, "S_Int_" + integrationInterval }, 1, 1, updateFreq);
+    Subscription<Acquisition>    powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P", "Q", "S", "phi" }, sampRate, 30'000, updateFreq);
 
-    // Subscription<PowerUsage>                  nilmSubscription("http://10.0.0.2:8081/", { "nilm_predict_values" }, updateFreq);
-    // Subscription<RealPowerUsage>              integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int@" + sampRate, "S_Int@" + sampRate }, updateFreq);
-    // Subscription<Acquisition>                 powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P@100Hz", "Q@100Hz", "S@100Hz", "phi@100Hz" }, updateFreq);
+    // Subscription<PowerUsage>     nilmSubscription("http://10.0.0.2:8081/", { "nilm_predict_values" }, 0, 1, updateFreq);
+    // Subscription<RealPowerUsage> integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval, "S_Int_" + integrationInterval }, 1, 1, updateFreq);
+    // Subscription<Acquisition>    powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P", "Q", "S", "phi" }, sampRate, 30'000, updateFreq);
 
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };

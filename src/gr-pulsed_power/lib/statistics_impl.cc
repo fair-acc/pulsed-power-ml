@@ -30,9 +30,9 @@ statistics_impl::statistics_impl(int decimation)
                          gr::io_signature::make(4 /* min outputs */,
                                                 4 /*max outputs */,
                                                 sizeof(output_type)),
-                         decimation)
+                         decimation),
+      d_decimation(decimation)
 {
-    d_decimation = decimation;
 }
 
 /*
@@ -72,11 +72,11 @@ void statistics_impl::calculate_statistics(float& mean,
 {
     float sum = 0.0;
     float sum_of_squares = 0.0;
-    float current, j;
+    float j;
     min = in[0];
     max = in[0];
     for (int i = 0; i < ninput_items; i++) {
-        current = in[i];
+        float current = in[i];
         if (current < min) {
             min = current;
         }
@@ -88,11 +88,12 @@ void statistics_impl::calculate_statistics(float& mean,
         // calculate the sum of squares with the formular of Youngs and Cramer
         if (j > 1) {
             sum_of_squares +=
-                (1 / (j * (j - 1.0))) * ((j * current) - sum) * ((j * current) - sum);
+                (1 / (j * (j - 1.0f))) * ((j * current) - sum) * ((j * current) - sum);
         }
     }
-    mean = sum / ninput_items;
-    std_deviation = sqrt(sum_of_squares / ninput_items);
+    float ninput_items_calc = static_cast<float>(ninput_items);
+    mean = sum / ninput_items_calc;
+    std_deviation = sqrt(sum_of_squares / ninput_items_calc);
 }
 
 } /* namespace pulsed_power */
