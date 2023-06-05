@@ -859,7 +859,6 @@ public:
                 blocks_divide_phase1_0, blocks_divide_phase1_1, blocks_transcendental_phase1_0, blocks_transcendental_phase1_1, blocks_sub_phase1);
     }
 
-
     void phase_calc_connections_1(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0,
         std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage1, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current1,
         gr::filter::fft_filter_fff::sptr band_pass_filter_voltage1, gr::filter::fft_filter_fff::sptr band_pass_filter_current1,
