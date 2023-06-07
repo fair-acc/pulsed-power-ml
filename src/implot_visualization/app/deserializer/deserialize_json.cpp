@@ -46,15 +46,6 @@ void ScrollingBuffer::erase() {
     }
 }
 
-void PowerBuffer::updateValues(const std::vector<double> &_values) {
-    this->values       = _values;
-    auto   clock       = std::chrono::system_clock::now();
-
-    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    this->timestamp    = currentTime;
-    init               = true;
-}
-
 template<typename T>
 IAcquisition<T>::IAcquisition() {}
 
@@ -469,6 +460,39 @@ void RealPowerUsage::fail() {
     this->success = false;
 }
 
+PowerUsageWeek::PowerUsageWeek(const std::vector<std::string> &_signalNames, const int _bufferSize)
+    : IAcquisition(_signalNames, _bufferSize) {
+    for (int i = 0; i < 7; i++) {
+        this->values.push_back(0.0);
+    }
+}
+
+void PowerUsageWeek::deserialize() {
+    if (!json::accept(this->jsonString)) {
+        std::cout << "Invalid json string in PowerUsage: " << this->jsonString << std::endl;
+        return;
+    }
+    auto json_obj = json::parse(this->jsonString);
+    // empty response
+    if (json_obj["timestamp"] == 0) {
+        return;
+    }
+    for (auto &element : json_obj.items()) {
+        if (element.key() == "values") {
+            this->values.clear();
+            this->values.assign(element.value().begin(), element.value().end());
+        }
+        if (element.key() == "timestamp") {
+            this->timestamp = element.value();
+        }
+    }
+}
+
+std::vector<double> PowerUsageWeek::getValues() {
+    return values;
+}
+
+
 template class IAcquisition<Buffer>;
 template class IAcquisition<ScrollingBuffer>;
-template class IAcquisition<PowerBuffer>;
+template class IAcquisition<DummyBuffer>;

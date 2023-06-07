@@ -23,11 +23,12 @@
 
 #define ELECTRICY_PRICE 30
 
-class AppState {
+class AppStateNilm {
 public:
     SDL_Window                               *window    = nullptr;
     SDL_GLContext                             GLContext = nullptr;
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage;
+    std::vector<Subscription<PowerUsageWeek>> subscriptionsPowerUsageWeek;
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain;
     std::vector<Subscription<RealPowerUsage>> subscriptionsRealPowerUsage;
     Plotter::DataInterval                     Interval;
@@ -37,13 +38,15 @@ public:
         ImFont *text;
         ImFont *fontawesome;
     };
-    AppState::AppFonts fonts{};
+    AppStateNilm::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<PowerUsage>>    &_powerUsages,
+    AppStateNilm(std::vector<Subscription<PowerUsage>>    &_powerUsages,
+            std::vector<Subscription<PowerUsageWeek>> &_subscriptionsPowerUsageWeek,
             std::vector<Subscription<Acquisition>>    &_subscriptionsTimeDomain,
             std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage,
             Plotter::DataInterval                      _Interval) {
         this->subscriptionsPowerUsage     = _powerUsages;
+        this->subscriptionsPowerUsageWeek = _subscriptionsPowerUsageWeek;
         this->subscriptionsTimeDomain     = _subscriptionsTimeDomain;
         this->subscriptionsRealPowerUsage = _subscriptionRealPowerUsage;
         this->Interval                    = _Interval;
@@ -97,6 +100,7 @@ int         main(int argc, char **argv) {
     }
 
     Subscription<PowerUsage>     nilmSubscription("http://localhost:8081/", { "nilm_predict_values" }, 0, 1, updateFreq);
+    Subscription<PowerUsageWeek> nilmWeekSubscription("http://localhost:8081/", { "nilm_week_values" }, 0, 1, updateFreq);
     Subscription<RealPowerUsage> integratedValues("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval, "S_Int_" + integrationInterval }, 1, 1, updateFreq);
     Subscription<Acquisition>    powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P", "Q", "S", "phi" }, sampRate, 30'000, updateFreq);
 
@@ -107,7 +111,8 @@ int         main(int argc, char **argv) {
     std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
     std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
     std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { integratedValues };
-    AppState                                  appState(subscriptionsPowerUsage, subscriptionsTimeDomain, subscriptionRealPowerUsage, Interval);
+    std::vector<Subscription<PowerUsageWeek>> subscriptionsPowerUsageWeek= { nilmWeekSubscription };
+    AppStateNilm                              appState(subscriptionsPowerUsage, subscriptionsPowerUsageWeek, subscriptionsTimeDomain, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -194,8 +199,9 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    AppState                                  *args                         = static_cast<AppState *>(arg);
+    AppStateNilm                              *args                         = static_cast<AppStateNilm *>(arg);
     std::vector<Subscription<PowerUsage>>     &subscriptionsPowerUsages     = args->subscriptionsPowerUsage;
+    std::vector<Subscription<PowerUsageWeek>> &subscriptionsPowerUsagesWeek = args->subscriptionsPowerUsageWeek;
     std::vector<Subscription<Acquisition>>    &subscriptionsTimeDomain      = args->subscriptionsTimeDomain;
     std::vector<Subscription<RealPowerUsage>> &subscriptionsRealPowerUsages = args->subscriptionsRealPowerUsage;
     Plotter::DataInterval                     &Interval                     = args->Interval;
@@ -228,19 +234,15 @@ static void main_loop(void *arg) {
         for (Subscription<PowerUsage> &powerUsage : subscriptionsPowerUsages) {
             powerUsage.fetch();
         }
+        for (Subscription<PowerUsageWeek> &powerUsageWeek : subscriptionsPowerUsagesWeek) {
+            powerUsageWeek.fetch();
+        }
         for (Subscription<Acquisition> &subTime : subscriptionsTimeDomain) {
             subTime.fetch();
         }
-
         for (Subscription<RealPowerUsage> &realPower : subscriptionsRealPowerUsages) {
             realPower.fetch();
         }
-
-        RealPowerUsage      realPowerUsage      = subscriptionsRealPowerUsages[0].acquisition;
-        double              integratedValue     = realPowerUsage.realPowerUsages[1];
-
-        std::vector<double> powerUsageOfDevices = { 0, 0, 0, 0, 0, 0, integratedValue };
-        PowerUsage          powerUsageValues    = subscriptionsPowerUsages[0].acquisition;
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
@@ -271,12 +273,18 @@ static void main_loop(void *arg) {
             }
 
             // Barchart for usage of the last 7 days
-            Plotter::plotBarchart(powerUsageOfDevices);
+            std::vector<double> weekValues = subscriptionsPowerUsagesWeek[0].acquisition.getValues();
+            std::reverse(weekValues.begin(), weekValues.end());
+            Plotter::plotBarchart(weekValues);
 
             ImPlot::EndSubplots();
         }
 
         ImGui::Spacing();
+
+        RealPowerUsage      realPowerUsage      = subscriptionsRealPowerUsages[0].acquisition;
+        double              integratedValue      = realPowerUsage.realPowerUsages[1];
+        PowerUsage          powerUsageValues    = subscriptionsPowerUsages[0].acquisition;
 
         if (realPowerUsage.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));

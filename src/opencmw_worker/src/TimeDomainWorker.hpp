@@ -215,6 +215,7 @@ private:
             auto &sink = _sinksMap.at(requestContext.channelNameFilter);
             sink.fetchData(requestContext.lastRefTrigger, out);
         } else {
+            fmt::print("Requested subscription for '{}' not found", requestContext.channelNameFilter);
             throw std::invalid_argument(fmt::format("Requested subscription for '{}' not found", requestContext.channelNameFilter));
         }
         return true;

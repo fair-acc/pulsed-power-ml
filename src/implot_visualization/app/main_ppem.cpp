@@ -15,7 +15,7 @@
 #include <IconsFontAwesome6.h>
 #include <plot_tools.h>
 
-class AppState {
+class AppStatePpem {
 public:
     SDL_Window                                   *window    = nullptr;
     SDL_GLContext                                 GLContext = nullptr;
@@ -28,9 +28,9 @@ public:
         ImFont *text;
         ImFont *fontawesome;
     };
-    AppState::AppFonts fonts{};
+    AppStatePpem::AppFonts fonts{};
 
-    AppState(std::vector<Subscription<Acquisition>>       &_subscriptionsTimeDomain,
+    AppStatePpem(std::vector<Subscription<Acquisition>>       &_subscriptionsTimeDomain,
             std::vector<Subscription<AcquisitionSpectra>> &_subscriptionsFrequency,
             std::vector<Subscription<RealPowerUsage>>     &_subscriptionRealPowerUsage,
             Plotter::DataInterval                          _Interval) {
@@ -104,7 +104,7 @@ int         main(int argc, char **argv) {
     std::vector<Subscription<Acquisition>>        subscriptionsTimeDomain    = { signalSubscription, powerStatsSubscription, mainsFreqSubscription };
     std::vector<Subscription<AcquisitionSpectra>> subscriptionsFrequency     = { frequencySubscription, limitingCurveSubscription };
     std::vector<Subscription<RealPowerUsage>>     subscriptionRealPowerUsage = { integratedValues };
-    AppState                                      appState(subscriptionsTimeDomain, subscriptionsFrequency, subscriptionRealPowerUsage, Interval);
+    AppStatePpem                                  appState(subscriptionsTimeDomain, subscriptionsFrequency, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -187,7 +187,7 @@ static void main_loop(void *arg) {
     ImGuiIO &io = ImGui::GetIO();
 
     // Parse arguments from main
-    auto                                          *args                        = static_cast<AppState *>(arg);
+    AppStatePpem                                  *args                        = static_cast<AppStatePpem *>(arg);
     std::vector<Subscription<Acquisition>>        &subscriptionsTimeDomain     = args->subscriptionsTimeDomain;
     std::vector<Subscription<AcquisitionSpectra>> &subscriptionsFrequency      = args->subscriptionsFrequency;
     std::vector<Subscription<RealPowerUsage>>     &subscriptionRealPowerUsages = args->subscriptionRealPowerUsage;

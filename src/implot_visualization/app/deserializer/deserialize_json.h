@@ -37,13 +37,9 @@ public:
     void erase();
 };
 
-class PowerBuffer {
+class DummyBuffer {
 public:
-    bool                init = false;
-    std::vector<double> values;
-    double              timestamp;
-
-    void                updateValues(const std::vector<double> &_values);
+    DummyBuffer(size_t _size) {}
 };
 
 class StrideArray {
@@ -143,7 +139,7 @@ private:
     void setSumOfUsageMonth();
 };
 
-class RealPowerUsage : public IAcquisition<PowerBuffer> {
+class RealPowerUsage : public IAcquisition<DummyBuffer> {
 public:
     double              deliveryTime;
     bool                init = false;
@@ -151,11 +147,25 @@ public:
     std::vector<double> realPowerUsages;
 
     RealPowerUsage();
-    RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
+    RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 0);
 
     ~RealPowerUsage(){};
 
     void deserialize();
     void fail();
     void addPowerUsage(const StrideArray &strideArray);
+};
+
+class PowerUsageWeek : public IAcquisition<DummyBuffer> {
+public:
+    PowerUsageWeek() = default;
+    PowerUsageWeek(const std::vector<std::string> &_signalNames, const int _bufferSize = 0);
+
+    ~PowerUsageWeek() = default;
+
+    void deserialize();
+    std::vector<double> getValues();
+private:
+    std::vector<double> values;
+    std::int64_t timestamp;
 };

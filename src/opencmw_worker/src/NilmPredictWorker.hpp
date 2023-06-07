@@ -14,7 +14,7 @@
 #include "FrequencyDomainWorker.hpp"
 #include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
-// #include "TimeDomainWorker.hpp"
+#include "DataFetcher.hpp"
 
 using opencmw::Annotated;
 using opencmw::NoUnit;
@@ -58,48 +58,6 @@ struct SUIDataSink {
     std::vector<float> u;
     std::vector<float> i;
     std::vector<float> s;
-};
-
-template<typename Acq>
-class DataFetcher {
-    std::string     _endpoint;
-    std::string     _signalNames;
-    int64_t         _lastTimeStamp;
-    httplib::Client _http;
-    bool            _responseOk;
-
-public:
-    DataFetcher() = delete;
-    DataFetcher(const std::string &endPoint, const std::string &signalNames = "")
-        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", DEFAULT_REST_PORT), _responseOk(false) {
-        _http.set_keep_alive(true);
-    }
-    ~DataFetcher() {}
-    httplib::Result get(Acq &data) {
-        std::string getPath = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
-        // fmt::print("{}: path: {}\n", typeid(data).name(), getPath);
-        auto response = _http.Get(getPath.data());
-        if (response.error() == httplib::Error::Success && response->status == 200) {
-            _responseOk = true;
-            opencmw::IoBuffer buffer;
-            buffer.put<opencmw::IoBuffer::MetaInfo::WITHOUT>(response->body);
-            auto result = opencmw::deserialise<opencmw::Json, opencmw::ProtocolCheck::LENIENT>(buffer, data);
-        } else {
-            _responseOk = false;
-        }
-
-        return response;
-    }
-
-    bool responseOk() {
-        return _responseOk;
-    }
-
-    void updateTimeStamp(Acquisition &data) {
-        if (!data.channelTimeSinceRefTrigger.empty()) {
-            _lastTimeStamp = data.refTriggerStamp + static_cast<int64_t>(data.channelTimeSinceRefTrigger.back() * 1e9f);
-        }
-    }
 };
 
 using namespace opencmw::disruptor;
@@ -195,7 +153,6 @@ public:
                     if (_acquisitionNilmFetcher.responseOk()) {
                         assert(!acquisitionNilm.apparentPowerSpectrumStridedValues.empty());
                         size_t fftSize = acquisitionNilm.apparentPowerSpectrumStridedValues.size() / acquisitionNilm.apparentPower.size();
-                        fmt::print("acquisitionNilm received, chunks no: {},  fftsize: {}, size of data: {}\n", acquisitionNilm.apparentPower.size(), fftSize, response->body.size());
                         for (size_t i = 0; i < acquisitionNilm.realPower.size(); i++) {
                             mergeValues(acquisitionNilm, i, fftSize, dataPoint);
 

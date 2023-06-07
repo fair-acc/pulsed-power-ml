@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "NilmPredictWorker.hpp"
+#include "NilmWeekWorker.hpp"
 
 using namespace opencmw::majordomo;
 
@@ -138,12 +139,15 @@ int main(int argc, char *argv[]) {
 
     // OpenCMW workers
     NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(60), mode, captureFilename);
+    NilmWeekWorker<"nilm_week_values", description<"Nilm Week Data">> nilmWeekWorker(broker, std::chrono::milliseconds(1000));
 
     // run workers in separate threads
     std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });
+    std::jthread nilmWeekWorkerThread([&nilmWeekWorker] { nilmWeekWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
     nilmPredictWorkerThread.join();
+    nilmWeekWorkerThread.join();
 }

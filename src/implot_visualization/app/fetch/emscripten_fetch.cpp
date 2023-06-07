@@ -115,3 +115,4 @@ template class Subscription<Acquisition>;
 template class Subscription<AcquisitionSpectra>;
 template class Subscription<PowerUsage>;
 template class Subscription<RealPowerUsage>;
+template class Subscription<PowerUsageWeek>;
