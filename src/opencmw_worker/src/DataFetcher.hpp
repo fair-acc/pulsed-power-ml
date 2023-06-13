@@ -4,6 +4,9 @@
 #include <httplib.h>
 #include <IoBuffer.hpp>
 #include <IoSerialiser.hpp>
+#include <majordomo/RestBackend.hpp>
+
+constexpr auto REST_PORT = opencmw::majordomo::DEFAULT_REST_PORT;
 
 template<typename Acq>
 class DataFetcher {
@@ -16,12 +19,13 @@ class DataFetcher {
 public:
     DataFetcher() = delete;
     explicit DataFetcher(const std::string &endPoint, const std::string &signalNames = "")
-        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", DEFAULT_REST_PORT), _responseOk(false) {
+        : _endpoint(endPoint), _signalNames(signalNames), _lastTimeStamp(0), _http("localhost", REST_PORT), _responseOk(false) {
         _http.set_keep_alive(true);
     }
     ~DataFetcher() = default;
     httplib::Result get(Acq &data) {
         const std::string getPath  = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
+        std::cout << getPath << std::endl;
         httplib::Result   response = _http.Get(getPath);
         if (response.error() == httplib::Error::Success && response->status == 200) {
             _responseOk = true;
@@ -46,9 +50,6 @@ public:
     int64_t getLastTimestamp() {
         return _lastTimeStamp;
     }
-
-    private:
-        int DEFAULT_REST_PORT = 8080;
 };
 
 #endif /* DATA_FETCHER_H */
