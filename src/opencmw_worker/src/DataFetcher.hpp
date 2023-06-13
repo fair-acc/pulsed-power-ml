@@ -46,6 +46,9 @@ public:
     int64_t getLastTimestamp() {
         return _lastTimeStamp;
     }
+
+    private:
+        int DEFAULT_REST_PORT = 8080;
 };
 
 #endif /* DATA_FETCHER_H */
