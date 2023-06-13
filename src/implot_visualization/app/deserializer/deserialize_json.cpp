@@ -492,7 +492,6 @@ std::vector<double> PowerUsageWeek::getValues() {
     return values;
 }
 
-
 template class IAcquisition<Buffer>;
 template class IAcquisition<ScrollingBuffer>;
 template class IAcquisition<DummyBuffer>;

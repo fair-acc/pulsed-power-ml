@@ -2,9 +2,8 @@
 #define DATA_FETCHER_H
 
 #include <httplib.h>
-#include <IoSerialiser.hpp>
 #include <IoBuffer.hpp>
-
+#include <IoSerialiser.hpp>
 
 template<typename Acq>
 class DataFetcher {
@@ -22,8 +21,8 @@ public:
     }
     ~DataFetcher() = default;
     httplib::Result get(Acq &data) {
-        const std::string getPath = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
-        httplib::Result response = _http.Get(getPath);
+        const std::string getPath  = fmt::format("{}?channelNameFilter={}&lastRefTrigger={}", _endpoint, _signalNames, _lastTimeStamp);
+        httplib::Result   response = _http.Get(getPath);
         if (response.error() == httplib::Error::Success && response->status == 200) {
             _responseOk = true;
             opencmw::IoBuffer buffer;

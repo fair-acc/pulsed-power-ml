@@ -40,11 +40,11 @@ public:
     };
     AppStateNilm::AppFonts fonts{};
 
-    AppStateNilm(std::vector<Subscription<PowerUsage>>    &_powerUsages,
-            std::vector<Subscription<PowerUsageWeek>> &_subscriptionsPowerUsageWeek,
-            std::vector<Subscription<Acquisition>>    &_subscriptionsTimeDomain,
-            std::vector<Subscription<RealPowerUsage>> &_subscriptionRealPowerUsage,
-            Plotter::DataInterval                      _Interval) {
+    AppStateNilm(std::vector<Subscription<PowerUsage>> &_powerUsages,
+            std::vector<Subscription<PowerUsageWeek>>  &_subscriptionsPowerUsageWeek,
+            std::vector<Subscription<Acquisition>>     &_subscriptionsTimeDomain,
+            std::vector<Subscription<RealPowerUsage>>  &_subscriptionRealPowerUsage,
+            Plotter::DataInterval                       _Interval) {
         this->subscriptionsPowerUsage     = _powerUsages;
         this->subscriptionsPowerUsageWeek = _subscriptionsPowerUsageWeek;
         this->subscriptionsTimeDomain     = _subscriptionsTimeDomain;
@@ -64,37 +64,37 @@ enum ColorTheme { Light,
 static void main_loop(void *);
 
 int         main(int argc, char **argv) {
-    // Set color theme via query parameters of url
+            // Set color theme via query parameters of url
     Plotter::DataInterval Interval            = Plotter::Short;
     double                sampRate            = 100;
     float                 updateFreq          = 25.0f;
     ColorTheme            ColorTheme          = Light;
     std::string           integrationInterval = "Day";
     for (int i = 0; i < argc; i++) {
-        std::string arg = argv[i];
-        if (arg.find("interval") != std::string::npos) {
-            if (arg.find("short") != std::string::npos) {
-                Interval            = Plotter::Short;
-                sampRate            = 100;
-                updateFreq          = 25.0f;
-                integrationInterval = "Day";
+                std::string arg = argv[i];
+                if (arg.find("interval") != std::string::npos) {
+                    if (arg.find("short") != std::string::npos) {
+                        Interval            = Plotter::Short;
+                        sampRate            = 100;
+                        updateFreq          = 25.0f;
+                        integrationInterval = "Day";
             } else if (arg.find("mid") != std::string::npos) {
-                Interval            = Plotter::Mid;
-                sampRate            = 1;
-                updateFreq          = 1.0f;
-                integrationInterval = "Week";
+                        Interval            = Plotter::Mid;
+                        sampRate            = 1;
+                        updateFreq          = 1.0f;
+                        integrationInterval = "Week";
             } else if (arg.find("long") != std::string::npos) {
-                Interval            = Plotter::Long;
-                sampRate            = 0.016666668;
-                updateFreq          = 0.1f;
-                integrationInterval = "Month";
+                        Interval            = Plotter::Long;
+                        sampRate            = 0.016666668;
+                        updateFreq          = 0.1f;
+                        integrationInterval = "Month";
             }
         }
-        if (arg.find("color") != std::string::npos) {
-            if (arg.find("light") != std::string::npos) {
-                ColorTheme = Light;
+                if (arg.find("color") != std::string::npos) {
+                    if (arg.find("light") != std::string::npos) {
+                        ColorTheme = Light;
             } else if (arg.find("dark") != std::string::npos) {
-                ColorTheme = Dark;
+                        ColorTheme = Dark;
             }
         }
     }
@@ -108,16 +108,16 @@ int         main(int argc, char **argv) {
     // Subscription<RealPowerUsage> integratedValues("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_Int_" + integrationInterval, "S_Int_" + integrationInterval }, 1, 1, updateFreq);
     // Subscription<Acquisition>    powerSubscription("http://10.0.0.2:8080/pulsed_power/Acquisition?channelNameFilter=", { "P", "Q", "S", "phi" }, sampRate, 30'000, updateFreq);
 
-    std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage    = { nilmSubscription };
-    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain    = { powerSubscription };
-    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage = { integratedValues };
-    std::vector<Subscription<PowerUsageWeek>> subscriptionsPowerUsageWeek= { nilmWeekSubscription };
+    std::vector<Subscription<PowerUsage>>     subscriptionsPowerUsage     = { nilmSubscription };
+    std::vector<Subscription<Acquisition>>    subscriptionsTimeDomain     = { powerSubscription };
+    std::vector<Subscription<RealPowerUsage>> subscriptionRealPowerUsage  = { integratedValues };
+    std::vector<Subscription<PowerUsageWeek>> subscriptionsPowerUsageWeek = { nilmWeekSubscription };
     AppStateNilm                              appState(subscriptionsPowerUsage, subscriptionsPowerUsageWeek, subscriptionsTimeDomain, subscriptionRealPowerUsage, Interval);
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
+                printf("Error: %s\n", SDL_GetError());
+                return -1;
     }
 
     // For the browser using Emscripten, we are going to use WebGL1 with GL ES2.
@@ -141,8 +141,8 @@ int         main(int argc, char **argv) {
     appState.window    = SDL_CreateWindow("Non-Intrusive Load Monitoring", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     appState.GLContext = SDL_GL_CreateContext(appState.window);
     if (!appState.GLContext) {
-        fprintf(stderr, "Failed to initialize WebGL context!\n");
-        return 1;
+                fprintf(stderr, "Failed to initialize WebGL context!\n");
+                return 1;
     }
 
     // Setup Dear ImGui context
@@ -164,7 +164,7 @@ int         main(int argc, char **argv) {
     // Setup Colors
     ImGui::StyleColorsLight();
     if (ColorTheme == Dark) {
-        ImGui::StyleColorsDark();
+                ImGui::StyleColorsDark();
     }
 
     const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
@@ -282,9 +282,9 @@ static void main_loop(void *arg) {
 
         ImGui::Spacing();
 
-        RealPowerUsage      realPowerUsage      = subscriptionsRealPowerUsages[0].acquisition;
-        double              integratedValue      = realPowerUsage.realPowerUsages[1];
-        PowerUsage          powerUsageValues    = subscriptionsPowerUsages[0].acquisition;
+        RealPowerUsage realPowerUsage   = subscriptionsRealPowerUsages[0].acquisition;
+        double         integratedValue  = realPowerUsage.realPowerUsages[1];
+        PowerUsage     powerUsageValues = subscriptionsPowerUsages[0].acquisition;
 
         if (realPowerUsage.init) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 125, 0, 255));

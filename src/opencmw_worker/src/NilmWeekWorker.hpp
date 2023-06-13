@@ -51,7 +51,7 @@ public:
 
                 try {
                     Acquisition  aq;
-                    auto         response = _dataFetcherAcq.get(aq);
+                    auto         response  = _dataFetcherAcq.get(aq);
                     unsigned int numValues = 0;
                     if (checkResponse(aq, numValues)) {
                         processValues(aq, numValues);
@@ -85,7 +85,7 @@ public:
     }
 
 private:
-    void processValues(const Acquisition& aq, unsigned int numValues) {
+    void processValues(const Acquisition &aq, unsigned int numValues) {
         std::unique_lock<std::mutex> lock(_mutex);
         if (!aq.channelTimeSinceRefTrigger.empty()) {
             int64_t timeStamp = aq.refTriggerStamp + static_cast<int64_t>(aq.channelTimeSinceRefTrigger.back() * 1e9F);
@@ -111,7 +111,7 @@ private:
         }
     }
 
-    bool checkResponse(const Acquisition& aq, unsigned int &numValues) {
+    bool checkResponse(const Acquisition &aq, unsigned int &numValues) {
         if (_dataFetcherAcq.responseOk()) {
             unsigned int dim0 = aq.channelValues.dimensions()[0];
             unsigned int dim1 = aq.channelValues.dimensions()[1];
@@ -205,9 +205,9 @@ private:
     std::atomic<bool>                                  _shutdownRequested;
     std::jthread                                       _workThread;
     std::chrono::time_point<std::chrono::system_clock> _lastSave;
-    const std::chrono::minutes                         _saveInterval = std::chrono::minutes(10);
+    const std::chrono::minutes                         _saveInterval          = std::chrono::minutes(10);
 
-    const unsigned int                                  NUMBER_OF_SAVED_VALUES = 7;
+    const unsigned int                                 NUMBER_OF_SAVED_VALUES = 7;
 };
 
 #endif /* NILM_WEEK_WORKER_H */

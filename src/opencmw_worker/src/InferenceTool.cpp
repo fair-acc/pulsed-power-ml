@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
     // OpenCMW workers
     NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">> nilmPredictWorker(broker, std::chrono::milliseconds(60), mode, captureFilename);
-    NilmWeekWorker<"nilm_week_values", description<"Nilm Week Data">> nilmWeekWorker(broker, std::chrono::milliseconds(1000));
+    NilmWeekWorker<"nilm_week_values", description<"Nilm Week Data">>            nilmWeekWorker(broker, std::chrono::milliseconds(1000));
 
     // run workers in separate threads
     std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });

@@ -163,9 +163,10 @@ public:
 
     ~PowerUsageWeek() = default;
 
-    void deserialize();
+    void                deserialize();
     std::vector<double> getValues();
+
 private:
     std::vector<double> values;
-    std::int64_t timestamp;
+    std::int64_t        timestamp;
 };

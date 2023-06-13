@@ -11,10 +11,10 @@
 
 #include <chrono>
 
+#include "DataFetcher.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
-#include "DataFetcher.hpp"
 
 using opencmw::Annotated;
 using opencmw::NoUnit;
@@ -167,18 +167,16 @@ public:
                             auto            output = _model({ { "serving_default_args_0:0", input } }, { "StatefulPartitionedCall:0" });
 
                             auto            values = output[0].get_data<float>();
-                        
- 
+
                             // fill data for REST
                             _nilmData.values.clear();
                             for (auto v : values) {
                                 _nilmData.values.push_back(static_cast<double>(v));
                             }
-                           _powerIntegrator->update(acquisitionNilm.refTriggerStamp[i], values);
-                         }
-                    }
-                    else {
-                         fmt::print("Invalid response \n");
+                            _powerIntegrator->update(acquisitionNilm.refTriggerStamp[i], values);
+                        }
+                    } else {
+                        fmt::print("Invalid response \n");
                     }
 
                     fillDayUsage();
