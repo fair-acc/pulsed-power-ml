@@ -500,6 +500,8 @@ public:
         // signal
         top->hier_block2::connect(source_interface_voltage0, 0, out_decimation_voltage0, 0);
         top->hier_block2::connect(source_interface_current0, 0, out_decimation_current0, 0);
+        top->hier_block2::connect(out_decimation_voltage0, 0, opencmw_time_sink_signals, 0); // U_raw
+        top->hier_block2::connect(out_decimation_current0, 0, opencmw_time_sink_signals, 1); // I_raw
         // Mains frequency
         top->hier_block2::connect(source_interface_voltage0, 0, calc_mains_frequency, 0);
         top->hier_block2::connect(calc_mains_frequency, 0, out_decimation_mains_frequency_shortterm, 0);
@@ -511,6 +513,7 @@ public:
         // Bandpass filter
         top->hier_block2::connect(source_interface_voltage0, 0, band_pass_filter_voltage0, 0);
         top->hier_block2::connect(source_interface_current0, 0, band_pass_filter_current0, 0);
+        //                                                                                 0, 1
         top->hier_block2::connect(band_pass_filter_voltage0, 0, opencmw_time_sink_signals, 2); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, opencmw_time_sink_signals, 3); // I_bpf
         //  Calculate phase shift
