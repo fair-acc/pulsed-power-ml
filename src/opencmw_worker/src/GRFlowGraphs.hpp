@@ -542,26 +542,26 @@ public:
         top->hier_block2::connect(blocks_transcendental_phase0_0, 0, blocks_sub_phase0, 0);
         top->hier_block2::connect(blocks_transcendental_phase0_1, 0, blocks_sub_phase0, 1);
         top->hier_block2::connect(blocks_sub_phase0, 0, pulsed_power_power_calc_ff_0_0, 2);
-        // Calculate P, Q, S, phi first phase
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, out_decimation_p_shortterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, out_decimation_q_shortterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, out_decimation_s_shortterm, 0);
+        // Calculate P, Q, S three phases
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, out_decimation_p_shortterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, out_decimation_q_shortterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, out_decimation_s_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, out_decimation_phi_shortterm, 0);
         top->hier_block2::connect(out_decimation_p_shortterm, 0, opencmw_time_sink_power_shortterm, 0);   // P short-term
         top->hier_block2::connect(out_decimation_q_shortterm, 0, opencmw_time_sink_power_shortterm, 1);   // Q short-term
         top->hier_block2::connect(out_decimation_s_shortterm, 0, opencmw_time_sink_power_shortterm, 2);   // S short-term
         top->hier_block2::connect(out_decimation_phi_shortterm, 0, opencmw_time_sink_power_shortterm, 3); // phi short-term
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, out_decimation_p_midterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, out_decimation_q_midterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, out_decimation_s_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, out_decimation_p_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, out_decimation_q_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, out_decimation_s_midterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, out_decimation_phi_midterm, 0);
         top->hier_block2::connect(out_decimation_p_midterm, 0, opencmw_time_sink_power_midterm, 0);   // P mid-term
         top->hier_block2::connect(out_decimation_q_midterm, 0, opencmw_time_sink_power_midterm, 1);   // Q mid-term
         top->hier_block2::connect(out_decimation_s_midterm, 0, opencmw_time_sink_power_midterm, 2);   // S mid-term
         top->hier_block2::connect(out_decimation_phi_midterm, 0, opencmw_time_sink_power_midterm, 3); // phi mid-term
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, out_decimation_p_longterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, out_decimation_q_longterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, out_decimation_s_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, out_decimation_p_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, out_decimation_q_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, out_decimation_s_longterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, out_decimation_phi_longterm, 0);
         top->hier_block2::connect(out_decimation_p_longterm, 0, opencmw_time_sink_power_longterm, 0);   // P long-term
         top->hier_block2::connect(out_decimation_q_longterm, 0, opencmw_time_sink_power_longterm, 1);   // Q long-term
@@ -581,9 +581,9 @@ public:
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, integrate_S_month, 0);
         top->hier_block2::connect(integrate_S_month, 0, opencmw_time_sink_int_month, 1); // int S month
         // Statistics
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_shortterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_shortterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, statistics_s_shortterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, statistics_p_shortterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, statistics_q_shortterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, statistics_s_shortterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, statistics_phi_shortterm, 0);
         top->hier_block2::connect(statistics_p_shortterm, 0, opencmw_time_sink_power_stats_shortterm, 0);    // P_mean short-term
         top->hier_block2::connect(statistics_p_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 1);    // P_min short-term
@@ -601,9 +601,9 @@ public:
         top->hier_block2::connect(statistics_phi_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 10); // phi_min short-term
         top->hier_block2::connect(statistics_phi_shortterm, 2, opencmw_time_sink_power_stats_shortterm, 11); // phi_max short-term
         top->hier_block2::connect(statistics_phi_shortterm, 3, null_sink_stats_shortterm, 3);                // phi_std_dev short-term
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_midterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_midterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, statistics_s_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, statistics_p_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, statistics_q_midterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, statistics_s_midterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, statistics_phi_midterm, 0);
         top->hier_block2::connect(statistics_p_midterm, 0, opencmw_time_sink_power_stats_midterm, 0);    // P_mean mid-term
         top->hier_block2::connect(statistics_p_midterm, 1, opencmw_time_sink_power_stats_midterm, 1);    // P_min mid-term
@@ -621,9 +621,9 @@ public:
         top->hier_block2::connect(statistics_phi_midterm, 1, opencmw_time_sink_power_stats_midterm, 10); // phi_min mid-term
         top->hier_block2::connect(statistics_phi_midterm, 2, opencmw_time_sink_power_stats_midterm, 11); // phi_max mid-term
         top->hier_block2::connect(statistics_phi_midterm, 3, null_sink_stats_midterm, 3);                // phi_std_dev mid-term
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, statistics_p_longterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, statistics_q_longterm, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, statistics_s_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, statistics_p_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, statistics_q_longterm, 0);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, statistics_s_longterm, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 3, statistics_phi_longterm, 0);
         top->hier_block2::connect(statistics_p_longterm, 0, opencmw_time_sink_power_stats_longterm, 0);    // P_mean long-term
         top->hier_block2::connect(statistics_p_longterm, 1, opencmw_time_sink_power_stats_longterm, 1);    // P_min long-term
@@ -926,10 +926,9 @@ public:
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 9, null_sink_p_q_s_phi_2, 1);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 10, null_sink_p_q_s_phi_2, 2);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 11, null_sink_p_q_s_phi_2, 3);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 12, null_sink_p_q_s_phi_acc, 0);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 13, null_sink_p_q_s_phi_acc, 1);
-        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 14, null_sink_p_q_s_phi_acc, 2);
-        std::cout << "line 931: connections done (second phase)\r\n";
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 0, null_sink_p_q_s_phi_acc, 0); //pqs first phase
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 1, null_sink_p_q_s_phi_acc, 1);
+        top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 2, null_sink_p_q_s_phi_acc, 2);
     }
     void phase2_phi_phase_calculation(std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current2,
         gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0, const float source_samp_rate, const float bpf_low_cut,
@@ -1067,7 +1066,6 @@ public:
         top->hier_block2::connect(blocks_transcendental_phase2_0, 0, blocks_sub_phase2, 0);
         top->hier_block2::connect(blocks_transcendental_phase2_1, 0, blocks_sub_phase2, 1);
         top->hier_block2::connect(blocks_sub_phase2, 0, pulsed_power_power_calc_ff_0_0, 8);
-        std::cout << "line 1069: connections done (third phase)\r\n";
     }
 };
 
