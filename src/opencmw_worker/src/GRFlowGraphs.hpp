@@ -129,15 +129,15 @@ public:
         float source_samp_rate          = 2'000'000.0f;
         auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_current0 = gr::blocks::multiply_const_ff::make(1);
-        //signal sources phase 2, 3
+        // signal sources phase 1, 2
         auto  source_interface_voltage1 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_current1 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_voltage2 = gr::blocks::multiply_const_ff::make(1);
         auto  source_interface_current2 = gr::blocks::multiply_const_ff::make(1);
         if (false) {
-                //picoscope part previously (not relevant at the moment)
+                // picoscope part previously (not relevant at the moment)
         } else { 
-        //--simulates U, I--//
+        // U, I signal simulation
             if (add_noise) {
                 //I
                 auto analog_sig_source_voltage0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
@@ -252,7 +252,7 @@ public:
         auto integrate_P_day               = gr::pulsed_power::integration::make(1000, 1000, gr::pulsed_power::INTEGRATION_DURATION::DAY, "PDay.txt");
         auto integrate_P_week              = gr::pulsed_power::integration::make(1000, 1000, gr::pulsed_power::INTEGRATION_DURATION::WEEK, "PWeek.txt");
         auto integrate_P_month             = gr::pulsed_power::integration::make(1000, 1000, gr::pulsed_power::INTEGRATION_DURATION::MONTH, "PMonth.txt");
-        //filter for phi phase calculation
+        // Filter for phi phase calculation
         auto band_pass_filter_current0     = gr::filter::fft_filter_fff::make(
                     decimation_bpf,
                     gr::filter::firdes::band_pass(
@@ -327,10 +327,10 @@ public:
 
         auto blocks_sub_phase0                        = gr::blocks::sub_ff::make(1);
 
-        //three phase block
+        // Three phase block
         auto pulsed_power_power_calc_ff_0_0           = gr::pulsed_power::power_calc_mul_ph_ff::make(0.001);
 
-        //statistics
+        // Statistics
         auto out_decimation_current0                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
         auto out_decimation_voltage0                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
         auto out_decimation_current_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
@@ -351,7 +351,7 @@ public:
         auto out_decimation_q_midterm                 = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
         auto out_decimation_s_midterm                 = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
         auto out_decimation_phi_midterm               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mid_term);
-        //inserted longterm again because no data came through after removing
+        // Inserted longterm again because no data came through after removing
         auto out_decimation_p_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
         auto out_decimation_q_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
         auto out_decimation_s_longterm                = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_long_term);
@@ -365,12 +365,12 @@ public:
         auto statistics_q_midterm                     = gr::pulsed_power::statistics::make(decimation_out_mid_term);
         auto statistics_s_midterm                     = gr::pulsed_power::statistics::make(decimation_out_mid_term);
         auto statistics_phi_midterm                   = gr::pulsed_power::statistics::make(decimation_out_mid_term);
-        //inserted longterm again because no data came through after removing
         auto statistics_p_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
         auto statistics_q_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
         auto statistics_s_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
         auto statistics_phi_longterm                  = gr::pulsed_power::statistics::make(decimation_out_long_term);
-        //statistics for accumulated P, Q, S
+
+        // Statistics for accumulated P, Q, S
         auto opencmw_time_sink_signals                = gr::pulsed_power::opencmw_time_sink::make(
                                { "U", "I", "U_bpf", "I_bpf" },
                                { "V", "A", "V", "A" },
@@ -405,7 +405,7 @@ public:
                 { "W", "Var", "VA", "rad" },
                 out_samp_rate_power_midterm);
         opencmw_time_sink_power_midterm->set_max_noutput_items(noutput_items);
-        //reinserted
+        // Reinserted longterm power sinks (no data came through)
         auto opencmw_time_sink_power_longterm = gr::pulsed_power::opencmw_time_sink::make(
                 { "P", "Q", "S", "phi" },
                 { "W", "Var", "VA", "rad" },
@@ -599,7 +599,7 @@ public:
         top->hier_block2::connect(statistics_phi_longterm, 1, opencmw_time_sink_power_stats_longterm, 10); // phi_min long-term
         top->hier_block2::connect(statistics_phi_longterm, 2, opencmw_time_sink_power_stats_longterm, 11); // phi_max long-term
         top->hier_block2::connect(statistics_phi_longterm, 3, null_sink_stats_longterm, 3);                // phi_std_dev long-term
-        //Frequency spectras
+        // Frequency spectras
         top->hier_block2::connect(source_interface_current0, 0, multiply_voltage_current, 0);
         top->hier_block2::connect(source_interface_voltage0, 0, multiply_voltage_current, 1);
         top->hier_block2::connect(multiply_voltage_current, 0, frequency_spec_one_in_n, 0);
@@ -617,7 +617,7 @@ public:
     void start() { top->start(); }
     void phase1_signal_simulation(bool add_noise, float source_samp_rate, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_voltage1, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_current1){
         float phase_shift_1_2 = 2 * PI / 3;
-        //same as phase 0
+        // same as phase 0
         if(add_noise){
                 //I
                 auto analog_sig_source_voltage1        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
@@ -677,9 +677,9 @@ public:
     void phase2_signal_simulation(bool add_noise, float source_samp_rate, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_voltage2, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_current2){
         float phase_shift_2_3 = 4 * PI / 3;
         if(add_noise){
-                //I
+                // I
                 auto analog_sig_source_voltage2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_2_3); // U_raw
-                //u
+                // u
                 auto analog_sig_source_current2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f + phase_shift_2_3);  // I_raw
                 auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f + phase_shift_2_3);
 
@@ -717,7 +717,6 @@ public:
 
         }
         else{
-                //todo: add phase shift
                 auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_2_3); // U_raw
                 auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_2_3);  // I_raw
 
@@ -835,7 +834,7 @@ public:
         // Bandpass filter
         top->hier_block2::connect(source_interface_voltage1, 0, band_pass_filter_voltage1, 0);
         top->hier_block2::connect(source_interface_current1, 0, band_pass_filter_current1, 0);
-        //  Calculate phase shift
+        // Calculate phase shift
         top->hier_block2::connect(band_pass_filter_voltage1, 0, decimation_block_voltage_bpf1, 0);
         top->hier_block2::connect(band_pass_filter_current1, 0, decimation_block_current_bpf1, 0);
 
@@ -843,7 +842,7 @@ public:
         top->hier_block2::connect(decimation_block_voltage_bpf1, 0, blocks_multiply_phase1_1, 0);
         top->hier_block2::connect(decimation_block_current_bpf1, 0, blocks_multiply_phase1_2, 0);
         top->hier_block2::connect(decimation_block_current_bpf1, 0, blocks_multiply_phase1_3, 0);
-        //connection U_1, I_1 to mul ph block
+        // connection U_1, I_1 to power_calc_mul_ph
         top->hier_block2::connect(decimation_block_voltage_bpf1, 0, pulsed_power_power_calc_ff_0_0, 3);
         top->hier_block2::connect(decimation_block_current_bpf1, 0, pulsed_power_power_calc_ff_0_0, 4);
         top->hier_block2::connect(analog_sig_source_phase1_sin, 0, blocks_multiply_phase1_0, 1);
