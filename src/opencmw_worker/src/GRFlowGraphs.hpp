@@ -861,9 +861,9 @@ public:
         top->hier_block2::connect(blocks_divide_phase1_1, 0, blocks_transcendental_phase1_1, 0);
         top->hier_block2::connect(blocks_transcendental_phase1_0, 0, blocks_sub_phase1, 0);
         top->hier_block2::connect(blocks_transcendental_phase1_1, 0, blocks_sub_phase1, 1);
-        //phi connection to mul ph block
+        // phase connection to power_calc_mul_ph
         top->hier_block2::connect(blocks_sub_phase1, 0, pulsed_power_power_calc_ff_0_0, 5); 
-        // Calculate P, Q, S, phi -> null sinks, no connection to statistics (fft)
+        // Calculate P, Q, S, phi
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 4, null_sink_p_q_s_phi_1, 0);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 5, null_sink_p_q_s_phi_1, 1);
         top->hier_block2::connect(pulsed_power_power_calc_ff_0_0, 6, null_sink_p_q_s_phi_1, 2);
@@ -985,7 +985,7 @@ public:
         // Bandpass filter
         top->hier_block2::connect(source_interface_voltage2, 0, band_pass_filter_voltage2, 0);
         top->hier_block2::connect(source_interface_current2, 0, band_pass_filter_current2, 0);
-        //  Calculate phase shift
+        // Calculate phase shift
         top->hier_block2::connect(band_pass_filter_voltage2, 0, decimation_block_voltage_bpf2, 0);
         top->hier_block2::connect(band_pass_filter_current2, 0, decimation_block_current_bpf2, 0);
 
