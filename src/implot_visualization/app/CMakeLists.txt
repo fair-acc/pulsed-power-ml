@@ -24,6 +24,20 @@ target_link_libraries(
         iconfont
 )
 
+# voltage dashboard (U_0, U_1, U_2)
+target_sources(${voltageOutputFileName} PRIVATE main_voltage.cpp)
+target_link_libraries(
+    ${voltageOutputFileName}
+    PRIVATE
+        implot
+        deserializer
+        fetch
+        plot_tools
+        app_header
+        stb
+        iconfont
+)
+
 add_subdirectory(deserializer)
 add_subdirectory(fetch)
 add_subdirectory(plot_tools)
