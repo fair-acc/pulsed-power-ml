@@ -56,6 +56,7 @@ int         main(int argc, char **argv) {
     ColorTheme            ColorTheme          = Light;
     for (int i = 0; i < argc; i++) {
         std::string arg = argv[i];
+        //integration not needed (-> usage)
         if (arg.find("interval") != std::string::npos) {
             if (arg.find("short") != std::string::npos) {
                 Interval            = Plotter::Short;
@@ -85,8 +86,10 @@ int         main(int argc, char **argv) {
             }
         }
     }
-    // todo: change subscriptions, get U_0-2
-    // Setup subscriptions
+    // subscription for voltage data
+    Subscription<Acquisition>        voltageSubscription("http://localhost:8082/pulsed_power/Acquisition?channelNameFilter=", { "U_0", "U_1", "U_2", "U_0_bpf", "U_1_bpf", "U_2_bpf" }, 1000, 0.06 * 1000, 25.0f);
+
+    // Setup subscriptions //not needed
     Subscription<Acquisition>        signalSubscription("http://localhost:8082/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
     Subscription<Acquisition>        powerStatsSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" }, sampRate, timeRange * sampRate, updateFreq);
     Subscription<Acquisition>        mainsFreqSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "mains_freq" }, sampRate, timeRange * sampRate, updateFreq);

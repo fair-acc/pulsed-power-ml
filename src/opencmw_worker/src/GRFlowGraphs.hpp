@@ -273,7 +273,26 @@ public:
                         bpf_trans,
                         gr::fft::window::win_type::WIN_HANN,
                         6.76));
-
+        auto band_pass_filter_voltage1 = gr::filter::fft_filter_fff::make(
+                decimation_bpf,
+                gr::filter::firdes::band_pass(
+                        1,
+                        source_samp_rate,
+                        bpf_low_cut,
+                        bpf_high_cut,
+                        bpf_trans,
+                        gr::fft::window::win_type::WIN_HANN,
+                        6.76));
+        auto band_pass_filter_voltage2 = gr::filter::fft_filter_fff::make(
+                decimation_bpf,
+                gr::filter::firdes::band_pass(
+                        1,
+                        source_samp_rate,
+                        bpf_low_cut,
+                        bpf_high_cut,
+                        bpf_trans,
+                        gr::fft::window::win_type::WIN_HANN,
+                        6.76));
         auto analog_sig_source_phase0_sin = gr::analog::sig_source_f::make(samp_rate_delta_phi_calc, gr::analog::GR_SIN_WAVE, 55, 1, 0, 0.0f);
         auto analog_sig_source_phase0_cos = gr::analog::sig_source_f::make(samp_rate_delta_phi_calc, gr::analog::GR_COS_WAVE, 55, 1, 0, 0.0f);
 
@@ -335,7 +354,6 @@ public:
         auto out_decimation_voltage0                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
         auto out_decimation_current_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
         auto out_decimation_voltage_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
-
         auto out_decimation_mains_frequency_shortterm = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_short_term);
         auto out_decimation_mains_frequency_midterm   = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_mid_term);
         auto out_decimation_mains_frequency_longterm  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_mains_freq_long_term);
@@ -376,7 +394,6 @@ public:
                                { "V", "A", "V", "A" },
                                out_samp_rate_ui);
         opencmw_time_sink_signals->set_max_noutput_items(noutput_items);
-
         // Mains frequency sinks, only for phase 0
         auto opencmw_time_sink_mains_freq_shortterm = gr::pulsed_power::opencmw_time_sink::make(
                 { "mains_freq" },
@@ -474,6 +491,9 @@ public:
         top->hier_block2::connect(source_interface_current0, 0, band_pass_filter_current0, 0);
         top->hier_block2::connect(band_pass_filter_voltage0, 0, opencmw_time_sink_signals, 2); // U_bpf
         top->hier_block2::connect(band_pass_filter_current0, 0, opencmw_time_sink_signals, 3); // I_bpf
+        // statistics U_0, U_1, U_2 (-> voltages dashboard)
+        statistics_connection_voltage(band_pass_filter_voltage1, band_pass_filter_voltage2, source_interface_voltage1, source_interface_voltage2, decimation_out_raw, decimation_out_bpf,
+                out_samp_rate_ui, noutput_items, out_decimation_voltage0, band_pass_filter_voltage0);
         //  Calculate phase shift
         top->hier_block2::connect(band_pass_filter_voltage0, 0, decimation_block_voltage_bpf0, 0);
         top->hier_block2::connect(band_pass_filter_current0, 0, decimation_block_current_bpf0, 0);
@@ -731,7 +751,7 @@ public:
                 top->hier_block2::connect(throttle_current2, 0, source_interface_current2, 0);
         }
     }
-    void phase1_phi_phase_calculation(std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current1, gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0, const float source_samp_rate, const float bpf_low_cut, const float bpf_high_cut, const int bpf_trans,
+    void phase1_phi_phase_calculation(gr::filter::fft_filter_fff::sptr band_pass_filter_voltage1, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_current1, gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_power_calc_ff_0_0, const float source_samp_rate, const float bpf_low_cut, const float bpf_high_cut, const int bpf_trans,
         const int decimation_bpf, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage1, const float samp_rate_delta_phi_calc,
         const int decimation_lpf, const float lpf_in_samp_rate, const float lpf_trans, const int decimation_delta_phi_calc){
         auto band_pass_filter_current1     = gr::filter::fft_filter_fff::make(
@@ -744,16 +764,7 @@ public:
                             bpf_trans,
                             gr::fft::window::win_type::WIN_HANN,
                             6.76));
-        auto band_pass_filter_voltage1 = gr::filter::fft_filter_fff::make(
-                decimation_bpf,
-                gr::filter::firdes::band_pass(
-                        1,
-                        source_samp_rate,
-                        bpf_low_cut,
-                        bpf_high_cut,
-                        bpf_trans,
-                        gr::fft::window::win_type::WIN_HANN,
-                        6.76));
+ 
 
         auto analog_sig_source_phase1_sin = gr::analog::sig_source_f::make(samp_rate_delta_phi_calc, gr::analog::GR_SIN_WAVE, 55, 1, 0, 0.0f);
         auto analog_sig_source_phase1_cos = gr::analog::sig_source_f::make(samp_rate_delta_phi_calc, gr::analog::GR_COS_WAVE, 55, 1, 0, 0.0f);
@@ -1012,6 +1023,33 @@ public:
         top->hier_block2::connect(blocks_transcendental_phase2_0, 0, blocks_sub_phase2, 0);
         top->hier_block2::connect(blocks_transcendental_phase2_1, 0, blocks_sub_phase2, 1);
         top->hier_block2::connect(blocks_sub_phase2, 0, pulsed_power_power_calc_ff_0_0, 8);
+    }
+
+    void statistics_connection_voltage(gr::filter::fft_filter_fff::sptr band_pass_filter_voltage1, gr::filter::fft_filter_fff::sptr band_pass_filter_voltage2, std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage1, 
+        std::shared_ptr<gr::blocks::multiply_const_ff> source_interface_voltage2, int decimation_out_raw, int decimation_out_bpf, float out_samp_rate_ui,
+        int noutput_items, gr::blocks::keep_one_in_n::sptr out_decimation_voltage0, gr::filter::fft_filter_fff::sptr band_pass_filter_voltage0)
+    {
+        // sinks
+        auto opencmw_time_sink_signals_voltages       = gr::pulsed_power::opencmw_time_sink::make(
+                               { "U_0", "U_1", "U_2", "U_0_bpf", "U_1_bpf", "U_2_bpf" },
+                               { "V", "V", "V", "V", "V", "V" },
+                               out_samp_rate_ui);
+        opencmw_time_sink_signals_voltages->set_max_noutput_items(noutput_items);
+        
+        auto out_decimation_voltage1                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
+        auto out_decimation_voltage1_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
+        auto out_decimation_voltage2                  = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_raw);
+        auto out_decimation_voltage2_bpf               = gr::blocks::keep_one_in_n::make(sizeof(float), decimation_out_bpf);
+        top->hier_block2::connect(source_interface_voltage1, 0, out_decimation_voltage1, 0);
+        top->hier_block2::connect(source_interface_voltage2, 0, out_decimation_voltage2, 0);
+        top->hier_block2::connect(out_decimation_voltage0, 0, opencmw_time_sink_signals_voltages, 0); // U_0_raw
+        top->hier_block2::connect(out_decimation_voltage1, 0, opencmw_time_sink_signals_voltages, 1); // U_1_raw
+        top->hier_block2::connect(out_decimation_voltage2, 0, opencmw_time_sink_signals_voltages, 2); // U_2_raw
+        top->hier_block2::connect(source_interface_voltage1, 0, band_pass_filter_voltage1, 0);
+        top->hier_block2::connect(source_interface_voltage2, 0, band_pass_filter_voltage2, 0);
+        top->hier_block2::connect(band_pass_filter_voltage0, 0, opencmw_time_sink_signals_voltages, 3); // U_0_bpf 
+        top->hier_block2::connect(band_pass_filter_voltage1, 0, opencmw_time_sink_signals_voltages, 4); // U_1_bpf
+        top->hier_block2::connect(band_pass_filter_voltage2, 0, opencmw_time_sink_signals_voltages, 5); // U_1_bpf
     }
 };
 
