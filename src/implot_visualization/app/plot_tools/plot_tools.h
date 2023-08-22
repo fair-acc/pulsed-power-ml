@@ -403,12 +403,124 @@ void plotTable(PowerUsage &powerUsage, DataInterval m_d_w, double integratedValu
     }
 }
 
+//VoltageSubscription (signals): "U_0", "U_1", "U_2", "U_0_bpf", "U_1_bpf", "U_2_bpf"
+void plotVoltageStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImPlot::SetupAxes("", "U_0(V), U_1(V), U_2(V)", xflags, yflags);
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    double dt          = setTimeInterval(Interval);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
+    //ImPlot::SetupAxis(ImAxis_Y2, "phi(rad)", ImPlotAxisFlags_AuxDefault);
+    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+
+    for (auto signal : signals) {
+        if (signal.data.empty()) {
+            return;
+        }
+    }
+
+    static float alpha = 0.25f;
+    ImGui::DragFloat("Alpha", &alpha, 0.01f, 0, 1);
+    if (signals.size() == 6) {
+        int offset = 0;
+        if constexpr (requires { signals[0].offset; }) {
+            offset = signals[0].offset;
+        }
+
+        // // Plot min and max as shaded
+        // ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, alpha);
+        // for (int i = 0; i < 12; i += 3) { //??
+        //     ImPlot::PlotShaded((signals[i].signalName).c_str(),
+        //             &signals[i].data[0].x,
+        //             &signals[i + 2].data[0].y,
+        //             &signals[i + 1].data[0].y,
+        //             signals[i].data.size(),
+        //             0,
+        //             offset,
+        //             2 * sizeof(double));
+        //     ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+        // }
+        // ImPlot::PopStyleVar();
+
+        // U bpf as line
+        for (int i = 2; i < 6; i++) {
+            // if (signals[i].signalName.find("phi") != std::string::npos) {
+            //     ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            // }
+            ImPlot::PlotLine((signals[i].signalName).c_str(),
+                    &signals[i].data[0].x,
+                    &signals[i].data[0].y,
+                    signals[i].data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+
+            // Add tags with signal value
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            DataPoint   lastPoint = signals[i].data.back();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 2);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+        }
+    }
+}
+
+void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImPlot::SetupAxes("", "mains frequency (Hz)", xflags, yflags);
+    auto   clock       = std::chrono::system_clock::now();
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
+    double dt          = setTimeInterval(Interval);
+    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
+    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+
+    // color axis
+    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
+
+    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
+    axis_Y1.ColorTxt    = blue;
+    axis_Y1.ColorTick   = blue;
+
+    for (const auto &signal : signals) {
+        if (!signal.data.empty()) {
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    0,
+                    offset,
+                    2 * sizeof(double));
+
+            // Add tags with signal value
+            DataPoint   lastPoint = signal.data.back();
+            ImVec4      col       = ImPlot::GetLastItemColor();
+            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 3);
+            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
+        }
+    }
+}
+
 void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
     static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
     static ImPlotLegendFlags legendFlags = 0;
-    //change to voltages, get data (subscription)
     ImPlot::SetupAxes("", "P(W), Q(Var), S(VA)", xflags, yflags);
     auto   clock       = std::chrono::system_clock::now();
     double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
@@ -474,50 +586,6 @@ void plotStatistics(std::vector<ScrollingBuffer> &signals, DataInterval Interval
     }
 }
 
-void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
-    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
-    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
-    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
-    static ImPlotLegendFlags legendFlags = 0;
-    ImU32                    blue        = 4289753676;
-    ImPlot::SetupAxes("", "mains frequency (Hz)", xflags, yflags);
-    auto   clock       = std::chrono::system_clock::now();
-    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(clock.time_since_epoch()).count());
-    double dt          = setTimeInterval(Interval);
-    ImPlot::SetupAxisLimits(ImAxis_X1, currentTime - dt, currentTime, ImGuiCond_Always);
-    ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
-    ImPlot::SetupLegend(legendLoc, legendFlags);
-
-    // color axis
-    ImPlotPlot &plot    = *GImPlot->CurrentPlot;
-
-    ImPlotAxis &axis_Y1 = plot.Axes[ImAxis_Y1];
-    axis_Y1.ColorTxt    = blue;
-    axis_Y1.ColorTick   = blue;
-
-    for (const auto &signal : signals) {
-        if (!signal.data.empty()) {
-            int offset = 0;
-            if constexpr (requires { signal.offset; }) {
-                offset = signal.offset;
-            }
-            ImPlot::PlotLine((signal.signalName).c_str(),
-                    &signal.data[0].x,
-                    &signal.data[0].y,
-                    signal.data.size(),
-                    0,
-                    offset,
-                    2 * sizeof(double));
-
-            // Add tags with signal value
-            DataPoint   lastPoint = signal.data.back();
-            ImVec4      col       = ImPlot::GetLastItemColor();
-            std::string tagValue  = to_si_prefix(lastPoint.y, " ", 3);
-            ImPlot::TagY(lastPoint.y, col, "%s", tagValue.c_str());
-        }
-    }
-}
 
 void plotPowerSpectrum(std::vector<Buffer> &signals, std::vector<Buffer> &limitingCurve, ImFont *fontawesome) {
     bool                     violation   = false;

@@ -277,7 +277,7 @@ static void main_loop(void *arg) {
         if (ImPlot::BeginPlot("##")) {
             //subscriptionsTimeDomain    = { voltageSubscription, signalSubscription, powerStatsSubscription, mainsFreqSubscription };
             if (subscriptionsTimeDomain.size() > 1) {
-                Plotter::plotStatistics(subscriptionsTimeDomain[0].acquisition.buffers, Interval);
+                Plotter::plotVoltageStatistics(subscriptionsTimeDomain[0].acquisition.buffers, Interval);
             }
             ImPlot::EndPlot();
         }
