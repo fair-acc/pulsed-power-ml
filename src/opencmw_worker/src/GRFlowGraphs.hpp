@@ -636,14 +636,14 @@ public:
     void start() { top->start(); }
 
     void phase1_signal_simulation(bool add_noise, float source_samp_rate, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_voltage1, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_current1){
-        float phase_shift_1_2 = 2 * PI / 3;
+        float phase_shift_0_1 = 2 * PI / 3;
         // same as phase 0
         if(add_noise){
                 //I
-                auto analog_sig_source_voltage1        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
+                auto analog_sig_source_voltage1        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_0_1); // U_raw
                 //u
-                auto analog_sig_source_current1        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f + phase_shift_1_2);  // I_raw
-                auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f + phase_shift_1_2);
+                auto analog_sig_source_current1        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f + phase_shift_0_1);  // I_raw
+                auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f + phase_shift_0_1);
 
                 auto noise_source_current1             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
                 auto noise_source_voltage1             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 16.25f);
@@ -679,8 +679,8 @@ public:
 
         }
         else{
-                auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
-                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_1_2);  // I_raw
+                auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_0_1); // U_raw
+                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_0_1);  // I_raw
 
                 auto throttle_voltage1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
                 auto throttle_current1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -695,13 +695,13 @@ public:
 
     }
     void phase2_signal_simulation(bool add_noise, float source_samp_rate, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_voltage2, std::shared_ptr<gr::blocks::multiply_const<float> > source_interface_current2){
-        float phase_shift_2_3 = 4 * PI / 3;
+        float phase_shift_1_2 = 4 * PI / 3;
         if(add_noise){
                 // I
-                auto analog_sig_source_voltage2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_2_3); // U_raw
+                auto analog_sig_source_voltage2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
                 // u
-                auto analog_sig_source_current2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f + phase_shift_2_3);  // I_raw
-                auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f + phase_shift_2_3);
+                auto analog_sig_source_current2        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f + phase_shift_1_2);  // I_raw
+                auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f + phase_shift_1_2);
 
                 auto noise_source_current2             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
                 auto noise_source_voltage2             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 16.25f);
@@ -737,8 +737,8 @@ public:
 
         }
         else{
-                auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_2_3); // U_raw
-                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_2_3);  // I_raw
+                auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
+                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_1_2);  // I_raw
 
                 auto throttle_voltage2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
                 auto throttle_current2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
