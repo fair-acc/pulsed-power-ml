@@ -89,7 +89,7 @@ int         main(int argc, char **argv) {
     // subscription for voltage data
     // sample rate must equal sink sample rate, F12 for constructor, (8080 -> worker, PulsedPowerservice) 
     Subscription<Acquisition>        voltageSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U_0", "U_1", "U_2", 
-                                                                                        "U_0_bpf", "U_1_bpf", "U_2_bpf" }, 1000, 0.06 * 1000, 25.0f);
+                                                                                        "U_0_bpf", "U_1_bpf", "U_2_bpf" }, 500, 0.06 * 1000, 25.0f);
 
     // Setup subscriptions //not needed
     Subscription<Acquisition>        signalSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", { "U", "I", "U_bpf", "I_bpf" }, 1000, 0.06 * 1000, 25.0f);
