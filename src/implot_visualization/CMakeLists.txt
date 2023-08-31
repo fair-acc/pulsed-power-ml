@@ -62,10 +62,13 @@ add_executable(${voltageOutputFileName})
 set(currentOutputFileName "dashboard_current")
 add_executable(${currentOutputFileName})
 
+set(u0i0OutputFileName "dashboard_u0i0")
+add_executable(${u0i0OutputFileName})
+
 add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
         COMMENT start a python server serving the wasm app
-        DEPENDS ${ppemOutputFileName} ${nilmOutputFileName} ${voltageOutputFileName} ${currentOutputFileName}
+        DEPENDS ${ppemOutputFileName} ${nilmOutputFileName} ${voltageOutputFileName} ${currentOutputFileName} ${u0i0OutputFileName}
 )
 
 add_subdirectory(external)

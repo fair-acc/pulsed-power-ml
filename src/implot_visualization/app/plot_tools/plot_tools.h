@@ -471,6 +471,43 @@ void plotCurrentStatistics(std::vector<ScrollingBuffer> &signals, DataInterval I
     }
 }
 
+void plotU0I0(std::vector<ScrollingBuffer> &signalsU, std::vector<ScrollingBuffer> &signalsI, DataInterval Interval = Short){
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
+    ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
+    ImPlot::SetupAxes("", "I_0(A), U_0(V)", xflags, yflags);    
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+    const auto &signalI = signalsI.at(3);
+    const auto &signalU = signalsU.at(3);
+    if (!signalU.data.empty() && !signalI.data.empty()) {
+        int offset = 0;
+        if constexpr (requires { signalI.offset; }) {
+            offset = signalI.offset;
+        }
+        ImPlot::PlotLine((signalU.signalName).c_str(),
+                &signalU.data[0].x,
+                &signalU.data[0].y,
+                signalU.data.size(),
+                lineFlag,
+                offset,
+                2 * sizeof(double));
+        
+        ImPlot::PlotLine((signalI.signalName).c_str(),
+                &signalI.data[0].x,
+                &signalI.data[0].y,
+                signalI.data.size(),
+                lineFlag,
+                offset,
+                2 * sizeof(double));
+    }
+}
+
 void plotMainsFrequency(std::vector<ScrollingBuffer> &signals, DataInterval Interval = Short) {
     static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_None;
     static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;

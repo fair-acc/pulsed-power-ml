@@ -52,7 +52,19 @@ target_link_libraries(
         stb
         iconfont
 )
-
+# U0 I0 dashboard
+target_sources(${u0i0OutputFileName} PRIVATE main_u0i0.cpp)
+target_link_libraries(
+    ${u0i0OutputFileName}
+    PRIVATE
+        implot
+        deserializer
+        fetch
+        plot_tools
+        app_header
+        stb
+        iconfont
+)
 
 add_subdirectory(deserializer)
 add_subdirectory(fetch)
