@@ -123,6 +123,9 @@ class TFGuptaClassifier(keras.Model):
         self.training_data_features_raw = training_data_features
         self.training_data_labels = training_data_labels
 
+        # Device states
+        self.device_states = [False] * n_known_appliances  
+
         self.scale_tensor = tf.Variable(initial_value=tf.ones(shape=(3 * self.n_peaks_max, 1), dtype=tf.float32),
                                         dtype=tf.float32,
                                         trainable=False,
@@ -476,6 +479,9 @@ class TFGuptaClassifier(keras.Model):
             false_fn=lambda: event_class
         )
 
+        # Determine the previous device status
+        previous_device_states = list(self.device_states)
+
         # 3. Update current state vector accordingly
         self.current_state_vector.assign(self.calculate_state_vector(event_class=event_class))
 
@@ -484,7 +490,33 @@ class TFGuptaClassifier(keras.Model):
             self.calculate_unknown_apparent_power(current_apparent_power=current_apparent_power)
         )
 
+        # 5. Function to update the device status
+        self.update_device_states(previous_device_states)
+        
+
+
         return self.current_state_vector
+    
+    def update_device_states(self, previous_device_states) -> None:
+        """
+        Updates the device status based on the classification and issues warnings when the status changes.
+
+        Parameters
+        ----------
+        previous_device_states
+            List of previous device states (on or off) for known devices.
+        """
+        for i in range(self.n_known_appliances):
+            current_state = bool(self.current_state_vector[i])
+            previous_state = previous_device_states[i]
+
+            if current_state == previous_state:
+                tf.print(f"Warning: Invalid state - device {i} is already {'switched on' if current_state else 'switched off'}!")
+
+        # Update the internal device status
+        for i in range(self.n_known_appliances):
+            self.device_states[i] = bool(self.current_state_vector[i])
+        return None
 
     def update_window(self, input_tensor: tf.Tensor) -> None:
         """
