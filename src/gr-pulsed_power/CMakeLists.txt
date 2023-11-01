@@ -16,7 +16,7 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
 ########################################################################
 cmake_minimum_required(VERSION 3.8)
 project(gr-pulsed_power CXX C)
-enable_testing()
+include(CTest)
 
 # Install to PyBOMBS target prefix if defined
 if(DEFINED ENV{PYBOMBS_PREFIX})
@@ -26,9 +26,18 @@ endif()
 
 # Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    include(CodeCoverage)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 # Find gnuradio to get access to the cmake modules
 set(GR_REQUIRED_COMPONENTS RUNTIME ANALOG BLOCKS)
-find_package(Gnuradio "3.10.4" REQUIRED COMPONENTS RUNTIME ANALOG BLOCKS)
+find_package(Gnuradio "3.10.4" REQUIRED COMPONENTS
+    runtime
+    analog
+    blocks)
+
 link_directories(
     ${GNURADIO_RUNTIME_LIBRARY_DIRS}
 )
@@ -59,8 +68,10 @@ include(GrCompilerSettings)
 ########################################################################
 # Install directories
 ########################################################################
+set(GR_REQUIRED_COMPONENTS RUNTIME ANALOG BLOCKS)
+find_package(Gnuradio "3.10.4" REQUIRED COMPONENTS RUNTIME ANALOG BLOCKS)
 include(GrVersion)
-
+# set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wl,--no-as-needed")
 include(GrPlatform) #define LIB_SUFFIX
 
 if(NOT CMAKE_MODULES_DIR)

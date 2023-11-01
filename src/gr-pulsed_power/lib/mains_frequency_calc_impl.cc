@@ -51,12 +51,12 @@ mains_frequency_calc_impl::mains_frequency_calc_impl(float expected_sample_rate,
       d_expected_sample_rate(expected_sample_rate),
       d_lo(low_threshold),
       d_hi(high_threshold),
-      d_last_state(false),
-      no_low(0),
-      no_high(0),
       current_half_frequency(0),
       average_frequency(50.0),
-      d_alpha(0.007)
+      d_alpha(0.007),
+      no_low(0),
+      no_high(0),
+      d_last_state(false)
 {
     reset_no_low();
     reset_no_high();
@@ -77,11 +77,13 @@ mains_frequency_calc_impl::~mains_frequency_calc_impl() {}
  */
 void mains_frequency_calc_impl::calc_frequency_per_halfed_period(int current_count)
 {
-    float seconds_per_halfed_period =
-        (float)((double)current_count / d_expected_sample_rate);
+    if (current_count == 0) {
+        return;
+    }
+    double seconds_per_halfed_period = ((double)current_count / d_expected_sample_rate);
 
     current_half_frequency =
-        float(1.0 / float(seconds_per_halfed_period + seconds_per_halfed_period));
+        (1.0 / (seconds_per_halfed_period + seconds_per_halfed_period));
 }
 
 /**
@@ -175,7 +177,7 @@ void mains_frequency_calc_impl::detect_mains_frequency_over_half_period(
                       << "\n";
         }
 
-        mains_frequency_out[i] = average_frequency;
+        mains_frequency_out[i] = float(average_frequency);
     }
 }
 

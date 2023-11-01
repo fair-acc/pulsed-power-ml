@@ -1,4 +1,3 @@
-#include "mains_frequency_calc_impl.h"
 #include <gnuradio/analog/noise_source.h>
 #include <gnuradio/analog/sig_source.h>
 #include <gnuradio/attributes.h>
@@ -55,9 +54,6 @@ BOOST_AUTO_TEST_CASE(test_mains_frequency_calc_55_Hz_without_noise)
     std::vector<float> result_data = vector_sink->data();
     std::vector<float> rdebug_data = vector_sink_debug->data();
 
-    int res_size_0 = result_data.size();
-    int res_size_1 = rdebug_data.size();
-
     // keep last second
     result_data.erase(result_data.begin(), result_data.end() - samp_rate);
 
@@ -108,8 +104,6 @@ BOOST_AUTO_TEST_CASE(test_mains_frequency_calc_55_Hz_with_noise_1_percent)
 
     std::vector<float> result_data = vector_sink->data();
 
-    int res_size_0 = result_data.size();
-
     // keep last second
     result_data.erase(result_data.begin(), result_data.end() - samp_rate);
 
@@ -158,8 +152,6 @@ BOOST_AUTO_TEST_CASE(test_mains_frequency_calc_55_Hz_with_noise_5_percent)
     tb->stop();
 
     std::vector<float> result_data = vector_sink->data();
-
-    int res_size_0 = result_data.size();
 
     // keep last second
     result_data.erase(result_data.begin(), result_data.end() - samp_rate);

@@ -10,6 +10,7 @@
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
+
 list(APPEND pulsed_power_sources
     digitizer_source.cc
     mains_frequency_calc_impl.cc
@@ -17,7 +18,6 @@ list(APPEND pulsed_power_sources
     opencmw_time_sink_impl.cc
     integration_impl.cc
     statistics_impl.cc
-    # picoscope_4000a_source_help_impl.cc
     picoscope_4000a_source_impl.cc
     picoscope_base.cc
     power_calc_cc_impl.cc
@@ -30,13 +30,18 @@ if(NOT pulsed_power_sources)
     return()
 endif(NOT pulsed_power_sources)
 
+message("Add library: ${pulsed_power_sources}")
 add_library(gnuradio-pulsed_power SHARED ${pulsed_power_sources})
+
 target_link_libraries(gnuradio-pulsed_power gnuradio::gnuradio-runtime)
+
 target_include_directories(gnuradio-pulsed_power
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
   )
-set_target_properties(gnuradio-pulsed_power PROPERTIES DEFINE_SYMBOL "gnuradio_pulsed_power_EXPORTS")
+
+set_target_properties(gnuradio-pulsed_power 
+    PROPERTIES DEFINE_SYMBOL "gnuradio_pulsed_power_EXPORTS")
 
 if(APPLE)
     set_target_properties(gnuradio-pulsed_power PROPERTIES
@@ -65,22 +70,19 @@ include(GrTest)
 #include_directories()
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_pulsed_power_sources
-qa_integration.cc
-qa_mains_frequency_calc.cc
-qa_opencmw_freq_sink.cc
-qa_opencmw_time_sink.cc
-qa_power_calc_cc.cc
-qa_power_calc_ff.cc
-qa_power_calc_mul_ph_ff.cc
-qa_statistics.cc
-)
+    qa_integration.cc
+    qa_mains_frequency_calc.cc
+    qa_opencmw_freq_sink.cc
+    qa_opencmw_time_sink.cc
+    qa_power_calc_cc.cc
+    qa_power_calc_ff.cc
+    qa_power_calc_mul_ph_ff.cc
+    qa_statistics.cc)
+
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-pulsed_power)
-target_link_libraries(gnuradio-pulsed_power 
-#"-Wl,--whole-archive picoscope-base.a -Wl,--no-whole-archive"
-gnuradio::gnuradio-runtime) # picoscope-ps4000a)
-find_package(gnuradio-blocks PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
-find_package(gnuradio-analog PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
+
+# target_link_libraries()
 
 if(NOT test_pulsed_power_sources)
     MESSAGE(STATUS "No C++ unit tests... skipping")
@@ -88,62 +90,56 @@ if(NOT test_pulsed_power_sources)
 endif(NOT test_pulsed_power_sources)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    #include(GrPlatform)
-    find_package(gnuradio-blocks PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
-    find_package(gnuradio-analog PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
+    # find_package(gnuradio::gnuradio-blocks PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
+    # find_package(gnuradio::gnuradio-analog PATHS ${GR_PREFIX}/lib64/cmake/gnuradio/)
+
     link_directories(
 	    ${Boost_LIBRARY_DIRS}
 	    ${GNURADIO_RUNTIME_LIBRARY_DIRS}
 	)
+
     foreach(qa_file ${test_pulsed_power_sources})
+
         string(LENGTH ${qa_file} qa_file_length)
         math(EXPR truncated_filename_length "${qa_file_length} - 6")
         string(SUBSTRING ${qa_file} 3 ${truncated_filename_length} truncated_qa_file)
         set(target_to_build "test_${truncated_qa_file}")
         add_executable(${target_to_build} ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file})
-        
         message("created target: ${target_to_build} ")
+        message("target deps: ${GR_TEST_TARGET_DEPS}")
+        
         target_link_libraries(
             ${target_to_build}
             ${GR_TEST_TARGET_DEPS}
             Boost::unit_test_framework
-            #${GNURADIO_ALL_LIBRARIES}
-            gnuradio-runtime
-            gnuradio-blocks
-            gnuradio-analog
+            gnuradio::gnuradio-analog
+            gnuradio::gnuradio-blocks
+            gnuradio::gnuradio-runtime
         )
+        
         add_dependencies(${target_to_build}  ${GR_TEST_TARGET_DEPS} Boost::unit_test_framework ${GNURADIO_ALL_LIBRARIES})
         set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O0")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
         set_target_properties(${target_to_build} 
             PROPERTIES COMPILE_DEFINITIONS "BOOST_TEST_DYN_LINK;BOOST_TEST_MAIN"
         )
-        setup_target_for_coverage_gcovr_html(NAME "test_${truncated_qa_file}_coverage" 
-                                            EXECUTABLE ${target_to_build}  ctest
-                                            DEPENDENCIES ${target_to_build}  ${GR_TEST_TARGET_DEPS}
-        )
+        # setup_target_for_coverage_gcovr_html(NAME "test_${truncated_qa_file}_coverage" 
+        #                                     EXECUTABLE ${target_to_build}  ctest
+        #                                     DEPENDENCIES ${target_to_build}  ${GR_TEST_TARGET_DEPS}
+        # )
         add_test(NAME "ctest_${truncated_qa_file}"
                 COMMAND ${target_to_build} 
         )
         
     endforeach(qa_file)
-    append_coverage_compiler_flags()
-
+    # append_coverage_compiler_flags()
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-# foreach(qa_file ${test_pulsed_power_sources})
-#     GR_ADD_CPP_TEST("pulsed_power_${qa_file}"
-#         ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file}
-#     )
-# endforeach(qa_file)
 
 ########################################################################
 # add picoscope
 ########################################################################
-#set(PS4000A_EXPORT_NAME ps4000aTargets)
 find_package(picoscope)
 message("PICOSCOPE_LIB_DIR  " ${PICOSCOPE_LIB_DIR})
-#add_library(ps4000a SHARED ${PICOSCOPE_LIB_DIR} )
 add_library(picoscope SHARED IMPORTED)
 set_target_properties(picoscope PROPERTIES IMPORTED_LOCATION ${PICOSCOPE_LIB_DIR})
 target_link_libraries( gnuradio-pulsed_power picoscope)

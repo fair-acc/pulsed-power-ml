@@ -7,12 +7,10 @@
 #include <iomanip>
 #include <thread>
 
-#include "CounterWorker.hpp"
 #include "FrequencyDomainWorker.hpp"
 #include "GRFlowGraphs.hpp"
 #include "LimitingCurveWorker.hpp"
-#include "NilmPowerWorker.hpp"
-#include "NilmPredictWorker.hpp"
+#include "NilmDataWorker.hpp"
 #include "TimeDomainWorker.hpp"
 
 using namespace opencmw::majordomo;
@@ -59,7 +57,6 @@ public:
 
     void registerHandlers() override {
         _svr.set_mount_point("/", _serverRoot.string());
-
         _svr.Post("/stdio.html", [](const httplib::Request &request, httplib::Response &response) {
             opencmw::debug::log() << "QtWASM:" << request.body;
             response.set_content("", "text/plain");
@@ -81,9 +78,12 @@ public:
 
 int main() {
     Broker                                          broker("Pulsed-Power-Broker");
-    auto                                            fs = cmrc::assets::get_filesystem();
+    auto                                            fs          = cmrc::assets::get_filesystem();
+    const std::string_view                          REST_SCHEME = "https";
+    const auto                                      REST_PORT   = DEFAULT_REST_PORT; // 8080
+    opencmw::URI<>                                  restAddress = opencmw::URI<>::factory().scheme(REST_SCHEME).hostName("0.0.0.0").port(REST_PORT).build();
 
-    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./");
+    FileServerRestBackend<PLAIN_HTTP, decltype(fs)> rest(broker, fs, "./", restAddress);
 
     const auto                                      brokerRouterAddress = broker.bind(opencmw::URI<>("mds://127.0.0.1:12345"));
 
@@ -95,33 +95,29 @@ int main() {
     std::jthread brokerThread([&broker] { broker.run(); });
 
     // flowgraph setup
-    // GRFlowGraph                      flowgraph(1024);
-    GRFlowGraphOnePhasePicoscopeNilm flowgraph(1024);
+    bool                 use_picoscope = true;
+    bool                 add_noise     = true; // adds noise on simulated data - has no effect on picoscope data
+
+    PulsedPowerFlowgraph flowgraph(256, use_picoscope, add_noise);
     flowgraph.start();
 
     // OpenCMW workers
-    CounterWorker<"counter", description<"Returns counter value">>                                        counterWorker(broker, std::chrono::milliseconds(1000));
     TimeDomainWorker<"pulsed_power/Acquisition", description<"Time-Domain Worker">>                       timeDomainWorker(broker);
     FrequencyDomainWorker<"pulsed_power_freq/AcquisitionSpectra", description<"Frequency-Domain Worker">> freqDomainWorker(broker);
-    NilmPowerWorker<"nilm_values", description<"Nilm Data">>                                              nilmDataWorker(broker, std::chrono::milliseconds(1000));
-    NilmPredictWorker<"nilm_predict_values", description<"Nilm Predicted Data">>                          nilmPredictWorker(broker, std::chrono::milliseconds(1000));
-    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker, std::chrono::milliseconds(4000));
+    LimitingCurveWorker<"limiting_curve", description<"Limiting curve worker">>                           limitingCurveWorker(broker);
+    NilmDataWorker<"pulsed_power_nilm", description<"Nilm Data Worker">>                                  nilmDataWorker(broker);
 
     // run workers in separate threads
-    std::jthread counterWorkerThread([&counterWorker] { counterWorker.run(); });
-    std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread timeSinkWorkerThread([&timeDomainWorker] { timeDomainWorker.run(); });
-    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
-    std::jthread nilmPredictWorkerThread([&nilmPredictWorker] { nilmPredictWorker.run(); });
+    std::jthread freqSinkWorkerThread([&freqDomainWorker] { freqDomainWorker.run(); });
     std::jthread limitingCurveWorkerThread([&limitingCurveWorker] { limitingCurveWorker.run(); });
+    std::jthread nilmDataWorkerThread([&nilmDataWorker] { nilmDataWorker.run(); });
 
     brokerThread.join();
 
     // workers terminate when broker shuts down
     timeSinkWorkerThread.join();
     freqSinkWorkerThread.join();
-    counterWorkerThread.join();
-    nilmDataWorkerThread.join();
-    nilmPredictWorkerThread.join();
     limitingCurveWorkerThread.join();
+    nilmDataWorkerThread.join();
 }

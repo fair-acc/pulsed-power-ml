@@ -18,12 +18,14 @@ using namespace std::chrono;
 class integration_impl : public integration
 {
 private:
-    float d_step_size;
+    double d_step_size;
     int d_decimation;
-    float last_value;
-    time_point<system_clock> last_save;
-    time_point<system_clock> last_reset;
-    float sum;
+    float d_last_value;
+    time_point<system_clock> d_last_save;
+    time_point<system_clock> d_last_reset;
+    float d_sum;
+    int d_duration;
+    const std::string d_filename;
 
     int get_values_from_file(time_point<system_clock>& last_reset,
                              time_point<system_clock>& last_save,
@@ -33,8 +35,11 @@ private:
                       float sum);
 
 public:
-    integration_impl(int decimation, int sample_rate);
-    ~integration_impl();
+    integration_impl(int decimation,
+                     int sample_rate,
+                     INTEGRATION_DURATION duration,
+                     const std::string savefilename);
+    ~integration_impl() override;
 
     void add_new_steps(float* out, const float* sample, int noutput_items) override;
 
@@ -47,6 +52,7 @@ public:
              gr_vector_const_void_star& input_items,
              gr_vector_void_star& output_items) override;
 };
+
 
 } // namespace pulsed_power
 } // namespace gr

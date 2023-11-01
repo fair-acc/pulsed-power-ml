@@ -24,7 +24,7 @@ opencmw_time_sink_impl::opencmw_time_sink_impl(
     float sample_rate)
     : gr::sync_block("opencmw_time_sink",
                      gr::io_signature::make(
-                         1 /* min inputs */, 10 /* max inputs */, sizeof(input_type)),
+                         1 /* min inputs */, 15 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
       _signal_names(signal_names),
       _signal_units(signal_units),
@@ -49,7 +49,8 @@ int opencmw_time_sink_impl::work(int noutput_items,
     if (_timestamp == 0) {
         _timestamp =
             duration_cast<nanoseconds>(high_resolution_clock().now().time_since_epoch())
-                .count();
+                .count(); // TODO first vlaue at _timestamp - noutput_items *
+                          // static_cast<int64_t>(1e9 / _sample_rate)?
     }
 
     for (auto callback : _cb_copy_data) {

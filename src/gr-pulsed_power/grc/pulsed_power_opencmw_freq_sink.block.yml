@@ -1,6 +1,6 @@
 id: pulsed_power_opencmw_freq_sink
 label: OpenCMW Frequency Sink
-category: '[pulsed_power]'
+category: "[pulsed_power]"
 
 templates:
   imports: from gnuradio import pulsed_power
@@ -13,18 +13,26 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-- id: signal_name
-  label: Signal Name
-  dtype: string
-  default: 'Voltage'
-- id: signal_unit
-  label: Signal Unit
-  dtype: string
-  default: 'volt'
-- id: bandwidth
-  label: Bandwidth (Hz)
-  dtype: float
-  default: samp_rate
+  - id: signal_name
+    label: Signal Name
+    dtype: string
+    default: "Voltage"
+  - id: signal_unit
+    label: Signal Unit
+    dtype: string
+    default: "volt"
+  - id: bandwidth
+    label: Bandwidth (Hz)
+    dtype: float
+    default: samp_rate
+  - id: sample_rate
+    label: Sample Rate
+    dtype: float
+    default: samp_rate
+  - id: vector_size
+    label: Vector Size
+    dtype: int
+    default: 1024
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -37,10 +45,10 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- label: in
-  domain: stream
-  dtype: float
-#  vlen: ...
+  - label: in
+    domain: stream
+    dtype: float
+    vlen: ${vector_size}
 #  optional: ...
 
 outputs:

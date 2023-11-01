@@ -17,31 +17,49 @@ private:
 public:
     power_calc_mul_ph_ff_impl(double alpha = 0.0000001); // 100n
     ~power_calc_mul_ph_ff_impl() override;
-    void calc_active_power(
-        float* out, float* voltage, float* current, float* phi_out, int noutput_items);
-    void calc_reactive_power(
-        float* out, float* voltage, float* current, float* phi_out, int noutput_items);
-    void
-    calc_apparent_power(float* out, float* voltage, float* current, int noutput_items);
-    void
-    calc_phi_phase_correction(float* phi_out, const float* dalta_phi, int noutput_items);
-    void calc_rms_u(float* output, const float* input, int noutput_items);
-    void calc_rms_i(float* output, const float* input, int noutput_items);
-    void get_timestamp_ms(float* out);
+
+    void calc_active_power(float* out,
+                           float* voltage,
+                           float* current,
+                           float* phi_out,
+                           int noutput_items) override;
+
+    void calc_reactive_power(float* out,
+                             float* voltage,
+                             float* current,
+                             float* phi_out,
+                             int noutput_items) override;
+
+    void calc_apparent_power(float* out,
+                             float* voltage,
+                             float* current,
+                             int noutput_items) override;
+
+    void calc_phi_phase_correction(float* phi_out,
+                                   const float* dalta_phi,
+                                   int noutput_items) override;
+
+    void calc_rms_u(float* output, const float* input, int noutput_items) override;
+    void calc_rms_i(float* output, const float* input, int noutput_items) override;
+    void get_timestamp_ms(float* out) override;
+
     void calc_acc_val_active_power(float* p_out_acc,
                                    float* p_out_1,
                                    float* p_out_2,
                                    float* p_out_3,
-                                   int noutput_items);
+                                   int noutput_items) override;
+
     void calc_acc_val_reactive_power(float* q_out_acc,
                                      float* q_out_1,
                                      float* q_out_2,
                                      float* q_out_3,
-                                     int noutput_items);
+                                     int noutput_items) override;
+
     void calc_acc_val_apparent_power(float* out,
                                      float* acc_active_power,
                                      float* acc_reactive_power,
-                                     int noutput_items);
+                                     int noutput_items) override;
+
     void set_alpha(double alpha) override; // step-length
 
     // Where all the action really happens

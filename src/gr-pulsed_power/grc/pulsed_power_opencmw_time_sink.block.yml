@@ -1,6 +1,6 @@
 id: pulsed_power_opencmw_time_sink
 label: OpenCMW Time Sink
-category: '[pulsed_power]'
+category: "[pulsed_power]"
 
 templates:
   imports: from gnuradio import pulsed_power
@@ -13,21 +13,23 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-- id: sample_rate
-  label: Sample Rate (Hz)
-  dtype: float
-  default: samp_rate
-- id: signal_name
-  label: Signal Name
-  dtype: string
-  default: 'Voltage'
-- id: signal_unit
-  label: Signal Unit
-  dtype: string
-  default: 'volt'
-#- id: ...
-#  label: ...
-#  dtype: ...
+  - id: sample_rate
+    label: Sample Rate (Hz)
+    dtype: float
+    default: samp_rate
+  - id: signal_name
+    label: Signal Name
+    dtype: string
+    default: "Voltage"
+  - id: signal_unit
+    label: Signal Unit
+    dtype: string
+    default: "volt"
+  - id: num_inputs
+    label: Num Inputs
+    dtype: int
+    default: "1"
+    hide: part
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:
@@ -37,9 +39,10 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- label: in
-  domain: stream
-  dtype: float
+  - label: in
+    domain: stream
+    dtype: float
+    multiplicity: ${ num_inputs }
 #  vlen: ...
 #  optional: ...
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Free Software Foundation, Inc.
+ * Copyright 2023 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(integration.h)                                             */
-/* BINDTOOL_HEADER_FILE_HASH(a6602ba60159bd8b7e5186f1ff0b4acf)                     */
+/* BINDTOOL_HEADER_FILE(integration.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(bf1f587422f551abbefdb083726c6ce4)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -33,12 +33,14 @@ void bind_integration(py::module& m)
     using integration = ::gr::pulsed_power::integration;
 
 
-    py::class_<integration, gr::block, gr::basic_block, std::shared_ptr<integration>>(
+    py::class_<integration, gr::sync_decimator, std::shared_ptr<integration>>(
         m, "integration", D(integration))
 
         .def(py::init(&integration::make),
              py::arg("decimation"),
              py::arg("sample_rate"),
+             py::arg("duration"),
+             py::arg("savefilename"),
              D(integration, make))
 
 
@@ -50,6 +52,7 @@ void bind_integration(py::module& m)
              py::arg("calculate_with_last_value"),
              D(integration, integrate))
 
+
         .def("add_new_steps",
              &integration::add_new_steps,
              py::arg("out"),
@@ -58,4 +61,12 @@ void bind_integration(py::module& m)
              D(integration, add_new_steps))
 
         ;
+
+    py::enum_<::gr::pulsed_power::INTEGRATION_DURATION>(m, "INTEGRATION_DURATION")
+        .value("DAY", ::gr::pulsed_power::INTEGRATION_DURATION::DAY)     // 0
+        .value("WEEK", ::gr::pulsed_power::INTEGRATION_DURATION::WEEK)   // 1
+        .value("MONTH", ::gr::pulsed_power::INTEGRATION_DURATION::MONTH) // 2
+        .export_values();
+
+    py::implicitly_convertible<int, ::gr::pulsed_power::INTEGRATION_DURATION>();
 }

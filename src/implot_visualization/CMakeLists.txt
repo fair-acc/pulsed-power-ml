@@ -6,9 +6,16 @@ set(projectName "implot_visualization")
 project(${projectName} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_COMPILER "emcc")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
+
+# Check for supported compiler version
+if (CMAKE_C_COMPILER MATCHES "emcc")
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 17.0.0)
+        message(FATAL_ERROR "emcc>=17.0.0 required, but emcc ${CMAKE_C_COMPILER_VERSION} detected.")
+    endif ()
+endif()
 
 # necessary to tell CMake (with emscripten) to extend the standard .js and .wasm output with .html output (so that we can execute it with the webserver)
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -43,16 +50,17 @@ add_link_options(
         -sFETCH
 )
 
-set(outputFileName "index")
-add_executable(${outputFileName})
+set(ppemOutputFileName "dashboard_ppem")
+add_executable(${ppemOutputFileName})
 
-# dependencies
-add_subdirectory(external)
-add_subdirectory(app)
+set(nilmOutputFileName "dashboard_nilm")
+add_executable(${nilmOutputFileName})
 
 add_custom_target(serve
         python3 -m http.server -d ${EXECUTABLE_OUTPUT_PATH} 8000
-        COMMENT start a python server serving the webassembly app
-        DEPENDS ${outputFileName}
+        COMMENT start a python server serving the wasm app
+        DEPENDS ${ppemOutputFileName} ${nilmOutputFileName}
 )
 
+add_subdirectory(external)
+add_subdirectory(app)

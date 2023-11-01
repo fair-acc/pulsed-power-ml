@@ -3,9 +3,12 @@ This module contains functions for the model framework concerning data I/O.
 """
 
 import glob
+import warnings
+from pathlib import Path
 
 import numpy as np
 
+import yaml
 
 FFT_APPARENT_POWER_FIX = "FFTApparentPower"
 FFT_VOLTAGE_FIX = "FFTVoltage"
@@ -14,6 +17,49 @@ APPARENT_POWER_FIX = "S_"
 ACTIVE_POWER_FIX = "P_"
 REACTIVE_POWER_FIX = "Q_"
 PHASE_DIFFERENCE_FIX = "Phi_"
+
+
+def load_binary_data_array(path_to_file: str,
+                           fft_size_data_point: int = 2**16) -> np.array:
+    """
+    Load and transform the data point array from a binary. Output will have shape (n, 3*fft_size_data_point + 4)
+    where n is the number of data points in the file.
+
+    One data point consists of (Spectrum_U, Spectrum_I, Spectrum_S, P, Q, S, Phi)
+
+    Parameters
+    ----------
+    path_to_file
+        Path to the binary
+    fft_size_data_point
+        Size of the spectra in the binary (usually half of what has been used for the calculation of the FFT)
+
+    Returns
+    -------
+    data_point_array
+        Array of data points.
+    """
+    data_point_len = 3 * fft_size_data_point + 4
+    return np.fromfile(path_to_file, dtype=np.float32).reshape((-1, data_point_len))
+
+
+def read_parameters(parameter_path: str) -> dict:
+    """
+    Read parameters from a parameter yml file into a dictionary.
+
+    Parameters
+    ----------
+    parameter_path
+        Path to the .yml file.
+
+    Returns
+    -------
+    Dictionary of parameters.
+    """
+    param_dic = yaml.safe_load(Path(parameter_path).read_text())
+    param_dic['sec_per_fft'] = param_dic['fft_size'] / param_dic['sample_rate']
+    param_dic['freq_per_bin'] = param_dic['sample_rate'] / param_dic['fft_size']
+    return param_dic
 
 
 def load_fft_file(path_to_file: str,
@@ -33,8 +79,15 @@ def load_fft_file(path_to_file: str,
     -------
     Array with timestep versus real part of the spectrum
     """
-    full_spectrum = np.fromfile(path_to_file, dtype=np.float32).reshape((-1, fft_size))
-    real_part = full_spectrum[:, 0:int(fft_size/2)]
+    spectrum = np.fromfile(path_to_file, dtype=np.float32)
+    remainder = len(spectrum) % fft_size
+    if remainder != 0:
+        warnings.warn(f"Length of array in file {path_to_file} is not a multiple of FFT Size ({fft_size})!\n"
+                      f"Ignoring last {remainder} entries to continue.")
+        reshaped_spectrum = spectrum[:-remainder].reshape((-1, fft_size))
+    else:
+        reshaped_spectrum = spectrum.reshape((-1, fft_size))
+    real_part = reshaped_spectrum[:, 0:int(fft_size/2)]
     return real_part
 
 
@@ -133,21 +186,24 @@ def read_training_files(path_to_folder: str,
     phase_difference = load_pqsphi_file(phase_difference_file_name,
                                         fft_apparent_power.shape[0])
 
+    list_of_data_arrays = [fft_voltage,
+                           fft_current,
+                           fft_apparent_power,
+                           active_power,
+                           reactive_power,
+                           apparent_power,
+                           phase_difference]
+    # Take care of some minor errors during recording.
+
+    min_length = min([len(data_array) for data_array in list_of_data_arrays])
+
     # Glue these arrays together accordingly (stack horizontally)
-    data_array = np.hstack([fft_voltage,
-                            fft_current,
-                            fft_apparent_power,
-                            active_power,
-                            reactive_power,
-                            apparent_power,
-                            phase_difference])
+    data_array = np.hstack([fft_voltage[:min_length],
+                            fft_current[:min_length],
+                            fft_apparent_power[:min_length],
+                            active_power[:min_length],
+                            reactive_power[:min_length],
+                            apparent_power[:min_length],
+                            phase_difference[:min_length]])
 
     return data_array
-
-
-if __name__ == "__main__":
-    test = read_training_files(
-        "/home/thomas/projects/nilm_at_fair/training_data/training_data_2022-10-12/halo/",
-        fft_size=2**14,
-    )
-    print(test.shape)

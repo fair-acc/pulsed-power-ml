@@ -14,6 +14,8 @@
 namespace gr {
 namespace pulsed_power {
 
+enum INTEGRATION_DURATION { DAY, WEEK, MONTH };
+
 /*!
  * \brief <+description of block+>
  * \ingroup pulsed_power
@@ -31,16 +33,24 @@ public:
      * constructor is in a private implementation
      * class. pulsed_power::integration::make is the public interface for
      * creating new instances.
+     *
+     * @param decimation Decimation
+     * @param sample_rate Sample rate in Hz
+     * @param duration The time duration before reset.
+     * @param savefilename The name of the file to save the integrated values.
      */
-    static sptr make(int decimation, int sample_rate);
+    static sptr make(int decimation,
+                     int sample_rate,
+                     INTEGRATION_DURATION duration,
+                     const std::string savefilename);
 
     /*!
-     * @brief Calculates the integral of the samples
+     * @brief Calculates the integral of the samples given in Watt
      *
-     * @param out Result pointer
+     * @param out Result pointer to integrated values in Watt/hour
      * @param sample Pointer to samples that shall be integrated
      * @param n_samples Number of samples over that is integrated
-     * @param calculate_with_last_value if true the last vlaue of the last sequence is
+     * @param calculate_with_last_value if true the last value of the last sequence is
      * used to calculate the value of the integral since then. Only do this if the
      * last_value variable was set.
      */

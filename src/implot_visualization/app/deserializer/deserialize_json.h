@@ -31,60 +31,131 @@ public:
     ImVector<DataPoint> data;
     std::string         signalName;
 
-    ScrollingBuffer(int max_size = 200'000);
+    ScrollingBuffer(int max_size = 50'000);
 
     void addPoint(double x, double y);
     void erase();
 };
 
-struct StrideArray {
+class PowerBuffer {
+public:
+    bool                init = false;
+    std::vector<double> values;
+    double              timestamp;
+
+    void                updateValues(const std::vector<double> &_values);
+};
+
+class StrideArray {
+public:
     std::vector<int>    dims;
     std::vector<double> values;
+
+    StrideArray();
+
+    ~StrideArray(){};
+
+    void cut(const std::vector<int> newDims);
 };
 
-class Acquisition {
-public:
-    std::vector<std::string>     signalNames;
-    std::string                  jsonString     = "";
-    uint64_t                     lastRefTrigger = 0;
-    std::vector<ScrollingBuffer> buffers;
-
-    Acquisition();
-    Acquisition(int numSignals);
-
-    void                deserialize();
-
+struct ConvertPair {
     std::vector<double> relativeTimestamps;
-    uint64_t            lastTimeStamp = 0.0;
+    uint64_t            referenceTimestamps;
+    StrideArray         strideArray;
+} typedef Convert;
 
-private:
-    uint64_t    refTrigger_ns = 0;
-    double      refTrigger_s  = 0.0;
-    StrideArray strideArray;
+template<typename T>
+class IAcquisition {
+public:
+    std::vector<std::string> signalNames;
+    std::string              jsonString    = "";
+    uint64_t                 lastTimeStamp = 0.0;
+    std::vector<T>           buffers;
+    bool                     success = false;
 
-    void        addToBuffers();
+    IAcquisition();
+    IAcquisition(const std::vector<std::string> _signalNames, const int _bufferSize = 50'000);
+
+    virtual ~IAcquisition()    = default;
+
+    virtual void deserialize() = 0;
+
+protected:
+    bool receivedRequestedSignals(std::vector<std::string> receivedSignals);
 };
 
-class AcquisitionSpectra {
+class Acquisition : public IAcquisition<ScrollingBuffer> {
 public:
-    std::string         signalName;
-    uint64_t            lastRefTrigger = 0;
-    std::string         jsonString     = "";
-    std::vector<Buffer> buffers;
+    Acquisition();
+    Acquisition(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
 
-    AcquisitionSpectra();
-    AcquisitionSpectra(int numSignals);
+    ~Acquisition(){};
 
-    void                deserialize();
-
-    std::vector<double> relativeTimestamps = { 0 };
-    uint64_t            lastTimeStamp      = 0.0;
+    void deserialize();
 
 private:
-    uint64_t            refTrigger_ns = 0;
-    double              refTrigger_s  = 0.0;
-    std::vector<double> channelMagnitudeValues;
-    std::vector<double> channelFrequencyValues;
+    uint64_t lastRefTrigger = 0;
 
-    void                addToBuffers();
+    void     addToBuffers(const StrideArray &strideArray, const std::vector<double> &relativeTimestamp, double refTrigger_ns);
+    bool     receivedVoltageCurrentData(std::vector<std::string> receivedSignals);
+};
+
+class AcquisitionSpectra : public IAcquisition<Buffer> {
+public:
+    AcquisitionSpectra();
+    AcquisitionSpectra(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
+
+    ~AcquisitionSpectra(){};
+
+    void deserialize();
+
+private:
+    void addToBuffers(const std::vector<double> &channelMagnitudeValues, const std::vector<double> &channelFrequencyValues);
+};
+
+class PowerUsage : public IAcquisition<Buffer> {
+public:
+    std::vector<std::string> devices;
+    std::vector<double>      powerUsages;
+    std::vector<double>      powerUsagesDay;
+    std::vector<double>      powerUsagesWeek;
+    std::vector<double>      powerUsagesMonth;
+    bool                     init = false;
+    double                   deliveryTime;
+    int64_t                  timestamp;
+
+    double                   kWhUsedDay   = 0.0;
+    double                   kWhUsedMonth = 0.0;
+    double                   kWhUsedWeek  = 0.0;
+
+    PowerUsage();
+    PowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
+
+    ~PowerUsage(){};
+
+    void   deserialize();
+    void   fail();
+    double sumOfUsage();
+
+private:
+    void setSumOfUsageDay();
+    void setSumOfUsageWeek();
+    void setSumOfUsageMonth();
+};
+
+class RealPowerUsage : public IAcquisition<PowerBuffer> {
+public:
+    double              deliveryTime;
+    bool                init = false;
+
+    std::vector<double> realPowerUsages;
+
+    RealPowerUsage();
+    RealPowerUsage(const std::vector<std::string> &_signalNames, const int _bufferSize = 50'000);
+
+    ~RealPowerUsage(){};
+
+    void deserialize();
+    void fail();
+    void addPowerUsage(const StrideArray &strideArray);
 };

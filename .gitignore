@@ -92,6 +92,7 @@ target/
 
 # Data
 data/*/*.csv
+src/opencmw_worker/src/data/
 
 # Emscripten
 *.o
@@ -102,6 +103,7 @@ src/gr-pulsed_power/Testing/
 
 # Other
 *.patch
+*dummy_notebook.ipynb
 
 # jetbrains
 cmake-build*/

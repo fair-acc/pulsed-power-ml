@@ -7,14 +7,52 @@ from typing import Union, List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
+
+import sys
+sys.path.append("../../../")
+
+from src.pulsed_power_ml.model_framework.data_io import read_training_files
+from src.pulsed_power_ml.models.gupta_model.gupta_utils import gupta_offline_switch_detection
 
 
-plt.style.use("dark_background")
+def make_eval_plot(power_array: Union[np.array, List],
+                   state_array: Union[np.array, List],
+                   appliance_power: float = 1) -> matplotlib.figure.Figure:
+    """
+    This function creates a single plot showing the raw data and the state of one appliance versus time step
+
+    Parameters
+    ----------
+    power_array
+        Array of power values
+    state_array
+        Array containing zeros (off) and ones (on), indicating the state of the appliance.
+    appliance_power
+        Data base power value of the appliances
+
+    Returns
+    -------
+    fig
+        Figure containing the plot
+    """
+    fig = plt.Figure(figsize=(8, 4.5))
+    ax = fig.add_subplot()
+    ax.plot(power_array,
+            label="Measured Power")
+    ax.plot(state_array * appliance_power,
+            label="Predicted Power")
+
+    return fig
+
 
 def plot_state_vector_array(state_vector_list: np.array,
                             label_list: Union[List[str], None] = None,
-                            true_apparent_power: Union[np.array, None] = None) -> matplotlib.figure.Figure:
+                            true_apparent_power: Union[np.array, None] = None,
+                            v_line: Union[float, None] = None) -> matplotlib.figure.Figure:
     """
+    Function to make one subplot for all appliances known to the model.
 
     Parameters
     ----------
@@ -23,30 +61,48 @@ def plot_state_vector_array(state_vector_list: np.array,
     label_list
         List with names for each device in state vector.
     true_apparent_power
-        Array w/ true, total apparent power values
+        Array w/ true, total apparent power values (S from raw data).
+    v_line:
+        Plot a vertical line in all plots to indicate which part of the data is unseen by the model.
+
     Returns
     -------
     Figure containing one plot per appliance
     """
     n_figures = state_vector_list.shape[1]
-    fig = plt.figure(figsize=(16, 4.5 * n_figures))
+    fig = plt.figure(figsize=(16, 4.5 * n_figures), tight_layout=True)
 
     if label_list is not None:
         label_list.append("Other")
 
     for i in range(n_figures):
         ax = fig.add_subplot(n_figures, 1, i+1)
-        ax.plot(state_vector_list[:,i],
-                "-")
+        ax.plot(state_vector_list[:, i],
+                "-",
+                label='Predicted')
 
         if true_apparent_power is not None:
             ax.plot(true_apparent_power,
-                    "--")
+                    "--",
+                    label='Measured Apparent Power')
 
         if label_list is not None:
             ax.set_title(label_list[i])
 
+        if v_line is not None:
+            ax.axvline(x=int(len(state_vector_list) * v_line),
+                       label="Training Data | Test Data",
+                       color="C2",
+                       linestyle=':',
+                       linewidth=3)
+
+        ax.grid(True)
+        ax.set_ylabel("Apparent Power [VA]")
+        ax.set_xlabel("Time [au]")
+        ax.legend(loc='upper left')
+
     return fig
+
 
 def plot_data_point_array(list_of_data_points: Union[List, np.array],
                           fft_size: int,
@@ -86,7 +142,7 @@ def plot_data_point_array(list_of_data_points: Union[List, np.array],
     phi_ax = fig.add_subplot(n_fig, 1, 5)
 
     if plot_spectra:
-    # Add spectrum plots
+        # Add spectrum plots
         min_max_freq = [0, 1_000]
         spectrum_size = int(fft_size/2)
         fft_u_ax = add_contour_plot(spectrum=list_of_data_points[:, 0:spectrum_size],
@@ -117,9 +173,9 @@ def plot_data_point_array(list_of_data_points: Union[List, np.array],
     # add prediction plot
     if list_of_state_vectors is not None:
         pqs_predicted_ax = fig.add_subplot(n_fig, 1, 6)
-        pqs_predicted_ax = add_prediction_plot(state_vector_array=np.array(list_of_state_vectors),
-                                               pqs_array=list_of_data_points[:, -4:-1],
-                                               ax=pqs_predicted_ax)
+        _pqs_predicted_ax = add_prediction_plot(state_vector_array=np.array(list_of_state_vectors),
+                                                pqs_array=list_of_data_points[:, -4:-1],
+                                                ax=pqs_predicted_ax)
 
     return fig
 
@@ -292,5 +348,170 @@ def add_prediction_plot(state_vector_array: np.array,
     ax.grid(True)
     ax.legend()
     ax.set_xlim(0, state_vector_array.shape[0])
+
+    return ax
+
+
+def make_gupta_switch_detection_plot(path_to_data_folder: str,
+                                     window_size: int = 25,
+                                     threshold: float = 2000,
+                                     log_scale: bool = False,
+                                     fft_size: int = 2**17,
+                                     add_labels: bool = True) -> matplotlib.figure.Figure:
+    """
+    Returns a figure containing one plot showing the apparent power versus time and the detected
+    switching events.
+
+    Parameters
+    ----------
+    path_to_data_folder
+        Path to folder containing the raw data in binary format.
+    window_size
+        Number of frames for background and signal in switch detection algorithm
+    threshold
+        Switch detection threshold
+    log_scale
+        If True, convert difference spectrum to dBm scale before applying threshold.
+    fft_size
+        Full FFT size.
+    add_labels
+        If True, add numbers to each detected switching event.
+
+    Returns
+    -------
+    fig
+        An instance of figure containing the respective plot.
+    """
+
+    # Load data
+    data_point_array = read_training_files(path_to_folder=path_to_data_folder,
+                                           fft_size=fft_size)
+
+    # Apply switch detection algorithm
+    switch_array = gupta_offline_switch_detection(
+        data_point_array=data_point_array,
+        window_size=window_size,
+        threshold=threshold,
+        log_scale=log_scale
+    )
+
+    switch_positions = np.argwhere(switch_array == 1).reshape((-1,))
+    dead_time_positions = np.argwhere(switch_array == -1).reshape((-1,))
+
+    # Create figure
+    fig = plt.figure(figsize=(16, 9), layout='tight')
+    ax = fig.add_subplot()
+
+    # Plot s
+    ax.plot(
+        data_point_array[:, -2],
+        label="Apparent Power"
+    )
+
+    y_max = max(data_point_array[:, -2])
+
+    # Plots detected switches
+    ax.vlines(
+        x=switch_positions,
+        ymin=0,
+        ymax=y_max,
+        linewidth=1,
+        color='C1',
+        alpha=0.5,
+        label='Detected Switch'
+    )
+
+    # Plot dead time
+    ax.vlines(
+        x=dead_time_positions,
+        ymin=0,
+        ymax=y_max,
+        linewidth=1,
+        color='C3',
+        alpha=0.5,
+        label='Dead time'
+    )
+
+    # Add numbers to switching events
+    for i, s in enumerate(switch_positions):
+        y = -1.25 if i % 2 != 0 else -0.5
+        ax.text(x=s,
+                y=y,
+                s=i)
+
+    # Some cosmetics
+    ax.legend()
+    ax.grid(True)
+    ax.set_title("Switch Detection - Gupta Approach")
+    ax.set_xlabel("Time [au]")
+    ax.set_ylabel("S [VA]")
+
+    return fig
+
+
+def add_pca_plot(ax: matplotlib.axis.Axis,
+                 feature_array: np.array,
+                 label_array: np.array,
+                 use_scaler: bool = True) -> matplotlib.axis.Axis:
+    """
+
+    Parameters
+    ----------
+    ax
+        Axis instance to plot on.
+    feature_array
+        Array containing the feature vectors.
+    label_array
+        Array containing label names. These will be used for the legend.
+    use_scaler
+        If True (default) features will be scaled with a MinMax scaler.
+
+    Returns
+    -------
+    ax
+        Axis incl. plot
+    """
+    # Check data
+
+    # check for nans in feature_array
+    assert np.isnan(feature_array).any() == False, 'Found nan in feature array!'
+
+    # check that feature array and label array have the same length
+    assert len(feature_array) == len(label_array), 'Feature array and label array do not have the same length!'
+
+
+
+    # scale input
+    if use_scaler is True:
+        scaler = MinMaxScaler()
+        pca_input = scaler.fit_transform(feature_array)
+    else:
+        pca_input = feature_array
+
+    # Perform PCA
+    pca_values = PCA(n_components=2).fit_transform(pca_input)
+
+    # Plot to axis
+    cmap = matplotlib.colormaps["tab20"]
+    unique_labels = np.unique(label_array)
+    color_dict = {label: cmap(i / (len(unique_labels) - 1)) for i, label in enumerate(unique_labels)}
+
+    legend_added = list()
+
+    for data_point, label in zip(pca_values, label_array):
+        legend_label = None
+        if label not in legend_added:
+            legend_label = label
+            legend_added.append(label)
+
+        ax.scatter(data_point[0],
+                   data_point[1],
+                   label=legend_label,
+                   marker='x',
+                   color=color_dict[label])
+
+    ax.set_title("PCA of features")
+    ax.grid(True)
+    ax.legend(scatterpoints=1, bbox_to_anchor=[1.05, 1])
 
     return ax
