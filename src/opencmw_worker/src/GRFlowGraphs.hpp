@@ -188,7 +188,7 @@ public:
                 //change for testing of different phases etc.
                 //                                                                                                        Freq, Amplitude
                 auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
-                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f);  // I_raw
+                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 1.57f);  // I_raw
                 //--END SIGNAL SOURCES PHASE 0--//
 
                 auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -715,7 +715,7 @@ public:
 
                 //--SIGNAL SOURCE PHASE 1--//
                 auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_0_1); // U_raw
-                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f + phase_shift_0_1);  // I_raw
+                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 1.57f + phase_shift_0_1);  // I_raw
                 //--END SIGNAL SOURCE PHASE 1--//
 
                 auto throttle_voltage1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -776,7 +776,7 @@ public:
 
                 //--SIGNAL SOURCE PHASE 2--//
                 auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
-                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f + phase_shift_1_2);  // I_raw
+                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 1.57f + phase_shift_1_2);  // I_raw
                 //--END SIGNAL SOURCE PHASE 2--//
 
                 auto throttle_voltage2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
