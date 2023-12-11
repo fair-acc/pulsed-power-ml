@@ -45,7 +45,9 @@ public:
         // flowgraph setup
         const float samp_rate = 4'000.0f;
         // sinus_signal --> throttle --> opencmw_time_sink
+
         auto signal_source_0             = gr::analog::sig_source_f::make(samp_rate, gr::analog::GR_SIN_WAVE, 0.5, 5, 0, 0);
+
         auto throttle_block_0            = gr::blocks::throttle::make(sizeof(float) * 1, samp_rate, true);
         auto pulsed_power_opencmw_sink_0 = gr::pulsed_power::opencmw_time_sink::make({ "sinus", "square" }, { "V", "A" }, samp_rate);
         pulsed_power_opencmw_sink_0->set_max_noutput_items(noutput_items);
@@ -124,7 +126,7 @@ private:
     gr::top_block_sptr top;
 
 public:
-    PulsedPowerFlowgraph(int noutput_items, bool use_picoscope = false, bool add_noise = true)
+    PulsedPowerFlowgraph(int noutput_items, bool use_picoscope = false, bool add_noise = false)
         : top(gr::make_top_block("GNURadio")) {
         float source_samp_rate          = 2'000'000.0f;
         auto  source_interface_voltage0 = gr::blocks::multiply_const_ff::make(1);
@@ -144,6 +146,8 @@ public:
                 auto analog_sig_source_voltage0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
                 //u
                 auto analog_sig_source_current0        = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 5, 0, 0.2f);  // I_raw
+
+                
                 auto analog_sig_source_freq_modulation = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 2, 1, 0, 0.2f);
 
                 auto noise_source_current0             = gr::analog::noise_source_f::make(gr::analog::GR_GAUSSIAN, 0.25f);
@@ -179,8 +183,13 @@ public:
                 top->hier_block2::connect(add_noise_current0, 0, source_interface_current0, 0);
             } else {
                 // blocks
+
+                //--SIGNAL SOURCE PHASE 0--//
+                //change for testing of different phases etc.
+                //                                                                                                        Freq, Amplitude
                 auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
-                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
+                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f);  // I_raw
+                //--END SIGNAL SOURCES PHASE 0--//
 
                 auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
                 auto throttle_current0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -703,8 +712,11 @@ public:
 
         }
         else{
+
+                //--SIGNAL SOURCE PHASE 1--//
                 auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_0_1); // U_raw
-                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_0_1);  // I_raw
+                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f + phase_shift_0_1);  // I_raw
+                //--END SIGNAL SOURCE PHASE 1--//
 
                 auto throttle_voltage1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
                 auto throttle_current1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -761,8 +773,11 @@ public:
 
         }
         else{
+
+                //--SIGNAL SOURCE PHASE 2--//
                 auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
-                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f + phase_shift_1_2);  // I_raw
+                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.79f + phase_shift_1_2);  // I_raw
+                //--END SIGNAL SOURCE PHASE 2--//
 
                 auto throttle_voltage2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
                 auto throttle_current2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -1044,7 +1059,6 @@ public:
         int decimation_out_raw, int decimation_out_bpf, float out_samp_rate_ui, int noutput_items, gr::blocks::keep_one_in_n::sptr out_decimation_current0,
         gr::filter::fft_filter_fff::sptr band_pass_filter_current0)
     {
-        //error: fft_filter_fff(61): insufficient connected input ports (1 needed, 0 connected)
         auto opencmw_time_sink_signals_currents       = gr::pulsed_power::opencmw_time_sink::make(
                                { "I_0", "I_1", "I_2", "I_0_bpf", "I_1_bpf", "I_2_bpf" },
                                { "A", "A", "A", "A", "A", "A" },
