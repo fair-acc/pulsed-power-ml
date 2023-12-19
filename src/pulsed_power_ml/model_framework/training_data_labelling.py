@@ -19,10 +19,12 @@ from src.pulsed_power_ml.models.gupta_model.gupta_utils import calculate_feature
 from src.pulsed_power_ml.models.gupta_model.gupta_utils import tf_calculate_feature_vector
 
 
-def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict) -> Tuple[np.array, np.array]:
+def get_features_from_raw_data(data_point_array: np.array, 
+                               parameter_dict: dict,
+                               switch_detection_threshold: float = np.inf) -> Tuple[np.array, np.array]:
     """
-    This function applies the Gupta approach to the input data and returns a list of features for all detected
-    switching events.
+    This function applies the Gupta approach to the input data and returns a list of features for 
+    all detected switching events.
 
     Parameters
     ----------
@@ -30,71 +32,98 @@ def get_features_from_raw_data(data_point_array: np.array, parameter_dict: dict)
         Array of data points (fft_u, fft_i, fft_s, p, q, s, phi)
     parameter_dict
         Parameter dictionary
+    switch_detection_threshold
+        Threshold for switch detection algorithm. Defaults to value in parameter file.
 
     Returns
     -------
     feature_array
         2D array containig the feature vector per detected switch
     switch_position
-        1D array with the same length as data_point_array containing 1s at each switch position, otherwise 0s.
+        1D array with the same length as data_point_array containing 1s at each switch position, 
+        otherwise 0s.
     """
-    feature_list = list()
+
+    # Get parameters from parameter dict
     fft_size_real = int(parameter_dict['fft_size_real'])
     sample_rate = int(parameter_dict['sample_rate'])
     spectrum_type = int(parameter_dict['spectrum_type'])
     window_size = int(parameter_dict['window_size'])
     step_size = int(parameter_dict['step_size'])
-    window = deque(maxlen=window_size * 3)
-    switch_threshold = float(parameter_dict['switch_threshold'])
     n_peaks = int(parameter_dict['n_peaks'])
-    switch_positions = np.zeros(shape=(len(data_point_array)))
 
-    for i, raw_spectrum in tqdm(
-            enumerate(data_point_array[:, spectrum_type * fft_size_real:(spectrum_type + 1) * fft_size_real])
-    ):
+    # set switch detection thresholf, if not provided
+    if np.isinf(switch_detection_threshold):
+            switch_detection_threshold = float(parameter_dict['switch_threshold'])
+
+    # Define some containers and variables
+    window = deque(maxlen=window_size * 3)
+    switch_value_array = np.zeros(shape=len(data_point_array))
+    switch_positions = np.zeros(shape=len(data_point_array))
+    feature_list = list()
+    n_switches_detected = 0
+
+    # Slice data_point_array to get only apparent power spcetrum
+    raw_spectrum_array = data_point_array[
+        :,
+        spectrum_type * fft_size_real:(spectrum_type + 1) * fft_size_real
+    ]
+
+    for i, raw_spectrum in tqdm(enumerate(raw_spectrum_array)):
+
+        # Convert spectrum from VA to dBm (decibels relative to 1 mW)
         spectrum = 10 * np.log10(raw_spectrum) + 30
         window.append(spectrum)
 
-        # window full?
-        if len(window) < 3 * window_size:
+        if len(window) < window_size * 2 + 1:
             continue
 
         window_array = np.array(window)
 
+        # calculate average background
         mean_background = np.mean(window_array[:window_size], axis=0)
-        mean_signal = np.mean(window_array[window_size:2*window_size], axis=0)
-        diff_spectrum = mean_signal - mean_background
+
+        # Calculate value for switch detection
+        spectrum_for_switch_detection = window_array[window_size + 1]
+        switch_detection_spectrum_cleaned = spectrum_for_switch_detection - mean_background
+        switch_value = np.mean(switch_detection_spectrum_cleaned, axis=0)
+        switch_value_array[i - window_size] = switch_value
 
         # switch detected
-        if np.max(np.abs(diff_spectrum)) >= switch_threshold:
-            switch_positions[i] = 1
-            mean_clf = np.mean(window_array[2*window_size:], axis=0)
-            feature_vector = tf_calculate_feature_vector(cleaned_spectrum=tf.constant(mean_clf, dtype=tf.float32),
-                                                         n_peaks_max=tf.constant(n_peaks, dtype=tf.int32),
-                                                         fft_size_real=tf.constant(fft_size_real, dtype=tf.int32),
-                                                         sample_rate=tf.constant(sample_rate, dtype=tf.int32))\
-                .numpy()\
-                .reshape((-1))
+        if np.abs(switch_value) >= switch_detection_threshold:
 
-            assert np.isnan(feature_vector).any() is False, \
+            # Report detected switch
+            n_switches_detected += 1
+            print(f"Switch deteted in Frame : {i - window_size}")
+            print(f"Switches detected in total : {n_switches_detected}")
+            switch_positions[i - window_size] = 1
+
+            # Calculate cleaned spectrum for feature vector calculation
+            spectra_for_feature_vector = window_array[window_size + 1:]
+            mean_spectrum_for_feature_vector = np.mean(spectra_for_feature_vector, axis=0)
+            cleaned_spectrum_for_feature_vector = mean_spectrum_for_feature_vector - mean_background
+
+            # Calculate feature vector
+            feature_vector = tf_calculate_feature_vector(
+                cleaned_spectrum=tf.constant(cleaned_spectrum_for_feature_vector, dtype=tf.float32),
+                n_peaks_max=tf.constant(n_peaks, dtype=tf.int32),
+                fft_size_real=tf.constant(fft_size_real, dtype=tf.int32),
+                sample_rate=tf.constant(sample_rate, dtype=tf.int32))\
+            .numpy()\
+            .reshape((-1))
+
+            assert np.isnan(feature_vector).any() == False, \
                 ("Found NAN in feature vector! |"
-                 f"{mean_clf=} |"
-                 f"nans in mean_clf = {np.isnan(mean_clf).any()} |"
+                 f"{cleaned_spectrum_for_feature_vector=} |"
+                 f"nans in mean_clf = {np.isnan(cleaned_spectrum_for_feature_vector).any()} |"
                  f"{n_peaks=} |"
                  f"{fft_size_real=} |"
                  f"{sample_rate=} |")
 
             feature_list.append(feature_vector)
             window.clear()
-            continue
 
-        # No switch detected
-        else:
-            # No switch detected, remove <step_size> oldest frames and replace with new ones.
-            for j in range(step_size):
-                _ = window.popleft()
-
-    return np.array(feature_list), switch_positions
+    return np.array(feature_list), switch_positions, switch_value_array
 
 
 def remove_false_positive_switching_events(feature_vector_array: np.array,
@@ -504,6 +533,7 @@ def make_training_validation_data(path_to_training_data_folders: str,
         
 
 if __name__ == "__main__":
+    pass
     # pars = read_parameters("src/pulsed_power_ml/models/gupta_model/parameters.yml")
     # print(pars)
     # spectra = load_fft_file("../training_data/2022-10-25_training_data/led/FFTApparentPower_LEDOnOff_FFTSize131072",
