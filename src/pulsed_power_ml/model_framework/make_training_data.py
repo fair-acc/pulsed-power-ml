@@ -9,8 +9,12 @@ from src.pulsed_power_ml.model_framework.data_io import load_binary_data_array
 from src.pulsed_power_ml.model_framework.training_data_labelling import get_features_from_raw_data
 from src.pulsed_power_ml.model_framework.data_io import read_parameters
 
-
-plt.style.use("/home/thomas/dark_theme.mplstyle")
+try:
+    matplotlib_config_file = "/home/thomas/dark_theme.mplstyle"
+    plt.style.use(matplotlib_config_file)
+except OSError:
+    print(f"INFO: matplotlib config file '{matplotlib_config_file}' not found. ")
+    print("INFO: Using std. config.")
 
 def main():
 
