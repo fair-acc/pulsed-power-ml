@@ -66,6 +66,20 @@ target_link_libraries(
         iconfont
 )
 
+# power dashboard
+target_sources(${powerOutputFileName} PRIVATE main_power.cpp)
+target_link_libraries(
+    ${powerOutputFileName}
+    PRIVATE
+        implot
+        deserializer
+        fetch
+        plot_tools
+        app_header
+        stb
+        iconfont
+)
+
 add_subdirectory(deserializer)
 add_subdirectory(fetch)
 add_subdirectory(plot_tools)

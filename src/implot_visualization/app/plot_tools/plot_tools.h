@@ -669,5 +669,143 @@ void plotUsageTable(std::vector<double> powerUsages) {
         ImGui::Text("%2f kVAh", powerUsages[1]);
     }
 }
+void plotPowerPhaseZero(std::vector<ScrollingBuffer> &signalsPower, DataInterval Interval = Short){
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
+    ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
+    ImPlot::SetupAxes("", "P_00(W), Q_0(Var), S_0(VA)", xflags, yflags);    
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+    for (auto signal : signalsPower) {
+        if (signal.data.empty()) {
+            return;
+        }
+    }
+
+    int i = 0;
+    //data power subscription: "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc"
+    for (const auto &signal : signalsPower) {
+        if (!signal.data.empty()) {
+            if(i > 2) continue; //only plot P_0, Q_0, S_0
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    lineFlag,
+                    offset,
+                    2 * sizeof(double));
+            i++;
+        }
+    }
+
+}
+void plotPowerPhaseOne(std::vector<ScrollingBuffer> &signalsPower, DataInterval Interval = Short){
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
+    ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
+    ImPlot::SetupAxes("", "P_1(W), Q_1(Var), S_1(VA)", xflags, yflags);    
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+    int i = 0;
+    //data power subscription: "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc"
+    for (const auto &signal : signalsPower) {
+        if (!signal.data.empty()) {
+            if(i < 3 || i > 5) continue; //only plot P_1, Q_1, S_1
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    lineFlag,
+                    offset,
+                    2 * sizeof(double));
+            i++;
+        }
+    }
+}
+void plotPowerPhaseTwo(std::vector<ScrollingBuffer> &signalsPower, DataInterval Interval = Short){
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
+    ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
+    ImPlot::SetupAxes("", "P_2(W), Q_2(Var),S_2 (VA)", xflags, yflags);    
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+    int i = 0;
+    //data power subscription: "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc"
+    for (const auto &signal : signalsPower) {
+        if (!signal.data.empty()) {
+            if(i < 6 || i > 8) continue; //only plot P_2, Q_2, S_2
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    lineFlag,
+                    offset,
+                    2 * sizeof(double));
+            i++;
+
+        }
+    }
+}
+void plotPowerAcc(std::vector<ScrollingBuffer> &signalsPower, DataInterval Interval = Short){
+    static ImPlotAxisFlags   xflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotAxisFlags   yflags      = ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit;
+    static ImPlotLineFlags   lineFlag    = ImPlotLineFlags_None;
+    static ImPlotLocation    legendLoc   = ImPlotLocation_NorthEast;
+    static ImPlotLegendFlags legendFlags = 0;
+    ImU32                    blue        = 4289753676;
+    ImU32                    red         = 4283584196;
+    ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
+    ImPlot::SetupAxes("", "P_acc(W), Q_acc(Var), S_acc(VA)", xflags, yflags);    
+    ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+    ImPlot::SetupLegend(legendLoc, legendFlags);
+    int i = 0;
+    //data power subscription: "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc"
+    for (const auto &signal : signalsPower) {
+        if (!signal.data.empty()) {
+            if(i < 8) continue; //only plot P_2, Q_2, S_2
+            int offset = 0;
+            if constexpr (requires { signal.offset; }) {
+                offset = signal.offset;
+            }
+            ImPlot::PlotLine((signal.signalName).c_str(),
+                    &signal.data[0].x,
+                    &signal.data[0].y,
+                    signal.data.size(),
+                    lineFlag,
+                    offset,
+                    2 * sizeof(double));
+            i++;
+
+        }
+    }
+}
+
 
 } // namespace Plotter

@@ -113,7 +113,7 @@ int         main(int argc, char **argv) {
     ImGui_ImplSDL2_InitForOpenGL(appState.window, appState.GLContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    const auto fontname = "assets/poe-vetica-monospace-font"; // engineering font
+    const auto fontname = "assets/xkcd-script/xkcd-script.ttf"; // engineering font
     // const auto fontname = "assets/liberation_sans/LiberationSans-Regular.ttf"; // final font
     appState.fonts.text  = io.Fonts->AddFontFromFileTTF(fontname, 18.0f);
     appState.fonts.title = io.Fonts->AddFontFromFileTTF(fontname, 32.0f);
@@ -124,7 +124,7 @@ int         main(int argc, char **argv) {
     builder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
     builder.AddText(ICON_FA_CIRCLE_QUESTION);
     builder.BuildRanges(&symbols);
-    appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/poe-vetica-monospace-font", 32.0f, nullptr, symbols.Data);
+    appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-solid-900.ttf", 32.0f, nullptr, symbols.Data);
     // appState.fonts.fontawesome = io.Fonts->AddFontFromFileTTF("assets/fontawesome/fa-regular.ttf", 16.0f);
 
     app_header::load_header_assets();
@@ -178,7 +178,7 @@ static void main_loop(void *arg) {
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_None);
-        ImGui::Begin("Power Monitoring", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+        ImGui::Begin("Pulsed Power Monitoring", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
         app_header::draw_header_bar("PowerMonitoring", args->fonts.title);
 
         static ImPlotSubplotFlags flags     = ImPlotSubplotFlags_NoTitle;
@@ -189,7 +189,7 @@ static void main_loop(void *arg) {
 
         
         // plot P_0, Q_0, S_0
-        if (ImPlot::BeginPlot("##")) {
+        if (ImPlot::BeginPlot("P, Q, S Phase 0")) {
             if (vectorPowerSubscription.size() >= 1) {
                 printf("%s \n", vectorPowerSubscription[0].acquisition.buffers.data()->signalName.c_str());
                 Plotter::plotPowerPhaseZero(vectorPowerSubscription[0].acquisition.buffers, Interval);
@@ -197,28 +197,22 @@ static void main_loop(void *arg) {
             ImPlot::EndPlot();
         }
         // plot P_1, Q_1, S_1
-        if (ImPlot::BeginPlot("##")) {
-            //subscriptionsTimeDomain    = { voltageSubscription, currentSubscription, signalSubscription, powerStatsSubscription, mainsFreqSubscription };
+        if (ImPlot::BeginPlot("P, Q, S Phase 1")) {
             if (vectorPowerSubscription.size() >= 1) {
-                printf("%s \n", vectorPowerSubscription[0].acquisition.buffers.data()->signalName.c_str());
                 Plotter::plotPowerPhaseOne(vectorPowerSubscription[0].acquisition.buffers, Interval);
             }
             ImPlot::EndPlot();
         }
-        // plot P_1, Q_1, S_1
-        if (ImPlot::BeginPlot("##")) {
-            //subscriptionsTimeDomain    = { voltageSubscription, currentSubscription, signalSubscription, powerStatsSubscription, mainsFreqSubscription };
+        // plot P_2, Q_2, S_2
+        if (ImPlot::BeginPlot("P, Q, S Phase 2")) {
             if (vectorPowerSubscription.size() >= 1) {
-                printf("%s \n", vectorPowerSubscription[0].acquisition.buffers.data()->signalName.c_str());
                 Plotter::plotPowerPhaseTwo(vectorPowerSubscription[0].acquisition.buffers, Interval);
             }
             ImPlot::EndPlot();
         }
         //plot P_acc, Q_acc, S_acc
-        if (ImPlot::BeginPlot("##")) {
-            //subscriptionsTimeDomain    = { voltageSubscription, currentSubscription, signalSubscription, powerStatsSubscription, mainsFreqSubscription };
+        if (ImPlot::BeginPlot("P, Q, S accumulated")) {
             if (vectorPowerSubscription.size() >= 1) {
-                printf("%s \n", vectorPowerSubscription[0].acquisition.buffers.data()->signalName.c_str());
                 Plotter::plotPowerAcc(vectorPowerSubscription[0].acquisition.buffers, Interval);
             }
             ImPlot::EndPlot();

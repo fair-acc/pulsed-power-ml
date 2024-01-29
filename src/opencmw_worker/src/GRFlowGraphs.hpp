@@ -188,7 +188,7 @@ public:
                 //change for testing of different phases etc.
                 //                                                                                                        Freq, Amplitude
                 auto analog_sig_source_voltage0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f); // U_raw
-                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 0, 0, 0.0f);  // I_raw
+                auto analog_sig_source_current0 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 50, 0, 0.2f);  // I_raw
                 //--END SIGNAL SOURCES PHASE 0--//
 
                 auto throttle_voltage0          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -663,6 +663,9 @@ public:
                 out_samp_rate_ui, noutput_items, out_decimation_voltage0, band_pass_filter_voltage0);
         statistics_connection_current(band_pass_filter_current1, band_pass_filter_current2, source_interface_current1, source_interface_current2, decimation_out_raw, decimation_out_bpf,
                 out_samp_rate_ui, noutput_items, out_decimation_current0, band_pass_filter_current0);
+
+        //todo: prepare to retrieve data P, Q, S for each phase
+        statistics_connection_P_Q_S(pulsed_power_calc_mul_ph_ff, noutput_items);
     }
     ~PulsedPowerFlowgraph() { top->stop(); }
     // start gnuradio flowgraph
@@ -715,7 +718,7 @@ public:
 
                 //--SIGNAL SOURCE PHASE 1--//
                 auto analog_sig_source_voltage1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_0_1); // U_raw
-                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 25, 0, -0.2f + phase_shift_0_1);  // I_raw
+                auto analog_sig_source_current1 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 0, 0, 0.2f + phase_shift_0_1);  // I_raw
                 //--END SIGNAL SOURCE PHASE 1--//
 
                 auto throttle_voltage1          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -776,7 +779,7 @@ public:
 
                 //--SIGNAL SOURCE PHASE 2--//
                 auto analog_sig_source_voltage2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 325, 0, 0.0f + phase_shift_1_2); // U_raw
-                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 40, 0, 0.4f + phase_shift_1_2);  // I_raw
+                auto analog_sig_source_current2 = gr::analog::sig_source_f::make(source_samp_rate, gr::analog::GR_SIN_WAVE, 50, 0, 0, 0.2f + phase_shift_1_2);  // I_raw
                 //--END SIGNAL SOURCE PHASE 2--//
 
                 auto throttle_voltage2          = gr::blocks::throttle::make(sizeof(float) * 1, source_samp_rate, true);
@@ -1076,6 +1079,30 @@ public:
         top->hier_block2::connect(band_pass_filter_current1, 0, opencmw_time_sink_signals_currents, 4); // U_1_bpf
         top->hier_block2::connect(band_pass_filter_current2, 0, opencmw_time_sink_signals_currents, 5); // U_1_bpf
     }
+
+    void statistics_connection_P_Q_S(gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_calc_mul_ph_ff, int noutput_items)
+    {
+        //sink for power dashboard
+        auto opencmw_time_sink_signals_P_Q_S       = gr::pulsed_power::opencmw_time_sink::make(
+                               { "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc" },
+                               { "W", "Var", "VA", "W", "Var", "VA", "W", "Var", "VA", "W", "Var", "VA" },
+                               500);
+        opencmw_time_sink_signals_P_Q_S->set_max_noutput_items(noutput_items);
+        //connect output of three phase block with inputs of sink used in subscription
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  0, opencmw_time_sink_signals_P_Q_S,  0); // P_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  1, opencmw_time_sink_signals_P_Q_S,  1); // Q_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  2, opencmw_time_sink_signals_P_Q_S,  2); // S_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  4, opencmw_time_sink_signals_P_Q_S,  3); // P_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  5, opencmw_time_sink_signals_P_Q_S,  4); // Q_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  6, opencmw_time_sink_signals_P_Q_S,  5); // S_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  8, opencmw_time_sink_signals_P_Q_S,  6); // P_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  9, opencmw_time_sink_signals_P_Q_S,  7); // Q_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 10, opencmw_time_sink_signals_P_Q_S,  8); // S_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, opencmw_time_sink_signals_P_Q_S,  9); // P_acc
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, opencmw_time_sink_signals_P_Q_S, 10); // Q_acc
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, opencmw_time_sink_signals_P_Q_S, 11); // S_acc
+    }
+
 };
 
 #endif /* GR_FLOWGRAPHS_HPP */
