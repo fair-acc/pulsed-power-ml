@@ -678,7 +678,7 @@ void plotPowerPhaseZero(std::vector<ScrollingBuffer> &signalsPower, DataInterval
     ImU32                    blue        = 4289753676;
     ImU32                    red         = 4283584196;
     ImU32                    green       = ImGui::ColorConvertFloat4ToU32(ImVec4(0.202, 0.637, 0.299, 1.0));
-    ImPlot::SetupAxes("", "P_00(W), Q_0(Var), S_0(VA)", xflags, yflags);    
+    ImPlot::SetupAxes("", "P_0(W), Q_0(Var), S_0(VA)", xflags, yflags);    
     ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
     ImPlot::SetupLegend(legendLoc, legendFlags);
     for (auto signal : signalsPower) {
