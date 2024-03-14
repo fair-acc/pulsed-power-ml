@@ -665,7 +665,7 @@ public:
                 out_samp_rate_ui, noutput_items, out_decimation_current0, band_pass_filter_current0);
 
         //statistics P, Q, S for each phase and accumulated (-> power dashboard)
-        statistics_connection_P_Q_S(decimation_out_short_term, statistics_p_shortterm, statistics_q_shortterm, statistics_s_shortterm, pulsed_power_calc_mul_ph_ff, noutput_items);
+        statistics_connection_P_Q_S(out_samp_rate_power_shortterm, decimation_out_short_term, statistics_p_shortterm, statistics_q_shortterm, statistics_s_shortterm, pulsed_power_calc_mul_ph_ff, noutput_items);
     }
     ~PulsedPowerFlowgraph() { top->stop(); }
     // start gnuradio flowgraph
@@ -1080,7 +1080,7 @@ public:
         top->hier_block2::connect(band_pass_filter_current2, 0, opencmw_time_sink_signals_currents, 5); // U_1_bpf
     }
     //power_dashboard supscription sink
-    void statistics_connection_P_Q_S(int decimation_out_short_term, gr::pulsed_power::statistics::sptr statistics_p_shortterm, gr::pulsed_power::statistics::sptr statistics_q_shortterm, 
+    void statistics_connection_P_Q_S(float out_samp_rate_power_shortterm, int decimation_out_short_term, gr::pulsed_power::statistics::sptr statistics_p_shortterm, gr::pulsed_power::statistics::sptr statistics_q_shortterm, 
         gr::pulsed_power::statistics::sptr statistics_s_shortterm, gr::pulsed_power::power_calc_mul_ph_ff::sptr pulsed_power_calc_mul_ph_ff, int noutput_items)
     {
         auto statistics_p_0_shortterm = gr::pulsed_power::statistics::make(decimation_out_short_term);
@@ -1105,7 +1105,7 @@ public:
         auto opencmw_time_sink_signals_P_Q_S       = gr::pulsed_power::opencmw_time_sink::make(
                                { "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc" },
                                { "W", "Var", "VA", "W", "Var", "VA", "W", "Var", "VA", "W", "Var", "VA" },
-                               100);
+                               /*out_samp_rate_power_shortterm*/100); //100Hz -> same as power subscription (power dashboard)
         opencmw_time_sink_signals_P_Q_S->set_max_noutput_items(noutput_items);
 
         //connect output of three phase block with inputs of sink used in subscription
@@ -1118,6 +1118,10 @@ public:
         top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  8, statistics_p_2_shortterm,  0); // P_2
         top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  9, statistics_q_2_shortterm,  0); // Q_2
         top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 10, statistics_s_2_shortterm,  0); // S_2
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_shortterm,  0); // P_acc
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_shortterm,  0); // Q_acc
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_shortterm,  0); // S_acc
+
         top->hier_block2::connect(statistics_p_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 0); // P_0 (mean shortterm)
         top->hier_block2::connect(statistics_q_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 1); // Q_0
         top->hier_block2::connect(statistics_s_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 2); // S_0
@@ -1136,7 +1140,8 @@ public:
         top->hier_block2::connect(statistics_p_0_shortterm,  1, null_sink_p_0_shortterm,  0); // P_0 min shortterm
         top->hier_block2::connect(statistics_p_0_shortterm,  2, null_sink_p_0_shortterm,  1); // P_0 max shortterm
         top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  2); // P_0_std_dev short-term
-        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  3); // only here to connect all inputs of null sink
+        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  3); // only here to connect all inputs 
+                                                                                              // of null sink
         top->hier_block2::connect(statistics_q_0_shortterm,  1, null_sink_q_0_shortterm,  0); // Q_0 min short-term
         top->hier_block2::connect(statistics_p_0_shortterm,  2, null_sink_p_0_shortterm,  1); // Q_0 max short-term
         top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  2); // Q_0_std_dev short-term

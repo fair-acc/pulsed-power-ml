@@ -55,8 +55,8 @@ int         main(int argc, char **argv) {
     // subscription to retrieve P, Q, S data for all phases
     Subscription<Acquisition> powerSubscription("http://localhost:8080/pulsed_power/Acquisition?channelNameFilter=", 
                             { "P_0", "Q_0", "S_0", "P_1", "Q_1", "S_1", "P_2", "Q_2", "S_2", "P_acc", "Q_acc", "S_acc" }, 
-                                                                                                500, 0.06 * 1000, 25.0f);
-
+                                                                            sampRate, timeRange * sampRate, updateFreq);
+//    Subscription(const std::string &_url, const std::vector<std::string> &_requestedSignals, const double _sampRate, const int _bufferSize, const float _updateFrequency);
    
     std::vector<Subscription<Acquisition>>        vectorPowerSubscription    = { powerSubscription };
     AppState                                      appState(vectorPowerSubscription, Interval);
