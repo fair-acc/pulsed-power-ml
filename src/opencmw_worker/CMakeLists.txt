@@ -8,7 +8,6 @@ project(opencmw-worker CXX)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(GNUInstallDirs)
-
 find_package(Gnuradio "3.10.4" COMPONENTS
     blocks
     analog

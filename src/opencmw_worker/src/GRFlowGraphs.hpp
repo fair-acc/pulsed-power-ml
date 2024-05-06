@@ -489,7 +489,7 @@ public:
                 out_samp_rate_power_longterm);
         opencmw_time_sink_power_stats_longterm->set_max_noutput_items(noutput_items);
         //todo: replicate statistic sinks for other phases? why doesn't the data directly from mul_ph_ff work?
-        
+        statistics_powerdashboard(noutput_items);
         auto null_sink_stats_shortterm = gr::blocks::null_sink::make(sizeof(float));
         auto null_sink_stats_midterm   = gr::blocks::null_sink::make(sizeof(float));
         auto null_sink_stats_longterm = gr::blocks::null_sink::make(sizeof(float));
@@ -1109,74 +1109,175 @@ public:
         opencmw_time_sink_signals_P_Q_S->set_max_noutput_items(noutput_items);
 
         //connect output of three phase block with inputs of sink used in subscription
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  0, statistics_p_0_shortterm,  0); // P_0
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  1, statistics_q_0_shortterm,  0); // Q_0
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  2, statistics_s_0_shortterm,  0); // S_0
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  4, statistics_p_1_shortterm,  0); // P_1
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  5, statistics_q_1_shortterm,  0); // Q_1
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  6, statistics_s_1_shortterm,  0); // S_1
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  8, statistics_p_2_shortterm,  0); // P_2
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  9, statistics_q_2_shortterm,  0); // Q_2
-        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 10, statistics_s_2_shortterm,  0); // S_2
-        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_shortterm,  0); // P_acc
-        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_shortterm,  0); // Q_acc
-        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_shortterm,  0); // S_acc
-
-        top->hier_block2::connect(statistics_p_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 0); // P_0 (mean shortterm)
-        top->hier_block2::connect(statistics_q_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 1); // Q_0
-        top->hier_block2::connect(statistics_s_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 2); // S_0
-        top->hier_block2::connect(statistics_p_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 3); // P_1
-        top->hier_block2::connect(statistics_q_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 4); // Q_1
-        top->hier_block2::connect(statistics_s_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 5); // S_1
-        top->hier_block2::connect(statistics_p_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 6); // P_2 
-        top->hier_block2::connect(statistics_q_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 7); // Q_2
-        top->hier_block2::connect(statistics_s_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 8); // S_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  0, opencmw_time_sink_signals_P_Q_S,  0); // P_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  1, opencmw_time_sink_signals_P_Q_S,  1); // Q_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  2, opencmw_time_sink_signals_P_Q_S,  2); // S_0
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  4, opencmw_time_sink_signals_P_Q_S,  3); // P_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  5, opencmw_time_sink_signals_P_Q_S,  4); // Q_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  6, opencmw_time_sink_signals_P_Q_S,  5); // S_1
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  8, opencmw_time_sink_signals_P_Q_S,  6); // P_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff,  9, opencmw_time_sink_signals_P_Q_S,  7); // Q_2
+        top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 10, opencmw_time_sink_signals_P_Q_S,  8); // S_2
         top->hier_block2::connect(statistics_p_shortterm, 0, opencmw_time_sink_signals_P_Q_S,   9); // P_acc
         top->hier_block2::connect(statistics_q_shortterm, 0, opencmw_time_sink_signals_P_Q_S,  10); // Q_acc
         top->hier_block2::connect(statistics_s_shortterm, 0, opencmw_time_sink_signals_P_Q_S,  11); // S_acc
 
-        //null sinks for data not needed
-        //phase 0
-        top->hier_block2::connect(statistics_p_0_shortterm,  1, null_sink_p_0_shortterm,  0); // P_0 min shortterm
-        top->hier_block2::connect(statistics_p_0_shortterm,  2, null_sink_p_0_shortterm,  1); // P_0 max shortterm
-        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  2); // P_0_std_dev short-term
-        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  3); // only here to connect all inputs 
-                                                                                              // of null sink
-        top->hier_block2::connect(statistics_q_0_shortterm,  1, null_sink_q_0_shortterm,  0); // Q_0 min short-term
-        top->hier_block2::connect(statistics_p_0_shortterm,  2, null_sink_p_0_shortterm,  1); // Q_0 max short-term
-        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  2); // Q_0_std_dev short-term
-        top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  3); 
-        top->hier_block2::connect(statistics_s_0_shortterm,  1, null_sink_s_0_shortterm,  0); // S_0 min short-term
-        top->hier_block2::connect(statistics_s_0_shortterm,  2, null_sink_s_0_shortterm,  1); // S_0 max short-term
-        top->hier_block2::connect(statistics_s_0_shortterm,  3, null_sink_s_0_shortterm,  2); // S_0_std_dev short-term
-        top->hier_block2::connect(statistics_s_0_shortterm,  3, null_sink_s_0_shortterm,  3); 
-        //phase 1
-        top->hier_block2::connect(statistics_p_1_shortterm,  1, null_sink_p_1_shortterm,  0); // P_1 min shortterm
-        top->hier_block2::connect(statistics_p_1_shortterm,  2, null_sink_p_1_shortterm,  1); // P_1 max shortterm
-        top->hier_block2::connect(statistics_p_1_shortterm,  3, null_sink_p_1_shortterm,  2); // P_1_std_dev short-term
-        top->hier_block2::connect(statistics_p_1_shortterm,  3, null_sink_p_1_shortterm,  3);
-        top->hier_block2::connect(statistics_q_1_shortterm,  1, null_sink_q_1_shortterm,  0); // Q_1 min short-term
-        top->hier_block2::connect(statistics_q_1_shortterm,  2, null_sink_q_1_shortterm,  1); // Q_1 max short-term
-        top->hier_block2::connect(statistics_q_1_shortterm,  3, null_sink_q_1_shortterm,  2); // Q_1_std_dev short-term
-        top->hier_block2::connect(statistics_q_1_shortterm,  3, null_sink_q_1_shortterm,  3); 
-        top->hier_block2::connect(statistics_s_1_shortterm,  1, null_sink_s_1_shortterm,  0); // S_1 min short-term
-        top->hier_block2::connect(statistics_s_1_shortterm,  2, null_sink_s_1_shortterm,  1); // S_1 max short-term
-        top->hier_block2::connect(statistics_s_1_shortterm,  3, null_sink_s_1_shortterm,  2); // S_1_std_dev short-term
-        top->hier_block2::connect(statistics_s_1_shortterm,  3, null_sink_s_1_shortterm,  3);
-        //phase 2
-        top->hier_block2::connect(statistics_p_2_shortterm,  1, null_sink_p_2_shortterm,  0); // P_2 min shortterm
-        top->hier_block2::connect(statistics_p_2_shortterm,  2, null_sink_p_2_shortterm,  1); // P_2 max shortterm
-        top->hier_block2::connect(statistics_p_2_shortterm,  3, null_sink_p_2_shortterm,  2); // P_2_std_dev short-term
-        top->hier_block2::connect(statistics_p_2_shortterm,  3, null_sink_p_2_shortterm,  3);
-        top->hier_block2::connect(statistics_q_2_shortterm,  1, null_sink_q_2_shortterm,  0); // Q_2 min short-term
-        top->hier_block2::connect(statistics_q_2_shortterm,  2, null_sink_q_2_shortterm,  1); // Q_2 max short-term
-        top->hier_block2::connect(statistics_q_2_shortterm,  3, null_sink_q_2_shortterm,  2); // Q_2_std_dev short-term
-        top->hier_block2::connect(statistics_q_2_shortterm,  3, null_sink_q_2_shortterm,  3); 
-        top->hier_block2::connect(statistics_s_2_shortterm,  1, null_sink_s_2_shortterm,  0); // S_2 min short-term
-        top->hier_block2::connect(statistics_s_2_shortterm,  2, null_sink_s_2_shortterm,  1); // S_2 max short-term
-        top->hier_block2::connect(statistics_s_2_shortterm,  3, null_sink_s_2_shortterm,  2); // S_2_std_dev short-term
-        top->hier_block2::connect(statistics_s_2_shortterm,  3, null_sink_s_2_shortterm,  3);
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_shortterm,  0); // P_acc
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_shortterm,  0); // Q_acc
+        // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_shortterm,  0); // S_acc
+
+        // top->hier_block2::connect(statistics_p_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 0); // P_0 (mean shortterm)
+        // top->hier_block2::connect(statistics_q_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 1); // Q_0
+        // top->hier_block2::connect(statistics_s_0_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 2); // S_0
+        // top->hier_block2::connect(statistics_p_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 3); // P_1
+        // top->hier_block2::connect(statistics_q_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 4); // Q_1
+        // top->hier_block2::connect(statistics_s_1_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 5); // S_1
+        // top->hier_block2::connect(statistics_p_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 6); // P_2 
+        // top->hier_block2::connect(statistics_q_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 7); // Q_2
+        // top->hier_block2::connect(statistics_s_2_shortterm, 0, opencmw_time_sink_signals_P_Q_S, 8); // S_2
+
+
+        // //null sinks for data not needed
+        // //phase 0
+        // top->hier_block2::connect(statistics_p_0_shortterm,  1, null_sink_p_0_shortterm,  0); // P_0 min shortterm
+        // top->hier_block2::connect(statistics_p_0_shortterm,  2, null_sink_p_0_shortterm,  1); // P_0 max shortterm
+        // top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  2); // P_0_std_dev short-term
+        // top->hier_block2::connect(statistics_p_0_shortterm,  3, null_sink_p_0_shortterm,  3); // only here to connect all inputs                                                                      // of null sink
+        // top->hier_block2::connect(statistics_q_0_shortterm,  1, null_sink_q_0_shortterm,  0); // Q_0 min short-term
+        // top->hier_block2::connect(statistics_q_0_shortterm,  2, null_sink_p_0_shortterm,  1); // Q_0 max short-term
+        // top->hier_block2::connect(statistics_q_0_shortterm,  3, null_sink_p_0_shortterm,  2); // Q_0_std_dev short-term
+        // top->hier_block2::connect(statistics_q_0_shortterm,  3, null_sink_p_0_shortterm,  3); 
+        // top->hier_block2::connect(statistics_s_0_shortterm,  1, null_sink_s_0_shortterm,  0); // S_0 min short-term
+        // top->hier_block2::connect(statistics_s_0_shortterm,  2, null_sink_s_0_shortterm,  1); // S_0 max short-term
+        // top->hier_block2::connect(statistics_s_0_shortterm,  3, null_sink_s_0_shortterm,  2); // S_0_std_dev short-term
+        // top->hier_block2::connect(statistics_s_0_shortterm,  3, null_sink_s_0_shortterm,  3); 
+        // //phase 1
+        // top->hier_block2::connect(statistics_p_1_shortterm,  1, null_sink_p_1_shortterm,  0); // P_1 min shortterm
+        // top->hier_block2::connect(statistics_p_1_shortterm,  2, null_sink_p_1_shortterm,  1); // P_1 max shortterm
+        // top->hier_block2::connect(statistics_p_1_shortterm,  3, null_sink_p_1_shortterm,  2); // P_1_std_dev short-term
+        // top->hier_block2::connect(statistics_p_1_shortterm,  3, null_sink_p_1_shortterm,  3);
+        // top->hier_block2::connect(statistics_q_1_shortterm,  1, null_sink_q_1_shortterm,  0); // Q_1 min short-term
+        // top->hier_block2::connect(statistics_q_1_shortterm,  2, null_sink_q_1_shortterm,  1); // Q_1 max short-term
+        // top->hier_block2::connect(statistics_q_1_shortterm,  3, null_sink_q_1_shortterm,  2); // Q_1_std_dev short-term
+        // top->hier_block2::connect(statistics_q_1_shortterm,  3, null_sink_q_1_shortterm,  3); 
+        // top->hier_block2::connect(statistics_s_1_shortterm,  1, null_sink_s_1_shortterm,  0); // S_1 min short-term
+        // top->hier_block2::connect(statistics_s_1_shortterm,  2, null_sink_s_1_shortterm,  1); // S_1 max short-term
+        // top->hier_block2::connect(statistics_s_1_shortterm,  3, null_sink_s_1_shortterm,  2); // S_1_std_dev short-term
+        // top->hier_block2::connect(statistics_s_1_shortterm,  3, null_sink_s_1_shortterm,  3);
+        // //phase 2
+        // top->hier_block2::connect(statistics_p_2_shortterm,  1, null_sink_p_2_shortterm,  0); // P_2 min shortterm
+        // top->hier_block2::connect(statistics_p_2_shortterm,  2, null_sink_p_2_shortterm,  1); // P_2 max shortterm
+        // top->hier_block2::connect(statistics_p_2_shortterm,  3, null_sink_p_2_shortterm,  2); // P_2_std_dev short-term
+        // top->hier_block2::connect(statistics_p_2_shortterm,  3, null_sink_p_2_shortterm,  3);
+        // top->hier_block2::connect(statistics_q_2_shortterm,  1, null_sink_q_2_shortterm,  0); // Q_2 min short-term
+        // top->hier_block2::connect(statistics_q_2_shortterm,  2, null_sink_q_2_shortterm,  1); // Q_2 max short-term
+        // top->hier_block2::connect(statistics_q_2_shortterm,  3, null_sink_q_2_shortterm,  2); // Q_2_std_dev short-term
+        // top->hier_block2::connect(statistics_q_2_shortterm,  3, null_sink_q_2_shortterm,  3); 
+        // top->hier_block2::connect(statistics_s_2_shortterm,  1, null_sink_s_2_shortterm,  0); // S_2 min short-term
+        // top->hier_block2::connect(statistics_s_2_shortterm,  2, null_sink_s_2_shortterm,  1); // S_2 max short-term
+        // top->hier_block2::connect(statistics_s_2_shortterm,  3, null_sink_s_2_shortterm,  2); // S_2_std_dev short-term
+        // top->hier_block2::connect(statistics_s_2_shortterm,  3, null_sink_s_2_shortterm,  3);
     }
+        void statistics_powerdashboard(int noutput_items){
+                // const float samp_rate_delta_phi_calc = 1'000.0f;
+                // // parameters decimation
+                // const float out_samp_rate_power_shortterm        = 100.0f;
+                // const float out_samp_rate_power_midterm          = 1.0f;
+                // const float out_samp_rate_power_longterm         = 1.0f / 60.0f;
+
+                // int         decimation_out_short_term            = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_shortterm));
+                // int         decimation_out_mid_term              = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_midterm));
+                // int         decimation_out_long_term             = static_cast<int>(roundf(samp_rate_delta_phi_calc / out_samp_rate_power_longterm));
+                // auto statistics_p_shortterm                   = gr::pulsed_power::statistics::make(decimation_out_short_term);
+                // auto statistics_q_shortterm                   = gr::pulsed_power::statistics::make(decimation_out_short_term);
+                // auto statistics_s_shortterm                   = gr::pulsed_power::statistics::make(decimation_out_short_term);
+                // auto statistics_phi_shortterm                 = gr::pulsed_power::statistics::make(decimation_out_short_term);
+                // auto statistics_p_midterm                     = gr::pulsed_power::statistics::make(decimation_out_mid_term);
+                // auto statistics_q_midterm                     = gr::pulsed_power::statistics::make(decimation_out_mid_term);
+                // auto statistics_s_midterm                     = gr::pulsed_power::statistics::make(decimation_out_mid_term);
+                // auto statistics_phi_midterm                   = gr::pulsed_power::statistics::make(decimation_out_mid_term);
+                // auto statistics_p_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
+                // auto statistics_q_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
+                // auto statistics_s_longterm                    = gr::pulsed_power::statistics::make(decimation_out_long_term);
+                // auto statistics_phi_longterm                  = gr::pulsed_power::statistics::make(decimation_out_long_term);
+                // auto opencmw_time_sink_power_stats_shortterm = gr::pulsed_power::opencmw_time_sink::make(
+                //         { "P_0_mean", "P_0_min", "P_0_max", "Q_0_mean", "Q_0_min", "Q_0_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" },
+                //         { "W", "W", "W", "Var", "Var", "Var", "VA", "VA", "VA", "rad", "rad", "rad" },
+                //         out_samp_rate_power_shortterm);
+                //         opencmw_time_sink_power_stats_shortterm->set_max_noutput_items(noutput_items);
+                // auto opencmw_time_sink_power_stats_midterm = gr::pulsed_power::opencmw_time_sink::make(
+                //         { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" },
+                //         { "W", "W", "W", "Var", "Var", "Var", "VA", "VA", "VA", "rad", "rad", "rad" },
+                //         out_samp_rate_power_midterm);
+                // opencmw_time_sink_power_stats_midterm->set_max_noutput_items(noutput_items);
+                // auto opencmw_time_sink_power_stats_longterm = gr::pulsed_power::opencmw_time_sink::make(
+                //         { "P_mean", "P_min", "P_max", "Q_mean", "Q_min", "Q_max", "S_mean", "S_min", "S_max", "phi_mean", "phi_min", "phi_max" },
+                //         { "W", "W", "W", "Var", "Var", "Var", "VA", "VA", "VA", "rad", "rad", "rad" },
+                //         out_samp_rate_power_longterm);
+                //         opencmw_time_sink_power_stats_longterm->set_max_noutput_items(noutput_items);
+                //                 top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_shortterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_shortterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_shortterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 3, statistics_phi_shortterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_midterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_midterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_midterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 3, statistics_phi_midterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 12, statistics_p_longterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 13, statistics_q_longterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 14, statistics_s_longterm, 0);
+                // top->hier_block2::connect(pulsed_power_calc_mul_ph_ff, 3, statistics_phi_longterm, 0);
+                // top->hier_block2::connect(statistics_p_shortterm, 0, opencmw_time_sink_power_stats_shortterm, 0);    // P_mean short-term
+                // top->hier_block2::connect(statistics_p_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 1);    // P_min short-term
+                // top->hier_block2::connect(statistics_p_shortterm, 2, opencmw_time_sink_power_stats_shortterm, 2);    // P_max short-term
+                // top->hier_block2::connect(statistics_p_shortterm, 3, null_sink_stats_shortterm, 0);                  // P_std_dev short-term
+                // top->hier_block2::connect(statistics_q_shortterm, 0, opencmw_time_sink_power_stats_shortterm, 3);    // Q_mean short-term
+                // top->hier_block2::connect(statistics_q_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 4);    // Q_min short-term
+                // top->hier_block2::connect(statistics_q_shortterm, 2, opencmw_time_sink_power_stats_shortterm, 5);    // Q_max short-term
+                // top->hier_block2::connect(statistics_q_shortterm, 3, null_sink_stats_shortterm, 1);                  // Q_std_dev short-term
+                // top->hier_block2::connect(statistics_s_shortterm, 0, opencmw_time_sink_power_stats_shortterm, 6);    // S_mean short-term
+                // top->hier_block2::connect(statistics_s_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 7);    // S_min short-term
+                // top->hier_block2::connect(statistics_s_shortterm, 2, opencmw_time_sink_power_stats_shortterm, 8);    // S_max short-term
+                // top->hier_block2::connect(statistics_s_shortterm, 3, null_sink_stats_shortterm, 2);                  // S_std_dev short-term
+                // top->hier_block2::connect(statistics_phi_shortterm, 0, opencmw_time_sink_power_stats_shortterm, 9);  // phi_mean short-term
+                // top->hier_block2::connect(statistics_phi_shortterm, 1, opencmw_time_sink_power_stats_shortterm, 10); // phi_min short-term
+                // top->hier_block2::connect(statistics_phi_shortterm, 2, opencmw_time_sink_power_stats_shortterm, 11); // phi_max short-term
+                // top->hier_block2::connect(statistics_phi_shortterm, 3, null_sink_stats_shortterm, 3);                // phi_std_dev short-term
+                // top->hier_block2::connect(statistics_p_midterm, 0, opencmw_time_sink_power_stats_midterm, 0);    // P_mean mid-term
+                // top->hier_block2::connect(statistics_p_midterm, 1, opencmw_time_sink_power_stats_midterm, 1);    // P_min mid-term
+                // top->hier_block2::connect(statistics_p_midterm, 2, opencmw_time_sink_power_stats_midterm, 2);    // P_max mid-term
+                // top->hier_block2::connect(statistics_p_midterm, 3, null_sink_stats_midterm, 0);                  // P_std_dev mid-term
+                // top->hier_block2::connect(statistics_q_midterm, 0, opencmw_time_sink_power_stats_midterm, 3);    // Q_mean mid-term
+                // top->hier_block2::connect(statistics_q_midterm, 1, opencmw_time_sink_power_stats_midterm, 4);    // Q_min mid-term
+                // top->hier_block2::connect(statistics_q_midterm, 2, opencmw_time_sink_power_stats_midterm, 5);    // Q_max mid-term
+                // top->hier_block2::connect(statistics_q_midterm, 3, null_sink_stats_midterm, 1);                  // Q_std_dev mid-term
+                // top->hier_block2::connect(statistics_s_midterm, 0, opencmw_time_sink_power_stats_midterm, 6);    // S_mean mid-term
+                // top->hier_block2::connect(statistics_s_midterm, 1, opencmw_time_sink_power_stats_midterm, 7);    // S_min mid-term
+                // top->hier_block2::connect(statistics_s_midterm, 2, opencmw_time_sink_power_stats_midterm, 8);    // S_max mid-term
+                // top->hier_block2::connect(statistics_s_midterm, 3, null_sink_stats_midterm, 2);                  // S_std_dev mid-term
+                // top->hier_block2::connect(statistics_phi_midterm, 0, opencmw_time_sink_power_stats_midterm, 9);  // phi_mean mid-term
+                // top->hier_block2::connect(statistics_phi_midterm, 1, opencmw_time_sink_power_stats_midterm, 10); // phi_min mid-term
+                // top->hier_block2::connect(statistics_phi_midterm, 2, opencmw_time_sink_power_stats_midterm, 11); // phi_max mid-term
+                // top->hier_block2::connect(statistics_phi_midterm, 3, null_sink_stats_midterm, 3);                // phi_std_dev mid-term
+                // top->hier_block2::connect(statistics_p_longterm, 0, opencmw_time_sink_power_stats_longterm, 0);    // P_mean long-term
+                // top->hier_block2::connect(statistics_p_longterm, 1, opencmw_time_sink_power_stats_longterm, 1);    // P_min long-term
+                // top->hier_block2::connect(statistics_p_longterm, 2, opencmw_time_sink_power_stats_longterm, 2);    // P_max long-term
+                // top->hier_block2::connect(statistics_p_longterm, 3, null_sink_stats_longterm, 0);                  // P_std_dev long-term
+                // top->hier_block2::connect(statistics_q_longterm, 0, opencmw_time_sink_power_stats_longterm, 3);    // Q_mean long-term
+                // top->hier_block2::connect(statistics_q_longterm, 1, opencmw_time_sink_power_stats_longterm, 4);    // Q_min long-term
+                // top->hier_block2::connect(statistics_q_longterm, 2, opencmw_time_sink_power_stats_longterm, 5);    // Q_max long-term
+                // top->hier_block2::connect(statistics_q_longterm, 3, null_sink_stats_longterm, 1);                  // Q_std_dev long-term
+                // top->hier_block2::connect(statistics_s_longterm, 0, opencmw_time_sink_power_stats_longterm, 6);    // S_mean long-term
+                // top->hier_block2::connect(statistics_s_longterm, 1, opencmw_time_sink_power_stats_longterm, 7);    // S_min long-term
+                // top->hier_block2::connect(statistics_s_longterm, 2, opencmw_time_sink_power_stats_longterm, 8);    // S_max long-term
+                // top->hier_block2::connect(statistics_s_longterm, 3, null_sink_stats_longterm, 2);                  // S_std_dev long-term
+                // top->hier_block2::connect(statistics_phi_longterm, 0, opencmw_time_sink_power_stats_longterm, 9);  // phi_mean long-term
+                // top->hier_block2::connect(statistics_phi_longterm, 1, opencmw_time_sink_power_stats_longterm, 10); // phi_min long-term
+                // top->hier_block2::connect(statistics_phi_longterm, 2, opencmw_time_sink_power_stats_longterm, 11); // phi_max long-term
+                // top->hier_block2::connect(statistics_phi_longterm, 3, null_sink_stats_longterm, 3);                // phi_std_dev long-term
+
+        }
+
 
 };
 
