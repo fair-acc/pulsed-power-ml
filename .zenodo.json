@@ -1,0 +1,45 @@
+{
+  "title": "pulsed-power-ml",
+  "description": "pulsed-power-ml — machine-learning-assisted pulsed-power converter diagnostics and control.",
+  "license": {
+    "id": "LGPL-3.0-only"
+  },
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Steinhagen, Ralph J.",
+      "affiliation": "GSI Helmholtzzentrum für Schwerionenforschung / FAIR",
+      "orcid": "0009-0009-8537-7029"
+    },
+    {
+      "name": "Heuser, Johanna",
+      "affiliation": "GSI Helmholtzzentrum für Schwerionenforschung"
+    },
+    {
+      "name": "Förstel, Stefan",
+      "affiliation": "GSI Helmholtzzentrum für Schwerionenforschung"
+    },
+    {
+      "name": "Kittler, Thomas",
+      "affiliation": "infoteam Software AG"
+    },
+    {
+      "name": "Krimm, Alexander",
+      "affiliation": "GSI Helmholtzzentrum für Schwerionenforschung",
+      "orcid": "0000-0003-0804-756X"
+    }
+  ],
+  "keywords": [
+    "pulsed power",
+    "machine learning",
+    "accelerator controls",
+    "diagnostics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/fair-acc/pulsed-power-ml",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
