@@ -110,3 +110,8 @@ cmake-build*/
 
 # gnuradio-prefix dir for installing
 gr-prefix/
+
+# prometheus
+src/prometheus/json_exporter/data.json
+src/prometheus/json_exporter/fair-main.code-workspace
+src/prometheus/json_exporter/requests.http
